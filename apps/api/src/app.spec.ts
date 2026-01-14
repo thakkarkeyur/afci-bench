@@ -1,0 +1,254 @@
+import request from 'supertest';
+import { createApp } from './app';
+import { OrderRequest, OrderResponse, ErrorResponse } from '@afci-bench/contracts';
+import { LogOutput, RequestLogEntry, ErrorLogEntry } from '@afci-bench/observability';
+import { resetOrderRepository } from '@afci-bench/infra';
+
+class TestLogOutput implements LogOutput {
+  public logs: Array<{ level: string; entry: RequestLogEntry | ErrorLogEntry }> = [];
+
+  write(level: string, entry: RequestLogEntry | ErrorLogEntry): void {
+    this.logs.push({ level, entry });
+  }
+
+  clear(): void {
+    this.logs = [];
+  }
+
+  getRequestLogs(): RequestLogEntry[] {
+    return this.logs
+      .filter((l) => 'operation' in l.entry)
+      .map((l) => l.entry as RequestLogEntry);
+  }
+
+  getErrorLogs(): ErrorLogEntry[] {
+    return this.logs
+      .filter((l) => 'errorType' in l.entry)
+      .map((l) => l.entry as ErrorLogEntry);
+  }
+}
+
+describe('API Integration Tests', () => {
+  let testLogOutput: TestLogOutput;
+
+  beforeEach(() => {
+    testLogOutput = new TestLogOutput();
+    resetOrderRepository();
+  });
+
+  describe('GET /health', () => {
+    it('should return health status', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const response = await request(app).get('/health');
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('ok');
+      expect(response.body.timestamp).toBeDefined();
+    });
+  });
+
+  describe('POST /orders', () => {
+    it('should create order successfully with valid input', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const orderRequest: OrderRequest = {
+        customerId: 'cust-123',
+        items: [
+          { productId: 'prod-1', name: 'Widget', quantity: 2, unitPrice: 10.5 },
+          { productId: 'prod-2', name: 'Gadget', quantity: 1, unitPrice: 25 },
+        ],
+      };
+
+      const response = await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json');
+
+      expect(response.status).toBe(201);
+
+      const order: OrderResponse = response.body;
+      expect(order.id).toBeDefined();
+      expect(order.customerId).toBe('cust-123');
+      expect(order.items).toHaveLength(2);
+      expect(order.items[0].subtotal).toBe(21); // 2 * 10.5
+      expect(order.items[1].subtotal).toBe(25); // 1 * 25
+      expect(order.total).toBe(46);
+      expect(order.status).toBe('pending');
+      expect(order.createdAt).toBeDefined();
+    });
+
+    it('should return correlationId in response header', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const orderRequest: OrderRequest = {
+        customerId: 'cust-123',
+        items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10 }],
+      };
+
+      const response = await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json');
+
+      expect(response.headers['x-correlation-id']).toBeDefined();
+      expect(typeof response.headers['x-correlation-id']).toBe('string');
+    });
+
+    it('should use provided x-correlation-id header', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+      const providedCorrelationId = 'my-custom-correlation-id-12345';
+
+      const orderRequest: OrderRequest = {
+        customerId: 'cust-123',
+        items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10 }],
+      };
+
+      const response = await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json')
+        .set('x-correlation-id', providedCorrelationId);
+
+      expect(response.headers['x-correlation-id']).toBe(providedCorrelationId);
+
+      // Verify logs contain the same correlationId
+      const requestLogs = testLogOutput.getRequestLogs();
+      expect(requestLogs.length).toBeGreaterThan(0);
+      requestLogs.forEach((log) => {
+        expect(log.correlationId).toBe(providedCorrelationId);
+      });
+    });
+
+    it('should return 400 for invalid input', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const orderRequest: OrderRequest = {
+        customerId: '',
+        items: [],
+      };
+
+      const response = await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json');
+
+      expect(response.status).toBe(400);
+
+      const error: ErrorResponse = response.body;
+      expect(error.error).toBe('ValidationError');
+      expect(error.message).toContain('customerId is required');
+      expect(error.message).toContain('Order must have at least one item');
+      expect(error.correlationId).toBeDefined();
+    });
+
+    it('should log structured JSON with required fields on success', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const orderRequest: OrderRequest = {
+        customerId: 'cust-123',
+        items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10 }],
+      };
+
+      await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json');
+
+      const requestLogs = testLogOutput.getRequestLogs();
+      expect(requestLogs.length).toBeGreaterThan(0);
+
+      const successLog = requestLogs.find((l) => l.status === 'success');
+      expect(successLog).toBeDefined();
+      expect(successLog?.correlationId).toBeDefined();
+      expect(successLog?.operation).toBe('createOrder');
+      expect(successLog?.status).toBe('success');
+      expect(typeof successLog?.latencyMs).toBe('number');
+      expect(successLog?.latencyMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should log structured JSON with required fields on failure', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const orderRequest: OrderRequest = {
+        customerId: '',
+        items: [],
+      };
+
+      await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json');
+
+      const requestLogs = testLogOutput.getRequestLogs();
+      const failLog = requestLogs.find((l) => l.status === 'fail');
+
+      expect(failLog).toBeDefined();
+      expect(failLog?.correlationId).toBeDefined();
+      expect(failLog?.operation).toBe('createOrder');
+      expect(failLog?.status).toBe('fail');
+      expect(typeof failLog?.latencyMs).toBe('number');
+    });
+
+    it('should match response shape to OrderResponse contract', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const orderRequest: OrderRequest = {
+        customerId: 'cust-456',
+        items: [
+          { productId: 'prod-1', name: 'Alpha', quantity: 3, unitPrice: 15.99 },
+        ],
+      };
+
+      const response = await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json');
+
+      expect(response.status).toBe(201);
+
+      const order = response.body;
+
+      // Validate all required OrderResponse fields exist and have correct types
+      expect(typeof order.id).toBe('string');
+      expect(typeof order.customerId).toBe('string');
+      expect(Array.isArray(order.items)).toBe(true);
+      expect(typeof order.total).toBe('number');
+      expect(typeof order.status).toBe('string');
+      expect(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']).toContain(order.status);
+      expect(typeof order.createdAt).toBe('string');
+
+      // Validate item shape
+      order.items.forEach((item: Record<string, unknown>) => {
+        expect(typeof item.productId).toBe('string');
+        expect(typeof item.name).toBe('string');
+        expect(typeof item.quantity).toBe('number');
+        expect(typeof item.unitPrice).toBe('number');
+        expect(typeof item.subtotal).toBe('number');
+      });
+    });
+
+    it('should match error response shape to ErrorResponse contract', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const orderRequest = {
+        customerId: '',
+        items: [],
+      };
+
+      const response = await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json');
+
+      expect(response.status).toBe(400);
+
+      const error = response.body;
+
+      // Validate all required ErrorResponse fields
+      expect(typeof error.error).toBe('string');
+      expect(typeof error.message).toBe('string');
+      expect(typeof error.correlationId).toBe('string');
+    });
+  });
+});
