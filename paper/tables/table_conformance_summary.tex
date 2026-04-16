@@ -1,0 +1,19 @@
+\begin{table*}[t]
+\centering
+\caption{Conformance violations (AFCI-Guard v0). Values are mean violations per run across tasks for each condition. Lower is better. P0 are machine-checkable; P1 are heuristic checks (upgradeable via tests/lints).}
+\vspace{-2.5ex}
+\label{tab:conformance}
+\footnotesize
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrr@{}}
+\toprule
+Condition & P0 Boundary & P0 Ports & P0 Contracts & P1 Observability & Total \\
+\midrule
+Baseline         & 0 & 0.38 & 0 & 0 & 0.38 \\
+AFCI             & 0 & 0.50 & 0 & 0 & 0.50 \\
+Baseline (Reset) & 0 & 0.25 & 0 & 0 & 0.25 \\
+AFCI (Reset)     & 0 & 0.25 & 0 & 0 & 0.25 \\
+\bottomrule
+\end{tabular*}
+\end{table*}

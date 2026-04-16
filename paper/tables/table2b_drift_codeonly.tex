@@ -1,0 +1,23 @@
+\begin{table*}[t]
+\centering
+\caption{Code-only consistency-under-reset (drift). Lower $\Delta$CodeLOC indicates more stable behavior under context resets.}
+\vspace{-2.5ex}
+\label{tab:drift_codeonly}
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrr@{}}
+\toprule
+Task & Base $\Delta$CodeLOC & AFCI $\Delta$CodeLOC & Base J & AFCI J & Base $\Delta$Tests & AFCI $\Delta$Tests \\
+\midrule
+T01 & 352 & 126 & 0.50 & 1.00 & +5 & +0 \\
+T04 & 137 & 9   & 0.60 & 0.60 & +0 & +0 \\
+T06 & 132 & 12  & 1.00 & 1.00 & +3 & +0 \\
+T02 & 328 & 262 & 0.75 & 0.60 & -8 & +0 \\
+T05 & 146 & 142 & 1.00 & 1.00 & +0 & +0 \\
+T03 & 52  & 49  & 0.75 & 0.60 & +0 & +0 \\
+T12 & 11  & 129 & 0.67 & 0.67 & +0 & -1 \\
+T11 & 28  & 202 & 1.00 & 1.00 & -5 & +10 \\
+\bottomrule
+\end{tabular*}
+\end{table*}

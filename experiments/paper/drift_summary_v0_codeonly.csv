@@ -1,0 +1,9 @@
+task_id,baseline_delta_loc_code,afci_delta_loc_code,drift_advantage_loc_code,baseline_layer_jaccard,afci_layer_jaccard,baseline_delta_tests,afci_delta_tests
+T01,352,126,226,0.5,1.0,5,0
+T02,328,262,66,0.75,0.6,-8,0
+T03,52,49,3,0.75,0.6,0,0
+T04,137,9,128,0.6,0.6,0,0
+T05,146,142,4,1.0,1.0,0,0
+T06,132,12,120,1.0,1.0,3,0
+T11,28,202,-174,1.0,1.0,-5,10
+T12,11,129,-118,0.667,0.667,0,-1
