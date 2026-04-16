@@ -99,4 +99,6 @@ which may be released separately due to size.
 
 ## License
 
-MIT (see `LICENSE`).
+This repository is licensed under the [MIT License](LICENSE).
+
+Copyright (c) 2026 AFCI-Bench Contributors.
