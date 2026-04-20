@@ -4,7 +4,9 @@ import {
   createOrderItem,
   validateOrderItems,
   validateCustomerId,
+  mapOrderToResponse,
   OrderItem,
+  Order,
 } from './index';
 
 describe('calculateItemSubtotal', () => {
@@ -172,5 +174,31 @@ describe('validateCustomerId', () => {
     const result = validateCustomerId('   ');
     expect(result.valid).toBe(false);
     expect(result.errors).toContain('customerId is required');
+  });
+});
+
+describe('mapOrderToResponse', () => {
+  it('should map Order domain entity to OrderResponse DTO', () => {
+    const now = new Date('2024-01-15T10:00:00Z');
+    const order: Order = {
+      id: 'order-1',
+      customerId: 'cust-1',
+      items: [{ productId: 'p1', name: 'Widget', quantity: 2, unitPrice: 10, subtotal: 20 }],
+      total: 20,
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const response = mapOrderToResponse(order);
+
+    expect(response.id).toBe('order-1');
+    expect(response.customerId).toBe('cust-1');
+    expect(response.items).toHaveLength(1);
+    expect(response.items[0].subtotal).toBe(20);
+    expect(response.total).toBe(20);
+    expect(response.status).toBe('pending');
+    expect(response.createdAt).toBe('2024-01-15T10:00:00.000Z');
+    expect(response.updatedAt).toBe('2024-01-15T10:00:00.000Z');
   });
 });

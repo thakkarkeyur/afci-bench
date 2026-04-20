@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { OrderRequest, OrderResponse, OrderItemResponse, PaginatedResponse } from '@afci-bench/contracts';
+import { OrderRequest, OrderResponse, PaginatedResponse } from '@afci-bench/contracts';
 import {
   Order,
   OrderItem,
@@ -8,6 +8,7 @@ import {
   calculateOrderTotal,
   validateOrderItems,
   validateCustomerId,
+  mapOrderToResponse,
 } from '@afci-bench/core';
 import { Logger } from '@afci-bench/observability';
 
@@ -58,23 +59,7 @@ export async function getOrderByIdUseCase(
       return { success: false, notFound: true, errors: ['Order not found'] };
     }
 
-    const responseItems: OrderItemResponse[] = order.items.map((item) => ({
-      productId: item.productId,
-      name: item.name,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      subtotal: item.subtotal,
-    }));
-
-    const response: OrderResponse = {
-      id: order.id,
-      customerId: order.customerId,
-      items: responseItems,
-      total: order.total,
-      status: order.status,
-      createdAt: order.createdAt.toISOString(),
-      updatedAt: order.updatedAt.toISOString(),
-    };
+    const response = mapOrderToResponse(order);
 
     logger.logRequest({
       correlationId,
@@ -164,23 +149,7 @@ export async function createOrderUseCase(
     const savedOrder = await orderRepository.save(order);
 
     // Map to response DTO
-    const responseItems: OrderItemResponse[] = savedOrder.items.map((item) => ({
-      productId: item.productId,
-      name: item.name,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      subtotal: item.subtotal,
-    }));
-
-    const response: OrderResponse = {
-      id: savedOrder.id,
-      customerId: savedOrder.customerId,
-      items: responseItems,
-      total: savedOrder.total,
-      status: savedOrder.status,
-      createdAt: savedOrder.createdAt.toISOString(),
-      updatedAt: savedOrder.updatedAt.toISOString(),
-    };
+    const response = mapOrderToResponse(savedOrder);
 
     logger.logRequest({
       correlationId,
@@ -236,21 +205,7 @@ export async function listOrdersUseCase(
 
   const { data: orders, total } = await orderRepository.findAll(effectiveLimit, effectiveOffset);
 
-  const responseData: OrderResponse[] = orders.map((order) => ({
-    id: order.id,
-    customerId: order.customerId,
-    items: order.items.map((item) => ({
-      productId: item.productId,
-      name: item.name,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      subtotal: item.subtotal,
-    })),
-    total: order.total,
-    status: order.status,
-    createdAt: order.createdAt.toISOString(),
-    updatedAt: order.updatedAt.toISOString(),
-  }));
+  const responseData: OrderResponse[] = orders.map(mapOrderToResponse);
 
   logger.logRequest({
     correlationId,

@@ -1,4 +1,4 @@
-import { OrderItemRequest, OrderStatus, OrderRepositoryPort } from '@afci-bench/contracts';
+import { OrderItemRequest, OrderStatus, OrderRepositoryPort, OrderResponse, OrderItemResponse } from '@afci-bench/contracts';
 
 // Domain entity (internal representation)
 export interface OrderItem {
@@ -92,5 +92,26 @@ export function validateCustomerId(customerId: string): ValidationResult {
   return {
     valid: errors.length === 0,
     errors,
+  };
+}
+
+// Pure mapping helper — eliminates duplicate response-mapping logic across use cases
+export function mapOrderToResponse(order: Order): OrderResponse {
+  const items: OrderItemResponse[] = order.items.map((item) => ({
+    productId: item.productId,
+    name: item.name,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+    subtotal: item.subtotal,
+  }));
+
+  return {
+    id: order.id,
+    customerId: order.customerId,
+    items,
+    total: order.total,
+    status: order.status,
+    createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
   };
 }
