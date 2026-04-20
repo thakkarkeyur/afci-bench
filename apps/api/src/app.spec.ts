@@ -303,6 +303,23 @@ describe('API Integration Tests', () => {
       expect(response.body.limit).toBe(2);
       expect(response.body.offset).toBe(1);
     });
+
+    it('should propagate correlationId and log required fields', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const response = await request(app)
+        .get('/orders')
+        .set('x-correlation-id', 'list-corr-id');
+
+      expect(response.headers['x-correlation-id']).toBe('list-corr-id');
+
+      const requestLogs = testLogOutput.getRequestLogs();
+      const listLog = requestLogs.find((l) => l.operation === 'listOrders');
+      expect(listLog).toBeDefined();
+      expect(listLog?.correlationId).toBe('list-corr-id');
+      expect(listLog?.status).toBe('success');
+      expect(typeof listLog?.latencyMs).toBe('number');
+    });
   });
 
   describe('GET /orders/:id', () => {

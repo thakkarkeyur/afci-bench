@@ -163,6 +163,7 @@ export function createApp(deps: AppDependencies = {}): Express {
 
   // List orders with pagination
   app.get('/orders', async (req: Request, res: Response, next: NextFunction) => {
+    const startTime = Date.now();
     const correlationId = extractCorrelationId(req.headers['x-correlation-id'] as string | undefined);
 
     try {
@@ -180,6 +181,21 @@ export function createApp(deps: AppDependencies = {}): Express {
       res.status(200).json(result);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+
+      logger.logError({
+        correlationId,
+        errorType: 'UnhandledError',
+        message: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      logger.logRequest({
+        correlationId,
+        operation: 'GET /orders',
+        status: 'fail',
+        latencyMs: Date.now() - startTime,
+      });
+
       const errorResponse: ErrorResponse = {
         error: 'InternalServerError',
         message: errorMessage,
