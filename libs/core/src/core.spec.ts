@@ -132,6 +132,27 @@ describe('validateOrderItems', () => {
     expect(result.valid).toBe(false);
     expect(result.errors.length).toBeGreaterThanOrEqual(4);
   });
+
+  it('should reject fractional quantity', () => {
+    const items = [{ productId: 'p1', name: 'Item', quantity: 1.5, unitPrice: 10 }];
+    const result = validateOrderItems(items);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Item 1: quantity must be a whole number');
+  });
+
+  it('should reject NaN quantity', () => {
+    const items = [{ productId: 'p1', name: 'Item', quantity: NaN, unitPrice: 10 }];
+    const result = validateOrderItems(items);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Item 1: quantity must be a positive number');
+  });
+
+  it('should reject Infinity unitPrice', () => {
+    const items = [{ productId: 'p1', name: 'Item', quantity: 1, unitPrice: Infinity }];
+    const result = validateOrderItems(items);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Item 1: unitPrice must be a non-negative number');
+  });
 });
 
 describe('validateCustomerId', () => {

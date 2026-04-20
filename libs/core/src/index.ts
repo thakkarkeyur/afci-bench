@@ -66,10 +66,12 @@ export function validateOrderItems(items: OrderItemRequest[]): ValidationResult 
     if (!item.name || item.name.trim() === '') {
       errors.push(`Item ${index + 1}: name is required`);
     }
-    if (typeof item.quantity !== 'number' || item.quantity <= 0) {
+    if (typeof item.quantity !== 'number' || !Number.isFinite(item.quantity) || item.quantity <= 0) {
       errors.push(`Item ${index + 1}: quantity must be a positive number`);
+    } else if (!Number.isInteger(item.quantity)) {
+      errors.push(`Item ${index + 1}: quantity must be a whole number`);
     }
-    if (typeof item.unitPrice !== 'number' || item.unitPrice < 0) {
+    if (typeof item.unitPrice !== 'number' || !Number.isFinite(item.unitPrice) || item.unitPrice < 0) {
       errors.push(`Item ${index + 1}: unitPrice must be a non-negative number`);
     }
   });
