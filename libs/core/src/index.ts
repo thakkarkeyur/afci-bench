@@ -23,6 +23,7 @@ export interface OrderRepository {
   save(order: Order): Promise<Order>;
   findById(id: string): Promise<Order | null>;
   findByCustomerId(customerId: string): Promise<Order[]>;
+  findAll(limit: number, offset: number): Promise<{ data: Order[]; total: number }>;
 }
 
 // Validation result

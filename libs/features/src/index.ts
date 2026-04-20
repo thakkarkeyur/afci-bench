@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { OrderRequest, OrderResponse, OrderItemResponse } from '@afci-bench/contracts';
+import { OrderRequest, OrderResponse, OrderItemResponse, PaginatedResponse } from '@afci-bench/contracts';
 import {
   Order,
   OrderItem,
@@ -211,4 +211,53 @@ export async function createOrderUseCase(
       errors: [errorMessage],
     };
   }
+}
+
+export interface ListOrdersPorts {
+  orderRepository: OrderRepository;
+  logger: Logger;
+  correlationId: string;
+}
+
+export async function listOrdersUseCase(
+  limit: number,
+  offset: number,
+  ports: ListOrdersPorts
+): Promise<PaginatedResponse<OrderResponse>> {
+  const startTime = Date.now();
+  const { orderRepository, logger, correlationId } = ports;
+
+  const effectiveLimit = limit > 0 ? limit : 20;
+  const effectiveOffset = offset >= 0 ? offset : 0;
+
+  const { data: orders, total } = await orderRepository.findAll(effectiveLimit, effectiveOffset);
+
+  const responseData: OrderResponse[] = orders.map((order) => ({
+    id: order.id,
+    customerId: order.customerId,
+    items: order.items.map((item) => ({
+      productId: item.productId,
+      name: item.name,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      subtotal: item.subtotal,
+    })),
+    total: order.total,
+    status: order.status,
+    createdAt: order.createdAt.toISOString(),
+  }));
+
+  logger.logRequest({
+    correlationId,
+    operation: 'listOrders',
+    status: 'success',
+    latencyMs: Date.now() - startTime,
+  });
+
+  return {
+    data: responseData,
+    total,
+    limit: effectiveLimit,
+    offset: effectiveOffset,
+  };
 }

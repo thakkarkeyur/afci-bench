@@ -37,6 +37,14 @@ export interface ErrorResponse {
   correlationId: string;
 }
 
+// Pagination
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 // Health check response
 export interface HealthResponse {
   status: 'ok' | 'degraded' | 'unhealthy';

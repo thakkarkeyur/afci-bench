@@ -26,6 +26,7 @@ export interface OrderRepositoryPort {
   save(order: OrderEntity): Promise<OrderEntity>;
   findById(id: string): Promise<OrderEntity | null>;
   findByCustomerId(customerId: string): Promise<OrderEntity[]>;
+  findAll(limit: number, offset: number): Promise<{ data: OrderEntity[]; total: number }>;
 }
 
 export class InMemoryOrderRepository implements OrderRepositoryPort {
@@ -49,6 +50,14 @@ export class InMemoryOrderRepository implements OrderRepositoryPort {
       }
     });
     return results;
+  }
+
+  async findAll(limit: number, offset: number): Promise<{ data: OrderEntity[]; total: number }> {
+    const all = Array.from(this.orders.values());
+    all.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const total = all.length;
+    const data = all.slice(offset, offset + limit);
+    return { data, total };
   }
 
   // Test helper - not part of interface

@@ -1,6 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse } from '@afci-bench/contracts';
-import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, Order, OrderRepository } from '@afci-bench/features';
+import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, listOrdersUseCase, ListOrdersPorts, Order, OrderRepository } from '@afci-bench/features';
 import { getOrderRepository, OrderEntity } from '@afci-bench/infra';
 import {
   Logger,
@@ -60,6 +60,20 @@ function adaptRepository(infraRepo: ReturnType<typeof getOrderRepository>): Orde
         status: entity.status,
         createdAt: entity.createdAt,
       }));
+    },
+    async findAll(limit: number, offset: number): Promise<{ data: Order[]; total: number }> {
+      const result = await infraRepo.findAll(limit, offset);
+      return {
+        data: result.data.map((entity) => ({
+          id: entity.id,
+          customerId: entity.customerId,
+          items: entity.items,
+          total: entity.total,
+          status: entity.status,
+          createdAt: entity.createdAt,
+        })),
+        total: result.total,
+      };
     },
   };
 }
@@ -131,6 +145,36 @@ export function createApp(deps: AppDependencies = {}): Express {
         latencyMs: Date.now() - startTime,
       });
 
+      const errorResponse: ErrorResponse = {
+        error: 'InternalServerError',
+        message: errorMessage,
+        correlationId,
+      };
+      res.setHeader('x-correlation-id', correlationId);
+      res.status(500).json(errorResponse);
+      next(error);
+    }
+  });
+
+  // List orders with pagination
+  app.get('/orders', async (req: Request, res: Response, next: NextFunction) => {
+    const correlationId = extractCorrelationId(req.headers['x-correlation-id'] as string | undefined);
+
+    try {
+      const limit = parseInt(req.query.limit as string, 10) || 20;
+      const offset = parseInt(req.query.offset as string, 10) || 0;
+
+      const ports: ListOrdersPorts = {
+        orderRepository,
+        logger,
+        correlationId,
+      };
+
+      const result = await listOrdersUseCase(limit, offset, ports);
+      res.setHeader('x-correlation-id', correlationId);
+      res.status(200).json(result);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
       const errorResponse: ErrorResponse = {
         error: 'InternalServerError',
         message: errorMessage,
