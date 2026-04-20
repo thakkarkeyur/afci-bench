@@ -34,3 +34,6 @@ test-results/
 
 # Nx cache
 .nx/cache
+
+# Claude Code
+.claude/
