@@ -31,6 +31,14 @@ export interface OrderResponse {
 
 export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 
+export const ORDER_STATUS = {
+  PENDING: 'pending' as OrderStatus,
+  CONFIRMED: 'confirmed' as OrderStatus,
+  SHIPPED: 'shipped' as OrderStatus,
+  DELIVERED: 'delivered' as OrderStatus,
+  CANCELLED: 'cancelled' as OrderStatus,
+} as const;
+
 export interface UpdateOrderRequest {
   status?: OrderStatus;
 }

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { OrderRequest, OrderResponse, PaginatedResponse, UpdateOrderRequest } from '@afci-bench/contracts';
+import { OrderRequest, OrderResponse, PaginatedResponse, UpdateOrderRequest, ORDER_STATUS } from '@afci-bench/contracts';
 import {
   Order,
   OrderItem,
@@ -140,7 +140,7 @@ export async function createOrderUseCase(
       customerId: input.customerId,
       items: orderItems,
       total,
-      status: 'pending',
+      status: ORDER_STATUS.PENDING,
       createdAt: now,
       updatedAt: now,
     };
@@ -312,12 +312,12 @@ export async function cancelOrderUseCase(
       return { success: false, notFound: true, errors: ['Order not found'] };
     }
 
-    if (existing.status === 'cancelled') {
+    if (existing.status === ORDER_STATUS.CANCELLED) {
       logger.logRequest({ correlationId, operation: 'cancelOrder', status: 'fail', latencyMs: Date.now() - startTime });
       return { success: false, errors: ['Order is already cancelled'] };
     }
 
-    const updated = await orderRepository.update(orderId, { status: 'cancelled', updatedAt: new Date() });
+    const updated = await orderRepository.update(orderId, { status: ORDER_STATUS.CANCELLED, updatedAt: new Date() });
     if (!updated) {
       logger.logRequest({ correlationId, operation: 'cancelOrder', status: 'fail', latencyMs: Date.now() - startTime });
       return { success: false, notFound: true, errors: ['Order not found'] };

@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { createApp } from './app';
-import { OrderRequest, OrderResponse, ErrorResponse, NotFoundError, ValidationError } from '@afci-bench/contracts';
+import { OrderRequest, OrderResponse, ErrorResponse, NotFoundError, ValidationError, ORDER_STATUS } from '@afci-bench/contracts';
 import { LogOutput, RequestLogEntry, ErrorLogEntry } from '@afci-bench/observability';
 import { resetOrderRepository } from '@afci-bench/infra';
 
@@ -448,6 +448,40 @@ describe('API Integration Tests', () => {
 
       expect(response.status).toBe(404);
       expect(response.body.error).toBe('NotFound');
+    });
+  });
+
+  describe('Order status enum consistency', () => {
+    it('should use ORDER_STATUS.PENDING on create', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+      const orderReq: OrderRequest = {
+        customerId: 'cust-1',
+        items: [{ productId: 'p1', name: 'A', quantity: 1, unitPrice: 10 }],
+      };
+      const res = await request(app).post('/orders').send(orderReq).set('Content-Type', 'application/json');
+      expect(res.body.status).toBe(ORDER_STATUS.PENDING);
+    });
+
+    it('should use ORDER_STATUS.CONFIRMED on update', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+      const orderReq: OrderRequest = {
+        customerId: 'cust-1',
+        items: [{ productId: 'p1', name: 'A', quantity: 1, unitPrice: 10 }],
+      };
+      const createRes = await request(app).post('/orders').send(orderReq).set('Content-Type', 'application/json');
+      const updateRes = await request(app).put(`/orders/${createRes.body.id}`).send({ status: ORDER_STATUS.CONFIRMED }).set('Content-Type', 'application/json');
+      expect(updateRes.body.status).toBe(ORDER_STATUS.CONFIRMED);
+    });
+
+    it('should use ORDER_STATUS.CANCELLED on cancel', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+      const orderReq: OrderRequest = {
+        customerId: 'cust-1',
+        items: [{ productId: 'p1', name: 'A', quantity: 1, unitPrice: 10 }],
+      };
+      const createRes = await request(app).post('/orders').send(orderReq).set('Content-Type', 'application/json');
+      const cancelRes = await request(app).post(`/orders/${createRes.body.id}/cancel`);
+      expect(cancelRes.body.status).toBe(ORDER_STATUS.CANCELLED);
     });
   });
 
