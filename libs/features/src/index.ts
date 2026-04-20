@@ -279,3 +279,57 @@ export async function updateOrderUseCase(
     return { success: false, errors: [errorMessage] };
   }
 }
+
+export interface CancelOrderPorts {
+  orderRepository: OrderRepository;
+  logger: Logger;
+  correlationId: string;
+}
+
+export interface CancelOrderResult {
+  success: boolean;
+  data?: OrderResponse;
+  notFound?: boolean;
+  errors?: string[];
+}
+
+export async function cancelOrderUseCase(
+  orderId: string,
+  ports: CancelOrderPorts
+): Promise<CancelOrderResult> {
+  const startTime = Date.now();
+  const { orderRepository, logger, correlationId } = ports;
+
+  try {
+    if (!orderId || orderId.trim() === '') {
+      logger.logRequest({ correlationId, operation: 'cancelOrder', status: 'fail', latencyMs: Date.now() - startTime });
+      return { success: false, errors: ['orderId is required'] };
+    }
+
+    const existing = await orderRepository.findById(orderId);
+    if (!existing) {
+      logger.logRequest({ correlationId, operation: 'cancelOrder', status: 'fail', latencyMs: Date.now() - startTime });
+      return { success: false, notFound: true, errors: ['Order not found'] };
+    }
+
+    if (existing.status === 'cancelled') {
+      logger.logRequest({ correlationId, operation: 'cancelOrder', status: 'fail', latencyMs: Date.now() - startTime });
+      return { success: false, errors: ['Order is already cancelled'] };
+    }
+
+    const updated = await orderRepository.update(orderId, { status: 'cancelled', updatedAt: new Date() });
+    if (!updated) {
+      logger.logRequest({ correlationId, operation: 'cancelOrder', status: 'fail', latencyMs: Date.now() - startTime });
+      return { success: false, notFound: true, errors: ['Order not found'] };
+    }
+
+    const response = mapOrderToResponse(updated);
+    logger.logRequest({ correlationId, operation: 'cancelOrder', status: 'success', latencyMs: Date.now() - startTime });
+    return { success: true, data: response };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.logError({ correlationId, errorType: 'CancelOrderError', message: errorMessage, stack: error instanceof Error ? error.stack : undefined });
+    logger.logRequest({ correlationId, operation: 'cancelOrder', status: 'fail', latencyMs: Date.now() - startTime });
+    return { success: false, errors: [errorMessage] };
+  }
+}

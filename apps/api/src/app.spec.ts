@@ -423,6 +423,34 @@ describe('API Integration Tests', () => {
     });
   });
 
+  describe('POST /orders/:id/cancel', () => {
+    it('should cancel an existing order', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const orderReq: OrderRequest = {
+        customerId: 'cust-1',
+        items: [{ productId: 'p1', name: 'A', quantity: 1, unitPrice: 10 }],
+      };
+      const createRes = await request(app).post('/orders').send(orderReq).set('Content-Type', 'application/json');
+      const orderId = createRes.body.id;
+
+      const cancelRes = await request(app).post(`/orders/${orderId}/cancel`);
+
+      expect(cancelRes.status).toBe(200);
+      expect(cancelRes.body.status).toBe('cancelled');
+      expect(cancelRes.body.id).toBe(orderId);
+    });
+
+    it('should return 404 for non-existent order', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const response = await request(app).post('/orders/nonexistent/cancel');
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe('NotFound');
+    });
+  });
+
   describe('Typed errors', () => {
     it('NotFoundError should have correct errorType', () => {
       const err = new NotFoundError('test not found');
