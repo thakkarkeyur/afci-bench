@@ -9,13 +9,6 @@ import {
   ConsoleLogOutput,
 } from '@afci-bench/observability';
 
-// NOTE: This file imports Order/OrderRepository from @afci-bench/features (which re-exports from core)
-// instead of importing directly from @afci-bench/core. This respects the module boundary rules:
-// apps/api can depend on features, but should not depend on core directly.
-//
-// BOUNDARY VIOLATION EXAMPLE (commented out - would fail CI if uncommented):
-// import { Order } from '@afci-bench/core'; // ERROR: api cannot import core directly
-
 // Adapter to convert infra's OrderEntity to core's Order
 function adaptRepository(infraRepo: ReturnType<typeof getOrderRepository>): OrderRepository {
   return {
