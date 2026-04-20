@@ -15,6 +15,95 @@ import { Logger } from '@afci-bench/observability';
 // This allows API to depend on features without directly importing core
 export type { Order, OrderItem, OrderRepository };
 
+export interface GetOrderByIdPorts {
+  orderRepository: OrderRepository;
+  logger: Logger;
+  correlationId: string;
+}
+
+export interface GetOrderByIdResult {
+  success: boolean;
+  data?: OrderResponse;
+  notFound?: boolean;
+  errors?: string[];
+}
+
+export async function getOrderByIdUseCase(
+  orderId: string,
+  ports: GetOrderByIdPorts
+): Promise<GetOrderByIdResult> {
+  const startTime = Date.now();
+  const { orderRepository, logger, correlationId } = ports;
+
+  try {
+    if (!orderId || orderId.trim() === '') {
+      logger.logRequest({
+        correlationId,
+        operation: 'getOrderById',
+        status: 'fail',
+        latencyMs: Date.now() - startTime,
+      });
+      return { success: false, errors: ['orderId is required'] };
+    }
+
+    const order = await orderRepository.findById(orderId);
+
+    if (!order) {
+      logger.logRequest({
+        correlationId,
+        operation: 'getOrderById',
+        status: 'fail',
+        latencyMs: Date.now() - startTime,
+      });
+      return { success: false, notFound: true, errors: ['Order not found'] };
+    }
+
+    const responseItems: OrderItemResponse[] = order.items.map((item) => ({
+      productId: item.productId,
+      name: item.name,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      subtotal: item.subtotal,
+    }));
+
+    const response: OrderResponse = {
+      id: order.id,
+      customerId: order.customerId,
+      items: responseItems,
+      total: order.total,
+      status: order.status,
+      createdAt: order.createdAt.toISOString(),
+    };
+
+    logger.logRequest({
+      correlationId,
+      operation: 'getOrderById',
+      status: 'success',
+      latencyMs: Date.now() - startTime,
+    });
+
+    return { success: true, data: response };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    logger.logError({
+      correlationId,
+      errorType: 'GetOrderByIdError',
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    logger.logRequest({
+      correlationId,
+      operation: 'getOrderById',
+      status: 'fail',
+      latencyMs: Date.now() - startTime,
+    });
+
+    return { success: false, errors: [errorMessage] };
+  }
+}
+
 export interface CreateOrderPorts {
   orderRepository: OrderRepository;
   logger: Logger;

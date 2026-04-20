@@ -251,4 +251,57 @@ describe('API Integration Tests', () => {
       expect(typeof error.correlationId).toBe('string');
     });
   });
+
+  describe('GET /orders/:id', () => {
+    it('should return 200 with order payload for existing ID', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      // First create an order
+      const orderRequest: OrderRequest = {
+        customerId: 'cust-123',
+        items: [{ productId: 'prod-1', name: 'Widget', quantity: 2, unitPrice: 10.5 }],
+      };
+
+      const createResponse = await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json');
+
+      expect(createResponse.status).toBe(201);
+      const createdOrder: OrderResponse = createResponse.body;
+
+      // Now fetch it by ID
+      const getResponse = await request(app).get(`/orders/${createdOrder.id}`);
+
+      expect(getResponse.status).toBe(200);
+      const fetchedOrder: OrderResponse = getResponse.body;
+      expect(fetchedOrder.id).toBe(createdOrder.id);
+      expect(fetchedOrder.customerId).toBe('cust-123');
+      expect(fetchedOrder.items).toHaveLength(1);
+      expect(fetchedOrder.total).toBe(21);
+      expect(fetchedOrder.status).toBe('pending');
+    });
+
+    it('should return 404 for unknown ID', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const response = await request(app).get('/orders/nonexistent-id');
+
+      expect(response.status).toBe(404);
+      const error: ErrorResponse = response.body;
+      expect(error.error).toBe('NotFound');
+      expect(error.message).toContain('Order not found');
+      expect(error.correlationId).toBeDefined();
+    });
+
+    it('should return correlationId in response header', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const response = await request(app)
+        .get('/orders/some-id')
+        .set('x-correlation-id', 'test-corr-id');
+
+      expect(response.headers['x-correlation-id']).toBe('test-corr-id');
+    });
+  });
 });
