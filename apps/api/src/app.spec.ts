@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { createApp } from './app';
-import { OrderRequest, OrderResponse, ErrorResponse } from '@afci-bench/contracts';
+import { OrderRequest, OrderResponse, ErrorResponse, NotFoundError, ValidationError } from '@afci-bench/contracts';
 import { LogOutput, RequestLogEntry, ErrorLogEntry } from '@afci-bench/observability';
 import { resetOrderRepository } from '@afci-bench/infra';
 
@@ -420,6 +420,39 @@ describe('API Integration Tests', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.error).toBe('ValidationError');
+    });
+  });
+
+  describe('Typed errors', () => {
+    it('NotFoundError should have correct errorType', () => {
+      const err = new NotFoundError('test not found');
+      expect(err.errorType).toBe('NotFound');
+      expect(err.message).toBe('test not found');
+      expect(err).toBeInstanceOf(Error);
+    });
+
+    it('ValidationError should have correct errorType', () => {
+      const err = new ValidationError('bad input');
+      expect(err.errorType).toBe('ValidationError');
+      expect(err.message).toBe('bad input');
+      expect(err).toBeInstanceOf(Error);
+    });
+
+    it('should return correct status codes for existing error scenarios', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      // 404 from get non-existent order
+      const notFoundRes = await request(app).get('/orders/no-such-id');
+      expect(notFoundRes.status).toBe(404);
+      expect(notFoundRes.body.error).toBe('NotFound');
+
+      // 400 from invalid create
+      const badRes = await request(app)
+        .post('/orders')
+        .send({ customerId: '', items: [] })
+        .set('Content-Type', 'application/json');
+      expect(badRes.status).toBe(400);
+      expect(badRes.body.error).toBe('ValidationError');
     });
   });
 });

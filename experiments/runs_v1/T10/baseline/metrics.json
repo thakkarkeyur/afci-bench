@@ -1,0 +1,23 @@
+{
+  "files_changed": [
+    ".gitignore",
+    "apps/api/src/app.spec.ts",
+    "apps/api/src/app.ts",
+    "libs/contracts/src/index.ts",
+    "libs/core/src/core.spec.ts",
+    "libs/core/src/index.ts",
+    "libs/features/src/features.spec.ts",
+    "libs/features/src/index.ts",
+    "libs/infra/src/index.ts",
+    "package-lock.json"
+  ],
+  "delta_loc_code": 433,
+  "delta_loc_test": 255,
+  "delta_tests": 22,
+  "code_additions": 573,
+  "code_deletions": 140,
+  "test_additions": 256,
+  "test_deletions": 1,
+  "ci_pass": true,
+  "layer_jaccard": 1.0
+}

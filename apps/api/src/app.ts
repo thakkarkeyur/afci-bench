@@ -1,5 +1,5 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
-import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse } from '@afci-bench/contracts';
+import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse, NotFoundError, ValidationError } from '@afci-bench/contracts';
 import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, listOrdersUseCase, ListOrdersPorts, updateOrderUseCase, UpdateOrderPorts, Order, OrderRepository } from '@afci-bench/features';
 import { getOrderRepository, OrderEntity } from '@afci-bench/infra';
 import {
@@ -318,6 +318,22 @@ export function createApp(deps: AppDependencies = {}): Express {
       res.setHeader('x-correlation-id', correlationId);
       res.status(500).json(errorResponse);
       next(error);
+    }
+  });
+
+  // Global error handler — maps typed errors to HTTP status codes
+  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+    const correlationId = res.getHeader('x-correlation-id') as string || 'unknown';
+
+    if (err instanceof NotFoundError) {
+      const errorResponse: ErrorResponse = { error: err.errorType, message: err.message, correlationId };
+      res.status(404).json(errorResponse);
+    } else if (err instanceof ValidationError) {
+      const errorResponse: ErrorResponse = { error: err.errorType, message: err.message, correlationId };
+      res.status(400).json(errorResponse);
+    } else {
+      const errorResponse: ErrorResponse = { error: 'InternalServerError', message: err.message || 'Internal server error', correlationId };
+      res.status(500).json(errorResponse);
     }
   });
 

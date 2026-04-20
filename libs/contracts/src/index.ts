@@ -70,6 +70,23 @@ export interface OrderRepositoryPort {
   update(id: string, fields: Partial<Pick<OrderEntity, 'status' | 'updatedAt'>>): Promise<OrderEntity | null>;
 }
 
+// Typed errors
+export class NotFoundError extends Error {
+  readonly errorType = 'NotFound';
+  constructor(message: string) {
+    super(message);
+    this.name = 'NotFoundError';
+  }
+}
+
+export class ValidationError extends Error {
+  readonly errorType = 'ValidationError';
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
 // Health check response
 export interface HealthResponse {
   status: 'ok' | 'degraded' | 'unhealthy';
