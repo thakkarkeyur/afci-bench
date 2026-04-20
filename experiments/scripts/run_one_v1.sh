@@ -15,6 +15,16 @@
 
 set -euo pipefail
 
+# Determine Python command (prefer python3, fallback to python)
+if command -v python3 &>/dev/null; then
+  PYTHON=python3
+elif command -v python &>/dev/null; then
+  PYTHON=python
+else
+  echo "ERROR: Neither python3 nor python found in PATH" >&2
+  exit 1
+fi
+
 TASK="${1:?Usage: run_one_v1.sh <TASK> <CONDITION> <PROMPT_FILE>}"
 CONDITION="${2:?Usage: run_one_v1.sh <TASK> <CONDITION> <PROMPT_FILE>}"
 PROMPT_FILE="${3:?Usage: run_one_v1.sh <TASK> <CONDITION> <PROMPT_FILE>}"
@@ -48,11 +58,11 @@ echo "CI exited with code $CI_EXIT"
 echo "=== CI run finished with exit code $CI_EXIT ===" >> "$RUN_DIR/ci_output.txt"
 
 # 5. Extract metrics
-python "$SCRIPT_DIR/extract_metrics.py" "$RUN_DIR"
+$PYTHON "$SCRIPT_DIR/extract_metrics.py" "$RUN_DIR"
 
 # 6. Conformance check (best-effort)
 set +e
-python "$SCRIPT_DIR/afci_guard_check.py" "$RUN_DIR"
+$PYTHON "$SCRIPT_DIR/afci_guard_check.py" "$RUN_DIR"
 set -e
 
 # 7. Write run_meta.json
