@@ -73,6 +73,7 @@ export async function getOrderByIdUseCase(
       total: order.total,
       status: order.status,
       createdAt: order.createdAt.toISOString(),
+      updatedAt: order.updatedAt.toISOString(),
     };
 
     logger.logRequest({
@@ -148,13 +149,15 @@ export async function createOrderUseCase(
     const orderItems = input.items.map(createOrderItem);
     const total = calculateOrderTotal(orderItems);
 
+    const now = new Date();
     const order: Order = {
       id: uuidv4(),
       customerId: input.customerId,
       items: orderItems,
       total,
       status: 'pending',
-      createdAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     };
 
     // Persist via repository
@@ -176,6 +179,7 @@ export async function createOrderUseCase(
       total: savedOrder.total,
       status: savedOrder.status,
       createdAt: savedOrder.createdAt.toISOString(),
+      updatedAt: savedOrder.updatedAt.toISOString(),
     };
 
     logger.logRequest({
@@ -245,6 +249,7 @@ export async function listOrdersUseCase(
     total: order.total,
     status: order.status,
     createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
   }));
 
   logger.logRequest({

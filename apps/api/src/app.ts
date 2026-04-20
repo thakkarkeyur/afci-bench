@@ -27,6 +27,7 @@ function adaptRepository(infraRepo: ReturnType<typeof getOrderRepository>): Orde
         total: order.total,
         status: order.status,
         createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
       };
       const saved = await infraRepo.save(entity);
       return {
@@ -36,6 +37,7 @@ function adaptRepository(infraRepo: ReturnType<typeof getOrderRepository>): Orde
         total: saved.total,
         status: saved.status,
         createdAt: saved.createdAt,
+        updatedAt: saved.updatedAt,
       };
     },
     async findById(id: string): Promise<Order | null> {
@@ -48,6 +50,7 @@ function adaptRepository(infraRepo: ReturnType<typeof getOrderRepository>): Orde
         total: entity.total,
         status: entity.status,
         createdAt: entity.createdAt,
+        updatedAt: entity.updatedAt,
       };
     },
     async findByCustomerId(customerId: string): Promise<Order[]> {
@@ -59,6 +62,7 @@ function adaptRepository(infraRepo: ReturnType<typeof getOrderRepository>): Orde
         total: entity.total,
         status: entity.status,
         createdAt: entity.createdAt,
+        updatedAt: entity.updatedAt,
       }));
     },
     async findAll(limit: number, offset: number): Promise<{ data: Order[]; total: number }> {
@@ -71,6 +75,7 @@ function adaptRepository(infraRepo: ReturnType<typeof getOrderRepository>): Orde
           total: entity.total,
           status: entity.status,
           createdAt: entity.createdAt,
+          updatedAt: entity.updatedAt,
         })),
         total: result.total,
       };

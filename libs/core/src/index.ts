@@ -16,6 +16,7 @@ export interface Order {
   total: number;
   status: OrderStatus;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 // OrderRepository uses the shared port from contracts
