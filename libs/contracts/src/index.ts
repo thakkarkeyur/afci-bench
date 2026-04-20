@@ -45,6 +45,24 @@ export interface PaginatedResponse<T> {
   offset: number;
 }
 
+// Order entity shape (shared port type)
+export interface OrderEntity {
+  id: string;
+  customerId: string;
+  items: OrderItemResponse[];
+  total: number;
+  status: OrderStatus;
+  createdAt: Date;
+}
+
+// Repository port interface - lives in contracts per MAD
+export interface OrderRepositoryPort {
+  save(order: OrderEntity): Promise<OrderEntity>;
+  findById(id: string): Promise<OrderEntity | null>;
+  findByCustomerId(customerId: string): Promise<OrderEntity[]>;
+  findAll(limit: number, offset: number): Promise<{ data: OrderEntity[]; total: number }>;
+}
+
 // Health check response
 export interface HealthResponse {
   status: 'ok' | 'degraded' | 'unhealthy';
