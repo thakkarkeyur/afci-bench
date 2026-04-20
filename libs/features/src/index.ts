@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { OrderRequest, OrderResponse, PaginatedResponse } from '@afci-bench/contracts';
+import { OrderRequest, OrderResponse, PaginatedResponse, UpdateOrderRequest } from '@afci-bench/contracts';
 import {
   Order,
   OrderItem,
@@ -220,4 +220,62 @@ export async function listOrdersUseCase(
     limit: effectiveLimit,
     offset: effectiveOffset,
   };
+}
+
+export interface UpdateOrderPorts {
+  orderRepository: OrderRepository;
+  logger: Logger;
+  correlationId: string;
+}
+
+export interface UpdateOrderResult {
+  success: boolean;
+  data?: OrderResponse;
+  notFound?: boolean;
+  errors?: string[];
+}
+
+export async function updateOrderUseCase(
+  orderId: string,
+  input: UpdateOrderRequest,
+  ports: UpdateOrderPorts
+): Promise<UpdateOrderResult> {
+  const startTime = Date.now();
+  const { orderRepository, logger, correlationId } = ports;
+
+  try {
+    if (!orderId || orderId.trim() === '') {
+      logger.logRequest({ correlationId, operation: 'updateOrder', status: 'fail', latencyMs: Date.now() - startTime });
+      return { success: false, errors: ['orderId is required'] };
+    }
+
+    if (!input.status) {
+      logger.logRequest({ correlationId, operation: 'updateOrder', status: 'fail', latencyMs: Date.now() - startTime });
+      return { success: false, errors: ['At least one field to update is required'] };
+    }
+
+    const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+    if (input.status && !validStatuses.includes(input.status)) {
+      logger.logRequest({ correlationId, operation: 'updateOrder', status: 'fail', latencyMs: Date.now() - startTime });
+      return { success: false, errors: ['Invalid status value'] };
+    }
+
+    const updated = await orderRepository.update(orderId, { status: input.status, updatedAt: new Date() });
+
+    if (!updated) {
+      logger.logRequest({ correlationId, operation: 'updateOrder', status: 'fail', latencyMs: Date.now() - startTime });
+      return { success: false, notFound: true, errors: ['Order not found'] };
+    }
+
+    const response = mapOrderToResponse(updated);
+
+    logger.logRequest({ correlationId, operation: 'updateOrder', status: 'success', latencyMs: Date.now() - startTime });
+
+    return { success: true, data: response };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.logError({ correlationId, errorType: 'UpdateOrderError', message: errorMessage, stack: error instanceof Error ? error.stack : undefined });
+    logger.logRequest({ correlationId, operation: 'updateOrder', status: 'fail', latencyMs: Date.now() - startTime });
+    return { success: false, errors: [errorMessage] };
+  }
 }

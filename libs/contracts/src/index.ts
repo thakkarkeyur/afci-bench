@@ -31,6 +31,10 @@ export interface OrderResponse {
 
 export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 
+export interface UpdateOrderRequest {
+  status?: OrderStatus;
+}
+
 // Error response contract
 export interface ErrorResponse {
   error: string;
@@ -63,6 +67,7 @@ export interface OrderRepositoryPort {
   findById(id: string): Promise<OrderEntity | null>;
   findByCustomerId(customerId: string): Promise<OrderEntity[]>;
   findAll(limit: number, offset: number): Promise<{ data: OrderEntity[]; total: number }>;
+  update(id: string, fields: Partial<Pick<OrderEntity, 'status' | 'updatedAt'>>): Promise<OrderEntity | null>;
 }
 
 // Health check response

@@ -1,6 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse } from '@afci-bench/contracts';
-import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, listOrdersUseCase, ListOrdersPorts, Order, OrderRepository } from '@afci-bench/features';
+import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, listOrdersUseCase, ListOrdersPorts, updateOrderUseCase, UpdateOrderPorts, Order, OrderRepository } from '@afci-bench/features';
 import { getOrderRepository, OrderEntity } from '@afci-bench/infra';
 import {
   Logger,
@@ -71,6 +71,19 @@ function adaptRepository(infraRepo: ReturnType<typeof getOrderRepository>): Orde
           updatedAt: entity.updatedAt,
         })),
         total: result.total,
+      };
+    },
+    async update(id: string, fields: Partial<Pick<Order, 'status' | 'updatedAt'>>): Promise<Order | null> {
+      const updated = await infraRepo.update(id, fields);
+      if (!updated) return null;
+      return {
+        id: updated.id,
+        customerId: updated.customerId,
+        items: updated.items,
+        total: updated.total,
+        status: updated.status,
+        createdAt: updated.createdAt,
+        updatedAt: updated.updatedAt,
       };
     },
   };
@@ -257,6 +270,51 @@ export function createApp(deps: AppDependencies = {}): Express {
         message: errorMessage,
         correlationId,
       };
+      res.setHeader('x-correlation-id', correlationId);
+      res.status(500).json(errorResponse);
+      next(error);
+    }
+  });
+
+  // Update order endpoint
+  app.put('/orders/:id', async (req: Request, res: Response, next: NextFunction) => {
+    const startTime = Date.now();
+    const correlationId = extractCorrelationId(req.headers['x-correlation-id'] as string | undefined);
+
+    try {
+      const ports: UpdateOrderPorts = {
+        orderRepository,
+        logger,
+        correlationId,
+      };
+
+      const result = await updateOrderUseCase(req.params.id, req.body, ports);
+
+      if (result.success && result.data) {
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(200).json(result.data);
+      } else if (result.notFound) {
+        const errorResponse: ErrorResponse = {
+          error: 'NotFound',
+          message: result.errors?.join('; ') ?? 'Order not found',
+          correlationId,
+        };
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(404).json(errorResponse);
+      } else {
+        const errorResponse: ErrorResponse = {
+          error: 'ValidationError',
+          message: result.errors?.join('; ') ?? 'Unknown error',
+          correlationId,
+        };
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(400).json(errorResponse);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+      logger.logError({ correlationId, errorType: 'UnhandledError', message: errorMessage, stack: error instanceof Error ? error.stack : undefined });
+      logger.logRequest({ correlationId, operation: 'PUT /orders/:id', status: 'fail', latencyMs: Date.now() - startTime });
+      const errorResponse: ErrorResponse = { error: 'InternalServerError', message: errorMessage, correlationId };
       res.setHeader('x-correlation-id', correlationId);
       res.status(500).json(errorResponse);
       next(error);

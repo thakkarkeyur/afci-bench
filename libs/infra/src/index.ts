@@ -38,6 +38,14 @@ export class InMemoryOrderRepository implements OrderRepositoryPort {
     return { data, total };
   }
 
+  async update(id: string, fields: Partial<Pick<OrderEntity, 'status' | 'updatedAt'>>): Promise<OrderEntity | null> {
+    const existing = this.orders.get(id);
+    if (!existing) return null;
+    const updated = { ...existing, ...fields };
+    this.orders.set(id, updated);
+    return updated;
+  }
+
   // Test helper - not part of interface
   clear(): void {
     this.orders.clear();

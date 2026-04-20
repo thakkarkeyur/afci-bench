@@ -374,4 +374,52 @@ describe('API Integration Tests', () => {
       expect(response.headers['x-correlation-id']).toBe('test-corr-id');
     });
   });
+
+  describe('PUT /orders/:id', () => {
+    it('should update order status successfully', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      // Create an order first
+      const orderReq: OrderRequest = {
+        customerId: 'cust-1',
+        items: [{ productId: 'p1', name: 'A', quantity: 1, unitPrice: 10 }],
+      };
+      const createRes = await request(app).post('/orders').send(orderReq).set('Content-Type', 'application/json');
+      const orderId = createRes.body.id;
+
+      // Update status
+      const updateRes = await request(app)
+        .put(`/orders/${orderId}`)
+        .send({ status: 'confirmed' })
+        .set('Content-Type', 'application/json');
+
+      expect(updateRes.status).toBe(200);
+      expect(updateRes.body.status).toBe('confirmed');
+      expect(updateRes.body.id).toBe(orderId);
+    });
+
+    it('should return 404 for non-existent order', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const response = await request(app)
+        .put('/orders/nonexistent-id')
+        .send({ status: 'confirmed' })
+        .set('Content-Type', 'application/json');
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe('NotFound');
+    });
+
+    it('should return 400 for missing update fields', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const response = await request(app)
+        .put('/orders/some-id')
+        .send({})
+        .set('Content-Type', 'application/json');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('ValidationError');
+    });
+  });
 });
