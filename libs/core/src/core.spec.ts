@@ -4,7 +4,10 @@ import {
   createOrderItem,
   validateOrderItems,
   validateCustomerId,
+  mapOrderToResponse,
+  mapOrderItemToResponse,
   OrderItem,
+  Order,
 } from './index';
 import { OrderItemRequest } from '@afci-bench/contracts';
 
@@ -171,5 +174,53 @@ describe('validateCustomerId', () => {
     const result = validateCustomerId('   ');
     expect(result.valid).toBe(false);
     expect(result.errors).toContain('customerId is required');
+  });
+});
+
+describe('mapOrderToResponse', () => {
+  it('should map Order to OrderResponse correctly', () => {
+    const now = new Date('2024-01-15T10:30:00.000Z');
+    const order: Order = {
+      id: 'order-1',
+      customerId: 'cust-1',
+      items: [
+        { productId: 'p1', name: 'Widget', quantity: 2, unitPrice: 10, subtotal: 20 },
+      ],
+      total: 20,
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const response = mapOrderToResponse(order);
+
+    expect(response.id).toBe('order-1');
+    expect(response.customerId).toBe('cust-1');
+    expect(response.items).toHaveLength(1);
+    expect(response.items[0].subtotal).toBe(20);
+    expect(response.total).toBe(20);
+    expect(response.status).toBe('pending');
+    expect(response.createdAt).toBe('2024-01-15T10:30:00.000Z');
+    expect(response.updatedAt).toBe('2024-01-15T10:30:00.000Z');
+  });
+});
+
+describe('mapOrderItemToResponse', () => {
+  it('should map OrderItem to OrderItemResponse correctly', () => {
+    const item: OrderItem = {
+      productId: 'p1',
+      name: 'Widget',
+      quantity: 3,
+      unitPrice: 15,
+      subtotal: 45,
+    };
+
+    const response = mapOrderItemToResponse(item);
+
+    expect(response.productId).toBe('p1');
+    expect(response.name).toBe('Widget');
+    expect(response.quantity).toBe(3);
+    expect(response.unitPrice).toBe(15);
+    expect(response.subtotal).toBe(45);
   });
 });

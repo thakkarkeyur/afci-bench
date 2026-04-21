@@ -1,4 +1,4 @@
-import { OrderItemRequest, OrderStatus, OrderRepositoryPort } from '@afci-bench/contracts';
+import { OrderItemRequest, OrderItemResponse, OrderResponse, OrderStatus, OrderRepositoryPort } from '@afci-bench/contracts';
 
 // Domain entity (internal representation)
 export interface OrderItem {
@@ -78,6 +78,29 @@ export function validateOrderItems(items: OrderItemRequest[]): ValidationResult 
   return {
     valid: errors.length === 0,
     errors,
+  };
+}
+
+// Pure mapping functions (Order -> Response DTOs)
+export function mapOrderItemToResponse(item: OrderItem): OrderItemResponse {
+  return {
+    productId: item.productId,
+    name: item.name,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+    subtotal: item.subtotal,
+  };
+}
+
+export function mapOrderToResponse(order: Order): OrderResponse {
+  return {
+    id: order.id,
+    customerId: order.customerId,
+    items: order.items.map(mapOrderItemToResponse),
+    total: order.total,
+    status: order.status,
+    createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
   };
 }
 
