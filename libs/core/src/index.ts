@@ -1,4 +1,4 @@
-import { OrderItemRequest, OrderStatus } from '@afci-bench/contracts';
+import { OrderItemRequest, OrderStatus, OrderRepositoryPort } from '@afci-bench/contracts';
 
 // Domain entity (internal representation)
 export interface OrderItem {
@@ -18,13 +18,9 @@ export interface Order {
   createdAt: Date;
 }
 
-// Port interface - implemented by infra layer
-export interface OrderRepository {
-  save(order: Order): Promise<Order>;
-  findById(id: string): Promise<Order | null>;
-  findByCustomerId(customerId: string): Promise<Order[]>;
-  findAll(limit: number, offset: number): Promise<{ orders: Order[]; total: number }>;
-}
+// OrderRepository is the domain's view of the port defined in contracts.
+// Order is structurally compatible with OrderData, so this alias works.
+export type OrderRepository = OrderRepositoryPort;
 
 // Validation result
 export interface ValidationResult {

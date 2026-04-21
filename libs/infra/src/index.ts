@@ -1,33 +1,9 @@
-import { OrderStatus } from '@afci-bench/contracts';
+import { OrderData, OrderItemData, OrderRepositoryPort } from '@afci-bench/contracts';
 
-// Infra layer implements repository interfaces
-// Note: We define our own Order type here based on contracts to avoid importing from core
-// This is a deliberate architectural choice - infra depends on contracts, not core
-
-export interface OrderEntity {
-  id: string;
-  customerId: string;
-  items: OrderItemEntity[];
-  total: number;
-  status: OrderStatus;
-  createdAt: Date;
-}
-
-export interface OrderItemEntity {
-  productId: string;
-  name: string;
-  quantity: number;
-  unitPrice: number;
-  subtotal: number;
-}
-
-// Port interface (matching core's OrderRepository)
-export interface OrderRepositoryPort {
-  save(order: OrderEntity): Promise<OrderEntity>;
-  findById(id: string): Promise<OrderEntity | null>;
-  findByCustomerId(customerId: string): Promise<OrderEntity[]>;
-  findAll(limit: number, offset: number): Promise<{ orders: OrderEntity[]; total: number }>;
-}
+// Infra layer implements the shared OrderRepositoryPort from contracts.
+// OrderEntity/OrderItemEntity are kept as aliases for backwards compatibility.
+export type OrderEntity = OrderData;
+export type OrderItemEntity = OrderItemData;
 
 export class InMemoryOrderRepository implements OrderRepositoryPort {
   private orders: Map<string, OrderEntity> = new Map();

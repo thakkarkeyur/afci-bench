@@ -1,7 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse } from '@afci-bench/contracts';
-import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, listOrdersUseCase, ListOrdersPorts, Order, OrderRepository } from '@afci-bench/features';
-import { getOrderRepository, OrderEntity } from '@afci-bench/infra';
+import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, listOrdersUseCase, ListOrdersPorts } from '@afci-bench/features';
+import { getOrderRepository } from '@afci-bench/infra';
 import {
   Logger,
   LogOutput,
@@ -9,56 +9,13 @@ import {
   ConsoleLogOutput,
 } from '@afci-bench/observability';
 
-// NOTE: This file imports Order/OrderRepository from @afci-bench/features (which re-exports from core)
+// NOTE: This file imports OrderRepository from @afci-bench/features (which re-exports from core)
 // instead of importing directly from @afci-bench/core. This respects the module boundary rules:
 // apps/api can depend on features, but should not depend on core directly.
 //
-// BOUNDARY VIOLATION EXAMPLE (commented out - would fail CI if uncommented):
-// import { Order } from '@afci-bench/core'; // ERROR: api cannot import core directly
-
-// Adapter to convert infra's OrderEntity to core's Order
-function entityToOrder(entity: OrderEntity): Order {
-  return {
-    id: entity.id,
-    customerId: entity.customerId,
-    items: entity.items,
-    total: entity.total,
-    status: entity.status,
-    createdAt: entity.createdAt,
-  };
-}
-
-function orderToEntity(order: Order): OrderEntity {
-  return {
-    id: order.id,
-    customerId: order.customerId,
-    items: order.items,
-    total: order.total,
-    status: order.status,
-    createdAt: order.createdAt,
-  };
-}
-
-function adaptRepository(infraRepo: ReturnType<typeof getOrderRepository>): OrderRepository {
-  return {
-    async save(order: Order): Promise<Order> {
-      const saved = await infraRepo.save(orderToEntity(order));
-      return entityToOrder(saved);
-    },
-    async findById(id: string): Promise<Order | null> {
-      const entity = await infraRepo.findById(id);
-      return entity ? entityToOrder(entity) : null;
-    },
-    async findByCustomerId(customerId: string): Promise<Order[]> {
-      const entities = await infraRepo.findByCustomerId(customerId);
-      return entities.map(entityToOrder);
-    },
-    async findAll(limit: number, offset: number): Promise<{ orders: Order[]; total: number }> {
-      const result = await infraRepo.findAll(limit, offset);
-      return { orders: result.orders.map(entityToOrder), total: result.total };
-    },
-  };
-}
+// Since T03, the OrderRepositoryPort lives in @afci-bench/contracts. Both infra's
+// InMemoryOrderRepository and core's OrderRepository type alias point to the same
+// contracts port, so the infra repo can be used directly — no adapter needed.
 
 export interface AppDependencies {
   logOutput?: LogOutput;
@@ -68,7 +25,7 @@ export function createApp(deps: AppDependencies = {}): Express {
   const app = express();
   const logOutput = deps.logOutput ?? new ConsoleLogOutput();
   const logger = new Logger(logOutput);
-  const orderRepository = adaptRepository(getOrderRepository());
+  const orderRepository = getOrderRepository();
 
   app.use(express.json());
 

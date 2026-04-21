@@ -43,6 +43,31 @@ export interface ListOrdersResponse {
   offset: number;
 }
 
+// Repository port interface (shared across layers)
+export interface OrderData {
+  id: string;
+  customerId: string;
+  items: OrderItemData[];
+  total: number;
+  status: OrderStatus;
+  createdAt: Date;
+}
+
+export interface OrderItemData {
+  productId: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+}
+
+export interface OrderRepositoryPort {
+  save(order: OrderData): Promise<OrderData>;
+  findById(id: string): Promise<OrderData | null>;
+  findByCustomerId(customerId: string): Promise<OrderData[]>;
+  findAll(limit: number, offset: number): Promise<{ orders: OrderData[]; total: number }>;
+}
+
 // Error response contract
 export interface ErrorResponse {
   error: string;
