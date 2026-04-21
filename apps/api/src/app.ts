@@ -1,6 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse, NotFoundError, ValidationError } from '@afci-bench/contracts';
-import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, listOrdersUseCase, ListOrdersPorts, updateOrderUseCase, UpdateOrderPorts } from '@afci-bench/features';
+import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, listOrdersUseCase, ListOrdersPorts, updateOrderUseCase, UpdateOrderPorts, cancelOrderUseCase, CancelOrderPorts } from '@afci-bench/features';
 import { getOrderRepository } from '@afci-bench/infra';
 import {
   Logger,
@@ -226,6 +226,65 @@ export function createApp(deps: AppDependencies = {}): Express {
       logger.logRequest({
         correlationId,
         operation: 'PUT /orders/:id',
+        status: 'fail',
+        latencyMs: Date.now() - startTime,
+      });
+
+      const mapped = mapErrorToResponse(error, correlationId);
+      res.setHeader('x-correlation-id', correlationId);
+      res.status(mapped.status).json(mapped.body);
+    }
+  });
+
+  // Cancel order endpoint
+  app.post('/orders/:id/cancel', async (req: Request, res: Response) => {
+    const startTime = Date.now();
+    const correlationId = extractCorrelationId(req.headers['x-correlation-id'] as string | undefined);
+
+    try {
+      const ports: CancelOrderPorts = {
+        orderRepository,
+        logger,
+        correlationId,
+      };
+
+      const result = await cancelOrderUseCase(req.params.id, ports);
+
+      if (result.success && result.data) {
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(200).json(result.data);
+      } else if (result.notFound) {
+        const errorResponse: ErrorResponse = {
+          error: 'NotFoundError',
+          message: result.errors?.join('; ') ?? 'Order not found',
+          correlationId,
+        };
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(404).json(errorResponse);
+      } else {
+        const errorResponse: ErrorResponse = {
+          error: 'InternalServerError',
+          message: result.errors?.join('; ') ?? 'Unknown error',
+          correlationId,
+        };
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(500).json(errorResponse);
+      }
+    } catch (error) {
+      const errorType = error instanceof NotFoundError || error instanceof ValidationError
+        ? error.errorType : 'UnhandledError';
+      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+
+      logger.logError({
+        correlationId,
+        errorType,
+        message: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      logger.logRequest({
+        correlationId,
+        operation: 'POST /orders/:id/cancel',
         status: 'fail',
         latencyMs: Date.now() - startTime,
       });

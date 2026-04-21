@@ -440,6 +440,42 @@ describe('API Integration Tests', () => {
     });
   });
 
+  describe('POST /orders/:id/cancel', () => {
+    it('should cancel order successfully', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      // Create an order
+      const createResponse = await request(app)
+        .post('/orders')
+        .send({
+          customerId: 'cust-123',
+          items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10 }],
+        })
+        .set('Content-Type', 'application/json');
+
+      const orderId = createResponse.body.id;
+
+      // Cancel it
+      const cancelResponse = await request(app)
+        .post(`/orders/${orderId}/cancel`);
+
+      expect(cancelResponse.status).toBe(200);
+      expect(cancelResponse.body.id).toBe(orderId);
+      expect(cancelResponse.body.status).toBe('cancelled');
+      expect(cancelResponse.body.updatedAt).toBeDefined();
+    });
+
+    it('should return 404 for non-existent order', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const cancelResponse = await request(app)
+        .post('/orders/nonexistent-id/cancel');
+
+      expect(cancelResponse.status).toBe(404);
+      expect(cancelResponse.body.error).toBe('NotFoundError');
+    });
+  });
+
   describe('GET /orders/:id', () => {
     it('should return 200 with order payload for existing order', async () => {
       const app = createApp({ logOutput: testLogOutput });
