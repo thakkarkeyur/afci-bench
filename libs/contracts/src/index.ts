@@ -26,6 +26,7 @@ export interface OrderResponse {
   total: number;
   status: OrderStatus;
   createdAt: string;
+  updatedAt: string;
 }
 
 export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
@@ -51,6 +52,7 @@ export interface OrderData {
   total: number;
   status: OrderStatus;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface OrderItemData {

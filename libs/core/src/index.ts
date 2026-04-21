@@ -16,6 +16,7 @@ export interface Order {
   total: number;
   status: OrderStatus;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 // OrderRepository is the domain's view of the port defined in contracts.

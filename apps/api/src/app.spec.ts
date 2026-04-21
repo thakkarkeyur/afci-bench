@@ -76,6 +76,7 @@ describe('API Integration Tests', () => {
       expect(order.total).toBe(46);
       expect(order.status).toBe('pending');
       expect(order.createdAt).toBeDefined();
+      expect(order.updatedAt).toBeDefined();
     });
 
     it('should return correlationId in response header', async () => {
@@ -217,6 +218,7 @@ describe('API Integration Tests', () => {
       expect(typeof order.status).toBe('string');
       expect(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']).toContain(order.status);
       expect(typeof order.createdAt).toBe('string');
+      expect(typeof order.updatedAt).toBe('string');
 
       // Validate item shape
       order.items.forEach((item: Record<string, unknown>) => {
@@ -363,6 +365,7 @@ describe('API Integration Tests', () => {
       expect(getResponse.body.total).toBe(21);
       expect(getResponse.body.status).toBe('pending');
       expect(getResponse.body.createdAt).toBeDefined();
+      expect(getResponse.body.updatedAt).toBeDefined();
     });
 
     it('should return 404 for unknown order ID', async () => {

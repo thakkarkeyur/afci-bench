@@ -58,6 +58,7 @@ describe('createOrderUseCase', () => {
     expect(result.data?.items).toHaveLength(2);
     expect(result.data?.total).toBe(46); // 2*10.5 + 1*25 = 21 + 25 = 46
     expect(result.data?.status).toBe('pending');
+    expect(result.data?.updatedAt).toBeDefined();
     expect(mockRepo.save).toHaveBeenCalledTimes(1);
 
     // Verify logging
