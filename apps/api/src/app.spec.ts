@@ -230,6 +230,26 @@ describe('API Integration Tests', () => {
       });
     });
 
+    it('should return 400 for fractional quantity', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const orderRequest = {
+        customerId: 'cust-123',
+        items: [
+          { productId: 'prod-1', name: 'Widget', quantity: 1.5, unitPrice: 10 },
+        ],
+      };
+
+      const response = await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('ValidationError');
+      expect(response.body.message).toContain('quantity must be a positive integer');
+    });
+
     it('should return 400 for items with invalid fields', async () => {
       const app = createApp({ logOutput: testLogOutput });
 

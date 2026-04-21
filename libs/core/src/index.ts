@@ -55,8 +55,9 @@ export function createOrderItem(input: OrderItemRequest): OrderItem {
 export function validateOrderItems(items: OrderItemRequest[]): ValidationResult {
   const errors: string[] = [];
 
-  if (!items || items.length === 0) {
+  if (!items || !Array.isArray(items) || items.length === 0) {
     errors.push('Order must have at least one item');
+    return { valid: false, errors };
   }
 
   items.forEach((item, index) => {
@@ -66,8 +67,8 @@ export function validateOrderItems(items: OrderItemRequest[]): ValidationResult 
     if (!item.name || item.name.trim() === '') {
       errors.push(`Item ${index + 1}: name is required`);
     }
-    if (typeof item.quantity !== 'number' || item.quantity <= 0) {
-      errors.push(`Item ${index + 1}: quantity must be a positive number`);
+    if (typeof item.quantity !== 'number' || item.quantity <= 0 || !Number.isInteger(item.quantity)) {
+      errors.push(`Item ${index + 1}: quantity must be a positive integer`);
     }
     if (typeof item.unitPrice !== 'number' || item.unitPrice < 0) {
       errors.push(`Item ${index + 1}: unitPrice must be a non-negative number`);

@@ -6,6 +6,7 @@ import {
   validateCustomerId,
   OrderItem,
 } from './index';
+import { OrderItemRequest } from '@afci-bench/contracts';
 
 describe('calculateItemSubtotal', () => {
   it('should calculate subtotal correctly', () => {
@@ -114,7 +115,7 @@ describe('validateOrderItems', () => {
     const items = [{ productId: 'p1', name: 'Item', quantity: 0, unitPrice: 10 }];
     const result = validateOrderItems(items);
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain('Item 1: quantity must be a positive number');
+    expect(result.errors).toContain('Item 1: quantity must be a positive integer');
   });
 
   it('should reject negative unitPrice', () => {
@@ -122,6 +123,25 @@ describe('validateOrderItems', () => {
     const result = validateOrderItems(items);
     expect(result.valid).toBe(false);
     expect(result.errors).toContain('Item 1: unitPrice must be a non-negative number');
+  });
+
+  it('should reject fractional quantity', () => {
+    const items = [{ productId: 'p1', name: 'Item', quantity: 1.5, unitPrice: 10 }];
+    const result = validateOrderItems(items);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Item 1: quantity must be a positive integer');
+  });
+
+  it('should handle null items gracefully', () => {
+    const result = validateOrderItems(null as unknown as OrderItemRequest[]);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Order must have at least one item');
+  });
+
+  it('should handle undefined items gracefully', () => {
+    const result = validateOrderItems(undefined as unknown as OrderItemRequest[]);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Order must have at least one item');
   });
 
   it('should collect multiple errors', () => {
