@@ -46,6 +46,24 @@ describe('API Integration Tests', () => {
       expect(response.body.status).toBe('ok');
       expect(response.body.timestamp).toBeDefined();
     });
+
+    it('should log required fields and propagate correlationId', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+      const customCorrelationId = 'health-check-corr-id';
+
+      const response = await request(app)
+        .get('/health')
+        .set('x-correlation-id', customCorrelationId);
+
+      expect(response.headers['x-correlation-id']).toBe(customCorrelationId);
+
+      const requestLogs = testLogOutput.getRequestLogs();
+      const healthLog = requestLogs.find((l) => l.operation === 'GET /health');
+      expect(healthLog).toBeDefined();
+      expect(healthLog?.correlationId).toBe(customCorrelationId);
+      expect(healthLog?.status).toBe('success');
+      expect(typeof healthLog?.latencyMs).toBe('number');
+    });
   });
 
   describe('POST /orders', () => {
@@ -409,6 +427,21 @@ describe('API Integration Tests', () => {
         .set('x-correlation-id', customCorrelationId);
 
       expect(getResponse.headers['x-correlation-id']).toBe(customCorrelationId);
+    });
+
+    it('should log with required observability fields on not-found', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+      const correlationId = 'obs-test-correlation';
+
+      await request(app)
+        .get('/orders/nonexistent-id')
+        .set('x-correlation-id', correlationId);
+
+      const requestLogs = testLogOutput.getRequestLogs();
+      const failLog = requestLogs.find((l) => l.operation === 'getOrderById' && l.status === 'fail');
+      expect(failLog).toBeDefined();
+      expect(failLog?.correlationId).toBe(correlationId);
+      expect(typeof failLog?.latencyMs).toBe('number');
     });
   });
 });

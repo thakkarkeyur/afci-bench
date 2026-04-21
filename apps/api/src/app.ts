@@ -30,11 +30,23 @@ export function createApp(deps: AppDependencies = {}): Express {
   app.use(express.json());
 
   // Health endpoint
-  app.get('/health', (_req: Request, res: Response) => {
+  app.get('/health', (req: Request, res: Response) => {
+    const startTime = Date.now();
+    const correlationId = extractCorrelationId(req.headers['x-correlation-id'] as string | undefined);
+
     const response: HealthResponse = {
       status: 'ok',
       timestamp: new Date().toISOString(),
     };
+
+    logger.logRequest({
+      correlationId,
+      operation: 'GET /health',
+      status: 'success',
+      latencyMs: Date.now() - startTime,
+    });
+
+    res.setHeader('x-correlation-id', correlationId);
     res.json(response);
   });
 
