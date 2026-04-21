@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { OrderRequest, OrderResponse, OrderItemResponse } from '@afci-bench/contracts';
+import { OrderRequest, OrderResponse, OrderItemResponse, ListOrdersResponse } from '@afci-bench/contracts';
 import {
   Order,
   OrderItem,
@@ -203,6 +203,93 @@ export async function createOrderUseCase(
     logger.logRequest({
       correlationId,
       operation: 'createOrder',
+      status: 'fail',
+      latencyMs: Date.now() - startTime,
+    });
+
+    return {
+      success: false,
+      errors: [errorMessage],
+    };
+  }
+}
+
+export interface ListOrdersPorts {
+  orderRepository: OrderRepository;
+  logger: Logger;
+  correlationId: string;
+}
+
+export interface ListOrdersResult {
+  success: boolean;
+  data?: ListOrdersResponse;
+  errors?: string[];
+}
+
+const DEFAULT_LIMIT = 20;
+const DEFAULT_OFFSET = 0;
+
+function mapOrderToResponse(order: Order): OrderResponse {
+  return {
+    id: order.id,
+    customerId: order.customerId,
+    items: order.items.map((item) => ({
+      productId: item.productId,
+      name: item.name,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      subtotal: item.subtotal,
+    })),
+    total: order.total,
+    status: order.status,
+    createdAt: order.createdAt.toISOString(),
+  };
+}
+
+export async function listOrdersUseCase(
+  limit: number | undefined,
+  offset: number | undefined,
+  ports: ListOrdersPorts
+): Promise<ListOrdersResult> {
+  const startTime = Date.now();
+  const { orderRepository, logger, correlationId } = ports;
+  const effectiveLimit = limit ?? DEFAULT_LIMIT;
+  const effectiveOffset = offset ?? DEFAULT_OFFSET;
+
+  try {
+    const { orders, total } = await orderRepository.findAll(effectiveLimit, effectiveOffset);
+
+    const response: ListOrdersResponse = {
+      orders: orders.map(mapOrderToResponse),
+      total,
+      limit: effectiveLimit,
+      offset: effectiveOffset,
+    };
+
+    logger.logRequest({
+      correlationId,
+      operation: 'listOrders',
+      status: 'success',
+      latencyMs: Date.now() - startTime,
+    });
+
+    return {
+      success: true,
+      data: response,
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    logger.logError({
+      correlationId,
+      errorType: 'ListOrdersError',
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    logger.logRequest({
+      correlationId,
+      operation: 'listOrders',
       status: 'fail',
       latencyMs: Date.now() - startTime,
     });

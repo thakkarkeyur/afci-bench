@@ -1,6 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse } from '@afci-bench/contracts';
-import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, Order, OrderRepository } from '@afci-bench/features';
+import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, listOrdersUseCase, ListOrdersPorts, Order, OrderRepository } from '@afci-bench/features';
 import { getOrderRepository, OrderEntity } from '@afci-bench/infra';
 import {
   Logger,
@@ -52,6 +52,10 @@ function adaptRepository(infraRepo: ReturnType<typeof getOrderRepository>): Orde
     async findByCustomerId(customerId: string): Promise<Order[]> {
       const entities = await infraRepo.findByCustomerId(customerId);
       return entities.map(entityToOrder);
+    },
+    async findAll(limit: number, offset: number): Promise<{ orders: Order[]; total: number }> {
+      const result = await infraRepo.findAll(limit, offset);
+      return { orders: result.orders.map(entityToOrder), total: result.total };
     },
   };
 }
@@ -131,6 +135,62 @@ export function createApp(deps: AppDependencies = {}): Express {
       res.setHeader('x-correlation-id', correlationId);
       res.status(500).json(errorResponse);
       next(error);
+    }
+  });
+
+  // List orders endpoint
+  app.get('/orders', async (req: Request, res: Response) => {
+    const startTime = Date.now();
+    const correlationId = extractCorrelationId(req.headers['x-correlation-id'] as string | undefined);
+
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+      const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : undefined;
+
+      const ports: ListOrdersPorts = {
+        orderRepository,
+        logger,
+        correlationId,
+      };
+
+      const result = await listOrdersUseCase(limit, offset, ports);
+
+      if (result.success && result.data) {
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(200).json(result.data);
+      } else {
+        const errorResponse: ErrorResponse = {
+          error: 'InternalServerError',
+          message: result.errors?.join('; ') ?? 'Unknown error',
+          correlationId,
+        };
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(500).json(errorResponse);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+
+      logger.logError({
+        correlationId,
+        errorType: 'UnhandledError',
+        message: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      logger.logRequest({
+        correlationId,
+        operation: 'GET /orders',
+        status: 'fail',
+        latencyMs: Date.now() - startTime,
+      });
+
+      const errorResponse: ErrorResponse = {
+        error: 'InternalServerError',
+        message: errorMessage,
+        correlationId,
+      };
+      res.setHeader('x-correlation-id', correlationId);
+      res.status(500).json(errorResponse);
     }
   });
 

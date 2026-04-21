@@ -30,6 +30,19 @@ export interface OrderResponse {
 
 export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 
+// Pagination DTOs
+export interface ListOrdersRequest {
+  limit?: number;
+  offset?: number;
+}
+
+export interface ListOrdersResponse {
+  orders: OrderResponse[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 // Error response contract
 export interface ErrorResponse {
   error: string;

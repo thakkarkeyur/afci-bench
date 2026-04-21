@@ -16,6 +16,7 @@ function createMockRepository(savedOrder?: Order): OrderRepository {
     save: jest.fn().mockResolvedValue(savedOrder),
     findById: jest.fn().mockResolvedValue(null),
     findByCustomerId: jest.fn().mockResolvedValue([]),
+    findAll: jest.fn().mockResolvedValue({ orders: [], total: 0 }),
   };
 }
 

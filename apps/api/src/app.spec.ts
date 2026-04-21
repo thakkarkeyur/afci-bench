@@ -271,6 +271,66 @@ describe('API Integration Tests', () => {
     });
   });
 
+  describe('GET /orders (list with pagination)', () => {
+    it('should return empty list with default pagination', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const response = await request(app).get('/orders');
+
+      expect(response.status).toBe(200);
+      expect(response.body.orders).toEqual([]);
+      expect(response.body.total).toBe(0);
+      expect(response.body.limit).toBe(20);
+      expect(response.body.offset).toBe(0);
+    });
+
+    it('should return orders with custom pagination', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      // Create 3 orders
+      for (let i = 0; i < 3; i++) {
+        await request(app)
+          .post('/orders')
+          .send({
+            customerId: `cust-${i}`,
+            items: [{ productId: `prod-${i}`, name: `Item ${i}`, quantity: 1, unitPrice: 10 }],
+          })
+          .set('Content-Type', 'application/json');
+      }
+
+      // Fetch with limit=2, offset=0
+      const response = await request(app).get('/orders?limit=2&offset=0');
+
+      expect(response.status).toBe(200);
+      expect(response.body.orders).toHaveLength(2);
+      expect(response.body.total).toBe(3);
+      expect(response.body.limit).toBe(2);
+      expect(response.body.offset).toBe(0);
+    });
+
+    it('should return remaining orders with offset', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      // Create 3 orders
+      for (let i = 0; i < 3; i++) {
+        await request(app)
+          .post('/orders')
+          .send({
+            customerId: `cust-${i}`,
+            items: [{ productId: `prod-${i}`, name: `Item ${i}`, quantity: 1, unitPrice: 10 }],
+          })
+          .set('Content-Type', 'application/json');
+      }
+
+      // Fetch with limit=2, offset=2
+      const response = await request(app).get('/orders?limit=2&offset=2');
+
+      expect(response.status).toBe(200);
+      expect(response.body.orders).toHaveLength(1);
+      expect(response.body.total).toBe(3);
+    });
+  });
+
   describe('GET /orders/:id', () => {
     it('should return 200 with order payload for existing order', async () => {
       const app = createApp({ logOutput: testLogOutput });
