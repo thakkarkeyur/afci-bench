@@ -68,6 +68,13 @@ export interface OrderRepositoryPort {
   findById(id: string): Promise<OrderData | null>;
   findByCustomerId(customerId: string): Promise<OrderData[]>;
   findAll(limit: number, offset: number): Promise<{ orders: OrderData[]; total: number }>;
+  update(order: OrderData): Promise<OrderData>;
+}
+
+// Update order DTO
+export interface UpdateOrderRequest {
+  items?: OrderItemRequest[];
+  status?: OrderStatus;
 }
 
 // Error response contract

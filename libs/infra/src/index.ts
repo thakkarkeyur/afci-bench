@@ -28,6 +28,12 @@ export class InMemoryOrderRepository implements OrderRepositoryPort {
     return results;
   }
 
+  async update(order: OrderEntity): Promise<OrderEntity> {
+    const updatedOrder = { ...order };
+    this.orders.set(order.id, updatedOrder);
+    return updatedOrder;
+  }
+
   async findAll(limit: number, offset: number): Promise<{ orders: OrderEntity[]; total: number }> {
     const all = Array.from(this.orders.values());
     const total = all.length;

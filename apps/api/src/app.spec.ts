@@ -371,6 +371,75 @@ describe('API Integration Tests', () => {
     });
   });
 
+  describe('PUT /orders/:id', () => {
+    it('should update order successfully', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      // Create an order first
+      const createResponse = await request(app)
+        .post('/orders')
+        .send({
+          customerId: 'cust-123',
+          items: [{ productId: 'prod-1', name: 'Widget', quantity: 2, unitPrice: 10 }],
+        })
+        .set('Content-Type', 'application/json');
+
+      const orderId = createResponse.body.id;
+
+      // Update with new items
+      const updateResponse = await request(app)
+        .put(`/orders/${orderId}`)
+        .send({
+          items: [{ productId: 'prod-1', name: 'Widget', quantity: 5, unitPrice: 10 }],
+        })
+        .set('Content-Type', 'application/json');
+
+      expect(updateResponse.status).toBe(200);
+      expect(updateResponse.body.id).toBe(orderId);
+      expect(updateResponse.body.items[0].quantity).toBe(5);
+      expect(updateResponse.body.total).toBe(50);
+      expect(updateResponse.body.updatedAt).toBeDefined();
+    });
+
+    it('should return 404 for non-existent order', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const updateResponse = await request(app)
+        .put('/orders/nonexistent-id')
+        .send({ status: 'confirmed' })
+        .set('Content-Type', 'application/json');
+
+      expect(updateResponse.status).toBe(404);
+      expect(updateResponse.body.error).toBe('NotFoundError');
+    });
+
+    it('should return 400 for invalid input', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      // Create an order first
+      const createResponse = await request(app)
+        .post('/orders')
+        .send({
+          customerId: 'cust-123',
+          items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10 }],
+        })
+        .set('Content-Type', 'application/json');
+
+      const orderId = createResponse.body.id;
+
+      // Update with invalid items
+      const updateResponse = await request(app)
+        .put(`/orders/${orderId}`)
+        .send({
+          items: [{ productId: '', name: '', quantity: 0, unitPrice: -1 }],
+        })
+        .set('Content-Type', 'application/json');
+
+      expect(updateResponse.status).toBe(400);
+      expect(updateResponse.body.error).toBe('ValidationError');
+    });
+  });
+
   describe('GET /orders/:id', () => {
     it('should return 200 with order payload for existing order', async () => {
       const app = createApp({ logOutput: testLogOutput });

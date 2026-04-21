@@ -1,6 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse } from '@afci-bench/contracts';
-import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, listOrdersUseCase, ListOrdersPorts } from '@afci-bench/features';
+import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, listOrdersUseCase, ListOrdersPorts, updateOrderUseCase, UpdateOrderPorts } from '@afci-bench/features';
 import { getOrderRepository } from '@afci-bench/infra';
 import {
   Logger,
@@ -144,6 +144,67 @@ export function createApp(deps: AppDependencies = {}): Express {
       logger.logRequest({
         correlationId,
         operation: 'GET /orders',
+        status: 'fail',
+        latencyMs: Date.now() - startTime,
+      });
+
+      const errorResponse: ErrorResponse = {
+        error: 'InternalServerError',
+        message: errorMessage,
+        correlationId,
+      };
+      res.setHeader('x-correlation-id', correlationId);
+      res.status(500).json(errorResponse);
+    }
+  });
+
+  // Update order endpoint
+  app.put('/orders/:id', async (req: Request, res: Response) => {
+    const startTime = Date.now();
+    const correlationId = extractCorrelationId(req.headers['x-correlation-id'] as string | undefined);
+
+    try {
+      const ports: UpdateOrderPorts = {
+        orderRepository,
+        logger,
+        correlationId,
+      };
+
+      const result = await updateOrderUseCase(req.params.id, req.body, ports);
+
+      if (result.success && result.data) {
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(200).json(result.data);
+      } else if (result.notFound) {
+        const errorResponse: ErrorResponse = {
+          error: 'NotFoundError',
+          message: result.errors?.join('; ') ?? 'Order not found',
+          correlationId,
+        };
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(404).json(errorResponse);
+      } else {
+        const errorResponse: ErrorResponse = {
+          error: 'ValidationError',
+          message: result.errors?.join('; ') ?? 'Invalid input',
+          correlationId,
+        };
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(400).json(errorResponse);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+
+      logger.logError({
+        correlationId,
+        errorType: 'UnhandledError',
+        message: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      logger.logRequest({
+        correlationId,
+        operation: 'PUT /orders/:id',
         status: 'fail',
         latencyMs: Date.now() - startTime,
       });
