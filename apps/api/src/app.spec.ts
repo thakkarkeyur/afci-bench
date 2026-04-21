@@ -498,6 +498,18 @@ describe('API Integration Tests', () => {
       expect(getResponse.headers['x-correlation-id']).toBe(customCorrelationId);
     });
 
+    it('should return NotFoundError type in error response for missing order', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const response = await request(app)
+        .get('/orders/does-not-exist');
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe('NotFoundError');
+      expect(response.body.message).toContain('Order not found');
+      expect(response.body.correlationId).toBeDefined();
+    });
+
     it('should log with required observability fields on not-found', async () => {
       const app = createApp({ logOutput: testLogOutput });
       const correlationId = 'obs-test-correlation';

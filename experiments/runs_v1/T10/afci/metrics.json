@@ -1,0 +1,31 @@
+{
+  "files_changed": [
+    "apps/api/src/app.spec.ts",
+    "apps/api/src/app.ts",
+    "experiments/prompts_v1/prompt_T01_afci.md",
+    "experiments/prompts_v1/prompt_T02_afci.md",
+    "experiments/prompts_v1/prompt_T03_afci.md",
+    "experiments/prompts_v1/prompt_T04_afci.md",
+    "experiments/prompts_v1/prompt_T05_afci.md",
+    "experiments/prompts_v1/prompt_T06_afci.md",
+    "experiments/prompts_v1/prompt_T07_afci.md",
+    "experiments/prompts_v1/prompt_T08_afci.md",
+    "experiments/prompts_v1/prompt_T09_afci.md",
+    "libs/contracts/src/index.ts",
+    "libs/core/src/core.spec.ts",
+    "libs/core/src/index.ts",
+    "libs/features/src/features.spec.ts",
+    "libs/features/src/index.ts",
+    "libs/infra/src/index.ts",
+    "package-lock.json"
+  ],
+  "delta_loc_code": 985,
+  "delta_loc_test": 348,
+  "delta_tests": 24,
+  "code_additions": 1156,
+  "code_deletions": 171,
+  "test_additions": 349,
+  "test_deletions": 1,
+  "ci_pass": true,
+  "layer_jaccard": 1.0
+}

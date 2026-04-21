@@ -1,5 +1,5 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
-import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse } from '@afci-bench/contracts';
+import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse, NotFoundError, ValidationError } from '@afci-bench/contracts';
 import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, listOrdersUseCase, ListOrdersPorts, updateOrderUseCase, UpdateOrderPorts } from '@afci-bench/features';
 import { getOrderRepository } from '@afci-bench/infra';
 import {
@@ -11,6 +11,29 @@ import {
 
 // Boundary rules: apps/api depends on features, infra, contracts, observability (not core directly).
 // OrderRepositoryPort is defined in contracts; infra implements it; features uses it via core type alias.
+
+function mapErrorToResponse(
+  error: unknown,
+  correlationId: string
+): { status: number; body: ErrorResponse } {
+  if (error instanceof NotFoundError) {
+    return {
+      status: 404,
+      body: { error: error.errorType, message: error.message, correlationId },
+    };
+  }
+  if (error instanceof ValidationError) {
+    return {
+      status: 400,
+      body: { error: error.errorType, message: error.message, correlationId },
+    };
+  }
+  const message = error instanceof Error ? error.message : 'Internal server error';
+  return {
+    status: 500,
+    body: { error: 'InternalServerError', message, correlationId },
+  };
+}
 
 export interface AppDependencies {
   logOutput?: LogOutput;
@@ -75,11 +98,13 @@ export function createApp(deps: AppDependencies = {}): Express {
         res.status(400).json(errorResponse);
       }
     } catch (error) {
+      const errorType = error instanceof NotFoundError || error instanceof ValidationError
+        ? error.errorType : 'UnhandledError';
       const errorMessage = error instanceof Error ? error.message : 'Internal server error';
 
       logger.logError({
         correlationId,
-        errorType: 'UnhandledError',
+        errorType,
         message: errorMessage,
         stack: error instanceof Error ? error.stack : undefined,
       });
@@ -91,13 +116,9 @@ export function createApp(deps: AppDependencies = {}): Express {
         latencyMs: Date.now() - startTime,
       });
 
-      const errorResponse: ErrorResponse = {
-        error: 'InternalServerError',
-        message: errorMessage,
-        correlationId,
-      };
+      const mapped = mapErrorToResponse(error, correlationId);
       res.setHeader('x-correlation-id', correlationId);
-      res.status(500).json(errorResponse);
+      res.status(mapped.status).json(mapped.body);
       next(error);
     }
   });
@@ -132,11 +153,13 @@ export function createApp(deps: AppDependencies = {}): Express {
         res.status(500).json(errorResponse);
       }
     } catch (error) {
+      const errorType = error instanceof NotFoundError || error instanceof ValidationError
+        ? error.errorType : 'UnhandledError';
       const errorMessage = error instanceof Error ? error.message : 'Internal server error';
 
       logger.logError({
         correlationId,
-        errorType: 'UnhandledError',
+        errorType,
         message: errorMessage,
         stack: error instanceof Error ? error.stack : undefined,
       });
@@ -148,13 +171,9 @@ export function createApp(deps: AppDependencies = {}): Express {
         latencyMs: Date.now() - startTime,
       });
 
-      const errorResponse: ErrorResponse = {
-        error: 'InternalServerError',
-        message: errorMessage,
-        correlationId,
-      };
+      const mapped = mapErrorToResponse(error, correlationId);
       res.setHeader('x-correlation-id', correlationId);
-      res.status(500).json(errorResponse);
+      res.status(mapped.status).json(mapped.body);
     }
   });
 
@@ -193,11 +212,13 @@ export function createApp(deps: AppDependencies = {}): Express {
         res.status(400).json(errorResponse);
       }
     } catch (error) {
+      const errorType = error instanceof NotFoundError || error instanceof ValidationError
+        ? error.errorType : 'UnhandledError';
       const errorMessage = error instanceof Error ? error.message : 'Internal server error';
 
       logger.logError({
         correlationId,
-        errorType: 'UnhandledError',
+        errorType,
         message: errorMessage,
         stack: error instanceof Error ? error.stack : undefined,
       });
@@ -209,13 +230,9 @@ export function createApp(deps: AppDependencies = {}): Express {
         latencyMs: Date.now() - startTime,
       });
 
-      const errorResponse: ErrorResponse = {
-        error: 'InternalServerError',
-        message: errorMessage,
-        correlationId,
-      };
+      const mapped = mapErrorToResponse(error, correlationId);
       res.setHeader('x-correlation-id', correlationId);
-      res.status(500).json(errorResponse);
+      res.status(mapped.status).json(mapped.body);
     }
   });
 
@@ -254,11 +271,13 @@ export function createApp(deps: AppDependencies = {}): Express {
         res.status(500).json(errorResponse);
       }
     } catch (error) {
+      const errorType = error instanceof NotFoundError || error instanceof ValidationError
+        ? error.errorType : 'UnhandledError';
       const errorMessage = error instanceof Error ? error.message : 'Internal server error';
 
       logger.logError({
         correlationId,
-        errorType: 'UnhandledError',
+        errorType,
         message: errorMessage,
         stack: error instanceof Error ? error.stack : undefined,
       });
@@ -270,13 +289,9 @@ export function createApp(deps: AppDependencies = {}): Express {
         latencyMs: Date.now() - startTime,
       });
 
-      const errorResponse: ErrorResponse = {
-        error: 'InternalServerError',
-        message: errorMessage,
-        correlationId,
-      };
+      const mapped = mapErrorToResponse(error, correlationId);
       res.setHeader('x-correlation-id', correlationId);
-      res.status(500).json(errorResponse);
+      res.status(mapped.status).json(mapped.body);
     }
   });
 

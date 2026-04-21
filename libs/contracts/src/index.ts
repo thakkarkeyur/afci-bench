@@ -77,6 +77,25 @@ export interface UpdateOrderRequest {
   status?: OrderStatus;
 }
 
+// Typed errors (shared across layers)
+export class NotFoundError extends Error {
+  readonly errorType = 'NotFoundError';
+  constructor(message: string) {
+    super(message);
+    this.name = 'NotFoundError';
+  }
+}
+
+export class ValidationError extends Error {
+  readonly errorType = 'ValidationError';
+  readonly validationErrors: string[];
+  constructor(errors: string[]) {
+    super(errors.join('; '));
+    this.name = 'ValidationError';
+    this.validationErrors = errors;
+  }
+}
+
 // Error response contract
 export interface ErrorResponse {
   error: string;
