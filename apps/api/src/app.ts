@@ -9,13 +9,8 @@ import {
   ConsoleLogOutput,
 } from '@afci-bench/observability';
 
-// NOTE: This file imports OrderRepository from @afci-bench/features (which re-exports from core)
-// instead of importing directly from @afci-bench/core. This respects the module boundary rules:
-// apps/api can depend on features, but should not depend on core directly.
-//
-// Since T03, the OrderRepositoryPort lives in @afci-bench/contracts. Both infra's
-// InMemoryOrderRepository and core's OrderRepository type alias point to the same
-// contracts port, so the infra repo can be used directly — no adapter needed.
+// Boundary rules: apps/api depends on features, infra, contracts, observability (not core directly).
+// OrderRepositoryPort is defined in contracts; infra implements it; features uses it via core type alias.
 
 export interface AppDependencies {
   logOutput?: LogOutput;
