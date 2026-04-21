@@ -187,7 +187,7 @@ describe('mapOrderToResponse', () => {
         { productId: 'p1', name: 'Widget', quantity: 2, unitPrice: 10, subtotal: 20 },
       ],
       total: 20,
-      status: 'pending',
+      status: 'created',
       createdAt: now,
       updatedAt: now,
     };
@@ -199,7 +199,7 @@ describe('mapOrderToResponse', () => {
     expect(response.items).toHaveLength(1);
     expect(response.items[0].subtotal).toBe(20);
     expect(response.total).toBe(20);
-    expect(response.status).toBe('pending');
+    expect(response.status).toBe('created');
     expect(response.createdAt).toBe('2024-01-15T10:30:00.000Z');
     expect(response.updatedAt).toBe('2024-01-15T10:30:00.000Z');
   });

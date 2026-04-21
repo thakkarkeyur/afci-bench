@@ -92,7 +92,7 @@ describe('API Integration Tests', () => {
       expect(order.items[0].subtotal).toBe(21); // 2 * 10.5
       expect(order.items[1].subtotal).toBe(25); // 1 * 25
       expect(order.total).toBe(46);
-      expect(order.status).toBe('pending');
+      expect(order.status).toBe('created');
       expect(order.createdAt).toBeDefined();
       expect(order.updatedAt).toBeDefined();
     });
@@ -234,7 +234,7 @@ describe('API Integration Tests', () => {
       expect(Array.isArray(order.items)).toBe(true);
       expect(typeof order.total).toBe('number');
       expect(typeof order.status).toBe('string');
-      expect(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']).toContain(order.status);
+      expect(['created', 'confirmed', 'updated', 'shipped', 'delivered', 'cancelled']).toContain(order.status);
       expect(typeof order.createdAt).toBe('string');
       expect(typeof order.updatedAt).toBe('string');
 
@@ -474,6 +474,36 @@ describe('API Integration Tests', () => {
       expect(cancelResponse.status).toBe(404);
       expect(cancelResponse.body.error).toBe('NotFoundError');
     });
+
+    it('should show correct status values across create/update/cancel flow', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      // Create -> status should be 'created'
+      const createRes = await request(app)
+        .post('/orders')
+        .send({
+          customerId: 'cust-flow',
+          items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10 }],
+        })
+        .set('Content-Type', 'application/json');
+
+      expect(createRes.body.status).toBe('created');
+      const orderId = createRes.body.id;
+
+      // Update items -> status should be 'updated' (or kept if only items change)
+      const updateRes = await request(app)
+        .put(`/orders/${orderId}`)
+        .send({ status: 'confirmed' })
+        .set('Content-Type', 'application/json');
+
+      expect(updateRes.body.status).toBe('confirmed');
+
+      // Cancel -> status should be 'cancelled'
+      const cancelRes = await request(app)
+        .post(`/orders/${orderId}/cancel`);
+
+      expect(cancelRes.body.status).toBe('cancelled');
+    });
   });
 
   describe('GET /orders/:id', () => {
@@ -506,7 +536,7 @@ describe('API Integration Tests', () => {
       expect(getResponse.body.customerId).toBe('cust-123');
       expect(getResponse.body.items).toHaveLength(1);
       expect(getResponse.body.total).toBe(21);
-      expect(getResponse.body.status).toBe('pending');
+      expect(getResponse.body.status).toBe('created');
       expect(getResponse.body.createdAt).toBeDefined();
       expect(getResponse.body.updatedAt).toBeDefined();
     });

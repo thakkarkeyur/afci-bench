@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { OrderRequest, OrderResponse, ListOrdersResponse, UpdateOrderRequest } from '@afci-bench/contracts';
+import { OrderRequest, OrderResponse, ListOrdersResponse, UpdateOrderRequest, ORDER_STATUS } from '@afci-bench/contracts';
 import {
   Order,
   OrderItem,
@@ -142,7 +142,7 @@ export async function createOrderUseCase(
       customerId: input.customerId,
       items: orderItems,
       total,
-      status: 'pending',
+      status: ORDER_STATUS.CREATED,
       createdAt: now,
       updatedAt: now,
     };
@@ -410,7 +410,7 @@ export async function cancelOrderUseCase(
 
     const cancelledOrder: Order = {
       ...existing,
-      status: 'cancelled',
+      status: ORDER_STATUS.CANCELLED,
       updatedAt: new Date(),
     };
 

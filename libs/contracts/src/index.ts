@@ -29,7 +29,17 @@ export interface OrderResponse {
   updatedAt: string;
 }
 
-export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+// Order status enum - single source of truth for all status values
+export const ORDER_STATUS = {
+  CREATED: 'created',
+  CONFIRMED: 'confirmed',
+  UPDATED: 'updated',
+  SHIPPED: 'shipped',
+  DELIVERED: 'delivered',
+  CANCELLED: 'cancelled',
+} as const;
+
+export type OrderStatus = typeof ORDER_STATUS[keyof typeof ORDER_STATUS];
 
 // Pagination DTOs
 export interface ListOrdersRequest {
