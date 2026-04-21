@@ -1,6 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse } from '@afci-bench/contracts';
-import { createOrderUseCase, CreateOrderPorts, Order, OrderRepository } from '@afci-bench/features';
+import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, Order, OrderRepository } from '@afci-bench/features';
 import { getOrderRepository, OrderEntity } from '@afci-bench/infra';
 import {
   Logger,
@@ -17,32 +17,41 @@ import {
 // import { Order } from '@afci-bench/core'; // ERROR: api cannot import core directly
 
 // Adapter to convert infra's OrderEntity to core's Order
-function adaptRepository(infraRepo: { save: (order: OrderEntity) => Promise<OrderEntity> }): OrderRepository {
+function entityToOrder(entity: OrderEntity): Order {
+  return {
+    id: entity.id,
+    customerId: entity.customerId,
+    items: entity.items,
+    total: entity.total,
+    status: entity.status,
+    createdAt: entity.createdAt,
+  };
+}
+
+function orderToEntity(order: Order): OrderEntity {
+  return {
+    id: order.id,
+    customerId: order.customerId,
+    items: order.items,
+    total: order.total,
+    status: order.status,
+    createdAt: order.createdAt,
+  };
+}
+
+function adaptRepository(infraRepo: ReturnType<typeof getOrderRepository>): OrderRepository {
   return {
     async save(order: Order): Promise<Order> {
-      const entity: OrderEntity = {
-        id: order.id,
-        customerId: order.customerId,
-        items: order.items,
-        total: order.total,
-        status: order.status,
-        createdAt: order.createdAt,
-      };
-      const saved = await infraRepo.save(entity);
-      return {
-        id: saved.id,
-        customerId: saved.customerId,
-        items: saved.items,
-        total: saved.total,
-        status: saved.status,
-        createdAt: saved.createdAt,
-      };
+      const saved = await infraRepo.save(orderToEntity(order));
+      return entityToOrder(saved);
     },
-    async findById(_id: string): Promise<Order | null> {
-      return null; // Not used in current implementation
+    async findById(id: string): Promise<Order | null> {
+      const entity = await infraRepo.findById(id);
+      return entity ? entityToOrder(entity) : null;
     },
-    async findByCustomerId(_customerId: string): Promise<Order[]> {
-      return []; // Not used in current implementation
+    async findByCustomerId(customerId: string): Promise<Order[]> {
+      const entities = await infraRepo.findByCustomerId(customerId);
+      return entities.map(entityToOrder);
     },
   };
 }
@@ -122,6 +131,67 @@ export function createApp(deps: AppDependencies = {}): Express {
       res.setHeader('x-correlation-id', correlationId);
       res.status(500).json(errorResponse);
       next(error);
+    }
+  });
+
+  // Get order by ID endpoint
+  app.get('/orders/:id', async (req: Request, res: Response) => {
+    const startTime = Date.now();
+    const correlationId = extractCorrelationId(req.headers['x-correlation-id'] as string | undefined);
+
+    try {
+      const ports: GetOrderByIdPorts = {
+        orderRepository,
+        logger,
+        correlationId,
+      };
+
+      const result = await getOrderByIdUseCase(req.params.id, ports);
+
+      if (result.success && result.data) {
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(200).json(result.data);
+      } else if (result.notFound) {
+        const errorResponse: ErrorResponse = {
+          error: 'NotFoundError',
+          message: result.errors?.join('; ') ?? 'Order not found',
+          correlationId,
+        };
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(404).json(errorResponse);
+      } else {
+        const errorResponse: ErrorResponse = {
+          error: 'InternalServerError',
+          message: result.errors?.join('; ') ?? 'Unknown error',
+          correlationId,
+        };
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(500).json(errorResponse);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+
+      logger.logError({
+        correlationId,
+        errorType: 'UnhandledError',
+        message: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      logger.logRequest({
+        correlationId,
+        operation: 'GET /orders/:id',
+        status: 'fail',
+        latencyMs: Date.now() - startTime,
+      });
+
+      const errorResponse: ErrorResponse = {
+        error: 'InternalServerError',
+        message: errorMessage,
+        correlationId,
+      };
+      res.setHeader('x-correlation-id', correlationId);
+      res.status(500).json(errorResponse);
     }
   });
 

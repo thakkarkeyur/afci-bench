@@ -228,6 +228,25 @@ describe('API Integration Tests', () => {
       });
     });
 
+    it('should return 400 for items with invalid fields', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const orderRequest = {
+        customerId: 'cust-123',
+        items: [
+          { productId: '', name: 'Widget', quantity: 0, unitPrice: -5 },
+        ],
+      };
+
+      const response = await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('ValidationError');
+    });
+
     it('should match error response shape to ErrorResponse contract', async () => {
       const app = createApp({ logOutput: testLogOutput });
 
@@ -249,6 +268,64 @@ describe('API Integration Tests', () => {
       expect(typeof error.error).toBe('string');
       expect(typeof error.message).toBe('string');
       expect(typeof error.correlationId).toBe('string');
+    });
+  });
+
+  describe('GET /orders/:id', () => {
+    it('should return 200 with order payload for existing order', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      // First create an order
+      const orderRequest: OrderRequest = {
+        customerId: 'cust-123',
+        items: [
+          { productId: 'prod-1', name: 'Widget', quantity: 2, unitPrice: 10.5 },
+        ],
+      };
+
+      const createResponse = await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json');
+
+      expect(createResponse.status).toBe(201);
+      const createdOrder: OrderResponse = createResponse.body;
+
+      // Now fetch it by ID
+      const getResponse = await request(app)
+        .get(`/orders/${createdOrder.id}`)
+        .set('Content-Type', 'application/json');
+
+      expect(getResponse.status).toBe(200);
+      expect(getResponse.body.id).toBe(createdOrder.id);
+      expect(getResponse.body.customerId).toBe('cust-123');
+      expect(getResponse.body.items).toHaveLength(1);
+      expect(getResponse.body.total).toBe(21);
+      expect(getResponse.body.status).toBe('pending');
+      expect(getResponse.body.createdAt).toBeDefined();
+    });
+
+    it('should return 404 for unknown order ID', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const getResponse = await request(app)
+        .get('/orders/nonexistent-id-12345')
+        .set('Content-Type', 'application/json');
+
+      expect(getResponse.status).toBe(404);
+      expect(getResponse.body.error).toBe('NotFoundError');
+      expect(getResponse.body.correlationId).toBeDefined();
+    });
+
+    it('should return correlationId in response header', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+      const customCorrelationId = 'get-order-correlation-id';
+
+      const getResponse = await request(app)
+        .get('/orders/some-id')
+        .set('x-correlation-id', customCorrelationId);
+
+      expect(getResponse.headers['x-correlation-id']).toBe(customCorrelationId);
     });
   });
 });
