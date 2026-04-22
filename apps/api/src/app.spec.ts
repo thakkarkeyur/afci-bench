@@ -251,4 +251,106 @@ describe('API Integration Tests', () => {
       expect(typeof error.correlationId).toBe('string');
     });
   });
+
+  describe('GET /orders/:id', () => {
+    it('should return 200 with order payload for existing ID', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      // First create an order
+      const orderRequest: OrderRequest = {
+        customerId: 'cust-123',
+        items: [
+          { productId: 'prod-1', name: 'Widget', quantity: 2, unitPrice: 10.5 },
+        ],
+      };
+
+      const createResponse = await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json');
+
+      expect(createResponse.status).toBe(201);
+      const createdOrder: OrderResponse = createResponse.body;
+
+      // Now fetch it by ID
+      const getResponse = await request(app)
+        .get(`/orders/${createdOrder.id}`);
+
+      expect(getResponse.status).toBe(200);
+      const fetchedOrder: OrderResponse = getResponse.body;
+      expect(fetchedOrder.id).toBe(createdOrder.id);
+      expect(fetchedOrder.customerId).toBe('cust-123');
+      expect(fetchedOrder.items).toHaveLength(1);
+      expect(fetchedOrder.items[0].subtotal).toBe(21);
+      expect(fetchedOrder.total).toBe(21);
+      expect(fetchedOrder.status).toBe('pending');
+      expect(fetchedOrder.createdAt).toBeDefined();
+    });
+
+    it('should return 404 for unknown ID', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      const response = await request(app)
+        .get('/orders/nonexistent-id-12345');
+
+      expect(response.status).toBe(404);
+
+      const error: ErrorResponse = response.body;
+      expect(error.error).toBe('NotFound');
+      expect(error.message).toContain('Order not found');
+      expect(error.correlationId).toBeDefined();
+    });
+
+    it('should return correlationId in response header', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+      const providedCorrelationId = 'get-order-correlation-id';
+
+      const response = await request(app)
+        .get('/orders/some-id')
+        .set('x-correlation-id', providedCorrelationId);
+
+      expect(response.headers['x-correlation-id']).toBe(providedCorrelationId);
+    });
+
+    it('should match response shape to OrderResponse contract for existing order', async () => {
+      const app = createApp({ logOutput: testLogOutput });
+
+      // Create an order first
+      const orderRequest: OrderRequest = {
+        customerId: 'cust-456',
+        items: [
+          { productId: 'prod-1', name: 'Alpha', quantity: 3, unitPrice: 15.99 },
+        ],
+      };
+
+      const createResponse = await request(app)
+        .post('/orders')
+        .send(orderRequest)
+        .set('Content-Type', 'application/json');
+
+      const createdOrder: OrderResponse = createResponse.body;
+
+      const getResponse = await request(app)
+        .get(`/orders/${createdOrder.id}`);
+
+      expect(getResponse.status).toBe(200);
+      const order = getResponse.body;
+
+      expect(typeof order.id).toBe('string');
+      expect(typeof order.customerId).toBe('string');
+      expect(Array.isArray(order.items)).toBe(true);
+      expect(typeof order.total).toBe('number');
+      expect(typeof order.status).toBe('string');
+      expect(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']).toContain(order.status);
+      expect(typeof order.createdAt).toBe('string');
+
+      order.items.forEach((item: Record<string, unknown>) => {
+        expect(typeof item.productId).toBe('string');
+        expect(typeof item.name).toBe('string');
+        expect(typeof item.quantity).toBe('number');
+        expect(typeof item.unitPrice).toBe('number');
+        expect(typeof item.subtotal).toBe('number');
+      });
+    });
+  });
 });

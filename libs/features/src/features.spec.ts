@@ -1,4 +1,4 @@
-import { createOrderUseCase, CreateOrderPorts } from './index';
+import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts } from './index';
 import { OrderRequest } from '@afci-bench/contracts';
 import { Order, OrderRepository } from '@afci-bench/core';
 import { Logger, LogOutput, RequestLogEntry, ErrorLogEntry } from '@afci-bench/observability';
@@ -168,6 +168,119 @@ describe('createOrderUseCase', () => {
     };
 
     await createOrderUseCase(input, ports);
+
+    expect(mockLogOutput.logs.length).toBeGreaterThan(0);
+    mockLogOutput.logs.forEach((log) => {
+      expect(log.entry.correlationId).toBe('my-unique-correlation-id');
+    });
+  });
+});
+
+describe('getOrderByIdUseCase', () => {
+  let mockLogOutput: MockLogOutput;
+  let logger: Logger;
+  const correlationId = 'test-correlation-id';
+
+  beforeEach(() => {
+    mockLogOutput = new MockLogOutput();
+    logger = new Logger(mockLogOutput);
+  });
+
+  it('should return order successfully when found', async () => {
+    const existingOrder: Order = {
+      id: 'order-123',
+      customerId: 'cust-123',
+      items: [
+        { productId: 'prod-1', name: 'Widget', quantity: 2, unitPrice: 10.5, subtotal: 21 },
+      ],
+      total: 21,
+      status: 'pending',
+      createdAt: new Date('2025-01-01T00:00:00.000Z'),
+    };
+
+    const mockRepo = createMockRepository();
+    (mockRepo.findById as jest.Mock).mockResolvedValue(existingOrder);
+
+    const ports: GetOrderByIdPorts = {
+      orderRepository: mockRepo,
+      logger,
+      correlationId,
+    };
+
+    const result = await getOrderByIdUseCase('order-123', ports);
+
+    expect(result.success).toBe(true);
+    expect(result.data).toBeDefined();
+    expect(result.data?.id).toBe('order-123');
+    expect(result.data?.customerId).toBe('cust-123');
+    expect(result.data?.items).toHaveLength(1);
+    expect(result.data?.total).toBe(21);
+    expect(result.data?.status).toBe('pending');
+    expect(result.data?.createdAt).toBe('2025-01-01T00:00:00.000Z');
+    expect(mockRepo.findById).toHaveBeenCalledWith('order-123');
+
+    const successLog = mockLogOutput.logs.find(
+      (l) => (l.entry as RequestLogEntry).status === 'success'
+    );
+    expect(successLog).toBeDefined();
+    expect((successLog?.entry as RequestLogEntry).operation).toBe('getOrderById');
+  });
+
+  it('should return not found when order does not exist', async () => {
+    const mockRepo = createMockRepository();
+    (mockRepo.findById as jest.Mock).mockResolvedValue(null);
+
+    const ports: GetOrderByIdPorts = {
+      orderRepository: mockRepo,
+      logger,
+      correlationId,
+    };
+
+    const result = await getOrderByIdUseCase('nonexistent-id', ports);
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toContain('Order not found: nonexistent-id');
+    expect(mockRepo.findById).toHaveBeenCalledWith('nonexistent-id');
+
+    const failLog = mockLogOutput.logs.find(
+      (l) => (l.entry as RequestLogEntry).status === 'fail'
+    );
+    expect(failLog).toBeDefined();
+    expect((failLog?.entry as RequestLogEntry).operation).toBe('getOrderById');
+  });
+
+  it('should handle repository errors gracefully', async () => {
+    const mockRepo = createMockRepository();
+    (mockRepo.findById as jest.Mock).mockRejectedValue(new Error('Database connection failed'));
+
+    const ports: GetOrderByIdPorts = {
+      orderRepository: mockRepo,
+      logger,
+      correlationId,
+    };
+
+    const result = await getOrderByIdUseCase('order-123', ports);
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toContain('Database connection failed');
+
+    const errorLog = mockLogOutput.logs.find(
+      (l) => (l.entry as ErrorLogEntry).errorType === 'GetOrderByIdError'
+    );
+    expect(errorLog).toBeDefined();
+  });
+
+  it('should include correlationId in all logs', async () => {
+    const mockRepo = createMockRepository();
+    (mockRepo.findById as jest.Mock).mockResolvedValue(null);
+
+    const ports: GetOrderByIdPorts = {
+      orderRepository: mockRepo,
+      logger,
+      correlationId: 'my-unique-correlation-id',
+    };
+
+    await getOrderByIdUseCase('order-123', ports);
 
     expect(mockLogOutput.logs.length).toBeGreaterThan(0);
     mockLogOutput.logs.forEach((log) => {

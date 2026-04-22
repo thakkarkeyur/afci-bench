@@ -1,6 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse } from '@afci-bench/contracts';
-import { createOrderUseCase, CreateOrderPorts, Order, OrderRepository } from '@afci-bench/features';
+import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, Order, OrderRepository } from '@afci-bench/features';
 import { getOrderRepository, OrderEntity } from '@afci-bench/infra';
 import {
   Logger,
@@ -17,7 +17,11 @@ import {
 // import { Order } from '@afci-bench/core'; // ERROR: api cannot import core directly
 
 // Adapter to convert infra's OrderEntity to core's Order
-function adaptRepository(infraRepo: { save: (order: OrderEntity) => Promise<OrderEntity> }): OrderRepository {
+function adaptRepository(infraRepo: {
+  save: (order: OrderEntity) => Promise<OrderEntity>;
+  findById: (id: string) => Promise<OrderEntity | null>;
+  findByCustomerId: (customerId: string) => Promise<OrderEntity[]>;
+}): OrderRepository {
   return {
     async save(order: Order): Promise<Order> {
       const entity: OrderEntity = {
@@ -38,8 +42,17 @@ function adaptRepository(infraRepo: { save: (order: OrderEntity) => Promise<Orde
         createdAt: saved.createdAt,
       };
     },
-    async findById(_id: string): Promise<Order | null> {
-      return null; // Not used in current implementation
+    async findById(id: string): Promise<Order | null> {
+      const entity = await infraRepo.findById(id);
+      if (!entity) return null;
+      return {
+        id: entity.id,
+        customerId: entity.customerId,
+        items: entity.items,
+        total: entity.total,
+        status: entity.status,
+        createdAt: entity.createdAt,
+      };
     },
     async findByCustomerId(_customerId: string): Promise<Order[]> {
       return []; // Not used in current implementation
@@ -110,6 +123,61 @@ export function createApp(deps: AppDependencies = {}): Express {
       logger.logRequest({
         correlationId,
         operation: 'POST /orders',
+        status: 'fail',
+        latencyMs: Date.now() - startTime,
+      });
+
+      const errorResponse: ErrorResponse = {
+        error: 'InternalServerError',
+        message: errorMessage,
+        correlationId,
+      };
+      res.setHeader('x-correlation-id', correlationId);
+      res.status(500).json(errorResponse);
+      next(error);
+    }
+  });
+
+  // Get order by ID endpoint
+  app.get('/orders/:id', async (req: Request, res: Response, next: NextFunction) => {
+    const startTime = Date.now();
+    const correlationId = extractCorrelationId(req.headers['x-correlation-id'] as string | undefined);
+
+    try {
+      const ports: GetOrderByIdPorts = {
+        orderRepository,
+        logger,
+        correlationId,
+      };
+
+      const result = await getOrderByIdUseCase(req.params.id, ports);
+
+      if (result.success && result.data) {
+        const response: OrderResponse = result.data;
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(200).json(response);
+      } else {
+        const errorResponse: ErrorResponse = {
+          error: 'NotFound',
+          message: result.errors?.join('; ') ?? 'Order not found',
+          correlationId,
+        };
+        res.setHeader('x-correlation-id', correlationId);
+        res.status(404).json(errorResponse);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+
+      logger.logError({
+        correlationId,
+        errorType: 'UnhandledError',
+        message: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      logger.logRequest({
+        correlationId,
+        operation: 'GET /orders/:id',
         status: 'fail',
         latencyMs: Date.now() - startTime,
       });
