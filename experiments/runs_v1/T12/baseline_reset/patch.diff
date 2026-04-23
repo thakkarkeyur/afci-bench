@@ -1,0 +1,1063 @@
+diff --git a/apps/api/src/app.spec.ts b/apps/api/src/app.spec.ts
+index 14a7ab4..968a575 100644
+--- a/apps/api/src/app.spec.ts
++++ b/apps/api/src/app.spec.ts
+@@ -1,6 +1,6 @@
+ import request from 'supertest';
+ import { createApp } from './app';
+-import { OrderRequest, OrderResponse, ErrorResponse } from '@afci-bench/contracts';
++import { OrderRequest, OrderResponse, ErrorResponse, OrderStatus } from '@afci-bench/contracts';
+ import { LogOutput, RequestLogEntry, ErrorLogEntry } from '@afci-bench/observability';
+ import { resetOrderRepository } from '@afci-bench/infra';
+ 
+@@ -74,7 +74,7 @@ describe('API Integration Tests', () => {
+       expect(order.items[0].subtotal).toBe(21); // 2 * 10.5
+       expect(order.items[1].subtotal).toBe(25); // 1 * 25
+       expect(order.total).toBe(46);
+-      expect(order.status).toBe('pending');
++      expect(order.status).toBe(OrderStatus.CREATED);
+       expect(order.createdAt).toBeDefined();
+     });
+ 
+@@ -215,7 +215,7 @@ describe('API Integration Tests', () => {
+       expect(Array.isArray(order.items)).toBe(true);
+       expect(typeof order.total).toBe('number');
+       expect(typeof order.status).toBe('string');
+-      expect(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']).toContain(order.status);
++      expect(Object.values(OrderStatus)).toContain(order.status);
+       expect(typeof order.createdAt).toBe('string');
+ 
+       // Validate item shape
+@@ -251,4 +251,118 @@ describe('API Integration Tests', () => {
+       expect(typeof error.correlationId).toBe('string');
+     });
+   });
++
++  describe('PUT /orders/:id', () => {
++    it('should update order and return status UPDATED', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      // First create an order
++      const createRequest: OrderRequest = {
++        customerId: 'cust-123',
++        items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10 }],
++      };
++
++      const createResponse = await request(app)
++        .post('/orders')
++        .send(createRequest)
++        .set('Content-Type', 'application/json');
++
++      const orderId = createResponse.body.id;
++
++      // Update the order
++      const updateRequest: OrderRequest = {
++        customerId: 'cust-123',
++        items: [{ productId: 'prod-2', name: 'Gadget', quantity: 2, unitPrice: 25 }],
++      };
++
++      const updateResponse = await request(app)
++        .put(`/orders/${orderId}`)
++        .send(updateRequest)
++        .set('Content-Type', 'application/json');
++
++      expect(updateResponse.status).toBe(200);
++      expect(updateResponse.body.status).toBe(OrderStatus.UPDATED);
++      expect(updateResponse.body.total).toBe(50);
++      expect(updateResponse.body.id).toBe(orderId);
++    });
++
++    it('should return 404 for non-existent order', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      const updateRequest: OrderRequest = {
++        customerId: 'cust-123',
++        items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10 }],
++      };
++
++      const response = await request(app)
++        .put('/orders/nonexistent')
++        .send(updateRequest)
++        .set('Content-Type', 'application/json');
++
++      expect(response.status).toBe(404);
++      expect(response.body.error).toBe('NotFoundError');
++    });
++  });
++
++  describe('POST /orders/:id/cancel', () => {
++    it('should cancel order and return status CANCELLED', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      // First create an order
++      const createRequest: OrderRequest = {
++        customerId: 'cust-123',
++        items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10 }],
++      };
++
++      const createResponse = await request(app)
++        .post('/orders')
++        .send(createRequest)
++        .set('Content-Type', 'application/json');
++
++      const orderId = createResponse.body.id;
++
++      // Cancel the order
++      const cancelResponse = await request(app)
++        .post(`/orders/${orderId}/cancel`);
++
++      expect(cancelResponse.status).toBe(200);
++      expect(cancelResponse.body.status).toBe(OrderStatus.CANCELLED);
++      expect(cancelResponse.body.id).toBe(orderId);
++    });
++
++    it('should return 404 for non-existent order', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      const response = await request(app)
++        .post('/orders/nonexistent/cancel');
++
++      expect(response.status).toBe(404);
++      expect(response.body.error).toBe('NotFoundError');
++    });
++
++    it('should return 400 when cancelling already cancelled order', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      // Create and cancel an order
++      const createRequest: OrderRequest = {
++        customerId: 'cust-123',
++        items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10 }],
++      };
++
++      const createResponse = await request(app)
++        .post('/orders')
++        .send(createRequest)
++        .set('Content-Type', 'application/json');
++
++      const orderId = createResponse.body.id;
++      await request(app).post(`/orders/${orderId}/cancel`);
++
++      // Try to cancel again
++      const response = await request(app)
++        .post(`/orders/${orderId}/cancel`);
++
++      expect(response.status).toBe(400);
++      expect(response.body.message).toContain('already cancelled');
++    });
++  });
+ });
+diff --git a/apps/api/src/app.ts b/apps/api/src/app.ts
+index 8eb2053..e6ec802 100644
+--- a/apps/api/src/app.ts
++++ b/apps/api/src/app.ts
+@@ -1,7 +1,16 @@
+ import express, { Express, Request, Response, NextFunction } from 'express';
+ import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse } from '@afci-bench/contracts';
+-import { createOrderUseCase, CreateOrderPorts, Order, OrderRepository } from '@afci-bench/features';
+-import { getOrderRepository, OrderEntity } from '@afci-bench/infra';
++import {
++  createOrderUseCase,
++  updateOrderUseCase,
++  cancelOrderUseCase,
++  CreateOrderPorts,
++  UpdateOrderPorts,
++  CancelOrderPorts,
++  Order,
++  OrderRepository,
++} from '@afci-bench/features';
++import { getOrderRepository, OrderEntity, InMemoryOrderRepository } from '@afci-bench/infra';
+ import {
+   Logger,
+   LogOutput,
+@@ -16,33 +25,42 @@ import {
+ // BOUNDARY VIOLATION EXAMPLE (commented out - would fail CI if uncommented):
+ // import { Order } from '@afci-bench/core'; // ERROR: api cannot import core directly
+ 
++function entityToOrder(entity: OrderEntity): Order {
++  return {
++    id: entity.id,
++    customerId: entity.customerId,
++    items: entity.items,
++    total: entity.total,
++    status: entity.status,
++    createdAt: entity.createdAt,
++  };
++}
++
++function orderToEntity(order: Order): OrderEntity {
++  return {
++    id: order.id,
++    customerId: order.customerId,
++    items: order.items,
++    total: order.total,
++    status: order.status,
++    createdAt: order.createdAt,
++  };
++}
++
+ // Adapter to convert infra's OrderEntity to core's Order
+-function adaptRepository(infraRepo: { save: (order: OrderEntity) => Promise<OrderEntity> }): OrderRepository {
++function adaptRepository(infraRepo: InMemoryOrderRepository): OrderRepository {
+   return {
+     async save(order: Order): Promise<Order> {
+-      const entity: OrderEntity = {
+-        id: order.id,
+-        customerId: order.customerId,
+-        items: order.items,
+-        total: order.total,
+-        status: order.status,
+-        createdAt: order.createdAt,
+-      };
+-      const saved = await infraRepo.save(entity);
+-      return {
+-        id: saved.id,
+-        customerId: saved.customerId,
+-        items: saved.items,
+-        total: saved.total,
+-        status: saved.status,
+-        createdAt: saved.createdAt,
+-      };
++      const saved = await infraRepo.save(orderToEntity(order));
++      return entityToOrder(saved);
+     },
+-    async findById(_id: string): Promise<Order | null> {
+-      return null; // Not used in current implementation
++    async findById(id: string): Promise<Order | null> {
++      const entity = await infraRepo.findById(id);
++      return entity ? entityToOrder(entity) : null;
+     },
+-    async findByCustomerId(_customerId: string): Promise<Order[]> {
+-      return []; // Not used in current implementation
++    async findByCustomerId(customerId: string): Promise<Order[]> {
++      const entities = await infraRepo.findByCustomerId(customerId);
++      return entities.map(entityToOrder);
+     },
+   };
+ }
+@@ -125,5 +143,100 @@ export function createApp(deps: AppDependencies = {}): Express {
+     }
+   });
+ 
++  // Update order endpoint
++  app.put('/orders/:id', async (req: Request, res: Response, next: NextFunction) => {
++    const startTime = Date.now();
++    const correlationId = extractCorrelationId(req.headers['x-correlation-id'] as string | undefined);
++
++    try {
++      const input: OrderRequest = req.body;
++      const ports: UpdateOrderPorts = { orderRepository, logger, correlationId };
++      const result = await updateOrderUseCase(req.params.id, input, ports);
++
++      res.setHeader('x-correlation-id', correlationId);
++
++      if (result.success && result.data) {
++        res.status(200).json(result.data);
++      } else {
++        const isNotFound = result.errors?.includes('Order not found');
++        const errorResponse: ErrorResponse = {
++          error: isNotFound ? 'NotFoundError' : 'ValidationError',
++          message: result.errors?.join('; ') ?? 'Unknown error',
++          correlationId,
++        };
++        res.status(isNotFound ? 404 : 400).json(errorResponse);
++      }
++    } catch (error) {
++      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
++      logger.logError({
++        correlationId,
++        errorType: 'UnhandledError',
++        message: errorMessage,
++        stack: error instanceof Error ? error.stack : undefined,
++      });
++      logger.logRequest({
++        correlationId,
++        operation: 'PUT /orders/:id',
++        status: 'fail',
++        latencyMs: Date.now() - startTime,
++      });
++      const errorResponse: ErrorResponse = {
++        error: 'InternalServerError',
++        message: errorMessage,
++        correlationId,
++      };
++      res.setHeader('x-correlation-id', correlationId);
++      res.status(500).json(errorResponse);
++      next(error);
++    }
++  });
++
++  // Cancel order endpoint
++  app.post('/orders/:id/cancel', async (req: Request, res: Response, next: NextFunction) => {
++    const startTime = Date.now();
++    const correlationId = extractCorrelationId(req.headers['x-correlation-id'] as string | undefined);
++
++    try {
++      const ports: CancelOrderPorts = { orderRepository, logger, correlationId };
++      const result = await cancelOrderUseCase(req.params.id, ports);
++
++      res.setHeader('x-correlation-id', correlationId);
++
++      if (result.success && result.data) {
++        res.status(200).json(result.data);
++      } else {
++        const isNotFound = result.errors?.includes('Order not found');
++        const errorResponse: ErrorResponse = {
++          error: isNotFound ? 'NotFoundError' : 'ValidationError',
++          message: result.errors?.join('; ') ?? 'Unknown error',
++          correlationId,
++        };
++        res.status(isNotFound ? 404 : 400).json(errorResponse);
++      }
++    } catch (error) {
++      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
++      logger.logError({
++        correlationId,
++        errorType: 'UnhandledError',
++        message: errorMessage,
++        stack: error instanceof Error ? error.stack : undefined,
++      });
++      logger.logRequest({
++        correlationId,
++        operation: 'POST /orders/:id/cancel',
++        status: 'fail',
++        latencyMs: Date.now() - startTime,
++      });
++      const errorResponse: ErrorResponse = {
++        error: 'InternalServerError',
++        message: errorMessage,
++        correlationId,
++      };
++      res.setHeader('x-correlation-id', correlationId);
++      res.status(500).json(errorResponse);
++      next(error);
++    }
++  });
++
+   return app;
+ }
+diff --git a/libs/contracts/src/index.ts b/libs/contracts/src/index.ts
+index ed88853..c124a2d 100644
+--- a/libs/contracts/src/index.ts
++++ b/libs/contracts/src/index.ts
+@@ -28,7 +28,11 @@ export interface OrderResponse {
+   createdAt: string;
+ }
+ 
+-export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
++export enum OrderStatus {
++  CREATED = 'CREATED',
++  UPDATED = 'UPDATED',
++  CANCELLED = 'CANCELLED',
++}
+ 
+ // Error response contract
+ export interface ErrorResponse {
+diff --git a/libs/features/src/features.spec.ts b/libs/features/src/features.spec.ts
+index 953ae2a..9e3508d 100644
+--- a/libs/features/src/features.spec.ts
++++ b/libs/features/src/features.spec.ts
+@@ -1,5 +1,5 @@
+-import { createOrderUseCase, CreateOrderPorts } from './index';
+-import { OrderRequest } from '@afci-bench/contracts';
++import { createOrderUseCase, updateOrderUseCase, cancelOrderUseCase, CreateOrderPorts, UpdateOrderPorts, CancelOrderPorts } from './index';
++import { OrderRequest, OrderStatus } from '@afci-bench/contracts';
+ import { Order, OrderRepository } from '@afci-bench/core';
+ import { Logger, LogOutput, RequestLogEntry, ErrorLogEntry } from '@afci-bench/observability';
+ 
+@@ -56,7 +56,7 @@ describe('createOrderUseCase', () => {
+     expect(result.data?.customerId).toBe('cust-123');
+     expect(result.data?.items).toHaveLength(2);
+     expect(result.data?.total).toBe(46); // 2*10.5 + 1*25 = 21 + 25 = 46
+-    expect(result.data?.status).toBe('pending');
++    expect(result.data?.status).toBe(OrderStatus.CREATED);
+     expect(mockRepo.save).toHaveBeenCalledTimes(1);
+ 
+     // Verify logging
+@@ -175,3 +175,159 @@ describe('createOrderUseCase', () => {
+     });
+   });
+ });
++
++describe('updateOrderUseCase', () => {
++  let mockLogOutput: MockLogOutput;
++  let logger: Logger;
++  const correlationId = 'test-correlation-id';
++
++  beforeEach(() => {
++    mockLogOutput = new MockLogOutput();
++    logger = new Logger(mockLogOutput);
++  });
++
++  function createExistingOrder(): Order {
++    return {
++      id: 'order-1',
++      customerId: 'cust-123',
++      items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10, subtotal: 10 }],
++      total: 10,
++      status: OrderStatus.CREATED,
++      createdAt: new Date('2024-01-01'),
++    };
++  }
++
++  function createMockRepoWithOrder(existing: Order): OrderRepository {
++    return {
++      save: jest.fn().mockImplementation((order: Order) => Promise.resolve(order)),
++      findById: jest.fn().mockResolvedValue(existing),
++      findByCustomerId: jest.fn().mockResolvedValue([]),
++    };
++  }
++
++  it('should update order and set status to UPDATED', async () => {
++    const existing = createExistingOrder();
++    const mockRepo = createMockRepoWithOrder(existing);
++    const ports: UpdateOrderPorts = { orderRepository: mockRepo, logger, correlationId };
++
++    const input: OrderRequest = {
++      customerId: 'cust-123',
++      items: [{ productId: 'prod-2', name: 'Gadget', quantity: 3, unitPrice: 20 }],
++    };
++
++    const result = await updateOrderUseCase('order-1', input, ports);
++
++    expect(result.success).toBe(true);
++    expect(result.data?.status).toBe(OrderStatus.UPDATED);
++    expect(result.data?.total).toBe(60);
++    expect(result.data?.id).toBe('order-1');
++  });
++
++  it('should return error when order not found', async () => {
++    const mockRepo: OrderRepository = {
++      save: jest.fn(),
++      findById: jest.fn().mockResolvedValue(null),
++      findByCustomerId: jest.fn().mockResolvedValue([]),
++    };
++    const ports: UpdateOrderPorts = { orderRepository: mockRepo, logger, correlationId };
++
++    const input: OrderRequest = {
++      customerId: 'cust-123',
++      items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10 }],
++    };
++
++    const result = await updateOrderUseCase('nonexistent', input, ports);
++
++    expect(result.success).toBe(false);
++    expect(result.errors).toContain('Order not found');
++  });
++
++  it('should not update a cancelled order', async () => {
++    const existing = createExistingOrder();
++    existing.status = OrderStatus.CANCELLED;
++    const mockRepo = createMockRepoWithOrder(existing);
++    const ports: UpdateOrderPorts = { orderRepository: mockRepo, logger, correlationId };
++
++    const input: OrderRequest = {
++      customerId: 'cust-123',
++      items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10 }],
++    };
++
++    const result = await updateOrderUseCase('order-1', input, ports);
++
++    expect(result.success).toBe(false);
++    expect(result.errors).toContain('Cannot update a cancelled order');
++  });
++});
++
++describe('cancelOrderUseCase', () => {
++  let mockLogOutput: MockLogOutput;
++  let logger: Logger;
++  const correlationId = 'test-correlation-id';
++
++  beforeEach(() => {
++    mockLogOutput = new MockLogOutput();
++    logger = new Logger(mockLogOutput);
++  });
++
++  it('should cancel order and set status to CANCELLED', async () => {
++    const existing: Order = {
++      id: 'order-1',
++      customerId: 'cust-123',
++      items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10, subtotal: 10 }],
++      total: 10,
++      status: OrderStatus.CREATED,
++      createdAt: new Date('2024-01-01'),
++    };
++
++    const mockRepo: OrderRepository = {
++      save: jest.fn().mockImplementation((order: Order) => Promise.resolve(order)),
++      findById: jest.fn().mockResolvedValue(existing),
++      findByCustomerId: jest.fn().mockResolvedValue([]),
++    };
++
++    const ports: CancelOrderPorts = { orderRepository: mockRepo, logger, correlationId };
++    const result = await cancelOrderUseCase('order-1', ports);
++
++    expect(result.success).toBe(true);
++    expect(result.data?.status).toBe(OrderStatus.CANCELLED);
++    expect(result.data?.id).toBe('order-1');
++  });
++
++  it('should return error when order not found', async () => {
++    const mockRepo: OrderRepository = {
++      save: jest.fn(),
++      findById: jest.fn().mockResolvedValue(null),
++      findByCustomerId: jest.fn().mockResolvedValue([]),
++    };
++
++    const ports: CancelOrderPorts = { orderRepository: mockRepo, logger, correlationId };
++    const result = await cancelOrderUseCase('nonexistent', ports);
++
++    expect(result.success).toBe(false);
++    expect(result.errors).toContain('Order not found');
++  });
++
++  it('should return error when order is already cancelled', async () => {
++    const existing: Order = {
++      id: 'order-1',
++      customerId: 'cust-123',
++      items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10, subtotal: 10 }],
++      total: 10,
++      status: OrderStatus.CANCELLED,
++      createdAt: new Date('2024-01-01'),
++    };
++
++    const mockRepo: OrderRepository = {
++      save: jest.fn(),
++      findById: jest.fn().mockResolvedValue(existing),
++      findByCustomerId: jest.fn().mockResolvedValue([]),
++    };
++
++    const ports: CancelOrderPorts = { orderRepository: mockRepo, logger, correlationId };
++    const result = await cancelOrderUseCase('order-1', ports);
++
++    expect(result.success).toBe(false);
++    expect(result.errors).toContain('Order is already cancelled');
++  });
++});
+diff --git a/libs/features/src/index.ts b/libs/features/src/index.ts
+index 2e7038b..5f6c2ee 100644
+--- a/libs/features/src/index.ts
++++ b/libs/features/src/index.ts
+@@ -1,5 +1,5 @@
+ import { v4 as uuidv4 } from 'uuid';
+-import { OrderRequest, OrderResponse, OrderItemResponse } from '@afci-bench/contracts';
++import { OrderRequest, OrderResponse, OrderItemResponse, OrderStatus } from '@afci-bench/contracts';
+ import {
+   Order,
+   OrderItem,
+@@ -14,6 +14,7 @@ import { Logger } from '@afci-bench/observability';
+ // Re-export types from core that the API layer needs
+ // This allows API to depend on features without directly importing core
+ export type { Order, OrderItem, OrderRepository };
++export { OrderStatus } from '@afci-bench/contracts';
+ 
+ export interface CreateOrderPorts {
+   orderRepository: OrderRepository;
+@@ -21,12 +22,14 @@ export interface CreateOrderPorts {
+   correlationId: string;
+ }
+ 
+-export interface CreateOrderResult {
++export interface OrderResult {
+   success: boolean;
+   data?: OrderResponse;
+   errors?: string[];
+ }
+ 
++export type CreateOrderResult = OrderResult;
++
+ export async function createOrderUseCase(
+   input: OrderRequest,
+   ports: CreateOrderPorts
+@@ -64,7 +67,7 @@ export async function createOrderUseCase(
+       customerId: input.customerId,
+       items: orderItems,
+       total,
+-      status: 'pending',
++      status: OrderStatus.CREATED,
+       createdAt: new Date(),
+     };
+ 
+@@ -123,3 +126,180 @@ export async function createOrderUseCase(
+     };
+   }
+ }
++
++function orderToResponse(order: Order): OrderResponse {
++  const responseItems: OrderItemResponse[] = order.items.map((item) => ({
++    productId: item.productId,
++    name: item.name,
++    quantity: item.quantity,
++    unitPrice: item.unitPrice,
++    subtotal: item.subtotal,
++  }));
++
++  return {
++    id: order.id,
++    customerId: order.customerId,
++    items: responseItems,
++    total: order.total,
++    status: order.status,
++    createdAt: order.createdAt.toISOString(),
++  };
++}
++
++export interface UpdateOrderPorts {
++  orderRepository: OrderRepository;
++  logger: Logger;
++  correlationId: string;
++}
++
++export async function updateOrderUseCase(
++  orderId: string,
++  input: OrderRequest,
++  ports: UpdateOrderPorts
++): Promise<OrderResult> {
++  const startTime = Date.now();
++  const { orderRepository, logger, correlationId } = ports;
++
++  try {
++    const existing = await orderRepository.findById(orderId);
++    if (!existing) {
++      logger.logRequest({
++        correlationId,
++        operation: 'updateOrder',
++        status: 'fail',
++        latencyMs: Date.now() - startTime,
++      });
++      return { success: false, errors: ['Order not found'] };
++    }
++
++    if (existing.status === OrderStatus.CANCELLED) {
++      logger.logRequest({
++        correlationId,
++        operation: 'updateOrder',
++        status: 'fail',
++        latencyMs: Date.now() - startTime,
++      });
++      return { success: false, errors: ['Cannot update a cancelled order'] };
++    }
++
++    const customerValidation = validateCustomerId(input.customerId);
++    const itemsValidation = validateOrderItems(input.items);
++
++    if (!customerValidation.valid || !itemsValidation.valid) {
++      const allErrors = [...customerValidation.errors, ...itemsValidation.errors];
++      logger.logRequest({
++        correlationId,
++        operation: 'updateOrder',
++        status: 'fail',
++        latencyMs: Date.now() - startTime,
++      });
++      return { success: false, errors: allErrors };
++    }
++
++    const orderItems = input.items.map(createOrderItem);
++    const total = calculateOrderTotal(orderItems);
++
++    const updatedOrder: Order = {
++      id: existing.id,
++      customerId: input.customerId,
++      items: orderItems,
++      total,
++      status: OrderStatus.UPDATED,
++      createdAt: existing.createdAt,
++    };
++
++    const saved = await orderRepository.save(updatedOrder);
++
++    logger.logRequest({
++      correlationId,
++      operation: 'updateOrder',
++      status: 'success',
++      latencyMs: Date.now() - startTime,
++    });
++
++    return { success: true, data: orderToResponse(saved) };
++  } catch (error) {
++    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
++    logger.logError({
++      correlationId,
++      errorType: 'UpdateOrderError',
++      message: errorMessage,
++      stack: error instanceof Error ? error.stack : undefined,
++    });
++    logger.logRequest({
++      correlationId,
++      operation: 'updateOrder',
++      status: 'fail',
++      latencyMs: Date.now() - startTime,
++    });
++    return { success: false, errors: [errorMessage] };
++  }
++}
++
++export interface CancelOrderPorts {
++  orderRepository: OrderRepository;
++  logger: Logger;
++  correlationId: string;
++}
++
++export async function cancelOrderUseCase(
++  orderId: string,
++  ports: CancelOrderPorts
++): Promise<OrderResult> {
++  const startTime = Date.now();
++  const { orderRepository, logger, correlationId } = ports;
++
++  try {
++    const existing = await orderRepository.findById(orderId);
++    if (!existing) {
++      logger.logRequest({
++        correlationId,
++        operation: 'cancelOrder',
++        status: 'fail',
++        latencyMs: Date.now() - startTime,
++      });
++      return { success: false, errors: ['Order not found'] };
++    }
++
++    if (existing.status === OrderStatus.CANCELLED) {
++      logger.logRequest({
++        correlationId,
++        operation: 'cancelOrder',
++        status: 'fail',
++        latencyMs: Date.now() - startTime,
++      });
++      return { success: false, errors: ['Order is already cancelled'] };
++    }
++
++    const cancelledOrder: Order = {
++      ...existing,
++      status: OrderStatus.CANCELLED,
++    };
++
++    const saved = await orderRepository.save(cancelledOrder);
++
++    logger.logRequest({
++      correlationId,
++      operation: 'cancelOrder',
++      status: 'success',
++      latencyMs: Date.now() - startTime,
++    });
++
++    return { success: true, data: orderToResponse(saved) };
++  } catch (error) {
++    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
++    logger.logError({
++      correlationId,
++      errorType: 'CancelOrderError',
++      message: errorMessage,
++      stack: error instanceof Error ? error.stack : undefined,
++    });
++    logger.logRequest({
++      correlationId,
++      operation: 'cancelOrder',
++      status: 'fail',
++      latencyMs: Date.now() - startTime,
++    });
++    return { success: false, errors: [errorMessage] };
++  }
++}
+diff --git a/package-lock.json b/package-lock.json
+index f54b1f5..37af837 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -70,6 +70,7 @@
+       "integrity": "sha512-H3mcG6ZDLTlYfaSNi0iOKkigqMFvkTKlGUYlD8GW7nNOYRrevuA46iTypPyv+06V3fEmvvazfntkBU34L0azAw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@babel/code-frame": "^7.28.6",
+         "@babel/generator": "^7.28.6",
+@@ -2025,13 +2026,6 @@
+         "url": "https://opencollective.com/eslint"
+       }
+     },
+-    "node_modules/@eslint/eslintrc/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/@eslint/eslintrc/node_modules/js-yaml": {
+       "version": "4.1.1",
+       "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.1.1.tgz",
+@@ -2123,6 +2117,30 @@
+         "node": ">=8"
+       }
+     },
++    "node_modules/@istanbuljs/load-nyc-config/node_modules/argparse": {
++      "version": "1.0.10",
++      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
++      "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "sprintf-js": "~1.0.2"
++      }
++    },
++    "node_modules/@istanbuljs/load-nyc-config/node_modules/js-yaml": {
++      "version": "3.14.2",
++      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.14.2.tgz",
++      "integrity": "sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "argparse": "^1.0.7",
++        "esprima": "^4.0.0"
++      },
++      "bin": {
++        "js-yaml": "bin/js-yaml.js"
++      }
++    },
+     "node_modules/@istanbuljs/schema": {
+       "version": "0.1.3",
+       "resolved": "https://registry.npmjs.org/@istanbuljs/schema/-/schema-0.1.3.tgz",
+@@ -3270,6 +3288,7 @@
+       "integrity": "sha512-YrT9ArrGaHForBaCNwFjoqJWmn8G1Pr7+BH/vwyLHciA9qT/wSiuOhxGCT50JA5xLvFBd6PIiGkE3afxcPE1nw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "undici-types": "~6.21.0"
+       }
+@@ -3445,6 +3464,7 @@
+       "integrity": "sha512-tbsV1jPne5CkFQCgPBcDOt30ItF7aJoZL997JSF7MhGQqOeT3svWRYxiqlfA5RUdlHN6Fi+EI9bxqbdyAUZjYQ==",
+       "dev": true,
+       "license": "BSD-2-Clause",
++      "peer": true,
+       "dependencies": {
+         "@typescript-eslint/scope-manager": "6.21.0",
+         "@typescript-eslint/types": "6.21.0",
+@@ -3681,6 +3701,30 @@
+         "node": ">=14.15.0"
+       }
+     },
++    "node_modules/@yarnpkg/parsers/node_modules/argparse": {
++      "version": "1.0.10",
++      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
++      "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "sprintf-js": "~1.0.2"
++      }
++    },
++    "node_modules/@yarnpkg/parsers/node_modules/js-yaml": {
++      "version": "3.14.2",
++      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.14.2.tgz",
++      "integrity": "sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "argparse": "^1.0.7",
++        "esprima": "^4.0.0"
++      },
++      "bin": {
++        "js-yaml": "bin/js-yaml.js"
++      }
++    },
+     "node_modules/@zkochan/js-yaml": {
+       "version": "0.0.6",
+       "resolved": "https://registry.npmjs.org/@zkochan/js-yaml/-/js-yaml-0.0.6.tgz",
+@@ -3694,13 +3738,6 @@
+         "js-yaml": "bin/js-yaml.js"
+       }
+     },
+-    "node_modules/@zkochan/js-yaml/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/accepts": {
+       "version": "1.3.8",
+       "resolved": "https://registry.npmjs.org/accepts/-/accepts-1.3.8.tgz",
+@@ -3720,6 +3757,7 @@
+       "integrity": "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "bin": {
+         "acorn": "bin/acorn"
+       },
+@@ -3864,14 +3902,11 @@
+       "license": "MIT"
+     },
+     "node_modules/argparse": {
+-      "version": "1.0.10",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
+-      "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
++      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+       "dev": true,
+-      "license": "MIT",
+-      "dependencies": {
+-        "sprintf-js": "~1.0.2"
+-      }
++      "license": "Python-2.0"
+     },
+     "node_modules/array-flatten": {
+       "version": "1.1.1",
+@@ -4270,6 +4305,7 @@
+         }
+       ],
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "baseline-browser-mapping": "^2.9.0",
+         "caniuse-lite": "^1.0.30001759",
+@@ -5122,6 +5158,7 @@
+       "deprecated": "This version is no longer supported. Please see https://eslint.org/version-support for other options.",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@eslint-community/eslint-utils": "^4.2.0",
+         "@eslint-community/regexpp": "^4.6.1",
+@@ -5178,6 +5215,7 @@
+       "integrity": "sha512-iI1f+D2ViGn+uvv5HuHVUamg8ll4tN+JRHGc6IJi4TP9Kl976C57fzPXgseXNs8v0iA8aSJpHsTWjDb9QJamGQ==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "bin": {
+         "eslint-config-prettier": "bin/cli.js"
+       },
+@@ -5215,13 +5253,6 @@
+         "url": "https://opencollective.com/eslint"
+       }
+     },
+-    "node_modules/eslint/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/eslint/node_modules/find-up": {
+       "version": "5.0.0",
+       "resolved": "https://registry.npmjs.org/find-up/-/find-up-5.0.0.tgz",
+@@ -6625,6 +6656,7 @@
+       "integrity": "sha512-NIy3oAFp9shda19hy4HK0HRTWKtPJmGdnvywu01nOqNC2vZg+Z+fvJDxpMQA88eb2I9EcafcdjYgsDthnYTvGw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@jest/core": "^29.7.0",
+         "@jest/types": "^29.6.3",
+@@ -6693,24 +6725,6 @@
+         "node": "^14.15.0 || ^16.10.0 || >=18.0.0"
+       }
+     },
+-    "node_modules/jest-circus/node_modules/babel-plugin-macros": {
+-      "version": "3.1.0",
+-      "resolved": "https://registry.npmjs.org/babel-plugin-macros/-/babel-plugin-macros-3.1.0.tgz",
+-      "integrity": "sha512-Cg7TFGpIr01vOQNODXOOaGz2NpCU5gl8x1qJFbb6hbZxR7XrcE2vtbAsTAbJ7/xwJtUuJEw8K8Zr/AE0LHlesg==",
+-      "dev": true,
+-      "license": "MIT",
+-      "optional": true,
+-      "peer": true,
+-      "dependencies": {
+-        "@babel/runtime": "^7.12.5",
+-        "cosmiconfig": "^7.0.0",
+-        "resolve": "^1.19.0"
+-      },
+-      "engines": {
+-        "node": ">=10",
+-        "npm": ">=6"
+-      }
+-    },
+     "node_modules/jest-circus/node_modules/cosmiconfig": {
+       "version": "7.1.0",
+       "resolved": "https://registry.npmjs.org/cosmiconfig/-/cosmiconfig-7.1.0.tgz",
+@@ -6718,7 +6732,6 @@
+       "dev": true,
+       "license": "MIT",
+       "optional": true,
+-      "peer": true,
+       "dependencies": {
+         "@types/parse-json": "^4.0.0",
+         "import-fresh": "^3.2.1",
+@@ -7283,14 +7296,14 @@
+       "license": "MIT"
+     },
+     "node_modules/js-yaml": {
+-      "version": "3.14.2",
+-      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.14.2.tgz",
+-      "integrity": "sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==",
++      "version": "4.1.0",
++      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.1.0.tgz",
++      "integrity": "sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+-        "argparse": "^1.0.7",
+-        "esprima": "^4.0.0"
++        "argparse": "^2.0.1"
+       },
+       "bin": {
+         "js-yaml": "bin/js-yaml.js"
+@@ -7766,6 +7779,7 @@
+       "dev": true,
+       "hasInstallScript": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@nrwl/tao": "17.2.8",
+         "@yarnpkg/lockfile": "^1.1.0",
+@@ -7831,13 +7845,6 @@
+         }
+       }
+     },
+-    "node_modules/nx/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/nx/node_modules/glob": {
+       "version": "7.1.4",
+       "resolved": "https://registry.npmjs.org/glob/-/glob-7.1.4.tgz",
+@@ -7857,19 +7864,6 @@
+         "node": "*"
+       }
+     },
+-    "node_modules/nx/node_modules/js-yaml": {
+-      "version": "4.1.0",
+-      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.1.0.tgz",
+-      "integrity": "sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==",
+-      "dev": true,
+-      "license": "MIT",
+-      "dependencies": {
+-        "argparse": "^2.0.1"
+-      },
+-      "bin": {
+-        "js-yaml": "bin/js-yaml.js"
+-      }
+-    },
+     "node_modules/object-inspect": {
+       "version": "1.13.4",
+       "resolved": "https://registry.npmjs.org/object-inspect/-/object-inspect-1.13.4.tgz",
+@@ -9221,6 +9215,7 @@
+       "integrity": "sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@cspotcode/source-map-support": "^0.8.0",
+         "@tsconfig/node10": "^1.0.7",
+@@ -9346,6 +9341,7 @@
+       "integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
+       "dev": true,
+       "license": "Apache-2.0",
++      "peer": true,
+       "bin": {
+         "tsc": "bin/tsc",
+         "tsserver": "bin/tsserver"
