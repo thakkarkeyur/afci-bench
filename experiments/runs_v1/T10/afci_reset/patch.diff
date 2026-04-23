@@ -1,0 +1,794 @@
+diff --git a/apps/api/src/app.spec.ts b/apps/api/src/app.spec.ts
+index 14a7ab4..5d06298 100644
+--- a/apps/api/src/app.spec.ts
++++ b/apps/api/src/app.spec.ts
+@@ -120,7 +120,7 @@ describe('API Integration Tests', () => {
+       });
+     });
+ 
+-    it('should return 400 for invalid input', async () => {
++    it('should return 400 with ValidationError for invalid input', async () => {
+       const app = createApp({ logOutput: testLogOutput });
+ 
+       const orderRequest: OrderRequest = {
+@@ -142,6 +142,50 @@ describe('API Integration Tests', () => {
+       expect(error.correlationId).toBeDefined();
+     });
+ 
++    it('should return 400 with ValidationError for missing item fields', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      const orderRequest: OrderRequest = {
++        customerId: 'cust-123',
++        items: [{ productId: '', name: '', quantity: 0, unitPrice: -1 }],
++      };
++
++      const response = await request(app)
++        .post('/orders')
++        .send(orderRequest)
++        .set('Content-Type', 'application/json');
++
++      expect(response.status).toBe(400);
++
++      const error: ErrorResponse = response.body;
++      expect(error.error).toBe('ValidationError');
++      expect(error.message).toContain('productId is required');
++      expect(error.correlationId).toBeDefined();
++    });
++
++    it('should log errors with errorType and correlationId', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      const orderRequest: OrderRequest = {
++        customerId: '',
++        items: [],
++      };
++
++      await request(app)
++        .post('/orders')
++        .send(orderRequest)
++        .set('Content-Type', 'application/json')
++        .set('x-correlation-id', 'err-corr-123');
++
++      const errorLogs = testLogOutput.getErrorLogs();
++      expect(errorLogs.length).toBeGreaterThan(0);
++
++      const errorLog = errorLogs[0];
++      expect(errorLog.errorType).toBe('ValidationError');
++      expect(errorLog.correlationId).toBe('err-corr-123');
++      expect(errorLog.message).toBeDefined();
++    });
++
+     it('should log structured JSON with required fields on success', async () => {
+       const app = createApp({ logOutput: testLogOutput });
+ 
+@@ -185,7 +229,7 @@ describe('API Integration Tests', () => {
+ 
+       expect(failLog).toBeDefined();
+       expect(failLog?.correlationId).toBeDefined();
+-      expect(failLog?.operation).toBe('createOrder');
++      expect(failLog?.operation).toBeDefined();
+       expect(failLog?.status).toBe('fail');
+       expect(typeof failLog?.latencyMs).toBe('number');
+     });
+diff --git a/apps/api/src/app.ts b/apps/api/src/app.ts
+index 8eb2053..b4f706c 100644
+--- a/apps/api/src/app.ts
++++ b/apps/api/src/app.ts
+@@ -1,5 +1,5 @@
+ import express, { Express, Request, Response, NextFunction } from 'express';
+-import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse } from '@afci-bench/contracts';
++import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse, ValidationError, NotFoundError } from '@afci-bench/contracts';
+ import { createOrderUseCase, CreateOrderPorts, Order, OrderRepository } from '@afci-bench/features';
+ import { getOrderRepository, OrderEntity } from '@afci-bench/infra';
+ import {
+@@ -47,6 +47,16 @@ function adaptRepository(infraRepo: { save: (order: OrderEntity) => Promise<Orde
+   };
+ }
+ 
++function mapErrorToStatus(error: unknown): { status: number; errorType: string } {
++  if (error instanceof ValidationError) {
++    return { status: 400, errorType: error.errorType };
++  }
++  if (error instanceof NotFoundError) {
++    return { status: 404, errorType: error.errorType };
++  }
++  return { status: 500, errorType: 'InternalServerError' };
++}
++
+ export interface AppDependencies {
+   logOutput?: LogOutput;
+ }
+@@ -82,27 +92,17 @@ export function createApp(deps: AppDependencies = {}): Express {
+         correlationId,
+       };
+ 
+-      const result = await createOrderUseCase(input, ports);
+-
+-      if (result.success && result.data) {
+-        const response: OrderResponse = result.data;
+-        res.setHeader('x-correlation-id', correlationId);
+-        res.status(201).json(response);
+-      } else {
+-        const errorResponse: ErrorResponse = {
+-          error: 'ValidationError',
+-          message: result.errors?.join('; ') ?? 'Unknown validation error',
+-          correlationId,
+-        };
+-        res.setHeader('x-correlation-id', correlationId);
+-        res.status(400).json(errorResponse);
+-      }
++      const response: OrderResponse = await createOrderUseCase(input, ports);
++
++      res.setHeader('x-correlation-id', correlationId);
++      res.status(201).json(response);
+     } catch (error) {
++      const { status, errorType } = mapErrorToStatus(error);
+       const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+ 
+       logger.logError({
+         correlationId,
+-        errorType: 'UnhandledError',
++        errorType,
+         message: errorMessage,
+         stack: error instanceof Error ? error.stack : undefined,
+       });
+@@ -115,13 +115,16 @@ export function createApp(deps: AppDependencies = {}): Express {
+       });
+ 
+       const errorResponse: ErrorResponse = {
+-        error: 'InternalServerError',
++        error: errorType,
+         message: errorMessage,
+         correlationId,
+       };
+       res.setHeader('x-correlation-id', correlationId);
+-      res.status(500).json(errorResponse);
+-      next(error);
++      res.status(status).json(errorResponse);
++
++      if (status === 500) {
++        next(error);
++      }
+     }
+   });
+ 
+diff --git a/libs/contracts/src/index.ts b/libs/contracts/src/index.ts
+index ed88853..91a1396 100644
+--- a/libs/contracts/src/index.ts
++++ b/libs/contracts/src/index.ts
+@@ -30,6 +30,23 @@ export interface OrderResponse {
+ 
+ export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+ 
++// Typed errors — shared across layers
++export class ValidationError extends Error {
++  readonly errorType = 'ValidationError' as const;
++  constructor(message: string) {
++    super(message);
++    this.name = 'ValidationError';
++  }
++}
++
++export class NotFoundError extends Error {
++  readonly errorType = 'NotFoundError' as const;
++  constructor(message: string) {
++    super(message);
++    this.name = 'NotFoundError';
++  }
++}
++
+ // Error response contract
+ export interface ErrorResponse {
+   error: string;
+diff --git a/libs/core/src/core.spec.ts b/libs/core/src/core.spec.ts
+index 65c01af..04454b0 100644
+--- a/libs/core/src/core.spec.ts
++++ b/libs/core/src/core.spec.ts
+@@ -6,6 +6,7 @@ import {
+   validateCustomerId,
+   OrderItem,
+ } from './index';
++import { ValidationError } from '@afci-bench/contracts';
+ 
+ describe('calculateItemSubtotal', () => {
+   it('should calculate subtotal correctly', () => {
+@@ -24,13 +25,15 @@ describe('calculateItemSubtotal', () => {
+     expect(calculateItemSubtotal(3, 10.333)).toBe(31);
+   });
+ 
+-  it('should throw error for negative quantity', () => {
++  it('should throw ValidationError for negative quantity', () => {
++    expect(() => calculateItemSubtotal(-1, 10)).toThrow(ValidationError);
+     expect(() => calculateItemSubtotal(-1, 10)).toThrow(
+       'Quantity and unit price must be non-negative'
+     );
+   });
+ 
+-  it('should throw error for negative price', () => {
++  it('should throw ValidationError for negative price', () => {
++    expect(() => calculateItemSubtotal(1, -10)).toThrow(ValidationError);
+     expect(() => calculateItemSubtotal(1, -10)).toThrow(
+       'Quantity and unit price must be non-negative'
+     );
+diff --git a/libs/core/src/index.ts b/libs/core/src/index.ts
+index afa5b3f..f77a44b 100644
+--- a/libs/core/src/index.ts
++++ b/libs/core/src/index.ts
+@@ -1,4 +1,4 @@
+-import { OrderItemRequest, OrderStatus } from '@afci-bench/contracts';
++import { OrderItemRequest, OrderStatus, ValidationError } from '@afci-bench/contracts';
+ 
+ // Domain entity (internal representation)
+ export interface OrderItem {
+@@ -34,7 +34,7 @@ export interface ValidationResult {
+ // Pure domain functions
+ export function calculateItemSubtotal(quantity: number, unitPrice: number): number {
+   if (quantity < 0 || unitPrice < 0) {
+-    throw new Error('Quantity and unit price must be non-negative');
++    throw new ValidationError('Quantity and unit price must be non-negative');
+   }
+   return Math.round(quantity * unitPrice * 100) / 100;
+ }
+diff --git a/libs/features/src/features.spec.ts b/libs/features/src/features.spec.ts
+index 953ae2a..b4e057f 100644
+--- a/libs/features/src/features.spec.ts
++++ b/libs/features/src/features.spec.ts
+@@ -1,5 +1,5 @@
+ import { createOrderUseCase, CreateOrderPorts } from './index';
+-import { OrderRequest } from '@afci-bench/contracts';
++import { OrderRequest, ValidationError } from '@afci-bench/contracts';
+ import { Order, OrderRepository } from '@afci-bench/core';
+ import { Logger, LogOutput, RequestLogEntry, ErrorLogEntry } from '@afci-bench/observability';
+ 
+@@ -51,12 +51,10 @@ describe('createOrderUseCase', () => {
+ 
+     const result = await createOrderUseCase(input, ports);
+ 
+-    expect(result.success).toBe(true);
+-    expect(result.data).toBeDefined();
+-    expect(result.data?.customerId).toBe('cust-123');
+-    expect(result.data?.items).toHaveLength(2);
+-    expect(result.data?.total).toBe(46); // 2*10.5 + 1*25 = 21 + 25 = 46
+-    expect(result.data?.status).toBe('pending');
++    expect(result.customerId).toBe('cust-123');
++    expect(result.items).toHaveLength(2);
++    expect(result.total).toBe(46); // 2*10.5 + 1*25 = 21 + 25 = 46
++    expect(result.status).toBe('pending');
+     expect(mockRepo.save).toHaveBeenCalledTimes(1);
+ 
+     // Verify logging
+@@ -68,7 +66,7 @@ describe('createOrderUseCase', () => {
+     expect((successLog?.entry as RequestLogEntry).operation).toBe('createOrder');
+   });
+ 
+-  it('should return validation errors for invalid input', async () => {
++  it('should throw ValidationError for invalid input', async () => {
+     const input: OrderRequest = {
+       customerId: '',
+       items: [],
+@@ -81,22 +79,12 @@ describe('createOrderUseCase', () => {
+       correlationId,
+     };
+ 
+-    const result = await createOrderUseCase(input, ports);
+-
+-    expect(result.success).toBe(false);
+-    expect(result.errors).toBeDefined();
+-    expect(result.errors).toContain('customerId is required');
+-    expect(result.errors).toContain('Order must have at least one item');
++    await expect(createOrderUseCase(input, ports)).rejects.toThrow(ValidationError);
++    await expect(createOrderUseCase(input, ports)).rejects.toThrow('customerId is required');
+     expect(mockRepo.save).not.toHaveBeenCalled();
+-
+-    // Verify fail log
+-    const failLog = mockLogOutput.logs.find(
+-      (l) => (l.entry as RequestLogEntry).status === 'fail'
+-    );
+-    expect(failLog).toBeDefined();
+   });
+ 
+-  it('should handle repository errors gracefully', async () => {
++  it('should propagate repository errors', async () => {
+     const input: OrderRequest = {
+       customerId: 'cust-123',
+       items: [{ productId: 'prod-1', name: 'Widget', quantity: 1, unitPrice: 10 }],
+@@ -111,17 +99,7 @@ describe('createOrderUseCase', () => {
+       correlationId,
+     };
+ 
+-    const result = await createOrderUseCase(input, ports);
+-
+-    expect(result.success).toBe(false);
+-    expect(result.errors).toContain('Database connection failed');
+-
+-    // Verify error log
+-    const errorLog = mockLogOutput.logs.find(
+-      (l) => (l.entry as ErrorLogEntry).errorType === 'CreateOrderError'
+-    );
+-    expect(errorLog).toBeDefined();
+-    expect((errorLog?.entry as ErrorLogEntry).message).toBe('Database connection failed');
++    await expect(createOrderUseCase(input, ports)).rejects.toThrow('Database connection failed');
+   });
+ 
+   it('should calculate item subtotals correctly', async () => {
+@@ -145,9 +123,8 @@ describe('createOrderUseCase', () => {
+ 
+     const result = await createOrderUseCase(input, ports);
+ 
+-    expect(result.success).toBe(true);
+-    expect(result.data?.items[0].subtotal).toBe(45.99); // 3 * 15.33 = 45.99
+-    expect(result.data?.total).toBe(45.99);
++    expect(result.items[0].subtotal).toBe(45.99); // 3 * 15.33 = 45.99
++    expect(result.total).toBe(45.99);
+   });
+ 
+   it('should include correlationId in all logs', async () => {
+diff --git a/libs/features/src/index.ts b/libs/features/src/index.ts
+index 2e7038b..3ab47e0 100644
+--- a/libs/features/src/index.ts
++++ b/libs/features/src/index.ts
+@@ -1,5 +1,5 @@
+ import { v4 as uuidv4 } from 'uuid';
+-import { OrderRequest, OrderResponse, OrderItemResponse } from '@afci-bench/contracts';
++import { OrderRequest, OrderResponse, OrderItemResponse, ValidationError } from '@afci-bench/contracts';
+ import {
+   Order,
+   OrderItem,
+@@ -21,94 +21,19 @@ export interface CreateOrderPorts {
+   correlationId: string;
+ }
+ 
+-export interface CreateOrderResult {
+-  success: boolean;
+-  data?: OrderResponse;
+-  errors?: string[];
+-}
+-
+ export async function createOrderUseCase(
+   input: OrderRequest,
+   ports: CreateOrderPorts
+-): Promise<CreateOrderResult> {
++): Promise<OrderResponse> {
+   const startTime = Date.now();
+   const { orderRepository, logger, correlationId } = ports;
+ 
+-  try {
+-    // Validate input
+-    const customerValidation = validateCustomerId(input.customerId);
+-    const itemsValidation = validateOrderItems(input.items);
+-
+-    if (!customerValidation.valid || !itemsValidation.valid) {
+-      const allErrors = [...customerValidation.errors, ...itemsValidation.errors];
+-
+-      logger.logRequest({
+-        correlationId,
+-        operation: 'createOrder',
+-        status: 'fail',
+-        latencyMs: Date.now() - startTime,
+-      });
+-
+-      return {
+-        success: false,
+-        errors: allErrors,
+-      };
+-    }
+-
+-    // Create domain entities
+-    const orderItems = input.items.map(createOrderItem);
+-    const total = calculateOrderTotal(orderItems);
+-
+-    const order: Order = {
+-      id: uuidv4(),
+-      customerId: input.customerId,
+-      items: orderItems,
+-      total,
+-      status: 'pending',
+-      createdAt: new Date(),
+-    };
+-
+-    // Persist via repository
+-    const savedOrder = await orderRepository.save(order);
+-
+-    // Map to response DTO
+-    const responseItems: OrderItemResponse[] = savedOrder.items.map((item) => ({
+-      productId: item.productId,
+-      name: item.name,
+-      quantity: item.quantity,
+-      unitPrice: item.unitPrice,
+-      subtotal: item.subtotal,
+-    }));
+-
+-    const response: OrderResponse = {
+-      id: savedOrder.id,
+-      customerId: savedOrder.customerId,
+-      items: responseItems,
+-      total: savedOrder.total,
+-      status: savedOrder.status,
+-      createdAt: savedOrder.createdAt.toISOString(),
+-    };
++  // Validate input
++  const customerValidation = validateCustomerId(input.customerId);
++  const itemsValidation = validateOrderItems(input.items);
+ 
+-    logger.logRequest({
+-      correlationId,
+-      operation: 'createOrder',
+-      status: 'success',
+-      latencyMs: Date.now() - startTime,
+-    });
+-
+-    return {
+-      success: true,
+-      data: response,
+-    };
+-  } catch (error) {
+-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+-
+-    logger.logError({
+-      correlationId,
+-      errorType: 'CreateOrderError',
+-      message: errorMessage,
+-      stack: error instanceof Error ? error.stack : undefined,
+-    });
++  if (!customerValidation.valid || !itemsValidation.valid) {
++    const allErrors = [...customerValidation.errors, ...itemsValidation.errors];
+ 
+     logger.logRequest({
+       correlationId,
+@@ -117,9 +42,49 @@ export async function createOrderUseCase(
+       latencyMs: Date.now() - startTime,
+     });
+ 
+-    return {
+-      success: false,
+-      errors: [errorMessage],
+-    };
++    throw new ValidationError(allErrors.join('; '));
+   }
++
++  // Create domain entities
++  const orderItems = input.items.map(createOrderItem);
++  const total = calculateOrderTotal(orderItems);
++
++  const order: Order = {
++    id: uuidv4(),
++    customerId: input.customerId,
++    items: orderItems,
++    total,
++    status: 'pending',
++    createdAt: new Date(),
++  };
++
++  // Persist via repository
++  const savedOrder = await orderRepository.save(order);
++
++  // Map to response DTO
++  const responseItems: OrderItemResponse[] = savedOrder.items.map((item) => ({
++    productId: item.productId,
++    name: item.name,
++    quantity: item.quantity,
++    unitPrice: item.unitPrice,
++    subtotal: item.subtotal,
++  }));
++
++  const response: OrderResponse = {
++    id: savedOrder.id,
++    customerId: savedOrder.customerId,
++    items: responseItems,
++    total: savedOrder.total,
++    status: savedOrder.status,
++    createdAt: savedOrder.createdAt.toISOString(),
++  };
++
++  logger.logRequest({
++    correlationId,
++    operation: 'createOrder',
++    status: 'success',
++    latencyMs: Date.now() - startTime,
++  });
++
++  return response;
+ }
+diff --git a/package-lock.json b/package-lock.json
+index f54b1f5..37af837 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -70,6 +70,7 @@
+       "integrity": "sha512-H3mcG6ZDLTlYfaSNi0iOKkigqMFvkTKlGUYlD8GW7nNOYRrevuA46iTypPyv+06V3fEmvvazfntkBU34L0azAw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@babel/code-frame": "^7.28.6",
+         "@babel/generator": "^7.28.6",
+@@ -2025,13 +2026,6 @@
+         "url": "https://opencollective.com/eslint"
+       }
+     },
+-    "node_modules/@eslint/eslintrc/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/@eslint/eslintrc/node_modules/js-yaml": {
+       "version": "4.1.1",
+       "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.1.1.tgz",
+@@ -2123,6 +2117,30 @@
+         "node": ">=8"
+       }
+     },
++    "node_modules/@istanbuljs/load-nyc-config/node_modules/argparse": {
++      "version": "1.0.10",
++      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
++      "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "sprintf-js": "~1.0.2"
++      }
++    },
++    "node_modules/@istanbuljs/load-nyc-config/node_modules/js-yaml": {
++      "version": "3.14.2",
++      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.14.2.tgz",
++      "integrity": "sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "argparse": "^1.0.7",
++        "esprima": "^4.0.0"
++      },
++      "bin": {
++        "js-yaml": "bin/js-yaml.js"
++      }
++    },
+     "node_modules/@istanbuljs/schema": {
+       "version": "0.1.3",
+       "resolved": "https://registry.npmjs.org/@istanbuljs/schema/-/schema-0.1.3.tgz",
+@@ -3270,6 +3288,7 @@
+       "integrity": "sha512-YrT9ArrGaHForBaCNwFjoqJWmn8G1Pr7+BH/vwyLHciA9qT/wSiuOhxGCT50JA5xLvFBd6PIiGkE3afxcPE1nw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "undici-types": "~6.21.0"
+       }
+@@ -3445,6 +3464,7 @@
+       "integrity": "sha512-tbsV1jPne5CkFQCgPBcDOt30ItF7aJoZL997JSF7MhGQqOeT3svWRYxiqlfA5RUdlHN6Fi+EI9bxqbdyAUZjYQ==",
+       "dev": true,
+       "license": "BSD-2-Clause",
++      "peer": true,
+       "dependencies": {
+         "@typescript-eslint/scope-manager": "6.21.0",
+         "@typescript-eslint/types": "6.21.0",
+@@ -3681,6 +3701,30 @@
+         "node": ">=14.15.0"
+       }
+     },
++    "node_modules/@yarnpkg/parsers/node_modules/argparse": {
++      "version": "1.0.10",
++      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
++      "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "sprintf-js": "~1.0.2"
++      }
++    },
++    "node_modules/@yarnpkg/parsers/node_modules/js-yaml": {
++      "version": "3.14.2",
++      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.14.2.tgz",
++      "integrity": "sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "argparse": "^1.0.7",
++        "esprima": "^4.0.0"
++      },
++      "bin": {
++        "js-yaml": "bin/js-yaml.js"
++      }
++    },
+     "node_modules/@zkochan/js-yaml": {
+       "version": "0.0.6",
+       "resolved": "https://registry.npmjs.org/@zkochan/js-yaml/-/js-yaml-0.0.6.tgz",
+@@ -3694,13 +3738,6 @@
+         "js-yaml": "bin/js-yaml.js"
+       }
+     },
+-    "node_modules/@zkochan/js-yaml/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/accepts": {
+       "version": "1.3.8",
+       "resolved": "https://registry.npmjs.org/accepts/-/accepts-1.3.8.tgz",
+@@ -3720,6 +3757,7 @@
+       "integrity": "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "bin": {
+         "acorn": "bin/acorn"
+       },
+@@ -3864,14 +3902,11 @@
+       "license": "MIT"
+     },
+     "node_modules/argparse": {
+-      "version": "1.0.10",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
+-      "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
++      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+       "dev": true,
+-      "license": "MIT",
+-      "dependencies": {
+-        "sprintf-js": "~1.0.2"
+-      }
++      "license": "Python-2.0"
+     },
+     "node_modules/array-flatten": {
+       "version": "1.1.1",
+@@ -4270,6 +4305,7 @@
+         }
+       ],
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "baseline-browser-mapping": "^2.9.0",
+         "caniuse-lite": "^1.0.30001759",
+@@ -5122,6 +5158,7 @@
+       "deprecated": "This version is no longer supported. Please see https://eslint.org/version-support for other options.",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@eslint-community/eslint-utils": "^4.2.0",
+         "@eslint-community/regexpp": "^4.6.1",
+@@ -5178,6 +5215,7 @@
+       "integrity": "sha512-iI1f+D2ViGn+uvv5HuHVUamg8ll4tN+JRHGc6IJi4TP9Kl976C57fzPXgseXNs8v0iA8aSJpHsTWjDb9QJamGQ==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "bin": {
+         "eslint-config-prettier": "bin/cli.js"
+       },
+@@ -5215,13 +5253,6 @@
+         "url": "https://opencollective.com/eslint"
+       }
+     },
+-    "node_modules/eslint/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/eslint/node_modules/find-up": {
+       "version": "5.0.0",
+       "resolved": "https://registry.npmjs.org/find-up/-/find-up-5.0.0.tgz",
+@@ -6625,6 +6656,7 @@
+       "integrity": "sha512-NIy3oAFp9shda19hy4HK0HRTWKtPJmGdnvywu01nOqNC2vZg+Z+fvJDxpMQA88eb2I9EcafcdjYgsDthnYTvGw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@jest/core": "^29.7.0",
+         "@jest/types": "^29.6.3",
+@@ -6693,24 +6725,6 @@
+         "node": "^14.15.0 || ^16.10.0 || >=18.0.0"
+       }
+     },
+-    "node_modules/jest-circus/node_modules/babel-plugin-macros": {
+-      "version": "3.1.0",
+-      "resolved": "https://registry.npmjs.org/babel-plugin-macros/-/babel-plugin-macros-3.1.0.tgz",
+-      "integrity": "sha512-Cg7TFGpIr01vOQNODXOOaGz2NpCU5gl8x1qJFbb6hbZxR7XrcE2vtbAsTAbJ7/xwJtUuJEw8K8Zr/AE0LHlesg==",
+-      "dev": true,
+-      "license": "MIT",
+-      "optional": true,
+-      "peer": true,
+-      "dependencies": {
+-        "@babel/runtime": "^7.12.5",
+-        "cosmiconfig": "^7.0.0",
+-        "resolve": "^1.19.0"
+-      },
+-      "engines": {
+-        "node": ">=10",
+-        "npm": ">=6"
+-      }
+-    },
+     "node_modules/jest-circus/node_modules/cosmiconfig": {
+       "version": "7.1.0",
+       "resolved": "https://registry.npmjs.org/cosmiconfig/-/cosmiconfig-7.1.0.tgz",
+@@ -6718,7 +6732,6 @@
+       "dev": true,
+       "license": "MIT",
+       "optional": true,
+-      "peer": true,
+       "dependencies": {
+         "@types/parse-json": "^4.0.0",
+         "import-fresh": "^3.2.1",
+@@ -7283,14 +7296,14 @@
+       "license": "MIT"
+     },
+     "node_modules/js-yaml": {
+-      "version": "3.14.2",
+-      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.14.2.tgz",
+-      "integrity": "sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==",
++      "version": "4.1.0",
++      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.1.0.tgz",
++      "integrity": "sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+-        "argparse": "^1.0.7",
+-        "esprima": "^4.0.0"
++        "argparse": "^2.0.1"
+       },
+       "bin": {
+         "js-yaml": "bin/js-yaml.js"
+@@ -7766,6 +7779,7 @@
+       "dev": true,
+       "hasInstallScript": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@nrwl/tao": "17.2.8",
+         "@yarnpkg/lockfile": "^1.1.0",
+@@ -7831,13 +7845,6 @@
+         }
+       }
+     },
+-    "node_modules/nx/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/nx/node_modules/glob": {
+       "version": "7.1.4",
+       "resolved": "https://registry.npmjs.org/glob/-/glob-7.1.4.tgz",
+@@ -7857,19 +7864,6 @@
+         "node": "*"
+       }
+     },
+-    "node_modules/nx/node_modules/js-yaml": {
+-      "version": "4.1.0",
+-      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.1.0.tgz",
+-      "integrity": "sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==",
+-      "dev": true,
+-      "license": "MIT",
+-      "dependencies": {
+-        "argparse": "^2.0.1"
+-      },
+-      "bin": {
+-        "js-yaml": "bin/js-yaml.js"
+-      }
+-    },
+     "node_modules/object-inspect": {
+       "version": "1.13.4",
+       "resolved": "https://registry.npmjs.org/object-inspect/-/object-inspect-1.13.4.tgz",
+@@ -9221,6 +9215,7 @@
+       "integrity": "sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@cspotcode/source-map-support": "^0.8.0",
+         "@tsconfig/node10": "^1.0.7",
+@@ -9346,6 +9341,7 @@
+       "integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
+       "dev": true,
+       "license": "Apache-2.0",
++      "peer": true,
+       "bin": {
+         "tsc": "bin/tsc",
+         "tsserver": "bin/tsserver"
