@@ -1,0 +1,203 @@
+
+> @afci-bench/source@0.1.0 ci
+> npm run lint && npm run typecheck && npm run test
+
+
+> @afci-bench/source@0.1.0 lint
+> nx run-many --target=lint --all
+
+
+ >  NX   Running target lint for 6 projects:
+
+    - observability
+    - contracts
+    - features
+    - infra
+    - core
+    - api
+
+ 
+
+> nx run contracts:lint  [existing outputs match the cache, left as is]
+
+
+Linting "contracts"...
+
+All files pass linting.
+
+
+> nx run observability:lint  [existing outputs match the cache, left as is]
+
+
+Linting "observability"...
+
+All files pass linting.
+
+
+> nx run features:lint  [existing outputs match the cache, left as is]
+
+
+Linting "features"...
+
+All files pass linting.
+
+
+> nx run infra:lint  [existing outputs match the cache, left as is]
+
+
+Linting "infra"...
+
+All files pass linting.
+
+
+> nx run api:lint  [existing outputs match the cache, left as is]
+
+
+Linting "api"...
+
+All files pass linting.
+
+
+> nx run core:lint  [existing outputs match the cache, left as is]
+
+
+Linting "core"...
+
+All files pass linting.
+
+
+ 
+
+ >  NX   Successfully ran target lint for 6 projects
+
+   Nx read the output from the cache instead of running the command for 6 out of 6 tasks.
+
+
+> @afci-bench/source@0.1.0 typecheck
+> tsc -p tsconfig.base.json --noEmit
+
+
+> @afci-bench/source@0.1.0 test
+> nx run-many --target=test --all
+
+
+ >  NX   Running target test for 6 projects:
+
+    - observability
+    - contracts
+    - features
+    - infra
+    - core
+    - api
+
+ 
+
+> nx run contracts:test  [existing outputs match the cache, left as is]
+
+No tests found, exiting with code 0
+
+> nx run core:test  [existing outputs match the cache, left as is]
+
+PASS core libs/core/src/core.spec.ts
+  calculateItemSubtotal
+    √ should calculate subtotal correctly (3 ms)
+    √ should handle zero quantity (1 ms)
+    √ should handle zero price (1 ms)
+    √ should round to 2 decimal places
+    √ should throw error for negative quantity (99 ms)
+    √ should throw error for negative price
+  calculateOrderTotal
+    √ should sum all item subtotals (1 ms)
+    √ should return 0 for empty items
+    √ should handle single item
+  createOrderItem
+    √ should create order item with calculated subtotal (1 ms)
+  validateOrderItems
+    √ should return valid for correct items
+    √ should reject empty items array (1 ms)
+    √ should reject missing productId
+    √ should reject missing name
+    √ should reject zero or negative quantity
+    √ should reject negative unitPrice
+    √ should collect multiple errors
+  validateCustomerId
+    √ should return valid for non-empty customerId
+    √ should reject empty customerId (1 ms)
+    √ should reject whitespace-only customerId
+  validateOrderCancellation
+    √ should allow cancelling pending order
+    √ should allow cancelling confirmed order (1 ms)
+    √ should reject cancelling shipped order
+    √ should reject cancelling delivered order
+    √ should reject cancelling already cancelled order
+
+Test Suites: 1 passed, 1 total
+Tests:       25 passed, 25 total
+Snapshots:   0 total
+Time:        6.193 s
+Ran all test suites.
+
+> nx run observability:test  [existing outputs match the cache, left as is]
+
+No tests found, exiting with code 0
+
+> nx run features:test  [existing outputs match the cache, left as is]
+
+PASS features libs/features/src/features.spec.ts
+  createOrderUseCase
+    √ should create order successfully with valid input (6 ms)
+    √ should return validation errors for invalid input (1 ms)
+    √ should handle repository errors gracefully (8 ms)
+    √ should calculate item subtotals correctly (1 ms)
+    √ should include correlationId in all logs
+  cancelOrderUseCase
+    √ should cancel a pending order successfully (2 ms)
+    √ should return error when order not found (1 ms)
+    √ should reject cancelling a shipped order (1 ms)
+    √ should handle repository errors gracefully (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       9 passed, 9 total
+Snapshots:   0 total
+Time:        5.55 s
+Ran all test suites.
+
+> nx run infra:test  [existing outputs match the cache, left as is]
+
+No tests found, exiting with code 0
+
+> nx run api:test  [existing outputs match the cache, left as is]
+
+PASS api apps/api/src/app.spec.ts (7.399 s)
+  API Integration Tests
+    GET /health
+      √ should return health status (31 ms)
+    POST /orders
+      √ should create order successfully with valid input (150 ms)
+      √ should return correlationId in response header (4 ms)
+      √ should use provided x-correlation-id header (4 ms)
+      √ should return 400 for invalid input (5 ms)
+      √ should log structured JSON with required fields on success (4 ms)
+      √ should log structured JSON with required fields on failure (3 ms)
+      √ should match response shape to OrderResponse contract (5 ms)
+      √ should match error response shape to ErrorResponse contract (5 ms)
+    DELETE /orders/:id
+      √ should cancel an existing order successfully (7 ms)
+      √ should return 404 when order not found (3 ms)
+      √ should return correlationId in response header (6 ms)
+      √ should log structured JSON with required fields on cancel success (6 ms)
+      √ should log structured JSON with required fields on cancel not-found (3 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       14 passed, 14 total
+Snapshots:   0 total
+Time:        7.494 s
+Ran all test suites.
+
+ 
+
+ >  NX   Successfully ran target test for 6 projects
+
+   Nx read the output from the cache instead of running the command for 6 out of 6 tasks.
+
+=== CI run finished with exit code 0 ===

@@ -1,0 +1,199 @@
+
+> @afci-bench/source@0.1.0 ci
+> npm run lint && npm run typecheck && npm run test
+
+
+> @afci-bench/source@0.1.0 lint
+> nx run-many --target=lint --all
+
+
+ >  NX   Running target lint for 6 projects:
+
+    - observability
+    - contracts
+    - features
+    - infra
+    - core
+    - api
+
+ 
+
+> nx run observability:lint  [existing outputs match the cache, left as is]
+
+
+Linting "observability"...
+
+All files pass linting.
+
+
+> nx run contracts:lint  [existing outputs match the cache, left as is]
+
+
+Linting "contracts"...
+
+All files pass linting.
+
+
+> nx run features:lint  [existing outputs match the cache, left as is]
+
+
+Linting "features"...
+
+All files pass linting.
+
+
+> nx run infra:lint  [existing outputs match the cache, left as is]
+
+
+Linting "infra"...
+
+All files pass linting.
+
+
+> nx run api:lint  [existing outputs match the cache, left as is]
+
+
+Linting "api"...
+
+All files pass linting.
+
+
+> nx run core:lint  [existing outputs match the cache, left as is]
+
+
+Linting "core"...
+
+All files pass linting.
+
+
+ 
+
+ >  NX   Successfully ran target lint for 6 projects
+
+   Nx read the output from the cache instead of running the command for 6 out of 6 tasks.
+
+
+> @afci-bench/source@0.1.0 typecheck
+> tsc -p tsconfig.base.json --noEmit
+
+
+> @afci-bench/source@0.1.0 test
+> nx run-many --target=test --all
+
+
+ >  NX   Running target test for 6 projects:
+
+    - observability
+    - contracts
+    - features
+    - infra
+    - core
+    - api
+
+ 
+
+> nx run contracts:test  [existing outputs match the cache, left as is]
+
+No tests found, exiting with code 0
+
+> nx run features:test  [existing outputs match the cache, left as is]
+
+PASS features libs/features/src/features.spec.ts
+  createOrderUseCase
+    √ should create order successfully with valid input (8 ms)
+    √ should return validation errors for invalid input (1 ms)
+    √ should handle repository errors gracefully (7 ms)
+    √ should calculate item subtotals correctly
+    √ should include correlationId in all logs
+
+Test Suites: 1 passed, 1 total
+Tests:       5 passed, 5 total
+Snapshots:   0 total
+Time:        1.566 s, estimated 3 s
+Ran all test suites.
+
+> nx run core:test  [existing outputs match the cache, left as is]
+
+PASS core libs/core/src/core.spec.ts
+  calculateItemSubtotal
+    √ should calculate subtotal correctly (4 ms)
+    √ should handle zero quantity
+    √ should handle zero price
+    √ should round to 2 decimal places (1 ms)
+    √ should throw error for negative quantity (28 ms)
+    √ should throw error for negative price (1 ms)
+  calculateOrderTotal
+    √ should sum all item subtotals
+    √ should return 0 for empty items
+    √ should handle single item
+  createOrderItem
+    √ should create order item with calculated subtotal (1 ms)
+  validateOrderItems
+    √ should return valid for correct items
+    √ should reject empty items array (1 ms)
+    √ should reject missing productId
+    √ should reject missing name (1 ms)
+    √ should reject zero or negative quantity (1 ms)
+    √ should reject negative unitPrice
+    √ should reject fractional quantity
+    √ should handle null items gracefully
+    √ should handle undefined items gracefully
+    √ should collect multiple errors (1 ms)
+  validateCustomerId
+    √ should return valid for non-empty customerId
+    √ should reject empty customerId (1 ms)
+    √ should reject whitespace-only customerId
+
+Test Suites: 1 passed, 1 total
+Tests:       23 passed, 23 total
+Snapshots:   0 total
+Time:        1.354 s, estimated 3 s
+Ran all test suites.
+
+> nx run observability:test  [existing outputs match the cache, left as is]
+
+No tests found, exiting with code 0
+
+> nx run infra:test  [existing outputs match the cache, left as is]
+
+No tests found, exiting with code 0
+
+> nx run api:test  [existing outputs match the cache, left as is]
+
+PASS api apps/api/src/app.spec.ts
+  API Integration Tests
+    GET /health
+      √ should return health status (40 ms)
+    POST /orders
+      √ should create order successfully with valid input (23 ms)
+      √ should return correlationId in response header (5 ms)
+      √ should use provided x-correlation-id header (6 ms)
+      √ should return 400 for invalid input (6 ms)
+      √ should log structured JSON with required fields on success (6 ms)
+      √ should log structured JSON with required fields on failure (5 ms)
+      √ should match response shape to OrderResponse contract (7 ms)
+      √ should return 400 for fractional quantity (4 ms)
+      √ should return 400 for items with invalid fields (5 ms)
+      √ should match error response shape to ErrorResponse contract (5 ms)
+    GET /orders (list with pagination)
+      √ should return empty list with default pagination (7 ms)
+      √ should return orders with custom pagination (14 ms)
+      √ should return remaining orders with offset (12 ms)
+    GET /orders/:id
+      √ should return 200 with order payload for existing order (7 ms)
+      √ should return 404 for unknown order ID (3 ms)
+      √ should return correlationId in response header (4 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       17 passed, 17 total
+Snapshots:   0 total
+Time:        2.137 s, estimated 7 s
+Ran all test suites.
+
+ 
+
+ >  NX   Successfully ran target test for 6 projects
+
+   Nx read the output from the cache instead of running the command for 6 out of 6 tasks.
+
+=== CI run finished with exit code 0 ===

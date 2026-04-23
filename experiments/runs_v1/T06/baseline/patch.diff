@@ -1,0 +1,1035 @@
+diff --git a/.gitignore b/.gitignore
+index fd3d230..8ad3477 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -34,3 +34,6 @@ test-results/
+ 
+ # Nx cache
+ .nx/cache
++
++# Claude Code
++.claude/
+diff --git a/apps/api/src/app.spec.ts b/apps/api/src/app.spec.ts
+index 14a7ab4..ff8049a 100644
+--- a/apps/api/src/app.spec.ts
++++ b/apps/api/src/app.spec.ts
+@@ -76,6 +76,7 @@ describe('API Integration Tests', () => {
+       expect(order.total).toBe(46);
+       expect(order.status).toBe('pending');
+       expect(order.createdAt).toBeDefined();
++      expect(order.updatedAt).toBeDefined();
+     });
+ 
+     it('should return correlationId in response header', async () => {
+@@ -217,6 +218,7 @@ describe('API Integration Tests', () => {
+       expect(typeof order.status).toBe('string');
+       expect(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']).toContain(order.status);
+       expect(typeof order.createdAt).toBe('string');
++      expect(typeof order.updatedAt).toBe('string');
+ 
+       // Validate item shape
+       order.items.forEach((item: Record<string, unknown>) => {
+@@ -251,4 +253,125 @@ describe('API Integration Tests', () => {
+       expect(typeof error.correlationId).toBe('string');
+     });
+   });
++
++  describe('GET /orders (list with pagination)', () => {
++    it('should return empty list with default paging when no orders exist', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      const response = await request(app).get('/orders');
++
++      expect(response.status).toBe(200);
++      expect(response.body.data).toEqual([]);
++      expect(response.body.total).toBe(0);
++      expect(response.body.limit).toBe(20);
++      expect(response.body.offset).toBe(0);
++    });
++
++    it('should return orders with default paging', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      const orderReq: OrderRequest = {
++        customerId: 'cust-1',
++        items: [{ productId: 'p1', name: 'A', quantity: 1, unitPrice: 10 }],
++      };
++      await request(app).post('/orders').send(orderReq).set('Content-Type', 'application/json');
++      await request(app).post('/orders').send({ ...orderReq, customerId: 'cust-2' }).set('Content-Type', 'application/json');
++
++      const response = await request(app).get('/orders');
++
++      expect(response.status).toBe(200);
++      expect(response.body.data).toHaveLength(2);
++      expect(response.body.total).toBe(2);
++    });
++
++    it('should support custom paging', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      const orderReq: OrderRequest = {
++        customerId: 'cust-1',
++        items: [{ productId: 'p1', name: 'A', quantity: 1, unitPrice: 10 }],
++      };
++      await request(app).post('/orders').send(orderReq).set('Content-Type', 'application/json');
++      await request(app).post('/orders').send(orderReq).set('Content-Type', 'application/json');
++      await request(app).post('/orders').send(orderReq).set('Content-Type', 'application/json');
++
++      const response = await request(app).get('/orders?limit=2&offset=1');
++
++      expect(response.status).toBe(200);
++      expect(response.body.data).toHaveLength(2);
++      expect(response.body.total).toBe(3);
++      expect(response.body.limit).toBe(2);
++      expect(response.body.offset).toBe(1);
++    });
++
++    it('should propagate correlationId and log required fields', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      const response = await request(app)
++        .get('/orders')
++        .set('x-correlation-id', 'list-corr-id');
++
++      expect(response.headers['x-correlation-id']).toBe('list-corr-id');
++
++      const requestLogs = testLogOutput.getRequestLogs();
++      const listLog = requestLogs.find((l) => l.operation === 'listOrders');
++      expect(listLog).toBeDefined();
++      expect(listLog?.correlationId).toBe('list-corr-id');
++      expect(listLog?.status).toBe('success');
++      expect(typeof listLog?.latencyMs).toBe('number');
++    });
++  });
++
++  describe('GET /orders/:id', () => {
++    it('should return 200 with order payload for existing ID', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      // First create an order
++      const orderRequest: OrderRequest = {
++        customerId: 'cust-123',
++        items: [{ productId: 'prod-1', name: 'Widget', quantity: 2, unitPrice: 10.5 }],
++      };
++
++      const createResponse = await request(app)
++        .post('/orders')
++        .send(orderRequest)
++        .set('Content-Type', 'application/json');
++
++      expect(createResponse.status).toBe(201);
++      const createdOrder: OrderResponse = createResponse.body;
++
++      // Now fetch it by ID
++      const getResponse = await request(app).get(`/orders/${createdOrder.id}`);
++
++      expect(getResponse.status).toBe(200);
++      const fetchedOrder: OrderResponse = getResponse.body;
++      expect(fetchedOrder.id).toBe(createdOrder.id);
++      expect(fetchedOrder.customerId).toBe('cust-123');
++      expect(fetchedOrder.items).toHaveLength(1);
++      expect(fetchedOrder.total).toBe(21);
++      expect(fetchedOrder.status).toBe('pending');
++    });
++
++    it('should return 404 for unknown ID', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      const response = await request(app).get('/orders/nonexistent-id');
++
++      expect(response.status).toBe(404);
++      const error: ErrorResponse = response.body;
++      expect(error.error).toBe('NotFound');
++      expect(error.message).toContain('Order not found');
++      expect(error.correlationId).toBeDefined();
++    });
++
++    it('should return correlationId in response header', async () => {
++      const app = createApp({ logOutput: testLogOutput });
++
++      const response = await request(app)
++        .get('/orders/some-id')
++        .set('x-correlation-id', 'test-corr-id');
++
++      expect(response.headers['x-correlation-id']).toBe('test-corr-id');
++    });
++  });
+ });
+diff --git a/apps/api/src/app.ts b/apps/api/src/app.ts
+index 8eb2053..2f121b5 100644
+--- a/apps/api/src/app.ts
++++ b/apps/api/src/app.ts
+@@ -1,6 +1,6 @@
+ import express, { Express, Request, Response, NextFunction } from 'express';
+ import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse } from '@afci-bench/contracts';
+-import { createOrderUseCase, CreateOrderPorts, Order, OrderRepository } from '@afci-bench/features';
++import { createOrderUseCase, CreateOrderPorts, getOrderByIdUseCase, GetOrderByIdPorts, listOrdersUseCase, ListOrdersPorts, Order, OrderRepository } from '@afci-bench/features';
+ import { getOrderRepository, OrderEntity } from '@afci-bench/infra';
+ import {
+   Logger,
+@@ -17,7 +17,7 @@ import {
+ // import { Order } from '@afci-bench/core'; // ERROR: api cannot import core directly
+ 
+ // Adapter to convert infra's OrderEntity to core's Order
+-function adaptRepository(infraRepo: { save: (order: OrderEntity) => Promise<OrderEntity> }): OrderRepository {
++function adaptRepository(infraRepo: ReturnType<typeof getOrderRepository>): OrderRepository {
+   return {
+     async save(order: Order): Promise<Order> {
+       const entity: OrderEntity = {
+@@ -27,6 +27,7 @@ function adaptRepository(infraRepo: { save: (order: OrderEntity) => Promise<Orde
+         total: order.total,
+         status: order.status,
+         createdAt: order.createdAt,
++        updatedAt: order.updatedAt,
+       };
+       const saved = await infraRepo.save(entity);
+       return {
+@@ -36,13 +37,48 @@ function adaptRepository(infraRepo: { save: (order: OrderEntity) => Promise<Orde
+         total: saved.total,
+         status: saved.status,
+         createdAt: saved.createdAt,
++        updatedAt: saved.updatedAt,
+       };
+     },
+-    async findById(_id: string): Promise<Order | null> {
+-      return null; // Not used in current implementation
++    async findById(id: string): Promise<Order | null> {
++      const entity = await infraRepo.findById(id);
++      if (!entity) return null;
++      return {
++        id: entity.id,
++        customerId: entity.customerId,
++        items: entity.items,
++        total: entity.total,
++        status: entity.status,
++        createdAt: entity.createdAt,
++        updatedAt: entity.updatedAt,
++      };
++    },
++    async findByCustomerId(customerId: string): Promise<Order[]> {
++      const entities = await infraRepo.findByCustomerId(customerId);
++      return entities.map((entity) => ({
++        id: entity.id,
++        customerId: entity.customerId,
++        items: entity.items,
++        total: entity.total,
++        status: entity.status,
++        createdAt: entity.createdAt,
++        updatedAt: entity.updatedAt,
++      }));
+     },
+-    async findByCustomerId(_customerId: string): Promise<Order[]> {
+-      return []; // Not used in current implementation
++    async findAll(limit: number, offset: number): Promise<{ data: Order[]; total: number }> {
++      const result = await infraRepo.findAll(limit, offset);
++      return {
++        data: result.data.map((entity) => ({
++          id: entity.id,
++          customerId: entity.customerId,
++          items: entity.items,
++          total: entity.total,
++          status: entity.status,
++          createdAt: entity.createdAt,
++          updatedAt: entity.updatedAt,
++        })),
++        total: result.total,
++      };
+     },
+   };
+ }
+@@ -125,5 +161,114 @@ export function createApp(deps: AppDependencies = {}): Express {
+     }
+   });
+ 
++  // List orders with pagination
++  app.get('/orders', async (req: Request, res: Response, next: NextFunction) => {
++    const startTime = Date.now();
++    const correlationId = extractCorrelationId(req.headers['x-correlation-id'] as string | undefined);
++
++    try {
++      const limit = parseInt(req.query.limit as string, 10) || 20;
++      const offset = parseInt(req.query.offset as string, 10) || 0;
++
++      const ports: ListOrdersPorts = {
++        orderRepository,
++        logger,
++        correlationId,
++      };
++
++      const result = await listOrdersUseCase(limit, offset, ports);
++      res.setHeader('x-correlation-id', correlationId);
++      res.status(200).json(result);
++    } catch (error) {
++      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
++
++      logger.logError({
++        correlationId,
++        errorType: 'UnhandledError',
++        message: errorMessage,
++        stack: error instanceof Error ? error.stack : undefined,
++      });
++
++      logger.logRequest({
++        correlationId,
++        operation: 'GET /orders',
++        status: 'fail',
++        latencyMs: Date.now() - startTime,
++      });
++
++      const errorResponse: ErrorResponse = {
++        error: 'InternalServerError',
++        message: errorMessage,
++        correlationId,
++      };
++      res.setHeader('x-correlation-id', correlationId);
++      res.status(500).json(errorResponse);
++      next(error);
++    }
++  });
++
++  // Get order by ID endpoint
++  app.get('/orders/:id', async (req: Request, res: Response, next: NextFunction) => {
++    const startTime = Date.now();
++    const correlationId = extractCorrelationId(req.headers['x-correlation-id'] as string | undefined);
++
++    try {
++      const ports: GetOrderByIdPorts = {
++        orderRepository,
++        logger,
++        correlationId,
++      };
++
++      const result = await getOrderByIdUseCase(req.params.id, ports);
++
++      if (result.success && result.data) {
++        const response: OrderResponse = result.data;
++        res.setHeader('x-correlation-id', correlationId);
++        res.status(200).json(response);
++      } else if (result.notFound) {
++        const errorResponse: ErrorResponse = {
++          error: 'NotFound',
++          message: result.errors?.join('; ') ?? 'Order not found',
++          correlationId,
++        };
++        res.setHeader('x-correlation-id', correlationId);
++        res.status(404).json(errorResponse);
++      } else {
++        const errorResponse: ErrorResponse = {
++          error: 'ValidationError',
++          message: result.errors?.join('; ') ?? 'Unknown error',
++          correlationId,
++        };
++        res.setHeader('x-correlation-id', correlationId);
++        res.status(400).json(errorResponse);
++      }
++    } catch (error) {
++      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
++
++      logger.logError({
++        correlationId,
++        errorType: 'UnhandledError',
++        message: errorMessage,
++        stack: error instanceof Error ? error.stack : undefined,
++      });
++
++      logger.logRequest({
++        correlationId,
++        operation: 'GET /orders/:id',
++        status: 'fail',
++        latencyMs: Date.now() - startTime,
++      });
++
++      const errorResponse: ErrorResponse = {
++        error: 'InternalServerError',
++        message: errorMessage,
++        correlationId,
++      };
++      res.setHeader('x-correlation-id', correlationId);
++      res.status(500).json(errorResponse);
++      next(error);
++    }
++  });
++
+   return app;
+ }
+diff --git a/libs/contracts/src/index.ts b/libs/contracts/src/index.ts
+index ed88853..1734950 100644
+--- a/libs/contracts/src/index.ts
++++ b/libs/contracts/src/index.ts
+@@ -26,6 +26,7 @@ export interface OrderResponse {
+   total: number;
+   status: OrderStatus;
+   createdAt: string;
++  updatedAt: string;
+ }
+ 
+ export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+@@ -37,6 +38,33 @@ export interface ErrorResponse {
+   correlationId: string;
+ }
+ 
++// Pagination
++export interface PaginatedResponse<T> {
++  data: T[];
++  total: number;
++  limit: number;
++  offset: number;
++}
++
++// Order entity shape (shared port type)
++export interface OrderEntity {
++  id: string;
++  customerId: string;
++  items: OrderItemResponse[];
++  total: number;
++  status: OrderStatus;
++  createdAt: Date;
++  updatedAt: Date;
++}
++
++// Repository port interface - lives in contracts per MAD
++export interface OrderRepositoryPort {
++  save(order: OrderEntity): Promise<OrderEntity>;
++  findById(id: string): Promise<OrderEntity | null>;
++  findByCustomerId(customerId: string): Promise<OrderEntity[]>;
++  findAll(limit: number, offset: number): Promise<{ data: OrderEntity[]; total: number }>;
++}
++
+ // Health check response
+ export interface HealthResponse {
+   status: 'ok' | 'degraded' | 'unhealthy';
+diff --git a/libs/core/src/core.spec.ts b/libs/core/src/core.spec.ts
+index 65c01af..8a19a38 100644
+--- a/libs/core/src/core.spec.ts
++++ b/libs/core/src/core.spec.ts
+@@ -132,6 +132,27 @@ describe('validateOrderItems', () => {
+     expect(result.valid).toBe(false);
+     expect(result.errors.length).toBeGreaterThanOrEqual(4);
+   });
++
++  it('should reject fractional quantity', () => {
++    const items = [{ productId: 'p1', name: 'Item', quantity: 1.5, unitPrice: 10 }];
++    const result = validateOrderItems(items);
++    expect(result.valid).toBe(false);
++    expect(result.errors).toContain('Item 1: quantity must be a whole number');
++  });
++
++  it('should reject NaN quantity', () => {
++    const items = [{ productId: 'p1', name: 'Item', quantity: NaN, unitPrice: 10 }];
++    const result = validateOrderItems(items);
++    expect(result.valid).toBe(false);
++    expect(result.errors).toContain('Item 1: quantity must be a positive number');
++  });
++
++  it('should reject Infinity unitPrice', () => {
++    const items = [{ productId: 'p1', name: 'Item', quantity: 1, unitPrice: Infinity }];
++    const result = validateOrderItems(items);
++    expect(result.valid).toBe(false);
++    expect(result.errors).toContain('Item 1: unitPrice must be a non-negative number');
++  });
+ });
+ 
+ describe('validateCustomerId', () => {
+diff --git a/libs/core/src/index.ts b/libs/core/src/index.ts
+index afa5b3f..58e19a4 100644
+--- a/libs/core/src/index.ts
++++ b/libs/core/src/index.ts
+@@ -1,4 +1,4 @@
+-import { OrderItemRequest, OrderStatus } from '@afci-bench/contracts';
++import { OrderItemRequest, OrderStatus, OrderRepositoryPort } from '@afci-bench/contracts';
+ 
+ // Domain entity (internal representation)
+ export interface OrderItem {
+@@ -16,14 +16,12 @@ export interface Order {
+   total: number;
+   status: OrderStatus;
+   createdAt: Date;
++  updatedAt: Date;
+ }
+ 
+-// Port interface - implemented by infra layer
+-export interface OrderRepository {
+-  save(order: Order): Promise<Order>;
+-  findById(id: string): Promise<Order | null>;
+-  findByCustomerId(customerId: string): Promise<Order[]>;
+-}
++// OrderRepository uses the shared port from contracts
++// Order and OrderEntity are structurally compatible
++export type OrderRepository = OrderRepositoryPort;
+ 
+ // Validation result
+ export interface ValidationResult {
+@@ -68,10 +66,12 @@ export function validateOrderItems(items: OrderItemRequest[]): ValidationResult
+     if (!item.name || item.name.trim() === '') {
+       errors.push(`Item ${index + 1}: name is required`);
+     }
+-    if (typeof item.quantity !== 'number' || item.quantity <= 0) {
++    if (typeof item.quantity !== 'number' || !Number.isFinite(item.quantity) || item.quantity <= 0) {
+       errors.push(`Item ${index + 1}: quantity must be a positive number`);
++    } else if (!Number.isInteger(item.quantity)) {
++      errors.push(`Item ${index + 1}: quantity must be a whole number`);
+     }
+-    if (typeof item.unitPrice !== 'number' || item.unitPrice < 0) {
++    if (typeof item.unitPrice !== 'number' || !Number.isFinite(item.unitPrice) || item.unitPrice < 0) {
+       errors.push(`Item ${index + 1}: unitPrice must be a non-negative number`);
+     }
+   });
+diff --git a/libs/features/src/features.spec.ts b/libs/features/src/features.spec.ts
+index 953ae2a..8c3665f 100644
+--- a/libs/features/src/features.spec.ts
++++ b/libs/features/src/features.spec.ts
+@@ -16,6 +16,7 @@ function createMockRepository(savedOrder?: Order): OrderRepository {
+     save: jest.fn().mockResolvedValue(savedOrder),
+     findById: jest.fn().mockResolvedValue(null),
+     findByCustomerId: jest.fn().mockResolvedValue([]),
++    findAll: jest.fn().mockResolvedValue({ data: [], total: 0 }),
+   };
+ }
+ 
+diff --git a/libs/features/src/index.ts b/libs/features/src/index.ts
+index 2e7038b..a8d5152 100644
+--- a/libs/features/src/index.ts
++++ b/libs/features/src/index.ts
+@@ -1,5 +1,5 @@
+ import { v4 as uuidv4 } from 'uuid';
+-import { OrderRequest, OrderResponse, OrderItemResponse } from '@afci-bench/contracts';
++import { OrderRequest, OrderResponse, OrderItemResponse, PaginatedResponse } from '@afci-bench/contracts';
+ import {
+   Order,
+   OrderItem,
+@@ -15,6 +15,96 @@ import { Logger } from '@afci-bench/observability';
+ // This allows API to depend on features without directly importing core
+ export type { Order, OrderItem, OrderRepository };
+ 
++export interface GetOrderByIdPorts {
++  orderRepository: OrderRepository;
++  logger: Logger;
++  correlationId: string;
++}
++
++export interface GetOrderByIdResult {
++  success: boolean;
++  data?: OrderResponse;
++  notFound?: boolean;
++  errors?: string[];
++}
++
++export async function getOrderByIdUseCase(
++  orderId: string,
++  ports: GetOrderByIdPorts
++): Promise<GetOrderByIdResult> {
++  const startTime = Date.now();
++  const { orderRepository, logger, correlationId } = ports;
++
++  try {
++    if (!orderId || orderId.trim() === '') {
++      logger.logRequest({
++        correlationId,
++        operation: 'getOrderById',
++        status: 'fail',
++        latencyMs: Date.now() - startTime,
++      });
++      return { success: false, errors: ['orderId is required'] };
++    }
++
++    const order = await orderRepository.findById(orderId);
++
++    if (!order) {
++      logger.logRequest({
++        correlationId,
++        operation: 'getOrderById',
++        status: 'fail',
++        latencyMs: Date.now() - startTime,
++      });
++      return { success: false, notFound: true, errors: ['Order not found'] };
++    }
++
++    const responseItems: OrderItemResponse[] = order.items.map((item) => ({
++      productId: item.productId,
++      name: item.name,
++      quantity: item.quantity,
++      unitPrice: item.unitPrice,
++      subtotal: item.subtotal,
++    }));
++
++    const response: OrderResponse = {
++      id: order.id,
++      customerId: order.customerId,
++      items: responseItems,
++      total: order.total,
++      status: order.status,
++      createdAt: order.createdAt.toISOString(),
++      updatedAt: order.updatedAt.toISOString(),
++    };
++
++    logger.logRequest({
++      correlationId,
++      operation: 'getOrderById',
++      status: 'success',
++      latencyMs: Date.now() - startTime,
++    });
++
++    return { success: true, data: response };
++  } catch (error) {
++    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
++
++    logger.logError({
++      correlationId,
++      errorType: 'GetOrderByIdError',
++      message: errorMessage,
++      stack: error instanceof Error ? error.stack : undefined,
++    });
++
++    logger.logRequest({
++      correlationId,
++      operation: 'getOrderById',
++      status: 'fail',
++      latencyMs: Date.now() - startTime,
++    });
++
++    return { success: false, errors: [errorMessage] };
++  }
++}
++
+ export interface CreateOrderPorts {
+   orderRepository: OrderRepository;
+   logger: Logger;
+@@ -59,13 +149,15 @@ export async function createOrderUseCase(
+     const orderItems = input.items.map(createOrderItem);
+     const total = calculateOrderTotal(orderItems);
+ 
++    const now = new Date();
+     const order: Order = {
+       id: uuidv4(),
+       customerId: input.customerId,
+       items: orderItems,
+       total,
+       status: 'pending',
+-      createdAt: new Date(),
++      createdAt: now,
++      updatedAt: now,
+     };
+ 
+     // Persist via repository
+@@ -87,6 +179,7 @@ export async function createOrderUseCase(
+       total: savedOrder.total,
+       status: savedOrder.status,
+       createdAt: savedOrder.createdAt.toISOString(),
++      updatedAt: savedOrder.updatedAt.toISOString(),
+     };
+ 
+     logger.logRequest({
+@@ -123,3 +216,53 @@ export async function createOrderUseCase(
+     };
+   }
+ }
++
++export interface ListOrdersPorts {
++  orderRepository: OrderRepository;
++  logger: Logger;
++  correlationId: string;
++}
++
++export async function listOrdersUseCase(
++  limit: number,
++  offset: number,
++  ports: ListOrdersPorts
++): Promise<PaginatedResponse<OrderResponse>> {
++  const startTime = Date.now();
++  const { orderRepository, logger, correlationId } = ports;
++
++  const effectiveLimit = limit > 0 ? limit : 20;
++  const effectiveOffset = offset >= 0 ? offset : 0;
++
++  const { data: orders, total } = await orderRepository.findAll(effectiveLimit, effectiveOffset);
++
++  const responseData: OrderResponse[] = orders.map((order) => ({
++    id: order.id,
++    customerId: order.customerId,
++    items: order.items.map((item) => ({
++      productId: item.productId,
++      name: item.name,
++      quantity: item.quantity,
++      unitPrice: item.unitPrice,
++      subtotal: item.subtotal,
++    })),
++    total: order.total,
++    status: order.status,
++    createdAt: order.createdAt.toISOString(),
++    updatedAt: order.updatedAt.toISOString(),
++  }));
++
++  logger.logRequest({
++    correlationId,
++    operation: 'listOrders',
++    status: 'success',
++    latencyMs: Date.now() - startTime,
++  });
++
++  return {
++    data: responseData,
++    total,
++    limit: effectiveLimit,
++    offset: effectiveOffset,
++  };
++}
+diff --git a/libs/infra/src/index.ts b/libs/infra/src/index.ts
+index a294d49..91b492e 100644
+--- a/libs/infra/src/index.ts
++++ b/libs/infra/src/index.ts
+@@ -1,32 +1,11 @@
+-import { OrderStatus } from '@afci-bench/contracts';
++import { OrderEntity, OrderRepositoryPort } from '@afci-bench/contracts';
+ 
+-// Infra layer implements repository interfaces
+-// Note: We define our own Order type here based on contracts to avoid importing from core
+-// This is a deliberate architectural choice - infra depends on contracts, not core
++// Re-export for backwards compatibility
++export type { OrderEntity };
++export type { OrderRepositoryPort };
+ 
+-export interface OrderEntity {
+-  id: string;
+-  customerId: string;
+-  items: OrderItemEntity[];
+-  total: number;
+-  status: OrderStatus;
+-  createdAt: Date;
+-}
+-
+-export interface OrderItemEntity {
+-  productId: string;
+-  name: string;
+-  quantity: number;
+-  unitPrice: number;
+-  subtotal: number;
+-}
+-
+-// Port interface (matching core's OrderRepository)
+-export interface OrderRepositoryPort {
+-  save(order: OrderEntity): Promise<OrderEntity>;
+-  findById(id: string): Promise<OrderEntity | null>;
+-  findByCustomerId(customerId: string): Promise<OrderEntity[]>;
+-}
++// Also export the old OrderItemEntity name for any consumers
++export type OrderItemEntity = OrderEntity['items'][number];
+ 
+ export class InMemoryOrderRepository implements OrderRepositoryPort {
+   private orders: Map<string, OrderEntity> = new Map();
+@@ -51,6 +30,14 @@ export class InMemoryOrderRepository implements OrderRepositoryPort {
+     return results;
+   }
+ 
++  async findAll(limit: number, offset: number): Promise<{ data: OrderEntity[]; total: number }> {
++    const all = Array.from(this.orders.values());
++    all.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
++    const total = all.length;
++    const data = all.slice(offset, offset + limit);
++    return { data, total };
++  }
++
+   // Test helper - not part of interface
+   clear(): void {
+     this.orders.clear();
+diff --git a/package-lock.json b/package-lock.json
+index f54b1f5..37af837 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -70,6 +70,7 @@
+       "integrity": "sha512-H3mcG6ZDLTlYfaSNi0iOKkigqMFvkTKlGUYlD8GW7nNOYRrevuA46iTypPyv+06V3fEmvvazfntkBU34L0azAw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@babel/code-frame": "^7.28.6",
+         "@babel/generator": "^7.28.6",
+@@ -2025,13 +2026,6 @@
+         "url": "https://opencollective.com/eslint"
+       }
+     },
+-    "node_modules/@eslint/eslintrc/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/@eslint/eslintrc/node_modules/js-yaml": {
+       "version": "4.1.1",
+       "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.1.1.tgz",
+@@ -2123,6 +2117,30 @@
+         "node": ">=8"
+       }
+     },
++    "node_modules/@istanbuljs/load-nyc-config/node_modules/argparse": {
++      "version": "1.0.10",
++      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
++      "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "sprintf-js": "~1.0.2"
++      }
++    },
++    "node_modules/@istanbuljs/load-nyc-config/node_modules/js-yaml": {
++      "version": "3.14.2",
++      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.14.2.tgz",
++      "integrity": "sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "argparse": "^1.0.7",
++        "esprima": "^4.0.0"
++      },
++      "bin": {
++        "js-yaml": "bin/js-yaml.js"
++      }
++    },
+     "node_modules/@istanbuljs/schema": {
+       "version": "0.1.3",
+       "resolved": "https://registry.npmjs.org/@istanbuljs/schema/-/schema-0.1.3.tgz",
+@@ -3270,6 +3288,7 @@
+       "integrity": "sha512-YrT9ArrGaHForBaCNwFjoqJWmn8G1Pr7+BH/vwyLHciA9qT/wSiuOhxGCT50JA5xLvFBd6PIiGkE3afxcPE1nw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "undici-types": "~6.21.0"
+       }
+@@ -3445,6 +3464,7 @@
+       "integrity": "sha512-tbsV1jPne5CkFQCgPBcDOt30ItF7aJoZL997JSF7MhGQqOeT3svWRYxiqlfA5RUdlHN6Fi+EI9bxqbdyAUZjYQ==",
+       "dev": true,
+       "license": "BSD-2-Clause",
++      "peer": true,
+       "dependencies": {
+         "@typescript-eslint/scope-manager": "6.21.0",
+         "@typescript-eslint/types": "6.21.0",
+@@ -3681,6 +3701,30 @@
+         "node": ">=14.15.0"
+       }
+     },
++    "node_modules/@yarnpkg/parsers/node_modules/argparse": {
++      "version": "1.0.10",
++      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
++      "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "sprintf-js": "~1.0.2"
++      }
++    },
++    "node_modules/@yarnpkg/parsers/node_modules/js-yaml": {
++      "version": "3.14.2",
++      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.14.2.tgz",
++      "integrity": "sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "argparse": "^1.0.7",
++        "esprima": "^4.0.0"
++      },
++      "bin": {
++        "js-yaml": "bin/js-yaml.js"
++      }
++    },
+     "node_modules/@zkochan/js-yaml": {
+       "version": "0.0.6",
+       "resolved": "https://registry.npmjs.org/@zkochan/js-yaml/-/js-yaml-0.0.6.tgz",
+@@ -3694,13 +3738,6 @@
+         "js-yaml": "bin/js-yaml.js"
+       }
+     },
+-    "node_modules/@zkochan/js-yaml/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/accepts": {
+       "version": "1.3.8",
+       "resolved": "https://registry.npmjs.org/accepts/-/accepts-1.3.8.tgz",
+@@ -3720,6 +3757,7 @@
+       "integrity": "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "bin": {
+         "acorn": "bin/acorn"
+       },
+@@ -3864,14 +3902,11 @@
+       "license": "MIT"
+     },
+     "node_modules/argparse": {
+-      "version": "1.0.10",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
+-      "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
++      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+       "dev": true,
+-      "license": "MIT",
+-      "dependencies": {
+-        "sprintf-js": "~1.0.2"
+-      }
++      "license": "Python-2.0"
+     },
+     "node_modules/array-flatten": {
+       "version": "1.1.1",
+@@ -4270,6 +4305,7 @@
+         }
+       ],
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "baseline-browser-mapping": "^2.9.0",
+         "caniuse-lite": "^1.0.30001759",
+@@ -5122,6 +5158,7 @@
+       "deprecated": "This version is no longer supported. Please see https://eslint.org/version-support for other options.",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@eslint-community/eslint-utils": "^4.2.0",
+         "@eslint-community/regexpp": "^4.6.1",
+@@ -5178,6 +5215,7 @@
+       "integrity": "sha512-iI1f+D2ViGn+uvv5HuHVUamg8ll4tN+JRHGc6IJi4TP9Kl976C57fzPXgseXNs8v0iA8aSJpHsTWjDb9QJamGQ==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "bin": {
+         "eslint-config-prettier": "bin/cli.js"
+       },
+@@ -5215,13 +5253,6 @@
+         "url": "https://opencollective.com/eslint"
+       }
+     },
+-    "node_modules/eslint/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/eslint/node_modules/find-up": {
+       "version": "5.0.0",
+       "resolved": "https://registry.npmjs.org/find-up/-/find-up-5.0.0.tgz",
+@@ -6625,6 +6656,7 @@
+       "integrity": "sha512-NIy3oAFp9shda19hy4HK0HRTWKtPJmGdnvywu01nOqNC2vZg+Z+fvJDxpMQA88eb2I9EcafcdjYgsDthnYTvGw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@jest/core": "^29.7.0",
+         "@jest/types": "^29.6.3",
+@@ -6693,24 +6725,6 @@
+         "node": "^14.15.0 || ^16.10.0 || >=18.0.0"
+       }
+     },
+-    "node_modules/jest-circus/node_modules/babel-plugin-macros": {
+-      "version": "3.1.0",
+-      "resolved": "https://registry.npmjs.org/babel-plugin-macros/-/babel-plugin-macros-3.1.0.tgz",
+-      "integrity": "sha512-Cg7TFGpIr01vOQNODXOOaGz2NpCU5gl8x1qJFbb6hbZxR7XrcE2vtbAsTAbJ7/xwJtUuJEw8K8Zr/AE0LHlesg==",
+-      "dev": true,
+-      "license": "MIT",
+-      "optional": true,
+-      "peer": true,
+-      "dependencies": {
+-        "@babel/runtime": "^7.12.5",
+-        "cosmiconfig": "^7.0.0",
+-        "resolve": "^1.19.0"
+-      },
+-      "engines": {
+-        "node": ">=10",
+-        "npm": ">=6"
+-      }
+-    },
+     "node_modules/jest-circus/node_modules/cosmiconfig": {
+       "version": "7.1.0",
+       "resolved": "https://registry.npmjs.org/cosmiconfig/-/cosmiconfig-7.1.0.tgz",
+@@ -6718,7 +6732,6 @@
+       "dev": true,
+       "license": "MIT",
+       "optional": true,
+-      "peer": true,
+       "dependencies": {
+         "@types/parse-json": "^4.0.0",
+         "import-fresh": "^3.2.1",
+@@ -7283,14 +7296,14 @@
+       "license": "MIT"
+     },
+     "node_modules/js-yaml": {
+-      "version": "3.14.2",
+-      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.14.2.tgz",
+-      "integrity": "sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==",
++      "version": "4.1.0",
++      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.1.0.tgz",
++      "integrity": "sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+-        "argparse": "^1.0.7",
+-        "esprima": "^4.0.0"
++        "argparse": "^2.0.1"
+       },
+       "bin": {
+         "js-yaml": "bin/js-yaml.js"
+@@ -7766,6 +7779,7 @@
+       "dev": true,
+       "hasInstallScript": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@nrwl/tao": "17.2.8",
+         "@yarnpkg/lockfile": "^1.1.0",
+@@ -7831,13 +7845,6 @@
+         }
+       }
+     },
+-    "node_modules/nx/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/nx/node_modules/glob": {
+       "version": "7.1.4",
+       "resolved": "https://registry.npmjs.org/glob/-/glob-7.1.4.tgz",
+@@ -7857,19 +7864,6 @@
+         "node": "*"
+       }
+     },
+-    "node_modules/nx/node_modules/js-yaml": {
+-      "version": "4.1.0",
+-      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.1.0.tgz",
+-      "integrity": "sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==",
+-      "dev": true,
+-      "license": "MIT",
+-      "dependencies": {
+-        "argparse": "^2.0.1"
+-      },
+-      "bin": {
+-        "js-yaml": "bin/js-yaml.js"
+-      }
+-    },
+     "node_modules/object-inspect": {
+       "version": "1.13.4",
+       "resolved": "https://registry.npmjs.org/object-inspect/-/object-inspect-1.13.4.tgz",
+@@ -9221,6 +9215,7 @@
+       "integrity": "sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@cspotcode/source-map-support": "^0.8.0",
+         "@tsconfig/node10": "^1.0.7",
+@@ -9346,6 +9341,7 @@
+       "integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
+       "dev": true,
+       "license": "Apache-2.0",
++      "peer": true,
+       "bin": {
+         "tsc": "bin/tsc",
+         "tsserver": "bin/tsserver"

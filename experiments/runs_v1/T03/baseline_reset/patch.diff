@@ -1,0 +1,548 @@
+diff --git a/apps/api/src/app.ts b/apps/api/src/app.ts
+index 8eb2053..7301f68 100644
+--- a/apps/api/src/app.ts
++++ b/apps/api/src/app.ts
+@@ -1,7 +1,7 @@
+ import express, { Express, Request, Response, NextFunction } from 'express';
+ import { OrderRequest, OrderResponse, ErrorResponse, HealthResponse } from '@afci-bench/contracts';
+-import { createOrderUseCase, CreateOrderPorts, Order, OrderRepository } from '@afci-bench/features';
+-import { getOrderRepository, OrderEntity } from '@afci-bench/infra';
++import { createOrderUseCase, CreateOrderPorts } from '@afci-bench/features';
++import { getOrderRepository } from '@afci-bench/infra';
+ import {
+   Logger,
+   LogOutput,
+@@ -9,44 +9,6 @@ import {
+   ConsoleLogOutput,
+ } from '@afci-bench/observability';
+ 
+-// NOTE: This file imports Order/OrderRepository from @afci-bench/features (which re-exports from core)
+-// instead of importing directly from @afci-bench/core. This respects the module boundary rules:
+-// apps/api can depend on features, but should not depend on core directly.
+-//
+-// BOUNDARY VIOLATION EXAMPLE (commented out - would fail CI if uncommented):
+-// import { Order } from '@afci-bench/core'; // ERROR: api cannot import core directly
+-
+-// Adapter to convert infra's OrderEntity to core's Order
+-function adaptRepository(infraRepo: { save: (order: OrderEntity) => Promise<OrderEntity> }): OrderRepository {
+-  return {
+-    async save(order: Order): Promise<Order> {
+-      const entity: OrderEntity = {
+-        id: order.id,
+-        customerId: order.customerId,
+-        items: order.items,
+-        total: order.total,
+-        status: order.status,
+-        createdAt: order.createdAt,
+-      };
+-      const saved = await infraRepo.save(entity);
+-      return {
+-        id: saved.id,
+-        customerId: saved.customerId,
+-        items: saved.items,
+-        total: saved.total,
+-        status: saved.status,
+-        createdAt: saved.createdAt,
+-      };
+-    },
+-    async findById(_id: string): Promise<Order | null> {
+-      return null; // Not used in current implementation
+-    },
+-    async findByCustomerId(_customerId: string): Promise<Order[]> {
+-      return []; // Not used in current implementation
+-    },
+-  };
+-}
+-
+ export interface AppDependencies {
+   logOutput?: LogOutput;
+ }
+@@ -55,7 +17,7 @@ export function createApp(deps: AppDependencies = {}): Express {
+   const app = express();
+   const logOutput = deps.logOutput ?? new ConsoleLogOutput();
+   const logger = new Logger(logOutput);
+-  const orderRepository = adaptRepository(getOrderRepository());
++  const orderRepository = getOrderRepository();
+ 
+   app.use(express.json());
+ 
+diff --git a/libs/contracts/src/index.ts b/libs/contracts/src/index.ts
+index ed88853..49fa53e 100644
+--- a/libs/contracts/src/index.ts
++++ b/libs/contracts/src/index.ts
+@@ -1,3 +1,30 @@
++export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
++
++// Domain entities - shared types used across layers
++export interface OrderItem {
++  productId: string;
++  name: string;
++  quantity: number;
++  unitPrice: number;
++  subtotal: number;
++}
++
++export interface Order {
++  id: string;
++  customerId: string;
++  items: OrderItem[];
++  total: number;
++  status: OrderStatus;
++  createdAt: Date;
++}
++
++// Port interface - implemented by infra layer
++export interface OrderRepository {
++  save(order: Order): Promise<Order>;
++  findById(id: string): Promise<Order | null>;
++  findByCustomerId(customerId: string): Promise<Order[]>;
++}
++
+ // Order DTOs - Public API contracts
+ export interface OrderItemRequest {
+   productId: string;
+@@ -28,8 +55,6 @@ export interface OrderResponse {
+   createdAt: string;
+ }
+ 
+-export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+-
+ // Error response contract
+ export interface ErrorResponse {
+   error: string;
+diff --git a/libs/core/src/index.ts b/libs/core/src/index.ts
+index afa5b3f..897cca3 100644
+--- a/libs/core/src/index.ts
++++ b/libs/core/src/index.ts
+@@ -1,29 +1,7 @@
+-import { OrderItemRequest, OrderStatus } from '@afci-bench/contracts';
++import { OrderItemRequest, Order, OrderItem } from '@afci-bench/contracts';
+ 
+-// Domain entity (internal representation)
+-export interface OrderItem {
+-  productId: string;
+-  name: string;
+-  quantity: number;
+-  unitPrice: number;
+-  subtotal: number;
+-}
+-
+-export interface Order {
+-  id: string;
+-  customerId: string;
+-  items: OrderItem[];
+-  total: number;
+-  status: OrderStatus;
+-  createdAt: Date;
+-}
+-
+-// Port interface - implemented by infra layer
+-export interface OrderRepository {
+-  save(order: Order): Promise<Order>;
+-  findById(id: string): Promise<Order | null>;
+-  findByCustomerId(customerId: string): Promise<Order[]>;
+-}
++// Re-export domain types from contracts
++export type { Order, OrderItem };
+ 
+ // Validation result
+ export interface ValidationResult {
+diff --git a/libs/features/src/features.spec.ts b/libs/features/src/features.spec.ts
+index 953ae2a..913e51a 100644
+--- a/libs/features/src/features.spec.ts
++++ b/libs/features/src/features.spec.ts
+@@ -1,6 +1,5 @@
+ import { createOrderUseCase, CreateOrderPorts } from './index';
+-import { OrderRequest } from '@afci-bench/contracts';
+-import { Order, OrderRepository } from '@afci-bench/core';
++import { OrderRequest, Order, OrderRepository } from '@afci-bench/contracts';
+ import { Logger, LogOutput, RequestLogEntry, ErrorLogEntry } from '@afci-bench/observability';
+ 
+ class MockLogOutput implements LogOutput {
+diff --git a/libs/features/src/index.ts b/libs/features/src/index.ts
+index 2e7038b..8d94353 100644
+--- a/libs/features/src/index.ts
++++ b/libs/features/src/index.ts
+@@ -1,9 +1,7 @@
+ import { v4 as uuidv4 } from 'uuid';
+-import { OrderRequest, OrderResponse, OrderItemResponse } from '@afci-bench/contracts';
++import { OrderRequest, OrderResponse, OrderItemResponse, Order, OrderRepository } from '@afci-bench/contracts';
+ import {
+-  Order,
+   OrderItem,
+-  OrderRepository,
+   createOrderItem,
+   calculateOrderTotal,
+   validateOrderItems,
+@@ -11,8 +9,7 @@ import {
+ } from '@afci-bench/core';
+ import { Logger } from '@afci-bench/observability';
+ 
+-// Re-export types from core that the API layer needs
+-// This allows API to depend on features without directly importing core
++// Re-export types that the API layer needs
+ export type { Order, OrderItem, OrderRepository };
+ 
+ export interface CreateOrderPorts {
+diff --git a/libs/infra/src/index.ts b/libs/infra/src/index.ts
+index a294d49..91f52da 100644
+--- a/libs/infra/src/index.ts
++++ b/libs/infra/src/index.ts
+@@ -1,48 +1,20 @@
+-import { OrderStatus } from '@afci-bench/contracts';
++import { Order, OrderRepository } from '@afci-bench/contracts';
+ 
+-// Infra layer implements repository interfaces
+-// Note: We define our own Order type here based on contracts to avoid importing from core
+-// This is a deliberate architectural choice - infra depends on contracts, not core
++export class InMemoryOrderRepository implements OrderRepository {
++  private orders: Map<string, Order> = new Map();
+ 
+-export interface OrderEntity {
+-  id: string;
+-  customerId: string;
+-  items: OrderItemEntity[];
+-  total: number;
+-  status: OrderStatus;
+-  createdAt: Date;
+-}
+-
+-export interface OrderItemEntity {
+-  productId: string;
+-  name: string;
+-  quantity: number;
+-  unitPrice: number;
+-  subtotal: number;
+-}
+-
+-// Port interface (matching core's OrderRepository)
+-export interface OrderRepositoryPort {
+-  save(order: OrderEntity): Promise<OrderEntity>;
+-  findById(id: string): Promise<OrderEntity | null>;
+-  findByCustomerId(customerId: string): Promise<OrderEntity[]>;
+-}
+-
+-export class InMemoryOrderRepository implements OrderRepositoryPort {
+-  private orders: Map<string, OrderEntity> = new Map();
+-
+-  async save(order: OrderEntity): Promise<OrderEntity> {
++  async save(order: Order): Promise<Order> {
+     const savedOrder = { ...order };
+     this.orders.set(order.id, savedOrder);
+     return savedOrder;
+   }
+ 
+-  async findById(id: string): Promise<OrderEntity | null> {
++  async findById(id: string): Promise<Order | null> {
+     return this.orders.get(id) ?? null;
+   }
+ 
+-  async findByCustomerId(customerId: string): Promise<OrderEntity[]> {
+-    const results: OrderEntity[] = [];
++  async findByCustomerId(customerId: string): Promise<Order[]> {
++    const results: Order[] = [];
+     this.orders.forEach((order) => {
+       if (order.customerId === customerId) {
+         results.push(order);
+diff --git a/package-lock.json b/package-lock.json
+index f54b1f5..37af837 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -70,6 +70,7 @@
+       "integrity": "sha512-H3mcG6ZDLTlYfaSNi0iOKkigqMFvkTKlGUYlD8GW7nNOYRrevuA46iTypPyv+06V3fEmvvazfntkBU34L0azAw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@babel/code-frame": "^7.28.6",
+         "@babel/generator": "^7.28.6",
+@@ -2025,13 +2026,6 @@
+         "url": "https://opencollective.com/eslint"
+       }
+     },
+-    "node_modules/@eslint/eslintrc/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/@eslint/eslintrc/node_modules/js-yaml": {
+       "version": "4.1.1",
+       "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.1.1.tgz",
+@@ -2123,6 +2117,30 @@
+         "node": ">=8"
+       }
+     },
++    "node_modules/@istanbuljs/load-nyc-config/node_modules/argparse": {
++      "version": "1.0.10",
++      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
++      "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "sprintf-js": "~1.0.2"
++      }
++    },
++    "node_modules/@istanbuljs/load-nyc-config/node_modules/js-yaml": {
++      "version": "3.14.2",
++      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.14.2.tgz",
++      "integrity": "sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "argparse": "^1.0.7",
++        "esprima": "^4.0.0"
++      },
++      "bin": {
++        "js-yaml": "bin/js-yaml.js"
++      }
++    },
+     "node_modules/@istanbuljs/schema": {
+       "version": "0.1.3",
+       "resolved": "https://registry.npmjs.org/@istanbuljs/schema/-/schema-0.1.3.tgz",
+@@ -3270,6 +3288,7 @@
+       "integrity": "sha512-YrT9ArrGaHForBaCNwFjoqJWmn8G1Pr7+BH/vwyLHciA9qT/wSiuOhxGCT50JA5xLvFBd6PIiGkE3afxcPE1nw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "undici-types": "~6.21.0"
+       }
+@@ -3445,6 +3464,7 @@
+       "integrity": "sha512-tbsV1jPne5CkFQCgPBcDOt30ItF7aJoZL997JSF7MhGQqOeT3svWRYxiqlfA5RUdlHN6Fi+EI9bxqbdyAUZjYQ==",
+       "dev": true,
+       "license": "BSD-2-Clause",
++      "peer": true,
+       "dependencies": {
+         "@typescript-eslint/scope-manager": "6.21.0",
+         "@typescript-eslint/types": "6.21.0",
+@@ -3681,6 +3701,30 @@
+         "node": ">=14.15.0"
+       }
+     },
++    "node_modules/@yarnpkg/parsers/node_modules/argparse": {
++      "version": "1.0.10",
++      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
++      "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "sprintf-js": "~1.0.2"
++      }
++    },
++    "node_modules/@yarnpkg/parsers/node_modules/js-yaml": {
++      "version": "3.14.2",
++      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.14.2.tgz",
++      "integrity": "sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "argparse": "^1.0.7",
++        "esprima": "^4.0.0"
++      },
++      "bin": {
++        "js-yaml": "bin/js-yaml.js"
++      }
++    },
+     "node_modules/@zkochan/js-yaml": {
+       "version": "0.0.6",
+       "resolved": "https://registry.npmjs.org/@zkochan/js-yaml/-/js-yaml-0.0.6.tgz",
+@@ -3694,13 +3738,6 @@
+         "js-yaml": "bin/js-yaml.js"
+       }
+     },
+-    "node_modules/@zkochan/js-yaml/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/accepts": {
+       "version": "1.3.8",
+       "resolved": "https://registry.npmjs.org/accepts/-/accepts-1.3.8.tgz",
+@@ -3720,6 +3757,7 @@
+       "integrity": "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "bin": {
+         "acorn": "bin/acorn"
+       },
+@@ -3864,14 +3902,11 @@
+       "license": "MIT"
+     },
+     "node_modules/argparse": {
+-      "version": "1.0.10",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
+-      "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
++      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+       "dev": true,
+-      "license": "MIT",
+-      "dependencies": {
+-        "sprintf-js": "~1.0.2"
+-      }
++      "license": "Python-2.0"
+     },
+     "node_modules/array-flatten": {
+       "version": "1.1.1",
+@@ -4270,6 +4305,7 @@
+         }
+       ],
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "baseline-browser-mapping": "^2.9.0",
+         "caniuse-lite": "^1.0.30001759",
+@@ -5122,6 +5158,7 @@
+       "deprecated": "This version is no longer supported. Please see https://eslint.org/version-support for other options.",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@eslint-community/eslint-utils": "^4.2.0",
+         "@eslint-community/regexpp": "^4.6.1",
+@@ -5178,6 +5215,7 @@
+       "integrity": "sha512-iI1f+D2ViGn+uvv5HuHVUamg8ll4tN+JRHGc6IJi4TP9Kl976C57fzPXgseXNs8v0iA8aSJpHsTWjDb9QJamGQ==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "bin": {
+         "eslint-config-prettier": "bin/cli.js"
+       },
+@@ -5215,13 +5253,6 @@
+         "url": "https://opencollective.com/eslint"
+       }
+     },
+-    "node_modules/eslint/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/eslint/node_modules/find-up": {
+       "version": "5.0.0",
+       "resolved": "https://registry.npmjs.org/find-up/-/find-up-5.0.0.tgz",
+@@ -6625,6 +6656,7 @@
+       "integrity": "sha512-NIy3oAFp9shda19hy4HK0HRTWKtPJmGdnvywu01nOqNC2vZg+Z+fvJDxpMQA88eb2I9EcafcdjYgsDthnYTvGw==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@jest/core": "^29.7.0",
+         "@jest/types": "^29.6.3",
+@@ -6693,24 +6725,6 @@
+         "node": "^14.15.0 || ^16.10.0 || >=18.0.0"
+       }
+     },
+-    "node_modules/jest-circus/node_modules/babel-plugin-macros": {
+-      "version": "3.1.0",
+-      "resolved": "https://registry.npmjs.org/babel-plugin-macros/-/babel-plugin-macros-3.1.0.tgz",
+-      "integrity": "sha512-Cg7TFGpIr01vOQNODXOOaGz2NpCU5gl8x1qJFbb6hbZxR7XrcE2vtbAsTAbJ7/xwJtUuJEw8K8Zr/AE0LHlesg==",
+-      "dev": true,
+-      "license": "MIT",
+-      "optional": true,
+-      "peer": true,
+-      "dependencies": {
+-        "@babel/runtime": "^7.12.5",
+-        "cosmiconfig": "^7.0.0",
+-        "resolve": "^1.19.0"
+-      },
+-      "engines": {
+-        "node": ">=10",
+-        "npm": ">=6"
+-      }
+-    },
+     "node_modules/jest-circus/node_modules/cosmiconfig": {
+       "version": "7.1.0",
+       "resolved": "https://registry.npmjs.org/cosmiconfig/-/cosmiconfig-7.1.0.tgz",
+@@ -6718,7 +6732,6 @@
+       "dev": true,
+       "license": "MIT",
+       "optional": true,
+-      "peer": true,
+       "dependencies": {
+         "@types/parse-json": "^4.0.0",
+         "import-fresh": "^3.2.1",
+@@ -7283,14 +7296,14 @@
+       "license": "MIT"
+     },
+     "node_modules/js-yaml": {
+-      "version": "3.14.2",
+-      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.14.2.tgz",
+-      "integrity": "sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==",
++      "version": "4.1.0",
++      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.1.0.tgz",
++      "integrity": "sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+-        "argparse": "^1.0.7",
+-        "esprima": "^4.0.0"
++        "argparse": "^2.0.1"
+       },
+       "bin": {
+         "js-yaml": "bin/js-yaml.js"
+@@ -7766,6 +7779,7 @@
+       "dev": true,
+       "hasInstallScript": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@nrwl/tao": "17.2.8",
+         "@yarnpkg/lockfile": "^1.1.0",
+@@ -7831,13 +7845,6 @@
+         }
+       }
+     },
+-    "node_modules/nx/node_modules/argparse": {
+-      "version": "2.0.1",
+-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+-      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+-      "dev": true,
+-      "license": "Python-2.0"
+-    },
+     "node_modules/nx/node_modules/glob": {
+       "version": "7.1.4",
+       "resolved": "https://registry.npmjs.org/glob/-/glob-7.1.4.tgz",
+@@ -7857,19 +7864,6 @@
+         "node": "*"
+       }
+     },
+-    "node_modules/nx/node_modules/js-yaml": {
+-      "version": "4.1.0",
+-      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.1.0.tgz",
+-      "integrity": "sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==",
+-      "dev": true,
+-      "license": "MIT",
+-      "dependencies": {
+-        "argparse": "^2.0.1"
+-      },
+-      "bin": {
+-        "js-yaml": "bin/js-yaml.js"
+-      }
+-    },
+     "node_modules/object-inspect": {
+       "version": "1.13.4",
+       "resolved": "https://registry.npmjs.org/object-inspect/-/object-inspect-1.13.4.tgz",
+@@ -9221,6 +9215,7 @@
+       "integrity": "sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@cspotcode/source-map-support": "^0.8.0",
+         "@tsconfig/node10": "^1.0.7",
+@@ -9346,6 +9341,7 @@
+       "integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
+       "dev": true,
+       "license": "Apache-2.0",
++      "peer": true,
+       "bin": {
+         "tsc": "bin/tsc",
+         "tsserver": "bin/tsserver"

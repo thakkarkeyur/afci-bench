@@ -1,0 +1,11 @@
+{
+  "model": "Opus 7",
+  "task": "T07",
+  "condition": "baseline_reset",
+  "timestamp": "2026-04-23T13:50:35Z",
+  "node_version": "v24.11.1",
+  "npm_version": "11.6.2",
+  "os": "MINGW64_NT-10.0-26200 FGC-LAPTOP-AS01 3.6.6-1cdd4371.x86_64 2026-01-15 22:20 UTC x86_64 Msys",
+  "ci_exit_code": 0,
+  "base_tag": "paper-v0"
+}

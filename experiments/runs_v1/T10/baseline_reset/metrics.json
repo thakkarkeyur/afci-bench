@@ -1,0 +1,21 @@
+{
+  "files_changed": [
+    "apps/api/src/app.spec.ts",
+    "apps/api/src/app.ts",
+    "libs/contracts/src/index.ts",
+    "libs/core/src/core.spec.ts",
+    "libs/core/src/index.ts",
+    "libs/features/src/features.spec.ts",
+    "libs/features/src/index.ts",
+    "package-lock.json"
+  ],
+  "delta_loc_code": 50,
+  "delta_loc_test": 13,
+  "delta_tests": 1,
+  "code_additions": 137,
+  "code_deletions": 87,
+  "test_additions": 35,
+  "test_deletions": 22,
+  "ci_pass": true,
+  "layer_jaccard": 1.0
+}
