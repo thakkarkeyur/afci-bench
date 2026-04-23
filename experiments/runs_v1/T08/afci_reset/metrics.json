@@ -1,0 +1,15 @@
+{
+  "files_changed": [
+    "apps/api/src/app.ts",
+    "package-lock.json"
+  ],
+  "delta_loc_code": -11,
+  "delta_loc_test": 0,
+  "delta_tests": 0,
+  "code_additions": 68,
+  "code_deletions": 79,
+  "test_additions": 0,
+  "test_deletions": 0,
+  "ci_pass": true,
+  "layer_jaccard": 1.0
+}
