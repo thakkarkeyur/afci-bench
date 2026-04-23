@@ -1,0 +1,38 @@
+\begin{table}[t]
+\centering
+\caption{Code-only drift: baseline vs.\ AFCI (v1, Opus~7). $\Delta$LOC = net lines changed in non-test source. Drift advantage = baseline $-$ AFCI (positive $\Rightarrow$ AFCI is leaner). Jaccard measures layer-overlap with expected touch set.}
+\label{tab:drift-v1}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{lrrrrrr}
+\toprule
+Task & BL $\Delta$LOC & AFCI $\Delta$LOC & Drift Adv. & BL Jaccard & AFCI Jaccard & $\Delta$Tests \\
+\midrule
+  T01 & 165 & 156 & 9 & 1.0 & 1.0 & 5 \\
+  T01\_reset & 152 & 176 & -24 & 1.0 & 1.0 & 15 \\
+  T02 & 279 & 325 & -46 & 1.0 & 1.0 & 9 \\
+  T02\_reset & 155 & 161 & -6 & 1.0 & 1.0 & 6 \\
+  T03 & 271 & 279 & -8 & 1.0 & 1.0 & 9 \\
+  T03\_reset & -70 & -67 & -3 & 1.0 & 1.0 & 0 \\
+  T04 & 284 & 451 & -167 & 1.0 & 1.0 & 9 \\
+  T04\_reset & 4 & 3 & 1 & 1.0 & 1.0 & 0 \\
+  T05 & 286 & 507 & -221 & 1.0 & 1.0 & 13 \\
+  T05\_reset & -3 & -3 & 0 & 1.0 & 1.0 & 3 \\
+  T06 & 302 & 575 & -273 & 1.0 & 1.0 & 15 \\
+  T06\_reset & 8 & 23 & -15 & 1.0 & 1.0 & 2 \\
+  T07 & 278 & 606 & -328 & 1.0 & 1.0 & 19 \\
+  T07\_reset & 11 & 7 & 4 & 1.0 & 1.0 & 7 \\
+  T08 & 271 & 656 & -385 & 1.0 & 1.0 & 19 \\
+  T08\_reset & -11 & -11 & 0 & 1.0 & 1.0 & 0 \\
+  T09 & 400 & 897 & -497 & 1.0 & 1.0 & 23 \\
+  T09\_reset & 212 & 232 & -20 & 1.0 & 1.0 & 8 \\
+  T10 & 433 & 985 & -552 & 1.0 & 1.0 & 24 \\
+  T10\_reset & 50 & -19 & 69 & 1.0 & 1.0 & 2 \\
+  T11 & 524 & 1181 & -657 & 1.0 & 1.0 & 27 \\
+  T11\_reset & 240 & 217 & 23 & 1.0 & 1.0 & 11 \\
+  T12 & 532 & 1247 & -715 & 1.0 & 1.0 & 28 \\
+  T12\_reset & 293 & 336 & -43 & 1.0 & 1.0 & 15 \\
+\bottomrule
+\end{tabular}
+\end{table}
