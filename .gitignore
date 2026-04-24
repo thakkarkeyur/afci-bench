@@ -34,3 +34,10 @@ test-results/
 
 # Nx cache
 .nx/cache
+
+# Python
+__pycache__/
+*.pyc
+
+# Raw survey exports — never commit
+*.xlsx
