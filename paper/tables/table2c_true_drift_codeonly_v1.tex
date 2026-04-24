@@ -1,0 +1,30 @@
+\begin{table}[t]
+\centering
+\caption{True code-only reset drift (\(\Delta\)CodeLOC). For each task, we compute drift as \(|\mathrm{CodeChurn}_{reset}-\mathrm{CodeChurn}_{nonreset}|\) using code-only churn (added+deleted code lines; blank and comment-only lines excluded). Lower is more reset-consistent.}
+\label{tab:true_drift_codeonly_v1}
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\renewcommand{\arraystretch}{1.05}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrr}
+\toprule
+Task & Baseline $\Delta$CodeLOC & AFCI $\Delta$CodeLOC & Advantage \\
+\midrule
+T01 & 17 & 8 & +9 \\
+T02 & 104 & 180 & -76 \\
+T03 & 207 & 290 & -83 \\
+T04 & 362 & 596 & -234 \\
+T05 & 371 & 662 & -291 \\
+T06 & 380 & 706 & -326 \\
+T07 & 377 & 777 & -400 \\
+T08 & 402 & 847 & -445 \\
+T09 & 292 & 807 & -515 \\
+T10 & 489 & 986 & -497 \\
+T11 & 370 & 1112 & -742 \\
+T12 & 321 & 1075 & -754 \\
+\midrule
+\multicolumn{4}{l}{\footnotesize Summary: AFCI lower drift in 1/12 tasks; mean baseline $\Delta$CodeLOC=307.7, mean AFCI $\Delta$CodeLOC=670.5.} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
