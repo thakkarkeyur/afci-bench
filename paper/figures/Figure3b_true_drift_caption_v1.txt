@@ -1,0 +1,1 @@
+Figure 3b: True code-only drift under context reset (v1). For each task, we compute ΔCodeLOC as the absolute difference in code-only churn between the reset and non-reset runs for the same prompting condition family. Lower values indicate more reset-consistent behavior. Code-only churn excludes blank and comment-only lines.
