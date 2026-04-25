@@ -9,6 +9,11 @@ This repo packages (1) a runnable benchmark codebase, (2) AFCI “architecture c
 
 Repository: https://github.com/thakkarkeyur/afci-bench
 
+## Artifact archive
+
+Artifact archive (Zenodo DOI): https://doi.org/10.5281/zenodo.19757261
+GitHub release tag: ase2026-artifacts-v1
+
 ---
 
 ## Quickstart (run CI)
