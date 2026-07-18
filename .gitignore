@@ -34,3 +34,46 @@ test-results/
 
 # Nx cache
 .nx/cache
+
+# =============================================================================
+# AFCI-Bench study v2 — reproducibility hygiene
+# Keep raw runs, scratch state, caches, evaluator mounts, and secrets out of git.
+# =============================================================================
+
+# Raw model transcripts (large; may contain verbatim prompts/outputs)
+raw_transcripts/
+transcripts/
+**/transcripts/
+*.transcript.jsonl
+*.transcript.json
+*.transcript.log
+
+# Temporary git worktrees used for isolated per-task runs
+.worktrees/
+worktrees/
+worktrees-tmp/
+*.worktree/
+
+# Model / tool caches
+.model_cache/
+model_cache/
+.afci_cache/
+.cache/
+
+# Temporary evaluator mounts (sandbox / oracle scratch dirs)
+.evaluator_mounts/
+evaluator-mounts/
+eval_mounts/
+*.evalmount/
+
+# Local secrets / credentials (in addition to the .env rules above)
+.secrets/
+*.secret
+secrets.local.*
+api_keys.*
+*.pem
+*.key
+
+# Generated v2 run results — never commit generated artifacts (README excepted)
+/experiments/v2/results/*
+!/experiments/v2/results/README.md

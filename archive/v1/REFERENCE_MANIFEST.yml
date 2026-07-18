@@ -1,0 +1,248 @@
+# =============================================================================
+# AFCI-Bench — v1 Reference Manifest
+# =============================================================================
+# Purpose: an immutable, annotated inventory of the v0/v1 experimental record so
+# that AFCI-Bench study v2 can be developed without touching, regenerating, or
+# depending on the mutable state of v1.
+#
+# This file is a POINTER RECORD. It does not copy v1 artifacts; it names the
+# exact git refs, tags, branches, and release/DOI identifiers under which the
+# v1 record already lives. Everything below is derived from `git` and `gh` on
+# this repository. Fields that could not be derived are marked TODO and MUST
+# NOT be invented.
+#
+# Generated on branch: study-v2 (created from main)
+# Repository remote:   https://github.com/thakkarkeyur/afci-bench.git
+# =============================================================================
+
+schema_version: 1
+manifest_kind: v1-reference-inventory
+
+# -----------------------------------------------------------------------------
+# Base of record
+# -----------------------------------------------------------------------------
+# The stable `main` branch is the public v1 repository. study-v2 is branched
+# from this exact commit. This SHA is the canonical anchor for the whole v1
+# record.
+main:
+  branch: main
+  sha: 2adc8741acad7ea5423f0bf3d9ad821ff023a35f
+  commit_date: "2026-04-17 03:53:31 +0530"
+  subject: "chore: add MIT license and align README"
+  note: >-
+    HEAD of the public v1 repository. Identical commit to tag `paper-v0` and to
+    branch `paper-v0-snapshot`. study-v2 begins here.
+
+# -----------------------------------------------------------------------------
+# Relevant v0 / v1 tags
+# -----------------------------------------------------------------------------
+tags:
+  - name: paper-v0
+    sha: 2adc8741acad7ea5423f0bf3d9ad821ff023a35f
+    commit_date: "2026-04-17 03:53:31 +0530"
+    subject: "chore: add MIT license and align README"
+    role: >-
+      v0 baseline snapshot referenced by the harness (patches are captured as
+      `git diff paper-v0`). Coincides with current `main` HEAD.
+
+  - name: paper-v0-runner
+    sha: 35dda1a786cd6183ab283d8425dda71c92825843
+    commit_date: "2026-04-21 01:17:58 +0530"
+    subject: "chore(v1): fix lockfile to restore deterministic npm ci"
+    role: >-
+      Runner-side snapshot used for the v1 re-execution; also the tip of branch
+      `rerun-v1-opus7-alltasks`. Contains the lockfile fix that restores
+      deterministic `npm ci`.
+
+  - name: ase2026-artifacts-v1
+    sha: 1ba21ad75dacbac5eb87d354a490b088078c30da
+    commit_date: "2026-04-25 13:25:29 +0530"
+    subject: "data(v1): add Figure3b true-drift caption text"
+    role: >-
+      Tag backing the published GitHub release "ASE 2026 Artifact Package
+      (AFCI): v1". Reachable only from the rerun branches, not from `main`.
+
+# -----------------------------------------------------------------------------
+# Historical rerun / experiment branches
+# -----------------------------------------------------------------------------
+# All rerun branches are strictly AHEAD of `main` (main is fully contained in
+# each; ahead/behind counts vs main shown below). They hold the distributed
+# experimental evidence of the v1 re-execution ("Opus 7" model label).
+#
+# CONSTRAINT: none of these may be merged into study-v2.
+rerun_branches:
+  - name: paper-v0-snapshot
+    tip_sha: 2adc8741acad7ea5423f0bf3d9ad821ff023a35f
+    ahead_of_main: 0
+    behind_main: 0
+    note: "Identical to main HEAD; snapshot marker of the public v1 repo."
+
+  - name: rerun-v1-opus7-alltasks
+    tip_sha: 35dda1a786cd6183ab283d8425dda71c92825843
+    ahead_of_main: 3
+    behind_main: 0
+    commit_date: "2026-04-21 01:17:58 +0530"
+    note: "Tip equals tag `paper-v0-runner`. All-tasks v1 re-run setup."
+
+  - name: rerun-v1-opus7-afci-nonreset
+    tip_sha: a9af8ee600af0653856622b9749028cf2aa3cfd0
+    ahead_of_main: 16
+    behind_main: 0
+    commit_date: "2026-04-21 14:52:55 +0530"
+    subject: "data(v1): afci non-reset T12 (Opus 7)"
+    note: "Non-reset AFCI condition artifacts, tasks T01..T12."
+
+  - name: rerun-v1-opus7-resets
+    tip_sha: b4818a34ac1512db4afc9f481232c9930d90ff6e
+    ahead_of_main: 27
+    behind_main: 0
+    commit_date: "2026-04-24 03:55:56 +0530"
+    subject: "data(v1): afci_reset T12 artifacts (Opus 7)"
+    note: "Reset conditions (baseline_reset / afci_reset) artifacts, T01..T12."
+
+  - name: rerun-v1-opus7-artifacts
+    tip_sha: 8d5e5c4dde9bbcd35a2945bd36fe23d82d24cc10
+    ahead_of_main: 10
+    behind_main: 0
+    commit_date: "2026-04-25 13:59:39 +0530"
+    subject: "docs: add Zenodo DOI for ase2026 artifacts"
+    note: >-
+      Aggregated v1 results (results_v1, drift/conformance summaries, Figure3/
+      Table v1) plus the Zenodo DOI documentation. Contains tag
+      `ase2026-artifacts-v1` in its history.
+
+# -----------------------------------------------------------------------------
+# Known artifact / release identifiers
+# -----------------------------------------------------------------------------
+release:
+  provider: github
+  name: "ASE 2026 Artifact Package (AFCI): v1"
+  tag: ase2026-artifacts-v1
+  target_commitish: main
+  is_draft: false
+  is_prerelease: false
+  is_immutable: false          # per gh: release is not marked immutable
+  created_at: "2026-04-25T07:55:29Z"
+  published_at: "2026-04-25T08:11:05Z"
+  author_login: thakkarkeyur
+  url: https://github.com/thakkarkeyur/afci-bench/releases/tag/ase2026-artifacts-v1
+  assets: []                   # no binary assets attached; payload archived on Zenodo
+
+# -----------------------------------------------------------------------------
+# Zenodo DOI
+# -----------------------------------------------------------------------------
+# Present in repository documentation on branch `rerun-v1-opus7-artifacts`
+# (README.md line 14 and paper/data_availability_note.md), NOT on `main`.
+zenodo:
+  doi: 10.5281/zenodo.19757261
+  url: https://doi.org/10.5281/zenodo.19757261
+  documented_in:
+    - "rerun-v1-opus7-artifacts:README.md"
+    - "rerun-v1-opus7-artifacts:paper/data_availability_note.md"
+  note: >-
+    DOI is documented on the artifacts branch only; it is not recorded on
+    `main`. Recorded here verbatim from git; not modified.
+
+# -----------------------------------------------------------------------------
+# v1 paper artifacts already tracked on main (immutable)
+# -----------------------------------------------------------------------------
+# These live under paper/ and experiments/ on main and MUST NOT be edited,
+# regenerated, or overwritten by v2 work.
+v1_tracked_artifacts_on_main:
+  paper:
+    - paper/figures/Figure1_AFCI_Workflow.png
+    - paper/figures/Figure3_drift_codeonly.pdf
+    - paper/figures/sources/Figure1_AFCI_Workflow.drawio
+    - paper/tables/table2b_drift_codeonly.tex
+    - paper/tables/table_conformance_summary.tex
+  docs:
+    - docs/ARCH_RULES.yml        # NOTE: 0 bytes on main (see limitations)
+    - docs/MAD_v0.md
+    - docs/PROMPT_PACK_v0.md
+  experiments:
+    - experiments/scripts/afci_guard_check.py
+    - experiments/scripts/aggregate_conformance.py
+    - experiments/tasks_v0/            # T01..T12 + TASK_TEMPLATE.md
+    - experiments/paper/drift_summary_v0_codeonly.csv
+
+# -----------------------------------------------------------------------------
+# Immutability statement
+# -----------------------------------------------------------------------------
+immutability:
+  statement: >-
+    All v0/v1 artifacts referenced above are IMMUTABLE. No v0/v1 result, prompt,
+    patch, table, figure, submitted-paper artifact, tag, release, or historical
+    rerun branch may be modified, deleted, renamed, regenerated, or overwritten.
+    study-v2 must not merge any rerun-v1 branch. The paper must not be edited.
+    This manifest and the archive/v1 folder are additive reference records only.
+  verified_additive: >-
+    The v1 history from tag `paper-v0` to the rerun branch tips is composed of
+    additions only (no v0/v1 files were overwritten), consistent with the
+    reproducibility review of 2026-07-18.
+
+# -----------------------------------------------------------------------------
+# Known limitations of the v1 execution design (stated factually)
+# -----------------------------------------------------------------------------
+# Recorded so v2 is designed to remedy them. These are descriptions of the v1
+# design as executed, not judgments about the v1 artifacts' integrity.
+v1_execution_limitations:
+  - id: L1-non-independent-runs
+    statement: >-
+      The harness (experiments/scripts/run_one_v1.sh) captures patch.diff as
+      `git diff paper-v0` over the whole working tree and never resets the tree
+      between tasks, so edits accumulate monotonically across T01..T12. Runs are
+      therefore non-independent, with a single run per condition
+      (48 rows = 12 tasks x 4 conditions).
+  - id: L2-no-model-invocation
+    statement: >-
+      run_one_v1.sh does not itself invoke a model; it snapshots the working
+      tree state. Model execution and diff capture are not coupled in the
+      harness, limiting reproducibility of the generation step.
+  - id: L3-afci-guard-nonfunctional
+    statement: >-
+      AFCI-Guard (afci_guard_check.py) matches literal `libs/core` import paths,
+      but the codebase uses `@afci-bench/*` path aliases (tsconfig.base.json), so
+      the guard regexes do not fire. conformance_summary_v1.csv is all zeros and
+      the guard has no validation tests.
+  - id: L4-empty-arch-rules
+    statement: >-
+      docs/ARCH_RULES.yml is 0 bytes on main despite documentation describing
+      machine-checkable architecture rules.
+  - id: L5-degenerate-metric
+    statement: >-
+      layer_jaccard in extract_metrics.py evaluates to a constant 1.0
+      (self-comparison; expected_layers=None) yet is reported as a metric.
+  - id: L6-indirect-metrics
+    statement: >-
+      Primary reported metrics are churn/drift (delta LOC). There is no
+      per-task acceptance oracle beyond `npm run ci`, and ci_pass is saturated
+      True across all 48 cells, so the gate does not discriminate task success.
+  - id: L7-lockfile-desync-on-base
+    statement: >-
+      package-lock.json on `main` (the v1 base / tag paper-v0) is out of sync
+      with package.json: `npm ci` fails on the clean base (transitive
+      js-yaml and argparse version mismatch). Code-level validation still
+      passes: `npm install` followed by `npm run ci` (lint + typecheck + test,
+      6 projects) succeeds. A lockfile-only deterministic-install fix already
+      exists at tag `paper-v0-runner` (commit 35dda1a; package.json unchanged,
+      140 lines changed in package-lock.json only). The public v1 base retains
+      the unsynced lockfile. study-v2 was branched leaving the v1 base
+      byte-for-byte unchanged; the v2 lockfile policy is a deferred, explicit
+      decision recorded under provenance.human_confirmation_todo.
+    verified_on: "2026-07-19 (study-v2 init)"
+
+# -----------------------------------------------------------------------------
+# Provenance of this manifest
+# -----------------------------------------------------------------------------
+provenance:
+  derived_from:
+    - "git for-each-ref / git rev-parse / git rev-list (refs above)"
+    - "gh release view ase2026-artifacts-v1"
+    - "git grep for zenodo/doi across branches"
+  human_confirmation_todo:
+    - "Confirm whether the Zenodo DOI should also be recorded on main for v2."
+    - "Confirm whether the GitHub v1 release should be marked immutable."
+    - >-
+      Decide the v2 lockfile policy (see limitation L7): regenerate via
+      npm install, adopt the paper-v0-runner lockfile, or keep the base
+      lockfile. Deferred at study-v2 init to keep the v1 base unchanged.
