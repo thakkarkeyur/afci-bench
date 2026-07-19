@@ -1,0 +1,18 @@
+source,locations,scope,audit_kind,isolation_mechanism,reliably_neutralized,residual_risk,present_on_ref_machine_2026_07_19
+user CLAUDE.md,~/.claude/CLAUDE.md; ~/CLAUDE.md,user,claude_md,temporary HOME + --bare (skips CLAUDE.md auto-discovery),yes,none,no
+project CLAUDE.md,<workspace>/CLAUDE.md,workspace,claude_md,condition allowlist (C1 none / C3 approved file) + audit,yes,none,no
+dot-claude CLAUDE.md,<workspace>/.claude/CLAUDE.md; ~/.claude/CLAUDE.md,workspace/user,claude_md,condition allowlist + temporary HOME + --bare,yes,none,no
+CLAUDE.local.md,<workspace>/CLAUDE.local.md,workspace,claude_local_md,condition allowlist + audit,yes,none,no
+ancestor CLAUDE.md,<ancestor>/CLAUDE.md; <ancestor>/.claude/CLAUDE.md,ancestor,claude_md,run workspace under a clean parent path + ancestor scan + --bare,yes,ancestor path outside workspace must be controlled,no
+.claude/rules,<workspace>/.claude/rules; ~/.claude/rules; <config>/rules,workspace/user/config,rules,condition allowlist + temporary HOME/config,yes,none,no
+settings files,~/.claude/settings.json; <workspace>/.claude/settings.json(.local); <config>/settings.json,user/workspace/config,settings,temporary CLAUDE_CONFIG_DIR + explicit --settings,yes,none,yes
+auto-memory,<config>/projects/*/memory/*; <workspace>/MEMORY.md,config/workspace,memory,CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 + temporary CLAUDE_CONFIG_DIR,yes,none,yes (40+ files)
+skills,~/.claude/skills; <workspace>/.claude/skills; <config>/skills,user/workspace/config,skills,temporary HOME/config + --disable-slash-commands + --bare,yes,skills still resolve via /name under --bare,yes
+agents,~/.claude/agents; <workspace>/.claude/agents; <config>/agents,user/workspace/config,agents,temporary HOME/config + explicit --agents/--agent only,yes,none,no
+commands,~/.claude/commands; <workspace>/.claude/commands; <config>/commands,user/workspace/config,commands,temporary HOME/config,yes,none,no
+hooks,settings.json "hooks"; <...>/.claude/hooks,user/workspace/config,hooks,temporary CLAUDE_CONFIG_DIR + --bare (skips hooks),yes,none,no
+plugins,~/.claude/plugins; <workspace>/.claude/plugins; <config>/plugins,user/workspace/config,plugins,temporary HOME/config + --bare (skips plugin sync) + explicit --plugin-dir,yes,none,yes
+MCP configuration,~/.claude.json; <config>/.claude.json; <workspace>/.mcp.json,user/config/workspace,mcp,--strict-mcp-config + explicit --mcp-config + temporary config,yes,none,yes (0 servers)
+managed/remote org policy,~/.claude/policy-limits.json; ~/.claude/remote-settings.json; OS managed-settings.json,managed/config/user,managed_settings,isolated container or VM + dedicated auth identity (account-tied; NOT removed by temp HOME/config),no,account-tied policy persists across relocated HOME/config; requires isolated environment,yes (policy-limits.json)
+session restoration,--continue/-c; --resume/-r; --from-pr; reused --session-id,runtime,session_restoration,never pass restoration flags + fresh unseen --session-id + --no-session-persistence,yes,none,n/a (runtime)
+auto-update,updater on launch,runtime,n/a,DISABLE_AUTOUPDATER=1,yes,none,n/a (runtime)

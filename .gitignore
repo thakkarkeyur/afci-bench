@@ -77,3 +77,9 @@ api_keys.*
 # Generated v2 run results — never commit generated artifacts (README excepted)
 /experiments/v2/results/*
 !/experiments/v2/results/README.md
+
+# Python (v2 harness / analysis scripts)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://afci-bench/experiments/v2/schemas/context_audit.schema.json",
+  "title": "AFCI-Bench v2 Context Isolation Audit",
+  "description": "Fail-closed audit record proving Claude context isolation for one experimental run. Records only paths, hashes, and non-secret status; never secret values.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "condition",
+    "generated_at",
+    "sterile_environment",
+    "auto_memory",
+    "session_restoration",
+    "detected_context_sources",
+    "permitted_context_sources",
+    "approved_context_hashes",
+    "component_status",
+    "contamination"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "run_id": { "type": "string" },
+    "condition": { "type": "string", "enum": ["C1", "C2", "C3", "C4"] },
+    "generated_at": { "type": "string" },
+    "sterile_environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "temp_home",
+        "claude_config_dir",
+        "auto_memory_disabled",
+        "autoupdater_disabled",
+        "config_dir_isolated",
+        "home_isolated"
+      ],
+      "properties": {
+        "temp_home": { "type": "string" },
+        "claude_config_dir": { "type": "string" },
+        "auto_memory_disabled": { "type": "boolean" },
+        "autoupdater_disabled": { "type": "boolean" },
+        "config_dir_isolated": { "type": "boolean" },
+        "home_isolated": { "type": "boolean" }
+      }
+    },
+    "auto_memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disabled", "status"],
+      "properties": {
+        "disabled": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["disabled", "enabled"] }
+      }
+    },
+    "session_restoration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["restored", "status", "violations"],
+      "properties": {
+        "restored": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["fresh", "restored"] },
+        "violations": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "detected_context_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "scope", "path", "is_dir", "sha256", "detail", "approved"],
+        "properties": {
+          "kind": { "type": "string" },
+          "scope": {
+            "type": "string",
+            "enum": ["workspace", "ancestor", "user", "config", "managed", "runtime"]
+          },
+          "path": { "type": "string" },
+          "is_dir": { "type": "boolean" },
+          "sha256": { "type": ["string", "null"] },
+          "detail": { "type": "string" },
+          "approved": { "type": "boolean" }
+        }
+      }
+    },
+    "permitted_context_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "path", "sha256"],
+        "properties": {
+          "kind": { "type": "string" },
+          "path": { "type": "string" },
+          "sha256": { "type": "string" }
+        }
+      }
+    },
+    "approved_context_hashes": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "component_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mcp", "plugins", "hooks", "skills", "agents", "commands"],
+      "properties": {
+        "mcp": { "type": "string", "enum": ["none", "approved", "present-unapproved"] },
+        "plugins": { "type": "string", "enum": ["none", "approved", "present-unapproved"] },
+        "hooks": { "type": "string", "enum": ["none", "approved", "present-unapproved"] },
+        "skills": { "type": "string", "enum": ["none", "approved", "present-unapproved"] },
+        "agents": { "type": "string", "enum": ["none", "approved", "present-unapproved"] },
+        "commands": { "type": "string", "enum": ["none", "approved", "present-unapproved"] }
+      }
+    },
+    "contamination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "reasons"],
+      "properties": {
+        "verdict": { "type": "string", "enum": ["CLEAN", "CONTAMINATED"] },
+        "reasons": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
