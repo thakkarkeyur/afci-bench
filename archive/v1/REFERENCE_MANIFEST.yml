@@ -175,10 +175,14 @@ immutability:
     rerun branch may be modified, deleted, renamed, regenerated, or overwritten.
     study-v2 must not merge any rerun-v1 branch. The paper must not be edited.
     This manifest and the archive/v1 folder are additive reference records only.
-  verified_additive: >-
-    The v1 history from tag `paper-v0` to the rerun branch tips is composed of
-    additions only (no v0/v1 files were overwritten), consistent with the
-    reproducibility review of 2026-07-18.
+  verified_no_evidence_overwrite: >-
+    Verified in the reproducibility review of 2026-07-18: across the v1 history
+    from tag `paper-v0` to the rerun branch tips, no historical v1 result,
+    figure, table, submitted-paper artifact, or submitted evidence file was
+    overwritten, deleted, renamed, or regenerated. This is the precise,
+    verifiable claim and it deliberately replaces the earlier over-broad
+    "additions only" phrasing, which asserted more about the history than was
+    actually checked.
 
 # -----------------------------------------------------------------------------
 # Known limitations of the v1 execution design (stated factually)

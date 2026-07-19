@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Architecture-First Context Injection Benchmark",
+  "packageManager": "npm@10.8.2",
   "scripts": {
     "lint": "nx run-many --target=lint --all",
     "test": "nx run-many --target=test --all",
