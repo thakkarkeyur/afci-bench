@@ -37,7 +37,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-SCHEMA_VERSION = "1.0.0"
+SCHEMA_VERSION = "1.1.0"
 
 # Environment variables that MUST be set for every experimental run.
 REQUIRED_ENV = {
@@ -212,7 +212,11 @@ class AuditResult:
     config_dir_isolated: bool
     home_isolated: bool
     session_restored: bool
+    session_status: str
     session_violations: List[str]
+    session_command_supplied: bool
+    session_command_source: str
+    session_command_flags: List[str]
     detected: List[DetectedSource]
     approved: List[ApprovedArtifact]
     component_status: Dict[str, str]
@@ -243,8 +247,11 @@ class AuditResult:
             },
             "session_restoration": {
                 "restored": self.session_restored,
-                "status": "restored" if self.session_restored else "fresh",
+                "status": self.session_status,
                 "violations": list(self.session_violations),
+                "command_supplied": self.session_command_supplied,
+                "command_source": self.session_command_source,
+                "inspected_flags": list(self.session_command_flags),
             },
             "detected_context_sources": [d.to_dict() for d in self.detected],
             "permitted_context_sources": [
@@ -370,6 +377,49 @@ def check_session_flags(
                 violations.append(f"previous session ID reused: {flag} {value}")
         i += 1
     return violations
+
+
+@dataclass(frozen=True)
+class LaunchCommand:
+    """The exact command line the experimental runner uses to start Claude.
+
+    The (future) runner must supply this so the audit can prove session freshness
+    from the *real* invocation rather than assuming it. ``source`` records
+    provenance: ``argv`` (passed directly / built by the runner), ``manifest``
+    (loaded from a validated JSON manifest), or ``fake-executor`` (a synthetic
+    clean command produced by :func:`fresh_launch_command` for development tests
+    only — never for an experimental run).
+    """
+
+    argv: Tuple[str, ...]
+    source: str = "argv"
+
+    def flag_tokens(self) -> List[str]:
+        """Recognized flag tokens (``-x`` / ``--x``) with their values stripped,
+        for the audit report. Free-text values — notably a ``-p`` prompt — are
+        never recorded, consistent with the no-secret-values rule."""
+        return [tok.partition("=")[0] for tok in self.argv if tok.startswith("-")]
+
+
+def fresh_launch_command(extra: Sequence[str] = ()) -> LaunchCommand:
+    """A synthetic clean (non-restoring) ``claude -p`` launch command for
+    development tests. Tagged ``fake-executor`` so it can never be mistaken for a
+    real experimental launch."""
+    argv = ("claude", "-p", "--no-session-persistence", *extra)
+    return LaunchCommand(argv=argv, source="fake-executor")
+
+
+def load_launch_manifest(path: Path) -> LaunchCommand:
+    """Load and validate a launch-command manifest: ``{"argv": ["claude", ...]}``.
+
+    Raises ``ValueError`` on any malformed manifest so the caller fails closed."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    argv = data.get("argv") if isinstance(data, dict) else None
+    if not isinstance(argv, list) or not argv:
+        raise ValueError("launch manifest must be an object with a non-empty 'argv' array")
+    if not all(isinstance(tok, str) for tok in argv):
+        raise ValueError("launch manifest 'argv' must contain only strings")
+    return LaunchCommand(argv=tuple(argv), source="manifest")
 
 
 # --------------------------------------------------------------------------- #
@@ -544,12 +594,20 @@ def audit(
     condition: Condition,
     roots: ScanRoots,
     env: Dict[str, str],
-    argv: Sequence[str] = (),
+    launch: Optional[LaunchCommand] = None,
+    require_launch: bool = False,
     previous_session_ids: Iterable[str] = (),
     run_id: str,
     generated_at: str = "unspecified",
 ) -> AuditResult:
-    """Produce a fail-closed context-isolation audit for one run."""
+    """Produce a fail-closed context-isolation audit for one run.
+
+    ``launch`` is the exact command the runner will use to start Claude. When
+    ``require_launch`` is True (experimental mode) a launch command is mandatory:
+    if none is supplied the audit refuses to certify session freshness and fails
+    closed. When False (development mode) the session dimension is skipped so the
+    other dimensions can be tested in isolation.
+    """
     approved = list(condition.approved)
     approved_by_real: Dict[str, ApprovedArtifact] = {a.real(): a for a in approved}
 
@@ -601,9 +659,32 @@ def audit(
         reasons.append("HOME/USERPROFILE does not point at the isolated temporary home")
 
     # --- session-restoration guard ---
-    session_violations = check_session_flags(argv, previous_session_ids)
+    # The launch command is the exact argv the runner uses to start Claude. An
+    # experimental audit (require_launch=True) MUST be given one, or it cannot
+    # prove the process is fresh and fails closed. Development tests may omit it
+    # (require_launch=False) to exercise the other dimensions in isolation.
+    session_command_supplied = launch is not None
+    session_command_source = launch.source if launch is not None else "none"
+    session_command_flags = launch.flag_tokens() if launch is not None else []
+
+    restoration_violations: List[str] = []
+    if launch is not None:
+        restoration_violations = check_session_flags(launch.argv, previous_session_ids)
+    session_violations = list(restoration_violations)
+    if launch is None and require_launch:
+        session_violations.append(
+            "no Claude launch command supplied; cannot certify a fresh session "
+            "(experimental audit requires --launch-argv or --launch-manifest)"
+        )
     reasons.extend(session_violations)
-    session_restored = bool(session_violations)
+
+    session_restored = bool(restoration_violations)
+    if session_restored:
+        session_status = "restored"
+    elif session_command_supplied:
+        session_status = "fresh"
+    else:
+        session_status = "unknown"
 
     # --- per-component status ---
     component_status = {k: "none" for k in COMPONENT_KINDS}
@@ -628,7 +709,11 @@ def audit(
         config_dir_isolated=config_dir_isolated,
         home_isolated=home_isolated,
         session_restored=session_restored,
+        session_status=session_status,
         session_violations=session_violations,
+        session_command_supplied=session_command_supplied,
+        session_command_source=session_command_source,
+        session_command_flags=session_command_flags,
         detected=detected,
         approved=approved,
         component_status=component_status,
@@ -736,6 +821,30 @@ def _build_parser() -> argparse.ArgumentParser:
         help="A previously used session ID to reject on reuse (repeatable).",
     )
     p.add_argument(
+        "--launch-argv",
+        default=None,
+        help=(
+            "JSON array of the exact Claude launch argv the runner will use, e.g. "
+            "'[\"claude\", \"-p\", \"--model\", \"claude-opus-4-8[1m]\"]'. Required "
+            "for an experimental audit unless --launch-manifest or "
+            "--allow-missing-launch is given."
+        ),
+    )
+    p.add_argument(
+        "--launch-manifest",
+        default=None,
+        help="Path to a JSON launch manifest {\"argv\": [...]} (alternative to --launch-argv).",
+    )
+    p.add_argument(
+        "--allow-missing-launch",
+        action="store_true",
+        help=(
+            "DEVELOPMENT ONLY: skip the mandatory launch-command check. Never use "
+            "for an experimental run — the session-freshness dimension is then "
+            "recorded as 'unknown'."
+        ),
+    )
+    p.add_argument(
         "--generated-at",
         default="unspecified",
         help="Timestamp string to stamp into the audit (caller-supplied; keeps this pure).",
@@ -759,11 +868,25 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             home=sterile.temp_home,
             config_dir=sterile.config_dir,
         )
+        # Resolve the launch command supplied by the runner. Experimental mode
+        # requires exactly one source; if none is given the audit fails closed
+        # (unless --allow-missing-launch is set for development).
+        if args.launch_manifest and args.launch_argv:
+            raise ValueError("supply only one of --launch-manifest / --launch-argv")
+        launch: Optional[LaunchCommand] = None
+        if args.launch_manifest:
+            launch = load_launch_manifest(Path(args.launch_manifest))
+        elif args.launch_argv:
+            parsed = json.loads(args.launch_argv)
+            if not isinstance(parsed, list) or not all(isinstance(t, str) for t in parsed):
+                raise ValueError("--launch-argv must be a JSON array of strings")
+            launch = LaunchCommand(argv=tuple(parsed), source="argv")
         result = audit(
             condition=condition,
             roots=roots,
             env=sterile.env,
-            argv=[],  # this harness never restores a session
+            launch=launch,
+            require_launch=not args.allow_missing_launch,
             previous_session_ids=args.previous_session_id,
             run_id=args.run_id,
             generated_at=args.generated_at,
@@ -784,7 +907,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 "home_isolated": False,
             },
             "auto_memory": {"disabled": False, "status": "enabled"},
-            "session_restoration": {"restored": True, "status": "restored", "violations": []},
+            "session_restoration": {
+                "restored": False,
+                "status": "unknown",
+                "violations": [],
+                "command_supplied": False,
+                "command_source": "none",
+                "inspected_flags": [],
+            },
             "detected_context_sources": [],
             "permitted_context_sources": [],
             "approved_context_hashes": {},

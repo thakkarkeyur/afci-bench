@@ -8,6 +8,8 @@ ever recorded.
 import json
 from pathlib import Path
 
+import pytest
+
 import context_audit as ca
 
 SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "context_audit.schema.json"
@@ -207,7 +209,8 @@ def test_audit_flags_session_restoration(tmp_path):
         condition=ca.CONDITIONS["C1"],
         roots=roots,
         env=sterile.env,
-        argv=["--resume", "old-session"],
+        launch=ca.LaunchCommand(argv=("claude", "-p", "--resume", "old-session")),
+        require_launch=True,
         run_id="rsess",
     )
     assert result.session_restored is True
@@ -265,3 +268,324 @@ def test_schema_file_is_valid_json():
     schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
     assert schema["type"] == "object"
     assert "contamination" in schema["properties"]
+
+
+# --------------------------------------------------------------------------- #
+# P1-1: launch-command / session-restoration enforcement (fail-closed)
+#
+# The audit must be given the exact Claude launch command; an experimental audit
+# with no command supplied must fail closed instead of silently claiming a fresh
+# session (the pre-fix defect: main() hard-coded argv=[]).
+# --------------------------------------------------------------------------- #
+def test_experimental_audit_requires_launch_command(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    result = ca.audit(
+        condition=ca.CONDITIONS["C1"],
+        roots=roots,
+        env=sterile.env,
+        launch=None,
+        require_launch=True,
+        run_id="rnl",
+    )
+    assert result.verdict == "CONTAMINATED"
+    assert result.session_command_supplied is False
+    assert any("launch command" in r for r in result.reasons)
+    sr = result.to_dict()["session_restoration"]
+    assert sr["status"] == "unknown"
+    assert sr["command_supplied"] is False
+    assert sr["command_source"] == "none"
+
+
+def test_fresh_process_command_passes(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    launch = ca.fresh_launch_command(["--model", "claude-opus-4-8[1m]", "--effort", "xhigh"])
+    result = ca.audit(
+        condition=ca.CONDITIONS["C1"],
+        roots=roots,
+        env=sterile.env,
+        launch=launch,
+        require_launch=True,
+        run_id="rfresh",
+    )
+    assert result.verdict == "CLEAN", result.reasons
+    sr = result.to_dict()["session_restoration"]
+    assert sr["restored"] is False
+    assert sr["status"] == "fresh"
+    assert sr["command_supplied"] is True
+    assert sr["command_source"] == "fake-executor"
+
+
+def test_continue_flag_rejected(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    launch = ca.LaunchCommand(argv=("claude", "-p", "--continue"))
+    result = ca.audit(
+        condition=ca.CONDITIONS["C1"],
+        roots=roots,
+        env=sterile.env,
+        launch=launch,
+        require_launch=True,
+        run_id="rcont",
+    )
+    assert result.verdict == "CONTAMINATED"
+    assert result.session_restored is True
+    assert any("--continue" in r for r in result.reasons)
+
+
+def test_resume_flag_rejected(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    launch = ca.LaunchCommand(argv=("claude", "-p", "--resume", "sess-42"))
+    result = ca.audit(
+        condition=ca.CONDITIONS["C1"],
+        roots=roots,
+        env=sterile.env,
+        launch=launch,
+        require_launch=True,
+        run_id="rres",
+    )
+    assert result.verdict == "CONTAMINATED"
+    assert result.session_restored is True
+    assert any("--resume" in r for r in result.reasons)
+
+
+def test_previous_session_id_rejected_by_audit(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    reused = ca.LaunchCommand(argv=("claude", "-p", "--session-id", "prev-123"))
+    result = ca.audit(
+        condition=ca.CONDITIONS["C1"],
+        roots=roots,
+        env=sterile.env,
+        launch=reused,
+        require_launch=True,
+        previous_session_ids=["prev-123"],
+        run_id="rprev",
+    )
+    assert result.verdict == "CONTAMINATED"
+    assert result.session_restored is True
+    assert any("previous session ID reused" in r for r in result.reasons)
+
+    # a fresh, unseen session id under the same guard is accepted
+    fresh_id = ca.LaunchCommand(argv=("claude", "-p", "--session-id", "fresh-999"))
+    ok = ca.audit(
+        condition=ca.CONDITIONS["C1"],
+        roots=roots,
+        env=sterile.env,
+        launch=fresh_id,
+        require_launch=True,
+        previous_session_ids=["prev-123"],
+        run_id="rprev2",
+    )
+    assert ok.verdict == "CLEAN", ok.reasons
+
+
+def test_json_report_reflects_supplied_command(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    launch = ca.LaunchCommand(
+        argv=("claude", "-p", "TOP-SECRET-PROMPT-BODY", "--model", "opus", "--resume", "sess-9"),
+        source="argv",
+    )
+    result = ca.audit(
+        condition=ca.CONDITIONS["C1"],
+        roots=roots,
+        env=sterile.env,
+        launch=launch,
+        require_launch=True,
+        run_id="rjson",
+    )
+    sr = result.to_dict()["session_restoration"]
+    assert sr["command_supplied"] is True
+    assert sr["command_source"] == "argv"
+    # recognized flags are recorded; free-text values (the -p prompt, the model
+    # value) are never written into the report
+    assert "--model" in sr["inspected_flags"]
+    assert "--resume" in sr["inspected_flags"]
+    assert "-p" in sr["inspected_flags"]
+    assert "opus" not in sr["inspected_flags"]
+    blob = json.dumps(result.to_dict())
+    assert "TOP-SECRET-PROMPT-BODY" not in blob
+
+
+def test_launch_manifest_round_trip_and_validation(tmp_path):
+    good = tmp_path / "launch.json"
+    good.write_text(json.dumps({"argv": ["claude", "-p", "--resume", "x"]}), encoding="utf-8")
+    launch = ca.load_launch_manifest(good)
+    assert launch.source == "manifest"
+    assert any("--resume" in v for v in ca.check_session_flags(list(launch.argv)))
+
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({"no_argv_here": 1}), encoding="utf-8")
+    with pytest.raises(ValueError):
+        ca.load_launch_manifest(bad)
+
+    empty = tmp_path / "empty.json"
+    empty.write_text(json.dumps({"argv": []}), encoding="utf-8")
+    with pytest.raises(ValueError):
+        ca.load_launch_manifest(empty)
+
+
+# --------------------------------------------------------------------------- #
+# P1-2a: C2 condition allowlist semantics
+#
+# C2 = same isolation as C1 plus ONLY the approved generic, token-matched
+# guidance file. It must reject all persistent context except that one file.
+# --------------------------------------------------------------------------- #
+_C2_GENERIC = "# Generic token-matched guidance (no repository specifics)\n"
+
+
+def test_c2_rejects_persistent_context(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    # user + project + local persistent context, none approved under C2
+    write(ws / "CLAUDE.md", "# project instructions")
+    write(ws / "CLAUDE.local.md", "# local overrides")
+    write(roots.home / ".claude" / "CLAUDE.md", "# user instructions")
+    result = ca.audit(condition=ca.CONDITIONS["C2"], roots=roots, env=sterile.env, run_id="rc2a")
+    assert result.verdict == "CONTAMINATED"
+    # every persistent source is flagged as unapproved
+    assert sum("unapproved context source" in r for r in result.reasons) >= 3
+
+
+def test_c2_rejects_repo_architecture_instructions(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    # C2 approves only a generic guidance file (by its hash)...
+    gpath = write(ws / "CLAUDE.md", _C2_GENERIC)
+    approved = [ca.ApprovedArtifact("claude_md", str(gpath), ca.sha256_file(gpath))]
+    cond = ca.CONDITIONS["C2"].with_approved(approved)
+    # ...but the file actually present carries repository-specific architecture
+    gpath.write_text("# Repository architecture: layers, modules, dependency rules\n", encoding="utf-8")
+    result = ca.audit(condition=cond, roots=roots, env=sterile.env, run_id="rc2b")
+    assert result.verdict == "CONTAMINATED"
+    assert any("hash mismatch" in r for r in result.reasons)
+
+
+def test_c2_permits_only_approved_generic_guidance(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    gpath = write(ws / "CLAUDE.md", _C2_GENERIC)
+    approved = [ca.ApprovedArtifact("claude_md", str(gpath), ca.sha256_file(gpath))]
+    cond = ca.CONDITIONS["C2"].with_approved(approved)
+    result = ca.audit(condition=cond, roots=roots, env=sterile.env, run_id="rc2c")
+    assert result.verdict == "CLEAN", result.reasons
+    assert any(s.approved for s in result.detected if s.kind == "claude_md")
+
+
+def test_c2_rejects_additional_unapproved_files(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    gpath = write(ws / "CLAUDE.md", _C2_GENERIC)
+    approved = [ca.ApprovedArtifact("claude_md", str(gpath), ca.sha256_file(gpath))]
+    cond = ca.CONDITIONS["C2"].with_approved(approved)
+    # approved generic file is fine, but an extra unapproved file appears
+    write(ws / "CLAUDE.local.md", "extra unapproved instruction")
+    result = ca.audit(condition=cond, roots=roots, env=sterile.env, run_id="rc2d")
+    assert result.verdict == "CONTAMINATED"
+    assert any("CLAUDE.local.md" in r for r in result.reasons)
+
+
+# --------------------------------------------------------------------------- #
+# P1-2b: managed / remote organization policy detection
+#
+# Account-tied policy follows the identity, not the filesystem, so a fresh
+# temporary HOME / CLAUDE_CONFIG_DIR does NOT clear it. Whenever a policy cache
+# is detected the environment is non-sterile and the audit must fail closed.
+# --------------------------------------------------------------------------- #
+def test_managed_policy_detected_marks_environment_nonsterile(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    write(
+        roots.config_dir / "policy-limits.json",
+        json.dumps({"restrictions": {"a": 1}, "defaults": {}}),
+    )
+    result = ca.audit(condition=ca.CONDITIONS["C1"], roots=roots, env=sterile.env, run_id="rmp1")
+    assert result.verdict == "CONTAMINATED"
+    mp = [s for s in result.detected if s.kind == "managed_settings"]
+    assert mp and mp[0].scope == "config"
+    assert any("managed_settings" in r for r in result.reasons)
+
+
+def test_temp_dirs_do_not_clear_managed_policy(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    # policy cached inside the freshly relocated temporary HOME
+    write(roots.home / "remote-settings.json", json.dumps({"monitoring_notice": "x"}))
+    result = ca.audit(condition=ca.CONDITIONS["C1"], roots=roots, env=sterile.env, run_id="rmp2")
+    # the env IS isolated, yet the account-tied policy is still detected
+    assert result.home_isolated is True
+    assert result.config_dir_isolated is True
+    assert result.verdict == "CONTAMINATED"
+    assert any(s.kind == "managed_settings" and s.scope == "user" for s in result.detected)
+
+
+def test_managed_policy_os_path_detected(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, base = sterile_roots(tmp_path, ws)
+    pol = write(
+        tmp_path / "ProgramData" / "ClaudeCode" / "managed-settings.json",
+        json.dumps({"restrictions": {}}),
+    )
+    roots = ca.ScanRoots(
+        workspace=base.workspace,
+        home=base.home,
+        config_dir=base.config_dir,
+        ancestors=[],
+        managed_settings=[pol],
+    )
+    result = ca.audit(condition=ca.CONDITIONS["C1"], roots=roots, env=sterile.env, run_id="rmp3")
+    assert result.verdict == "CONTAMINATED"
+    assert any(s.kind == "managed_settings" and s.scope == "managed" for s in result.detected)
+
+
+def test_audit_fails_closed_unless_isolated_env_policy_satisfied(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    pol = write(roots.config_dir / "policy-limits.json", json.dumps({"defaults": {}}))
+    dirty = ca.audit(condition=ca.CONDITIONS["C1"], roots=roots, env=sterile.env, run_id="rmp4a")
+    assert dirty.verdict == "CONTAMINATED"
+    # once the isolated-environment requirement (no managed policy present) is
+    # satisfied, a full experimental audit passes
+    pol.unlink()
+    clean = ca.audit(
+        condition=ca.CONDITIONS["C1"],
+        roots=roots,
+        env=sterile.env,
+        launch=ca.fresh_launch_command(),
+        require_launch=True,
+        run_id="rmp4b",
+    )
+    assert clean.verdict == "CLEAN", clean.reasons
+
+
+def test_managed_policy_no_secrets_in_report(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sterile, roots = sterile_roots(tmp_path, ws)
+    secret = "org-POLICY-SECRET-TOKEN-77"
+    write(
+        roots.config_dir / "policy-limits.json",
+        json.dumps({"restrictions": {"api_token": secret}, "compliance_taints": [secret]}),
+    )
+    result = ca.audit(condition=ca.CONDITIONS["C1"], roots=roots, env=sterile.env, run_id="rmp5")
+    blob = json.dumps(result.to_dict())
+    assert secret not in blob
+    assert result.verdict == "CONTAMINATED"
+    assert any(s.kind == "managed_settings" for s in result.detected)

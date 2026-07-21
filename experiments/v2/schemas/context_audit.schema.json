@@ -56,11 +56,24 @@
     "session_restoration": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["restored", "status", "violations"],
+      "required": [
+        "restored",
+        "status",
+        "violations",
+        "command_supplied",
+        "command_source",
+        "inspected_flags"
+      ],
       "properties": {
         "restored": { "type": "boolean" },
-        "status": { "type": "string", "enum": ["fresh", "restored"] },
-        "violations": { "type": "array", "items": { "type": "string" } }
+        "status": { "type": "string", "enum": ["fresh", "restored", "unknown"] },
+        "violations": { "type": "array", "items": { "type": "string" } },
+        "command_supplied": { "type": "boolean" },
+        "command_source": {
+          "type": "string",
+          "enum": ["argv", "manifest", "fake-executor", "none"]
+        },
+        "inspected_flags": { "type": "array", "items": { "type": "string" } }
       }
     },
     "detected_context_sources": {

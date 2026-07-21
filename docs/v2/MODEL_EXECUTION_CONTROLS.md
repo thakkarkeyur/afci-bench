@@ -11,6 +11,26 @@ and every claim is tagged verified vs. doc-only.
 
 Companion table: [`MODEL_CONFIGURATION_MATRIX.csv`](MODEL_CONFIGURATION_MATRIX.csv).
 
+## 0. Evidence legend (how each claim is grounded)
+
+Every behavioural claim below carries an explicit evidence tag. Nothing about
+*runtime* behaviour has been confirmed by a controlled `claude -p` execution
+(none was run), so any runtime claim is at most a well-supported hypothesis:
+
+- **[CLI-verified]** — confirmed from `claude --version` / `claude --help` on the
+  pinned CLI **2.1.209**. Covers *syntax and flag existence only*, never runtime
+  behaviour.
+- **[transcript]** — observed in a real workflow transcript already on disk. A
+  single incidental observation, not a controlled experiment.
+- **[doc-derived]** — taken from Anthropic / Claude Code documentation that is
+  **not** version-pinned to CLI 2.1.x; the behaviour was **not** executed here.
+- **[dry-run-required]** — **UNRESOLVED**: a runtime behaviour that must be
+  validated by a controlled real dry run before it can be treated as fact.
+  Useful as a hypothesis; do **not** rely on it when freezing the final config.
+
+A claim may carry several tags. All open **[dry-run-required]** items are
+collected in §7.
+
 ## 1. Installed versions (exact)
 
 | Component | Version | Source |
@@ -39,10 +59,14 @@ the Anthropic model catalog:
 | Haiku 4.5 | `claude-haiku-4-5-20251001` | — |
 
 On this machine `~/.claude/settings.json` pins `model: "opus[1m]"`, which
-resolves to **`claude-opus-4-8[1m]`** — verified: a real run transcript records
-`"model":"claude-opus-4-8[1m]"` on every turn. **Pin the full resolved id**, not
-the alias, to eliminate alias drift; an unrecognized id is rejected (no silent
-degradation).
+**[transcript]** resolves to **`claude-opus-4-8[1m]`**: a real run transcript
+records `"model":"claude-opus-4-8[1m]"` on every turn. This is a single
+transcript observation, not a controlled dry run — the alias→full-id resolution
+under `claude -p 2.1.209` is **[dry-run-required]** (§7 Q1). **Pin the full
+resolved id**, not the alias, to eliminate alias drift. The expectation that an
+unrecognized id is rejected rather than silently degraded is **[doc-derived;
+dry-run-required]** — it is not asserted by `--help` and was not executed here
+(§7 Q8).
 
 ## 3. Control determination (adversarially verified)
 
@@ -51,22 +75,47 @@ experimental control only if it can be **both** explicitly pinned for a `claude
 -p` run **and** have its actually-used value recorded from machine-readable
 output — then an independent agent tried to refute each verdict.
 
-| Control | Pinnable | Recordable | Suitable as control | Verified |
+| Control | Pinnable | Recordable | Suitable as control | Evidence |
 |---------|----------|------------|---------------------|----------|
-| **model** | ✅ yes | ✅ yes | ✅ **yes** | local `--help` + real transcript + docs |
-| **effort** | ✅ yes | ❌ no | ❌ no | local `--help` (pin); recording absent |
-| **thinking** | ❌ no | ❌ no | ❌ no | local `--help` (no flag); rest doc-only/unverified |
-| **workflow / agent mode** | ⚠️ OFF-state only | ❌ no | ❌ no | local `--help` (`--agent`/`--agents`); ON mode not pinnable under `-p` |
+| **model** | ✅ yes | ⚠️ likely | ✅ **yes** (pin), pending record | pin **[CLI-verified]**; resolved-id **[transcript]**; readback via `modelUsage` **[doc-derived; dry-run-required]** (§7 Q1) |
+| **effort** | ✅ yes | ❌ no | ❌ no | pin flag **[CLI-verified]**; "not recordable" is a negative-existence claim **[doc-derived; dry-run-required]** (§7 Q4) |
+| **thinking** | ❌ no | ❌ no | ❌ no | absence of `--think`/`--reason` flag **[CLI-verified]**; adaptivity/budget behaviour **[doc-derived; dry-run-required]** (§7 Q5) |
+| **workflow / agent mode** | ⚠️ OFF-state only | ❌ no | ❌ no | `--agent`/`--agents` exist **[CLI-verified]**; `--effort` enum has no `ultracode` **[CLI-verified]**; ON-mode behaviour under `-p` **[doc-derived; dry-run-required]** (§7 Q3/Q6) |
 
-### 3.1 model — SUITABLE (the only fully controlled knob)
-- **Pin:** `--model claude-opus-4-8[1m]` (also `settings:model`, `env:ANTHROPIC_MODEL`, `sdk:model`).
-- **Record:** `--output-format json` (`modelUsage` / per-model cost map, keys every model incl. subagents) or `--output-format stream-json` (`system`/`init` `model` field). Directly verified: a transcript records the fully-resolved id.
-- **Caution:** do **not** set `--fallback-model` for a controlled run (it can substitute another model when overloaded); if used, capture `modelUsage` to detect what actually ran.
+### 3.1 model — the most controllable knob (pin verified; readback pending a dry run)
+- **Pin:** `--model claude-opus-4-8[1m]` **[CLI-verified]** the flag exists and
+  accepts alias or full id (also `settings:model`, `env:ANTHROPIC_MODEL`,
+  `sdk:model` **[doc-derived]**).
+- **Record:** `--output-format json`/`stream-json` **[CLI-verified]** the flags
+  exist. That the JSON payload actually carries `modelUsage` / a `system.init`
+  `model` field is **[doc-derived; dry-run-required]** (§7 Q1). A transcript
+  records the fully-resolved id **[transcript]**, but that is not the same as
+  confirming the headless `-p` JSON schema.
+- **Caution:** do **not** set `--fallback-model` for a controlled run. The flag
+  exists **[CLI-verified]**; that it substitutes another model when the primary
+  is overloaded is **[doc-derived; dry-run-required]** (§7 Q9). If used, capture
+  `modelUsage` to detect what actually ran.
 
-### 3.2 effort — PINNABLE BUT NOT RECORDABLE → not a clean control
-- **Pin:** `--effort <low|medium|high|xhigh|max>` (verified in `--help`; levels exactly those five). Also `settings:effortLevel` (**rejects `max`/`ultracode`**), `env:CLAUDE_CODE_EFFORT_LEVEL` (docs). Prefer the **`--effort` flag**.
-- **Not recordable:** no `--output-format json`/`stream-json`/SDK field echoes the effective effort; it appears only in the interactive session header (a UI string). Unsupported levels **silently fall back** to the highest supported ≤ requested, and nothing reports the value actually used.
-- **Consequence:** you must **log the `--effort` value you passed** as run metadata; treat it as an *input record*, not a readback. Env-var discrepancy: this machine exposes `CLAUDE_EFFORT=xhigh` but docs name the input `CLAUDE_CODE_EFFORT_LEVEL`; `CLAUDE_EFFORT` is unconfirmed as an input — prefer the flag.
+### 3.2 effort — PINNABLE; recordability & fallback behaviour unresolved → not a clean control
+- **Pin:** `--effort <low|medium|high|xhigh|max>` **[CLI-verified]** (the enum is
+  exactly those five levels in `--help`). Also `settings:effortLevel` — the claim
+  that it **rejects `max`/`ultracode`** is **[doc-derived; dry-run-required]**
+  (§7 Q10), not shown by `--help` (which validates the *flag* enum, not the
+  settings loader). `env:CLAUDE_CODE_EFFORT_LEVEL` is **[doc-derived]**. Prefer
+  the **`--effort` flag**.
+- **Not recordable (working hypothesis):** the claim that no
+  `--output-format json`/`stream-json`/SDK field echoes the effective effort — so
+  it appears only in the interactive session header — is a negative-existence
+  claim, **[doc-derived; dry-run-required]** (§7 Q4). The related claim that
+  unsupported levels **silently fall back** to the highest supported ≤ requested
+  with no readback is likewise **[doc-derived; dry-run-required]** (§7 Q10).
+- **Consequence:** regardless of the above, **log the `--effort` value you
+  passed** as run metadata and treat it as an *input record*, not a readback —
+  this is the safe course whether or not a readback later proves to exist.
+  Env-var discrepancy: this machine exposes `CLAUDE_EFFORT=xhigh` **[CLI-verified
+  present]** but docs name the input `CLAUDE_CODE_EFFORT_LEVEL` **[doc-derived]**;
+  whether `CLAUDE_EFFORT` is a real input is **[dry-run-required]** (§7 Q2) —
+  prefer the flag.
 
 ### 3.3 thinking — NOT PINNABLE, NOT RECORDABLE → not a factor
 - `claude --help` has **zero** `think`/`reason` flags (the only budget-like flag, `--max-budget-usd`, is a USD cost cap, not a thinking budget). No thinking key in settings/env on this install.
@@ -74,9 +123,21 @@ output — then an independent agent tried to refute each verdict.
 - **Per the work package, Thinking ON/OFF is NOT an experimental factor.** It rides on the chosen effort level.
 
 ### 3.4 workflow / agent mode ("Ultracode + workflows") — not a clean control
-- Only the **OFF/disabled** direction is reliably reproducible: `env:CLAUDE_CODE_DISABLE_WORKFLOWS=1` / `settings:disableWorkflows` (docs), plus explicit named agents via `--agent`/`--agents` (verified in `--help`).
-- The **ON** "Ultracode" mode is **not reliably pinnable under `-p`**: `--effort` enum has **no `ultracode`** on this install, the per-prompt `ultracode` keyword does not trigger a workflow under `-p`, and the mode is session-only / not persistable. It is also **not recordable** (no output field reports mode; only incidental subagent activity is visible via `parent_tool_use_id` / `modelUsage`).
-- **For deterministic benchmark runs, disable workflows explicitly** (`CLAUDE_CODE_DISABLE_WORKFLOWS=1`) to remove this uncontrolled variable.
+- Only the **OFF/disabled** direction is reliably reproducible:
+  `env:CLAUDE_CODE_DISABLE_WORKFLOWS=1` / `settings:disableWorkflows`
+  **[doc-derived]**, plus explicit named agents via `--agent`/`--agents`
+  **[CLI-verified]**.
+- The **ON** "Ultracode" mode is **not reliably pinnable under `-p`**: `--effort`
+  enum has **no `ultracode`** on this install **[CLI-verified]**. The claims that
+  the per-prompt `ultracode` keyword does **not** trigger a workflow under `-p`,
+  that the mode is session-only / not persistable, and that it is **not
+  recordable** (only incidental subagent activity via `parent_tool_use_id` /
+  `modelUsage`) are **[doc-derived; dry-run-required]** (§7 Q3/Q6) — none was
+  executed under `-p 2.1.209`.
+- **For deterministic benchmark runs, disable workflows explicitly**
+  (`CLAUDE_CODE_DISABLE_WORKFLOWS=1`) to remove this uncontrolled variable. This
+  recommendation stands regardless of the unresolved items, because it removes
+  the variable rather than relying on characterising it.
 
 ## 4. UI → non-interactive mapping
 
@@ -128,15 +189,25 @@ Deliberately **omitted** because not reliably pinnable/recordable under `-p`: th
 2. Reconcile the two effort env vars (`CLAUDE_EFFORT` seen locally vs.
    `CLAUDE_CODE_EFFORT_LEVEL` in docs): real input, legacy alias, or echo?
 3. Does `--effort ultracode` work on 2.1.209 despite being absent from the
-   `--help` enum?
+   `--help` enum, and does the per-prompt `ultracode` keyword trigger a workflow
+   under `-p`? (Both asserted negative in §3.4 on doc grounds only.)
 4. Is there **any** headless mechanism that reports the effort level actually
-   used after a fallback? None found.
+   used after a fallback? Assumed none; the negative is **[dry-run-required]**.
 5. Does `MAX_THINKING_TOKENS` affect Opus 4.8, and can thinking config be
    recorded from headless output at all? Both unconfirmed.
 6. Does the local `CLAUDE_CODE_ENABLE_TASKS=0` (and org policy) suppress
    workflow/subagent orchestration in `-p` runs?
 7. Do Agent SDK 0.3.212 `thinking`/`effort` options round-trip into any
    recordable init/result field, or are they input-only like the CLI flags?
+8. Is an **unrecognized `--model` id rejected** (hard error) rather than silently
+   degraded on 2.1.209? Asserted in §2 on doc grounds; not executed.
+9. Does **`--fallback-model` actually substitute** another model when the primary
+   is overloaded (the §3.1 rationale for avoiding it), and is the substitution
+   visible in `modelUsage`? Doc-derived; not executed.
+10. Does `settings:effortLevel` **reject `max`/`ultracode`** (§3.2), and do
+    unsupported `--effort` levels **silently downshift** to the highest supported
+    level with no readback? Both doc-derived; a real dry run is required to
+    confirm the settings-loader and fallback behaviour.
 
 ## 8. Methodology
 
