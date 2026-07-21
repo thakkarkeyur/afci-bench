@@ -1,0 +1,22 @@
+decision_id,blocking,decision,owner,resolved_when,gate,referenced_in,status
+TD-B01,yes,Reset checkpoint definitions and the pre/post-reset budget split per task,Pilot Task Designer,pilot task design,G2,RESET_PROTOCOL.md; RESET_CHECKPOINT_MATRIX.csv,open
+TD-B02,yes,Freeze the final model-execution settings after resolving MODEL_EXECUTION_CONTROLS Q1-Q10 by a controlled dry run,Harness Engineer,after dry-run validation,n/a,MODEL_EXECUTION_CONTROLS.md; run_manifest.schema.json; RUN_ARTIFACT_MATRIX.csv; REVIEWER_RESPONSE_MATRIX.csv,open
+TD-B03,yes,Select the primary benchmark model (do NOT select Sonnet or Opus yet),Study Lead,after dry-run validation (TD-B02),n/a,MODEL_REGISTRY.yml; MODEL_REGISTRY.csv; REVIEWER_RESPONSE_MATRIX.csv,open
+TD-B04,yes,Author the approved MAD and machine-checkable architecture-rule catalog (rule ids; severity; evaluator) delivered by C3/C4,Oracle Designer,pilot task design,G1/G5,CONDITIONS.md; TASK_RULE_MATRIX.csv; ORACLE_TRACEABILITY.csv,open
+TD-B05,yes,Author the hidden acceptance criteria; out-of-scope surface; and legitimate alternatives per task (kept hidden),Oracle Designer,pilot task design,G1,TASK_ACCEPTANCE_MATRIX.csv; ORACLE_TRACEABILITY.csv,open
+TD-B06,yes,Final distribution/family and endpoint specification and degenerate-outcome coding (after dispersion and ceiling checks),Statistician,pilot,G2,STATISTICAL_ANALYSIS_PLAN.md,open
+TD-B07,yes,Significance level; power target; minimum detectable effect; and effect-size boundaries (NOT derived from v1),Statistician,a-priori plus pilot,G3,STATISTICAL_ANALYSIS_PLAN.md; PILOT_GATE_MATRIX.csv; INDUSTRIAL_DATA_AUDIT.md,open
+TD-B08,yes,The C2 to C4 token-match tolerance value (from the measured C4 MAD token count),Study Lead + Statistician,pilot task design,G4,RESEARCH_QUESTIONS.md; CONDITIONS.md; CONDITION_MATRIX.csv; CLAIMS_CONSTRUCTS_METRICS.csv,open
+TD-B09,yes,Industrial data availability; AFCI adoption date; minimum interpretable sample; raw-data access; and anonymization feasibility,Industrial Data Owner (FGC),feasibility audit,G7,INDUSTRIAL_DATA_AUDIT.md; CLAIMS_CONSTRUCTS_METRICS.csv,open
+TD-B10,yes,Replication count per cell (from pilot dispersion and target precision; NOT from v1),Statistician,pilot,G2/G3,STATISTICAL_ANALYSIS_PLAN.md; REVIEWER_RESPONSE_MATRIX.csv,open
+TD-B11,yes,Total fixed budget per run (tokens/turns/time) kept equal for reset and non-reset,Harness Engineer,pilot task design,n/a,RESET_PROTOCOL.md; RESET_CHECKPOINT_MATRIX.csv,open
+TD-B12,yes,Guard precision/recall validation (labelled corpus; mutation tests; alias-aware matching),Guard Engineer,pilot,G6,TASK_RULE_MATRIX.csv; TASK_ACCEPTANCE_MATRIX.csv; ORACLE_TRACEABILITY.csv; guard_result.schema.json,open
+TD-B13,yes,Demonstrate benchmark discrimination (tasks and checkpoints distinguish conditions; non-degenerate),Pilot Task Designer + Statistician,pilot,G2,PILOT_GATE_MATRIX.csv,open
+TD-B14,yes,Task-suite selection and layer taxonomy (required/optional/prohibited layers per task),Task Designer,pilot task design,G1/G2,TASK_LAYER_MATRIX.csv; RESET_CHECKPOINT_MATRIX.csv,open
+TD-B15,yes,The pre-registered unacceptable-cost tolerance for RQ3,Statistician + Study Lead,pilot,n/a,RESEARCH_QUESTIONS.md; CLAIMS_CONSTRUCTS_METRICS.csv; STATISTICAL_ANALYSIS_PLAN.md,open
+TD-N01,no,Pin CI to the exact Node patch (node-version-file .nvmrc) so CI and local cannot drift,Harness Engineer,before final config freeze,n/a,ENVIRONMENT_BASELINE.md,open
+TD-N02,no,Triage the 41 known npm advisories in the transitive tree,Harness Engineer,before final config freeze,n/a,ENVIRONMENT_BASELINE.md,open
+TD-N03,no,Decide whether to add a workflow/agent experimental arm with a recordable mechanism,Study Lead,optional; later,n/a,MODEL_EXECUTION_CONTROLS.md,open
+TD-N04,no,Capture the container image digest in environment_fingerprint once the container baseline is chosen,Harness Engineer,with the container decision,n/a,CONTEXT_ISOLATION_POLICY.md; run_manifest.schema.json,open
+TD-N05,no,Detailed anonymization/pseudonymization scheme for the industrial dataset,Industrial Data Owner (FGC),with G7,G7,INDUSTRIAL_DATA_AUDIT.md,open
+TD-N06,no,Escalation policy for repeated infrastructure failure on a single run cell,Harness Engineer,before runs,n/a,FAILURE_RERUN_POLICY.md,open

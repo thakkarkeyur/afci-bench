@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://afci-bench/experiments/v2/schemas/acceptance_result.schema.json",
+  "title": "AFCI-Bench v2 Task-Acceptance Oracle Result",
+  "description": "Direct task-completeness measurement for one run: hidden acceptance-test pass proportion and per-criterion acceptance-criteria coverage (CON-TC), independent of visible CI. Development scaffolding for study v2; no paid run produced it. Completeness is NOT 'visible npm run ci passed'.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "task_id",
+    "condition",
+    "criteria",
+    "criteria_total",
+    "criteria_satisfied",
+    "coverage_proportion",
+    "hidden_tests",
+    "verdict"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "run_id": { "type": "string" },
+    "task_id": { "type": "string" },
+    "condition": { "type": "string", "enum": ["C1", "C2", "C3", "C4"] },
+    "criteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion_id", "evaluator_type", "satisfied", "evidence_ref"],
+        "properties": {
+          "criterion_id": { "type": "string" },
+          "evaluator_type": { "type": "string", "enum": ["automated", "manual"] },
+          "satisfied": { "type": ["boolean", "null"] },
+          "evidence_ref": { "type": "string" }
+        }
+      }
+    },
+    "criteria_total": { "type": "integer" },
+    "criteria_satisfied": { "type": "integer" },
+    "coverage_proportion": { "type": ["number", "null"] },
+    "hidden_tests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "passed", "failed", "pass_proportion", "suite_ref", "visible_to_model"],
+      "properties": {
+        "total": { "type": "integer" },
+        "passed": { "type": "integer" },
+        "failed": { "type": "integer" },
+        "pass_proportion": { "type": ["number", "null"] },
+        "suite_ref": { "type": "string" },
+        "visible_to_model": { "type": "boolean" }
+      }
+    },
+    "verdict": { "type": "string", "enum": ["PASS", "PARTIAL", "FAIL", "PENDING"] }
+  }
+}

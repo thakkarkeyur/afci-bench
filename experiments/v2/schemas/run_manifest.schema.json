@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://afci-bench/experiments/v2/schemas/run_manifest.schema.json",
+  "title": "AFCI-Bench v2 Run Manifest",
+  "description": "Complete, self-describing record of one experimental run (task x condition x reset-state x model x repetition). This schema is development scaffolding for study v2: no paid model run produced it, and it does not freeze the final benchmark configuration. Enum reason codes are defined in docs/v2/FAILURE_RERUN_POLICY.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "task_id",
+    "condition",
+    "reset_state",
+    "model",
+    "repetition",
+    "base_sha",
+    "protocol_versions",
+    "environment_fingerprint",
+    "context_audit",
+    "prompt_hashes",
+    "phases",
+    "exit_reason",
+    "ci_attempts",
+    "acceptance_result",
+    "oracle_result",
+    "guard_result",
+    "tokens",
+    "time",
+    "iterations",
+    "artifact_hashes",
+    "rerun",
+    "exclusion_status",
+    "budget"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "run_id": { "type": "string" },
+    "task_id": { "type": "string" },
+    "condition": { "type": "string", "enum": ["C1", "C2", "C3", "C4"] },
+    "reset_state": { "type": "string", "enum": ["reset", "non-reset"] },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "exact_model_id", "resolved_model_id", "effort_input"],
+      "properties": {
+        "label": { "type": "string" },
+        "exact_model_id": { "type": "string" },
+        "resolved_model_id": { "type": ["string", "null"] },
+        "effort_input": { "type": "string" }
+      }
+    },
+    "repetition": { "type": "integer" },
+    "base_sha": { "type": "string" },
+    "protocol_versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "condition_spec",
+        "oracle_spec",
+        "acceptance_spec",
+        "reset_protocol",
+        "model_execution_config",
+        "guard_spec"
+      ],
+      "properties": {
+        "condition_spec": { "type": "string" },
+        "oracle_spec": { "type": "string" },
+        "acceptance_spec": { "type": "string" },
+        "reset_protocol": { "type": "string" },
+        "model_execution_config": { "type": "string" },
+        "guard_spec": { "type": "string" }
+      }
+    },
+    "environment_fingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "cli_version",
+        "agent_sdk_version",
+        "node_version",
+        "npm_version",
+        "container_image_digest",
+        "lockfile_sha256"
+      ],
+      "properties": {
+        "os": { "type": "string" },
+        "cli_version": { "type": "string" },
+        "agent_sdk_version": { "type": "string" },
+        "node_version": { "type": "string" },
+        "npm_version": { "type": "string" },
+        "container_image_digest": { "type": ["string", "null"] },
+        "lockfile_sha256": { "type": "string" }
+      }
+    },
+    "context_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "report_path", "report_sha256"],
+      "properties": {
+        "verdict": { "type": "string", "enum": ["CLEAN", "CONTAMINATED"] },
+        "report_path": { "type": "string" },
+        "report_sha256": { "type": "string" }
+      }
+    },
+    "prompt_hashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "system_prompt_sha256",
+        "task_prompt_sha256",
+        "injected_context_sha256",
+        "reset_prompt_sha256"
+      ],
+      "properties": {
+        "system_prompt_sha256": { "type": ["string", "null"] },
+        "task_prompt_sha256": { "type": ["string", "null"] },
+        "injected_context_sha256": { "type": ["string", "null"] },
+        "reset_prompt_sha256": { "type": ["string", "null"] }
+      }
+    },
+    "phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["phase", "start_index", "exit_reason"],
+        "properties": {
+          "phase": { "type": "string", "enum": ["single", "pre-reset", "post-reset"] },
+          "start_index": { "type": "integer" },
+          "exit_reason": {
+            "type": "string",
+            "enum": [
+              "COMPLETED",
+              "INCOMPLETE_IMPLEMENTATION",
+              "VISIBLE_CI_FAIL",
+              "HIDDEN_TEST_FAIL",
+              "ARCH_VIOLATION",
+              "TIMEOUT",
+              "BUDGET_TOKENS_EXHAUSTED",
+              "BUDGET_TURNS_EXHAUSTED",
+              "REFUSAL",
+              "INVALID_CODE",
+              "NO_PATCH",
+              "INFRA_AUTH_OUTAGE",
+              "INFRA_API_TRANSPORT",
+              "INFRA_WORKTREE_CORRUPT",
+              "INFRA_RUNNER_CRASH",
+              "INFRA_EVALUATOR_MOUNT",
+              "INFRA_MISSING_ARTIFACT",
+              "SETUP_CONTAMINATED"
+            ]
+          }
+        }
+      }
+    },
+    "exit_reason": {
+      "type": "string",
+      "enum": [
+        "COMPLETED",
+        "INCOMPLETE_IMPLEMENTATION",
+        "VISIBLE_CI_FAIL",
+        "HIDDEN_TEST_FAIL",
+        "ARCH_VIOLATION",
+        "TIMEOUT",
+        "BUDGET_TOKENS_EXHAUSTED",
+        "BUDGET_TURNS_EXHAUSTED",
+        "REFUSAL",
+        "INVALID_CODE",
+        "NO_PATCH",
+        "INFRA_AUTH_OUTAGE",
+        "INFRA_API_TRANSPORT",
+        "INFRA_WORKTREE_CORRUPT",
+        "INFRA_RUNNER_CRASH",
+        "INFRA_EVALUATOR_MOUNT",
+        "INFRA_MISSING_ARTIFACT",
+        "SETUP_CONTAMINATED"
+      ]
+    },
+    "ci_attempts": { "type": "integer" },
+    "acceptance_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "artifact_path", "artifact_sha256"],
+      "properties": {
+        "status": { "type": "string", "enum": ["PASS", "PARTIAL", "FAIL", "PENDING"] },
+        "artifact_path": { "type": "string" },
+        "artifact_sha256": { "type": ["string", "null"] }
+      }
+    },
+    "oracle_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "artifact_path", "artifact_sha256"],
+      "properties": {
+        "status": { "type": "string", "enum": ["CONFORMANT", "VIOLATIONS", "PENDING"] },
+        "artifact_path": { "type": "string" },
+        "artifact_sha256": { "type": ["string", "null"] }
+      }
+    },
+    "guard_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "artifact_path", "artifact_sha256"],
+      "properties": {
+        "status": { "type": "string", "enum": ["CLEAN", "VIOLATIONS", "PENDING"] },
+        "artifact_path": { "type": "string" },
+        "artifact_sha256": { "type": ["string", "null"] }
+      }
+    },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "output", "total"],
+      "properties": {
+        "input": { "type": "integer" },
+        "output": { "type": "integer" },
+        "total": { "type": "integer" }
+      }
+    },
+    "time": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wall_clock_seconds", "pre_reset_seconds", "post_reset_seconds"],
+      "properties": {
+        "wall_clock_seconds": { "type": "number" },
+        "pre_reset_seconds": { "type": ["number", "null"] },
+        "post_reset_seconds": { "type": ["number", "null"] }
+      }
+    },
+    "iterations": { "type": "integer" },
+    "artifact_hashes": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "rerun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_replacement", "replaces_run_id", "replaced_by_run_id", "reason_code"],
+      "properties": {
+        "is_replacement": { "type": "boolean" },
+        "replaces_run_id": { "type": ["string", "null"] },
+        "replaced_by_run_id": { "type": ["string", "null"] },
+        "reason_code": { "type": ["string", "null"] }
+      }
+    },
+    "exclusion_status": {
+      "type": "string",
+      "enum": [
+        "EXCL_NONE",
+        "EXCL_INFRA_SUPERSEDED",
+        "EXCL_CONTAMINATED",
+        "EXCL_PROTOCOL_MISMATCH",
+        "EXCL_PREREGISTERED_RULE"
+      ]
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "pre_reset", "post_reset", "unit"],
+      "properties": {
+        "total": { "type": ["number", "null"] },
+        "pre_reset": { "type": ["number", "null"] },
+        "post_reset": { "type": ["number", "null"] },
+        "unit": { "type": "string" }
+      }
+    }
+  }
+}

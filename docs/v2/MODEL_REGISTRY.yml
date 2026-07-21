@@ -1,0 +1,109 @@
+# AFCI-Bench v2 — Model Registry
+#
+# Status: development artifact for study v2. Records ONLY verified or explicitly
+# evidence-tagged information about candidate models and their execution
+# controls. It does NOT freeze the final benchmark configuration, it does NOT
+# select a primary model, and NO paid model run was performed to produce it.
+#
+# Evidence tags (same scheme as MODEL_EXECUTION_CONTROLS.md):
+#   CLI-verified  - confirmed from `claude --version` / `claude --help` on CLI 2.1.209
+#   env-observed  - read from the reference machine environment
+#   transcript    - seen in a real workflow transcript already on disk
+#   doc-derived   - from Anthropic / Claude Code docs (not version-pinned to 2.1.x)
+#   dry-run-required - a runtime claim NOT yet validated by a controlled run
+#
+# Companion table: MODEL_REGISTRY.csv (kept in step with this file; a test
+# asserts the two agree). Control details: MODEL_EXECUTION_CONTROLS.md +
+# MODEL_CONFIGURATION_MATRIX.csv.
+
+registry_version: "1.0.0"
+status: development
+no_paid_run: true
+
+toolchain:
+  claude_code_cli_version: "2.1.209"          # CLI-verified (claude --version)
+  host_ide_extension_version: "2.1.212"       # env-observed (interactive UI build; not used for runs)
+  claude_agent_sdk_version: "0.3.212"         # env-observed (CLAUDE_AGENT_SDK_VERSION)
+  provider: Anthropic
+
+# The primary benchmark model is DELIBERATELY NOT SELECTED in this work package.
+primary_model: null                            # OPEN DECISION TD-B03 (blocking)
+primary_model_selection_status: "not selected - blocked on dry-run validation (TD-B03); do not select Sonnet or Opus yet"
+
+# Execution controls are identical across conditions within a model
+# (MODEL_EXECUTION_CONTROLS.md §6). Runtime-behaviour claims remain
+# dry-run-required until a controlled run is performed (Q1-Q10 in that doc).
+execution_controls:
+  effort_input:
+    mechanism: "--effort <low|medium|high|xhigh|max>"   # CLI-verified enum
+    recorded_as: "input metadata only (log the flag passed)"
+    recordable_from_output: "no - doc-derived; dry-run-required (Q4)"
+  thinking_control_status:
+    pinnable: false                              # CLI-verified (no --think/--reason flag)
+    note: "adaptive and governed by effort on Opus 4.8 (doc-derived); NOT an experimental factor"
+  workflow_control_status:
+    disable_mechanism: "CLAUDE_CODE_DISABLE_WORKFLOWS=1 / settings disableWorkflows"  # doc-derived
+    named_agents: "--agent / --agents exist"     # CLI-verified
+    ultracode_in_effort_enum: false              # CLI-verified (absent from this install's enum)
+    recommendation: "disable workflows for deterministic runs"
+
+models:
+  - model_label: "Opus 4.8"
+    exact_model_id: "claude-opus-4-8"
+    context_variant_id: "claude-opus-4-8[1m]"    # 1M-context variant
+    alias_status: "alias 'opus'/'opus[1m]' resolves to the exact id (transcript); pin the exact id not the alias"
+    provider: Anthropic
+    claude_code_version: "2.1.209"
+    agent_sdk_version: "0.3.212"
+    intended_role: "candidate benchmark-execution model (also the development-harness model on the reference machine; development use is NOT experimental evidence)"
+    model_selection_status: "candidate - not selected as primary (TD-B03)"
+    effort_input: "--effort flag (log as input metadata); not recordable from output (dry-run-required Q4)"
+    thinking_control_status: "not pinnable/recordable; adaptive under effort; not a factor"
+    workflow_control_status: "disable via CLAUDE_CODE_DISABLE_WORKFLOWS=1"
+    evidence_classification: "id doc-derived; opus[1m] resolution transcript; CLI CLI-verified; SDK env-observed"
+    dry_run_validation_status: "pending - no paid run executed"
+
+  - model_label: "Sonnet 5"
+    exact_model_id: "claude-sonnet-5"
+    context_variant_id: null
+    alias_status: "alias 'sonnet' maps to this exact id (doc-derived); pin the exact id"
+    provider: Anthropic
+    claude_code_version: "2.1.209"
+    agent_sdk_version: "0.3.212"
+    intended_role: "candidate benchmark-execution model (selection pending)"
+    model_selection_status: "candidate - not selected as primary (TD-B03)"
+    effort_input: "--effort flag (log as input metadata); not recordable from output (dry-run-required Q4)"
+    thinking_control_status: "not pinnable/recordable; not a factor"
+    workflow_control_status: "disable via CLAUDE_CODE_DISABLE_WORKFLOWS=1"
+    evidence_classification: "id doc-derived; CLI CLI-verified; SDK env-observed"
+    dry_run_validation_status: "pending - no paid run executed"
+
+  - model_label: "Haiku 4.5"
+    exact_model_id: "claude-haiku-4-5-20251001"
+    context_variant_id: null
+    alias_status: "dated exact id (doc-derived)"
+    provider: Anthropic
+    claude_code_version: "2.1.209"
+    agent_sdk_version: "0.3.212"
+    intended_role: "candidate low-cost / secondary generalizability model (not a primary candidate)"
+    model_selection_status: "candidate - not selected as primary (TD-B03)"
+    effort_input: "--effort flag (log as input metadata)"
+    thinking_control_status: "not pinnable/recordable; not a factor"
+    workflow_control_status: "disable via CLAUDE_CODE_DISABLE_WORKFLOWS=1"
+    evidence_classification: "id doc-derived; CLI CLI-verified; SDK env-observed"
+    dry_run_validation_status: "pending - no paid run executed"
+
+  - model_label: "Fable 5"
+    exact_model_id: "claude-fable-5"
+    context_variant_id: null
+    alias_status: "alias 'fable' maps to this exact id (doc-derived); pin the exact id"
+    provider: Anthropic
+    claude_code_version: "2.1.209"
+    agent_sdk_version: "0.3.212"
+    intended_role: "candidate benchmark-execution model (selection pending)"
+    model_selection_status: "candidate - not selected as primary (TD-B03)"
+    effort_input: "--effort flag (log as input metadata)"
+    thinking_control_status: "not pinnable/recordable; not a factor"
+    workflow_control_status: "disable via CLAUDE_CODE_DISABLE_WORKFLOWS=1"
+    evidence_classification: "id doc-derived; CLI CLI-verified; SDK env-observed"
+    dry_run_validation_status: "pending - no paid run executed"

@@ -1,0 +1,3 @@
+task_id,required_layers,optional_layers,prohibited_layers,layer_taxonomy_ref,evidence_location,status,owner,notes
+TASK-TEMPLATE-A,TODO TD-B14 (e.g. domain; application),TODO TD-B14 (e.g. interface-adapters),TODO TD-B14 (e.g. infrastructure for a domain-only task),nx project scope tags (tsconfig.base.json @afci-bench/* aliases),experiments/v2/results/<run_id>/oracle_result.json,TODO,Task Designer,template row; layer taxonomy derives from nx scope tags; values unresolved
+TASK-TEMPLATE-B,TODO TD-B14,TODO TD-B14,TODO TD-B14,nx project scope tags (tsconfig.base.json @afci-bench/* aliases),experiments/v2/results/<run_id>/oracle_result.json,TODO,Task Designer,template row; second task placeholder; unresolved

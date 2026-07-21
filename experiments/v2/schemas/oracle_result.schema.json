@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://afci-bench/experiments/v2/schemas/oracle_result.schema.json",
+  "title": "AFCI-Bench v2 Architecture-Conformance Oracle Result",
+  "description": "Direct architectural-conformance measurement for one run: per-rule outcomes plus the violation count/rate and applicable-rule satisfaction proportion (CON-AC). Development scaffolding for study v2; no paid run produced it. Conformance is NOT churn/Delta-CodeLOC and NOT visible-CI pass.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "task_id",
+    "condition",
+    "evaluator",
+    "evaluated_rules",
+    "applicable_rule_count",
+    "violation_count",
+    "rules_satisfied_count",
+    "satisfaction_proportion",
+    "verdict"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "run_id": { "type": "string" },
+    "task_id": { "type": "string" },
+    "condition": { "type": "string", "enum": ["C1", "C2", "C3", "C4"] },
+    "evaluator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "alias_aware"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "alias_aware": { "type": "boolean" }
+      }
+    },
+    "evaluated_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rule_id",
+          "applicability",
+          "severity",
+          "evaluator_type",
+          "satisfied",
+          "violation_count",
+          "evidence_ref"
+        ],
+        "properties": {
+          "rule_id": { "type": "string" },
+          "applicability": {
+            "type": "string",
+            "enum": ["applicable", "not-applicable", "conditional"]
+          },
+          "severity": { "type": "string", "enum": ["blocker", "major", "minor", "n/a"] },
+          "evaluator_type": { "type": "string", "enum": ["automated", "manual"] },
+          "satisfied": { "type": ["boolean", "null"] },
+          "violation_count": { "type": "integer" },
+          "evidence_ref": { "type": "string" }
+        }
+      }
+    },
+    "applicable_rule_count": { "type": "integer" },
+    "violation_count": { "type": "integer" },
+    "rules_satisfied_count": { "type": "integer" },
+    "satisfaction_proportion": { "type": ["number", "null"] },
+    "verdict": { "type": "string", "enum": ["CONFORMANT", "VIOLATIONS", "PENDING"] }
+  }
+}
