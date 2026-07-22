@@ -60,10 +60,16 @@ The approved MAD is **re-injected as explicit context after a reset**
 |---|---|---|---|
 | **C4 vs C1** | task, model config | all guidance | total AFCI effect vs no guidance |
 | **C4 vs C2** | task, model config, delivery channel (prompt), guidance token count (±`TD-B08`) | guidance **content** (architecture MAD vs generic) | that the effect is the *architecture content*, not token volume |
-| **C4 vs C3** | task, model config, guidance **content** (same MAD) | **delivery channel** (explicit prompt injection vs persistent repository file) | that *how* the MAD is injected matters |
+| **C4 vs C3** | task, model config, guidance **content** (**byte-identical** MAD; hash-verified, `TD-B18`) | **delivery channel** (explicit governed injection + re-injection vs persistent repository file) | whether the delivery channel matters, **allowing equivalence** |
 
 C2 pairs with C4 (token-matched placebo); C3 contrasts the delivery channel with
-C4. C1 is the floor.
+C4 while holding the architecture content **byte-identical**
+([`CONDITION_PARITY_POLICY.md`](CONDITION_PARITY_POLICY.md),
+[`CONDITION_CONTENT_MATRIX.csv`](CONDITION_CONTENT_MATRIX.csv)). C1 is the floor.
+
+**C3 ≈ C4 is a valid, supported interpretation** — the study measures the C3/C4
+relationship and does **not** assume C4 wins; paper viability does not depend on
+C4 superiority ([`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md) D4).
 
 ---
 
@@ -128,8 +134,10 @@ behaviour**. Each field is also a column in
   repository-instruction file (MAD-bearing), content **hash-matched**.
 - **Prohibited files:** any explicit MAD in the prompt; any additional
   `CLAUDE.md` / `.claude/*` / memory / second instruction file.
-- **Token-count rule:** MAD content is **identical to C4**; token count is the
-  MAD's own (recorded), **not** adjusted to match another condition.
+- **Token-count rule:** MAD content is **byte-identical to C4** (verified by the
+  architecture-content hash, `TD-B18`); token count is the MAD's own (recorded),
+  **not** adjusted to match another condition. No architecture hard rule may be
+  present in C3 that is absent from C4, or vice versa.
 - **Context-audit requirement:** verdict **CLEAN** with exactly the one approved
   instruction file (hash-matched); sterile user + auto-memory; nothing else.
 - **Contamination failure behaviour:** see §4.
@@ -147,7 +155,8 @@ behaviour**. Each field is also a column in
 - **Prohibited files:** any persistent MAD / repository-instruction file
   (`CLAUDE.md` / rules); any persistent memory.
 - **Token-count rule:** the MAD injection is the **reference** token count that C2
-  matches; recorded per task.
+  matches (runtime tokenizer, provisional ±5%, `TD-B08`); its architecture
+  content is **byte-identical to C3** (`TD-B18`); recorded per task.
 - **Context-audit requirement:** verdict **CLEAN** with an **empty** approved
   allowlist; a persistent MAD / instruction file present ⇒ **CONTAMINATED**
   (enforced by `test_c4_rejects_persistent_mad`).
@@ -176,11 +185,33 @@ implementation or an architecture violation), which must **not** be rerun; see
 
 ---
 
-## 5. Open decisions affecting conditions
+## 5. CI visibility to the coding model
 
-- `TD-B08` (blocking) — the C2↔C4 token-match tolerance value, set from the
-  measured C4 MAD token count during pilot task design.
+The coding model works under a condition with exactly one CI surface visible:
+
+- **`npm run ci:agent` is the ONLY CI command visible to the coding model.** It
+  runs type checking, visible unit tests, and ordinary non-architecture lint, and
+  **excludes** `@nx/enforce-module-boundaries` and all hidden checks.
+- **`npm run ci` is repository validation, NOT agent feedback.** It keeps
+  architecture enforcement and is run by maintainers / repository CI only; it is
+  never part of a run's edit-verify loop.
+- **Hidden acceptance tests and hidden architecture-oracle checks never run inside
+  the coding model's workspace or feedback loop.** They are evaluated after the
+  run by the separated evaluator.
+
+See [`EXPERIMENTAL_CI_POLICY.md`](EXPERIMENTAL_CI_POLICY.md) and
+[`ORACLE_VALIDATION_REQUIREMENTS.md`](ORACLE_VALIDATION_REQUIREMENTS.md).
+
+## 6. Open decisions affecting conditions
+
+- `TD-B08` (blocking) — the C2↔C4 token-match tolerance value (provisional ±5%,
+  runtime tokenizer), set from the measured C4 architecture-content token count.
 - `TD-B04` (blocking) — the approved MAD / architecture-rule catalog that C3 and
   C4 deliver (content), authored during pilot task design.
+- `TD-B18` (blocking) — the **byte-identical C3/C4 architecture-content parity**
+  hashes, frozen before pilot outcome collection
+  ([`CONDITION_PARITY_POLICY.md`](CONDITION_PARITY_POLICY.md)).
+- `TD-B16` (blocking) — runner-time enforcement that `ci:agent` is the only CI the
+  model sees ([`EXPERIMENTAL_CI_POLICY.md`](EXPERIMENTAL_CI_POLICY.md)).
 
 See [`OPEN_DECISIONS.md`](OPEN_DECISIONS.md) for the full registry.

@@ -40,8 +40,10 @@ mechanism, not to how the reset was performed.
 2. **Begin the task in a fresh process.** A new model process starts the task
    under the condition's context (per [`CONDITIONS.md`](CONDITIONS.md)).
 3. **Interrupt at a predefined, task-specific checkpoint.** The checkpoint is
-   fixed *before* the run for each task (see §5; value = `TD-B01`). It does not
-   depend on what the model does at run time beyond the defined trigger.
+   fixed *before* the run for each task (see §5; value = `TD-B01`), and is
+   **externally detectable and condition-neutral** (it must not require a
+   canonical layer, file path, or correct architecture — D7). It does not depend
+   on what the model does at run time beyond the defined trigger.
 4. **Preserve only the partially modified repository and approved state
    metadata.** The working tree as modified up to the checkpoint is kept; the
    approved state metadata (base SHA, condition, task, budget consumed so far,
@@ -83,11 +85,17 @@ budget artifact. Therefore:
 
 - `total_budget(reset) == total_budget(non-reset)` for the same
   (task, condition, model).
+- **The post-reset budget allowance is equal across conditions** for the same
+  (task, model): the reset never grants one condition more room to recover than
+  another.
+- **Pre-reset consumption and post-reset allowance are logged separately.** The
+  run manifest records, distinctly: `budget.pre_reset_consumed` (what process A
+  actually used up to the checkpoint) and `budget.post_reset_allowance` (the
+  equal-across-conditions room given to process B), alongside the pre/post split
+  (`budget.pre_reset` / `budget.post_reset`) and `budget.total`.
 - `pre_reset_budget + post_reset_budget == total_budget` for a reset run.
-- The pre-reset portion is what is consumed up to the checkpoint; the post-reset
-  portion is the remainder.
 
-The total budget value, and the pre/post split policy, are open decisions
+The total budget value, and the split/allowance policy, are open decisions
 (`TD-B11`, `TD-B01`); they are not set from v1 data.
 
 ---
@@ -113,15 +121,32 @@ on the chosen task suite (which does not yet exist) and must be:
 
 - **predefined** and **deterministic** (a fixed trigger, not model-behaviour-
   dependent beyond the trigger);
+- **externally detectable** (observable by the harness without inspecting model
+  reasoning);
+- **condition-neutral and non-canonical** — the predicate **must not** require a
+  canonical layer, a specific file path, or a correct architecture, because that
+  would advantage the guided conditions (C3/C4) and confound the reset with the
+  treatment ([`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md) D7);
 - placed so that meaningful work remains after the reset (otherwise the reset is
   vacuous);
 - **identical** for all conditions of the same task.
 
-Candidate trigger types (final choice = `TD-B01`): a fixed **progress fraction**
-of the reference solution, reaching a defined **intermediate artifact**, a fixed
-**tool-use / turn count**, or a defined **phase boundary**. Each candidate task
-row in [`RESET_CHECKPOINT_MATRIX.csv`](RESET_CHECKPOINT_MATRIX.csv) carries these
-fields with `status = TODO` and no finalized value.
+**Preferred checkpoint:** task-specific **functional / worktree progress** — an
+observable, condition-neutral state (e.g. a required behaviour becomes reachable,
+or a defined worktree change exists) that any condition could reach by any
+architectural route.
+
+**Fallback checkpoint:** the **first visible validation attempt after at least
+one edit** (e.g. the first `npm run ci:agent` invocation after an edit) — also
+condition-neutral.
+
+Prohibited predicates: "the file was created in the core layer", "the port was
+placed in contracts", or any trigger that presupposes the correct architecture.
+
+Every task **intended for reset analysis must have a frozen checkpoint**. Each
+candidate task row in
+[`RESET_CHECKPOINT_MATRIX.csv`](RESET_CHECKPOINT_MATRIX.csv) carries these fields
+with `status = TODO` and no finalized value (`TD-B01`).
 
 Related gates: checkpoint validity feeds **G2** (benchmark discrimination) and
 **G1** (oracle validity). See [`PILOT_GATE_MATRIX.csv`](PILOT_GATE_MATRIX.csv).

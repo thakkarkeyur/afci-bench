@@ -1,0 +1,18 @@
+// AFCI-Bench v2 — controlled architecture-boundary-violation fixture.
+//
+// This is a `.ts.fixture` file (NOT a `.ts` file) so that NO normal tool touches
+// it: it is outside every nx project's lint patterns, and `tsc` does not compile
+// `.ts.fixture`. The experimental-CI separation test
+// (experiments/v2/harness/tests/test_experimental_ci_separation.py) materializes
+// it into a tagged library source directory, runs ESLint under both the normal
+// and the agent configs, asserts the expected difference, and removes it again.
+//
+// The violation: `scope:observability` may depend on NOTHING (see the root
+// .eslintrc.json `depConstraints`), so importing from `@afci-bench/contracts`
+// (`scope:contracts`) is an architecture-boundary violation. `contracts` does not
+// import `observability`, so this is a clean forbidden dependency (not circular).
+// The snippet is otherwise type-valid, so what fails under the normal config is
+// the ARCHITECTURE rule (@nx/enforce-module-boundaries), nothing else.
+import { HealthResponse } from '@afci-bench/contracts';
+
+export const fixtureBoundaryViolation: HealthResponse | null = null;

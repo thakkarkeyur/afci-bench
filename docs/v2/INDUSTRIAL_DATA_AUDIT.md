@@ -32,6 +32,12 @@ because an observational before/after claim is only defensible if:
 If any of these fails, the objective RQ4 claim is not made. This is gate **G7**
 ([`PILOT_GATE_MATRIX.csv`](PILOT_GATE_MATRIX.csv)).
 
+**Feasibility work begins in parallel** with the controlled benchmark
+(RQ1–RQ3): the availability audit and access negotiation do not block, and are
+not blocked by, the controlled study. **No private FGC data is committed to this
+repository** at any point — the audit records only element definitions, sources,
+and `UNCONFIRMED` placeholders (see §4).
+
 ---
 
 ## 2. Data-element availability audit
@@ -106,3 +112,28 @@ made only if this audit clears gate **G7**.
 
 Resolution owner: **Industrial Data Owner (FGC)**; blocking decision `TD-B09`
 (see [`OPEN_DECISIONS.md`](OPEN_DECISIONS.md)).
+
+---
+
+## 7. Design choice for RQ4 (ITS vs crossover) — decide before committing
+
+The observational design is **not** pre-committed. Before choosing an
+interrupted-time-series (ITS) analysis, the audit must first **determine the AFCI
+adoption date, the accessible PR window (pre and post), and the confounders**
+(§2–§3). Only then:
+
+- **ITS is used only when its assumptions and a sufficient number of time points
+  are defensible** — a clear, non-gradual adoption cutpoint; enough pre- and
+  post-adoption periods to estimate level and slope; and confounders that can be
+  modelled. A fuzzy/gradual rollout or too few time points ⇒ ITS is **not** used.
+- **A counterbalanced crossover handoff study is the PREFERRED causal
+  complement.** Where feasible, comparable work is handed off under AFCI vs
+  non-AFCI in a counterbalanced order (teams/periods crossed over), giving a
+  within-unit contrast that is far less confounded than a single before/after
+  cut. It is the preferred way to move RQ4 toward a causal statement.
+- **The survey remains perception evidence only** (CL12): reported separately,
+  never merged into an objective estimate, never used to establish an objective
+  outcome.
+
+All of these choices depend on the availability audit (`TD-B09`) and the
+precision target (`TD-B07`); none is frozen here, and no FGC data is committed.

@@ -27,9 +27,15 @@ How does AFCI affect **architectural conformance** compared with:
 - **token-matched generic guidance** (C2);
 - **persistent repository instruction files** (C3)?
 
-Confirmatory. The comparison C4 vs {C1, C2, C3} on a **direct** conformance
-outcome is the study's primary endpoint family (see
-[`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md)).
+Confirmatory. The **single primary outcome is the architecture-violation rate per
+applicable rule/opportunity**; the comparison C4 vs {C1, C2, C3} on that rate is
+the primary contrast family (see
+[`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md)). The **C4-vs-C3**
+comparison **allows superiority, equivalence, or inferiority** — the study
+measures the relationship rather than assuming C4 wins, and **C3 ≈ C4 is a valid,
+publishable outcome** ([`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md)
+D4). Under equivalence the contribution is the benchmark, the validated oracle,
+the governance/auditability process, and an honest equivalence finding.
 
 ### RQ2 — Reset robustness
 
@@ -85,12 +91,17 @@ rule set): permitted vs prohibited inter-module/inter-layer dependencies, the
 correct layer placement of new code, and use of the sanctioned interfaces and
 import boundaries.
 
-**Direct operationalization.** (1) The **count / rate of architecture-rule
-violations** in the patch and (2) the **proportion of applicable rules
-satisfied**, produced by a validated conformance oracle (e.g. nx
-`enforce-module-boundaries` plus per-rule checks, with manual adjudication for
-rules that cannot be automated). Rule applicability, severity, and evaluator are
-recorded per task in [`TASK_RULE_MATRIX.csv`](TASK_RULE_MATRIX.csv).
+**Direct operationalization.** The **single primary metric** is the **rate of
+architecture-rule violations per applicable rule/opportunity** in the patch (raw
+counts retained). The **proportion of applicable rules satisfied** is a
+**descriptive transformation** of the same measurement, reported for
+interpretability but **not** an independent confirmatory endpoint
+([`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md) D8). Both are
+produced by a validated conformance oracle (e.g. nx `enforce-module-boundaries`
+plus per-rule checks, with manual adjudication for rules that cannot be
+automated; see [`ORACLE_VALIDATION_REQUIREMENTS.md`](ORACLE_VALIDATION_REQUIREMENTS.md)).
+Rule applicability, severity, and evaluator are recorded per task in
+[`TASK_RULE_MATRIX.csv`](TASK_RULE_MATRIX.csv).
 
 **Must NOT be proxied by.** Code churn / `Delta-CodeLOC` (a change-footprint
 metric, not conformance), `layer_jaccard`-style self-comparisons, or `npm run

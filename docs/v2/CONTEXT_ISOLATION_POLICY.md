@@ -126,14 +126,19 @@ Claude account (cached in `policy-limits.json`/`remote-settings.json`), not via 
 local `managed-settings.json`. A fresh HOME/`CLAUDE_CONFIG_DIR` does not remove
 it — it is re-applied for the same account.
 
-**Therefore, an isolated container or VM is recommended as mandatory for a
-provably sterile experimental baseline**, because it is the only way to guarantee
-the absence of (a) account-tied managed/remote policy and (b) any host-level
-`managed-settings.json`. The isolated environment should authenticate with a
-dedicated identity (or `--bare` + `ANTHROPIC_API_KEY`, once it is verified that
-organization policy does not also bind the API-key path) and run the audit; the
-run is valid only if the audit records managed policy as absent and the verdict
-is `CLEAN`.
+**Therefore, an isolated container (or equivalent dedicated environment) with a
+dedicated identity is MANDATORY for every counted run** — binding decision D11
+([`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md)), blocker
+**`TD-B19`**. It is the only way to guarantee the absence of (a) account-tied
+managed/remote policy and (b) any host-level `managed-settings.json`. The
+isolated environment authenticates with a **dedicated identity** (or `--bare` +
+`ANTHROPIC_API_KEY`, once it is verified that organization policy does not also
+bind the API-key path) and runs the audit. **Every counted run requires a
+`context_audit` verdict of `CLEAN` with managed policy recorded as absent**;
+contaminated executions are excluded as **environment failures**
+(`EXCL_CONTAMINATED` / `SETUP_CONTAMINATED`), never treated as valid model
+outcomes. The container image digest is captured in `environment_fingerprint`
+(non-blocking companion `TD-N04`).
 
 Minimum acceptable configuration if a container is not used: temporary HOME +
 temporary `CLAUDE_CONFIG_DIR` + the three mandatory env vars + no session

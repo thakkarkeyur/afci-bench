@@ -37,21 +37,35 @@ Claims and their constructs are in
 
 ---
 
-## 2. Confirmatory endpoints (pre-registered)
+## 2. Endpoints (pre-registered)
 
-Exactly these four endpoint families are confirmatory. Everything else
-(engineering cost, industrial, exploratory contrasts) is exploratory and labelled
-as such.
+**The single primary endpoint is the architecture-violation rate per applicable
+rule/opportunity (E1).** Raw violation counts are retained; **applicable-rule
+satisfaction (E2) is a descriptive transformation of the same measurement, NOT an
+independent confirmatory endpoint** (see
+[`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md) D8). The **hidden
+acceptance-test pass proportion (E3)** is the **principal completeness outcome**.
 
-| ID | Endpoint | Construct | Direction of interest | Claims |
-|----|----------|-----------|-----------------------|--------|
-| **E1** | **Architecture-violation count or rate** | CON-AC | AFCI (C4) lower than C1/C2/C3 | CL01–CL03 |
-| **E2** | **Applicable-rule satisfaction proportion** | CON-AC | AFCI (C4) higher than C1/C2/C3 | CL04 |
-| **E3** | **Hidden acceptance-test pass proportion** | CON-TC | AFCI (C4) higher than C1/C2/C3 | CL07 |
-| **E4** | **Condition × reset interaction on a direct outcome** | CON-RR | AFCI attenuates reset degradation | CL05, CL06 |
+| ID | Endpoint | Role | Construct | Claims |
+|----|----------|------|-----------|--------|
+| **E1** | **Architecture-violation rate per applicable rule/opportunity** (raw counts retained) | **PRIMARY** (single) | CON-AC | CL01–CL03 |
+| **E2** | Applicable-rule satisfaction proportion | **Descriptive transformation** of E1 (not independent confirmatory) | CON-AC | CL04 |
+| **E3** | Hidden acceptance-test pass proportion | **Principal completeness** outcome (confirmatory, secondary to the E1 family) | CON-TC | CL07 |
+| **E4** | Condition × reset interaction on the violation rate | Confirmatory (interaction) | CON-RR | CL05, CL06 |
 
-The primary comparison family is **C4 vs C1**, **C4 vs C2**, **C4 vs C3** on E1
-(and, as co-primary/secondary per `TD-B06`, on E2/E3). E4 tests the interaction.
+### Hypothesis hierarchy (pre-registered order; D9)
+
+No numerical success thresholds are set here (they are `TD-B07`, pilot-set, never
+from v1):
+
+1. **C4 vs C1** on the architecture-violation rate (E1).
+2. **Condition × reset interaction** on the violation rate (E4).
+3. **C4 vs C2** (E1).
+4. **C4 vs C3** (E1), allowing **superiority, equivalence, or inferiority**
+   (D4) — analysed equivalence-aware / two-sided, not as a one-sided superiority
+   test. **C3 ≈ C4 is a valid, publishable outcome.**
+5. **Hidden acceptance outcomes** (E3).
+6. **Cost and footprint outcomes** — secondary / descriptive.
 
 ---
 
@@ -85,14 +99,26 @@ Provisional; final link/family fixed after the pilot dispersion & ceiling checks
 
 ## 4. Contrasts and interaction
 
-- **RQ1 (E1/E2):** marginal contrasts **C4 vs C1**, **C4 vs C2**, **C4 vs C3**.
-- **RQ2 (E4):** the **condition × reset** interaction; within-condition reset −
-  non-reset simple effects reported as supporting detail. The reset **main
-  effect** (CL05) is exploratory.
+- **RQ1 (E1, primary):** marginal contrasts **C4 vs C1**, **C4 vs C2**, **C4 vs
+  C3** on the violation rate, in the hierarchy order of §2. The **C4-vs-C3**
+  contrast is **equivalence-aware / two-sided** (D4): equivalence is a valid
+  outcome, tested with a pre-registered equivalence procedure (e.g. TOST on the
+  rate ratio) alongside the difference test, with the equivalence margin set at
+  pilot (`TD-B07`) and **never** from v1. E2 (rule satisfaction) is reported as a
+  **descriptive transformation**, not an independent confirmatory contrast.
+- **RQ2 (E4):** the **condition × reset** interaction on the violation rate;
+  within-condition reset − non-reset simple effects reported as supporting
+  detail. The reset **main effect** (CL05) is exploratory. **An
+  interaction-focused power simulation is mandatory before the core grid**
+  (`TD-B20`; see [`PILOT_AND_POWER_POLICY.md`](PILOT_AND_POWER_POLICY.md)), because
+  the interaction is the least-powered confirmatory effect.
 - **RQ3 completeness (E3):** contrasts as in RQ1; the engineering-cost endpoints
   (tokens/time/iterations/churn/files) are **exploratory** and only **qualify** a
   completeness/conformance result via the pre-registered tolerance (`TD-B15`),
   never establish one.
+- **Model:** both candidate models are screened including **C1, C3, and C4**
+  (D10); the second model is analysed as a **separate generalizability study**
+  unless the model-as-factor plan is confirmed at pilot (`TD-B06`).
 
 ---
 
@@ -126,10 +152,12 @@ Provisional; final link/family fixed after the pilot dispersion & ceiling checks
 
 | Decision | ID | Set when / from |
 |----------|----|-----------------|
-| Significance level, power target, minimum detectable effect | `TD-B07` | a-priori + pilot precision — **never** v1 |
+| Significance level, power target, minimum detectable effect, equivalence margin | `TD-B07` | a-priori + pilot precision — **never** v1 |
 | Replication count per cell | `TD-B10` | pilot dispersion + target precision |
 | Final distribution/family and endpoint specification | `TD-B06` | pilot dispersion & ceiling/floor checks |
 | "Unacceptable cost" tolerance (RQ3) | `TD-B15` | pilot-set, pre-registered |
+| Interaction-focused power simulation (condition × reset), mandatory before the core grid | `TD-B20` | Stage-1 pilot dispersion |
+| Final task count / repetitions / total run count (all UNFROZEN) | `TD-B10`/`TD-B14`/`TD-B20` | simulation-determined; never from v1 |
 
 See [`OPEN_DECISIONS.md`](OPEN_DECISIONS.md).
 

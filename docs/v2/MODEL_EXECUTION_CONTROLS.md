@@ -180,12 +180,29 @@ Deliberately **omitted** because not reliably pinnable/recordable under `-p`: th
 5. Controls that cannot be both pinned and recorded (**effort readback**,
    **thinking**, **workflow ON mode**) are **not** treated as verified controls
    and are **not** silently approximated.
+6. **`npm run ci:agent` is the ONLY CI command visible to the coding model**
+   (type-check + visible unit tests + ordinary non-architecture lint; no
+   `@nx/enforce-module-boundaries`, no hidden checks). **`npm run ci`
+   (architecture-enforcing) is repository validation, not agent feedback**, and
+   is never part of a run's edit-verify loop. Hidden acceptance and
+   architecture-oracle checks never run inside the model's workspace. See
+   [`EXPERIMENTAL_CI_POLICY.md`](EXPERIMENTAL_CI_POLICY.md). Each run records this
+   in the manifest's `agent_visible_ci` block (`TD-B16`).
 
 ## 7. Open questions (to resolve before freezing the final config)
 
+> **Q1 and Q8 are explicit dry-run BLOCKERS before the paid pilot** — the
+> **resolved-model-id readback** (Q1) and the **invalid-model-id rejection** (Q8)
+> **must** be verified through controlled dry runs **after the runner exists**.
+> They are **not** performed in this work package (no runner; no paid/dry run).
+> Tracked as **`TD-B21`** (cross-references `TD-B02`); see
+> [`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md) D12 and
+> [`PILOT_AND_POWER_POLICY.md`](PILOT_AND_POWER_POLICY.md) Stage 0.
+
 1. Does 2.1.209's `--output-format json` result contain `model`/`modelUsage` at
    runtime? Doc-backed and consistent with the local transcript, but not
-   confirmed by executing a paid run (deliberately avoided).
+   confirmed by executing a paid run (deliberately avoided). **Dry-run BLOCKER
+   before the paid pilot (`TD-B21`).**
 2. Reconcile the two effort env vars (`CLAUDE_EFFORT` seen locally vs.
    `CLAUDE_CODE_EFFORT_LEVEL` in docs): real input, legacy alias, or echo?
 3. Does `--effort ultracode` work on 2.1.209 despite being absent from the
@@ -200,7 +217,8 @@ Deliberately **omitted** because not reliably pinnable/recordable under `-p`: th
 7. Do Agent SDK 0.3.212 `thinking`/`effort` options round-trip into any
    recordable init/result field, or are they input-only like the CLI flags?
 8. Is an **unrecognized `--model` id rejected** (hard error) rather than silently
-   degraded on 2.1.209? Asserted in §2 on doc grounds; not executed.
+   degraded on 2.1.209? Asserted in §2 on doc grounds; not executed. **Dry-run
+   BLOCKER before the paid pilot (`TD-B21`).**
 9. Does **`--fallback-model` actually substitute** another model when the primary
    is overloaded (the §3.1 rationale for avoiding it), and is the substitution
    visible in `modelUsage`? Doc-derived; not executed.

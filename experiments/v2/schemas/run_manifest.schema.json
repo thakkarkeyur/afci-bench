@@ -21,6 +21,7 @@
     "phases",
     "exit_reason",
     "ci_attempts",
+    "agent_visible_ci",
     "acceptance_result",
     "oracle_result",
     "guard_result",
@@ -178,6 +179,17 @@
       ]
     },
     "ci_attempts": { "type": "integer" },
+    "agent_visible_ci": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The single CI surface the coding model could run (must be ci:agent). Records that architecture enforcement and all hidden checks were excluded from the model's feedback loop. Normal `npm run ci` is repository validation, not agent feedback.",
+      "required": ["command", "architecture_enforcement_excluded", "hidden_checks_excluded"],
+      "properties": {
+        "command": { "type": "string" },
+        "architecture_enforcement_excluded": { "type": "boolean" },
+        "hidden_checks_excluded": { "type": "boolean" }
+      }
+    },
     "acceptance_result": {
       "type": "object",
       "additionalProperties": false,
@@ -257,11 +269,14 @@
     "budget": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["total", "pre_reset", "post_reset", "unit"],
+      "description": "Budgets kept equal for reset and non-reset (RESET_PROTOCOL). pre_reset_consumed is the actual amount process A used up to the checkpoint; post_reset_allowance is the equal-across-conditions room given to process B; these are logged separately from the pre/post split.",
+      "required": ["total", "pre_reset", "pre_reset_consumed", "post_reset", "post_reset_allowance", "unit"],
       "properties": {
         "total": { "type": ["number", "null"] },
         "pre_reset": { "type": ["number", "null"] },
+        "pre_reset_consumed": { "type": ["number", "null"] },
         "post_reset": { "type": ["number", "null"] },
+        "post_reset_allowance": { "type": ["number", "null"] },
         "unit": { "type": "string" }
       }
     }

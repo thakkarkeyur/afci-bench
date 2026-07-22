@@ -2,8 +2,9 @@
 
 Every ``TD-*`` reference anywhere in the v2 protocol must resolve to a row in
 docs/v2/OPEN_DECISIONS.csv, every entry must have an owner and a valid blocking
-flag, none may be resolved yet, and the counts must be exactly 15 blocking +
-6 non-blocking. Pure file inspection; no model is invoked.
+flag, none may be resolved yet, and the counts must be exactly 21 blocking +
+6 non-blocking (TD-B16..TD-B21 were added by the pre-execution design-review
+reconciliation). Pure file inspection; no model is invoked.
 """
 import csv
 import re
@@ -44,13 +45,13 @@ def test_registry_columns_and_integrity():
         )
 
 
-def test_counts_are_15_blocking_6_nonblocking():
+def test_counts_are_21_blocking_6_nonblocking():
     rows = _registry_rows()
     blocking = [r["decision_id"] for r in rows if r["blocking"] == "yes"]
     nonblocking = [r["decision_id"] for r in rows if r["blocking"] == "no"]
-    assert sorted(blocking) == [f"TD-B{i:02d}" for i in range(1, 16)], blocking
+    assert sorted(blocking) == [f"TD-B{i:02d}" for i in range(1, 22)], blocking
     assert sorted(nonblocking) == [f"TD-N{i:02d}" for i in range(1, 7)], nonblocking
-    assert len(blocking) == 15 and len(nonblocking) == 6
+    assert len(blocking) == 21 and len(nonblocking) == 6
 
 
 def test_every_referenced_todo_is_registered():

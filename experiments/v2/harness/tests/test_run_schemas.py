@@ -25,9 +25,9 @@ SCHEMA_FILES = [
 RUN_REQUIRED = [
     "run_id", "task_id", "condition", "reset_state", "model", "repetition",
     "base_sha", "protocol_versions", "environment_fingerprint", "context_audit",
-    "prompt_hashes", "phases", "exit_reason", "ci_attempts", "acceptance_result",
-    "oracle_result", "guard_result", "tokens", "time", "iterations",
-    "artifact_hashes", "rerun", "exclusion_status",
+    "prompt_hashes", "phases", "exit_reason", "ci_attempts", "agent_visible_ci",
+    "acceptance_result", "oracle_result", "guard_result", "tokens", "time",
+    "iterations", "artifact_hashes", "rerun", "exclusion_status", "budget",
 ]
 
 
@@ -81,6 +81,11 @@ def _run_manifest_example():
         "phases": [{"phase": "single", "start_index": 0, "exit_reason": "COMPLETED"}],
         "exit_reason": "COMPLETED",
         "ci_attempts": 1,
+        "agent_visible_ci": {
+            "command": "npm run ci:agent",
+            "architecture_enforcement_excluded": True,
+            "hidden_checks_excluded": True,
+        },
         "acceptance_result": {
             "status": "PENDING",
             "artifact_path": "acceptance_result.json",
@@ -107,7 +112,14 @@ def _run_manifest_example():
             "reason_code": None,
         },
         "exclusion_status": "EXCL_NONE",
-        "budget": {"total": None, "pre_reset": None, "post_reset": None, "unit": "tokens"},
+        "budget": {
+            "total": None,
+            "pre_reset": None,
+            "pre_reset_consumed": None,
+            "post_reset": None,
+            "post_reset_allowance": None,
+            "unit": "tokens",
+        },
     }
 
 

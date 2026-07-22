@@ -1,0 +1,84 @@
+# AFCI-Bench v2 — public-task architecture-leakage terms.
+#
+# Consumed by experiments/v2/tasks/validate_public_tasks.py. Applies ONLY to
+# future PUBLIC v2 task files (experiments/v2/tasks/*.md). It NEVER scans or
+# modifies v1 tasks (archive/, experiments/tasks_v0/). Purpose: keep the hidden
+# architecture out of the public task statement (CRITICAL_DESIGN_DECISIONS D2).
+# Blocker for validating the authored public-task suite: TD-B17.
+#
+# Two tiers:
+#   hard_leak       - architecture INSTRUCTIONS. Reveal the hidden architecture;
+#                     may NEVER appear in a public task and may NEVER be excepted.
+#                     Fail closed.
+#   review_required - ambiguous terms that CAN be legitimate functional language.
+#                     Flagged for REVIEW; a finding passes only if a matching
+#                     reviewed exception (front-matter `leakage_exceptions`) with a
+#                     non-empty justification AND reviewer exists.
+#
+# Patterns are Python `re` regexes, matched case-insensitively per line.
+
+version: "1.0.0"
+
+hard_leak:
+  - id: HL-MAD
+    category: mad-reference
+    pattern: '\bMAD\b|minimum architecture document'
+    why: names the hidden Minimum Architecture Document
+
+  - id: HL-BOUNDARIES
+    category: boundary-instruction
+    pattern: 'module[ -]?boundar(y|ies)|enforce-module-boundaries|boundary rule|architectural boundar(y|ies)|layering rule|cross(-| )layer|do not cross .{0,20}boundar'
+    why: instructs the model about module/layer boundary rules
+
+  - id: HL-FOLLOW-ARCH
+    category: follow-the-architecture
+    pattern: 'follow the architecture|respect the architecture|adhere to the architecture|consistent with the architecture|per the (repo|repository|project|codebase).{0,3} architectur'
+    why: tells the model to conform to the (hidden) architecture
+
+  - id: HL-EXISTING-PATTERN
+    category: existing-architecture-pattern
+    pattern: '(existing|established) architectur(e|al) pattern|match the (repo|repository|codebase).{0,3} architectur|architectural pattern of the (repo|repository|codebase)'
+    why: points the model at the repository architecture pattern
+
+  - id: HL-DEP-DIRECTION
+    category: dependency-direction
+    pattern: 'dependency direction|import direction|must not import|may only depend|depend(s)? only on|not allowed to import|allowed to import from|inward dependenc|point(s|ing)? inward'
+    why: specifies permitted/prohibited dependency directions
+
+  - id: HL-LAYER-PRESCRIPTIVE
+    category: layer-prescriptive
+    pattern: '(place|put|keep|add|define|move|register|belongs?|must (go|live|reside)) .{0,40}\b(core|infra(structure)?|feature|domain|contracts?|observability|presentation|application) (layer|module)\b|\bin the \b.{0,20}(core|infra(structure)?|feature|domain|contracts?|observability) (layer|module)\b'
+    why: prescribes placement into a named architecture layer/module
+
+  - id: HL-CONTRACT-PORT-PLACEMENT
+    category: contract-port-placement
+    pattern: '(port|contract|dto|interface)s? .{0,30}(must|should|belongs?|go(es)?|live|reside|placed?|defined?) .{0,30}(in|under|inside)|define the (port|contract) in|the (port|contract) (belongs|lives|goes) in'
+    why: prescribes where a contract/port must be placed
+
+  - id: HL-ARCH-ACCEPTANCE
+    category: architecture-acceptance-criteria
+    pattern: '(pass|satisfy|conform to|not violate|respect) .{0,30}(architecture|boundary|layering|module boundar)|no (architecture|boundary|layering) violation'
+    why: architecture-specific acceptance/observability requirement
+
+review_required:
+  - id: RR-LAYER
+    category: layer-term
+    pattern: '\blayer(s|ed|ing)?\b'
+  - id: RR-CONTRACT
+    category: contract-term
+    pattern: '\bcontract(s)?\b'
+  - id: RR-PORT
+    category: port-term
+    pattern: '\bport(s)?\b'
+  - id: RR-ARCHITECTURE
+    category: architecture-term
+    pattern: '\barchitectur(e|es|al)\b'
+  - id: RR-BOUNDARY
+    category: boundary-term
+    pattern: '\bboundar(y|ies)\b'
+  - id: RR-DEPENDENCY
+    category: dependency-term
+    pattern: '\bdependenc(y|ies)\b'
+  - id: RR-MODULE
+    category: module-term
+    pattern: '\bmodule(s)?\b'

@@ -30,6 +30,24 @@ toolchain:
 primary_model: null                            # OPEN DECISION TD-B03 (blocking)
 primary_model_selection_status: "not selected - blocked on dry-run validation (TD-B03); do not select Sonnet or Opus yet"
 
+# Model screening (CRITICAL_DESIGN_DECISIONS D10; TD-B03).
+screening:
+  screen_models: ["Sonnet 5", "Opus 4.8"]
+  conditions_in_screening: ["C1", "C3", "C4"]   # C3 IS included in the initial screening pilot
+  c2_added_for: "the selected primary model only (after its architecture content exists to token-match; TD-B08)"
+  selection_criteria:
+    - reliability
+    - non-ceiling baseline (C1) behaviour
+    - operational stability
+    - useful C3 discrimination
+  never_select_on: "the largest favourable AFCI (C4) effect"   # prohibited
+
+# Runtime model-id validation remains BLOCKING before the paid pilot (D12).
+dry_run_blockers:
+  status: "unresolved - not performed in this work package (no runner; no paid/dry run)"
+  q1_resolved_model_id_readback: "dry-run-required (MODEL_EXECUTION_CONTROLS §7 Q1; TD-B21)"
+  q8_invalid_model_id_rejection: "dry-run-required (MODEL_EXECUTION_CONTROLS §7 Q8; TD-B21)"
+
 # Execution controls are identical across conditions within a model
 # (MODEL_EXECUTION_CONTROLS.md §6). Runtime-behaviour claims remain
 # dry-run-required until a controlled run is performed (Q1-Q10 in that doc).
@@ -56,7 +74,7 @@ models:
     claude_code_version: "2.1.209"
     agent_sdk_version: "0.3.212"
     intended_role: "candidate benchmark-execution model (also the development-harness model on the reference machine; development use is NOT experimental evidence)"
-    model_selection_status: "candidate - not selected as primary (TD-B03)"
+    model_selection_status: "candidate - not selected as primary (TD-B03; screened incl C1/C3/C4; never selected on AFCI effect; D10)"
     effort_input: "--effort flag (log as input metadata); not recordable from output (dry-run-required Q4)"
     thinking_control_status: "not pinnable/recordable; adaptive under effort; not a factor"
     workflow_control_status: "disable via CLAUDE_CODE_DISABLE_WORKFLOWS=1"
@@ -71,7 +89,7 @@ models:
     claude_code_version: "2.1.209"
     agent_sdk_version: "0.3.212"
     intended_role: "candidate benchmark-execution model (selection pending)"
-    model_selection_status: "candidate - not selected as primary (TD-B03)"
+    model_selection_status: "candidate - not selected as primary (TD-B03; screened incl C1/C3/C4; never selected on AFCI effect; D10)"
     effort_input: "--effort flag (log as input metadata); not recordable from output (dry-run-required Q4)"
     thinking_control_status: "not pinnable/recordable; not a factor"
     workflow_control_status: "disable via CLAUDE_CODE_DISABLE_WORKFLOWS=1"
@@ -86,7 +104,7 @@ models:
     claude_code_version: "2.1.209"
     agent_sdk_version: "0.3.212"
     intended_role: "candidate low-cost / secondary generalizability model (not a primary candidate)"
-    model_selection_status: "candidate - not selected as primary (TD-B03)"
+    model_selection_status: "candidate - not selected as primary (TD-B03; screened incl C1/C3/C4; never selected on AFCI effect; D10)"
     effort_input: "--effort flag (log as input metadata)"
     thinking_control_status: "not pinnable/recordable; not a factor"
     workflow_control_status: "disable via CLAUDE_CODE_DISABLE_WORKFLOWS=1"
@@ -101,7 +119,7 @@ models:
     claude_code_version: "2.1.209"
     agent_sdk_version: "0.3.212"
     intended_role: "candidate benchmark-execution model (selection pending)"
-    model_selection_status: "candidate - not selected as primary (TD-B03)"
+    model_selection_status: "candidate - not selected as primary (TD-B03; screened incl C1/C3/C4; never selected on AFCI effect; D10)"
     effort_input: "--effort flag (log as input metadata)"
     thinking_control_status: "not pinnable/recordable; not a factor"
     workflow_control_status: "disable via CLAUDE_CODE_DISABLE_WORKFLOWS=1"

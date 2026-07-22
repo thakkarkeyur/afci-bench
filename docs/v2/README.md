@@ -8,11 +8,44 @@ and the architecture-conformance rule specification. It is the v2 counterpart to
 the v0 documents on `main` (`docs/MAD_v0.md`, `docs/PROMPT_PACK_v0.md`,
 `docs/ARCH_RULES.yml`), which remain immutable.
 
-This is a **protocol-development freeze**: it defines the study design and the
-evidence contracts. It authorizes **no** paid model run, freezes **no** final
-benchmark/model-execution configuration, and uses **no** v1 result to choose any
-threshold. Unresolved decisions are tracked as explicit TODOs in
-[`OPEN_DECISIONS.md`](OPEN_DECISIONS.md).
+## Status: PRE-FREEZE DRAFT (not scientifically frozen)
+
+The previous commit (`b23409f`) described this protocol as "frozen". That was
+premature. Following the external **pre-execution scientific-design review**, the
+protocol is reclassified:
+
+- The existing protocol is a **pre-freeze draft**.
+- It is **structurally complete but NOT scientifically frozen**: mandatory
+  scientific decisions remain unresolved (see
+  [`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md) and
+  [`OPEN_DECISIONS.md`](OPEN_DECISIONS.md)).
+- **Scientific freeze occurs only after** this reconciliation is **independently
+  approved** *and* the relevant **blocking decisions are closed**.
+- **No `protocol-freeze` tag currently exists**, and none is created by this work
+  package.
+
+It authorizes **no** paid model run, freezes **no** final benchmark /
+model-execution configuration and **no** task / repetition / run count, and uses
+**no** v1 result to choose any threshold, power input, or effect size. Unresolved
+decisions are tracked as explicit blockers in
+[`OPEN_DECISIONS.md`](OPEN_DECISIONS.md); binding design decisions are recorded in
+[`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md).
+
+### Pre-execution design-review reconciliation (this work package)
+
+- [`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md) — binding design
+  decisions D1–D13 (v1 use, task wording, C3≈C4, content parity, reset, primary
+  endpoint, hypothesis hierarchy, model screening, environment, study size).
+- [`EXPERIMENTAL_CI_POLICY.md`](EXPERIMENTAL_CI_POLICY.md) — the agent-visible CI
+  (`npm run ci:agent`) vs repository validation (`npm run ci`).
+- [`TASK_AUTHORING_POLICY.md`](TASK_AUTHORING_POLICY.md) +
+  [`TASK_LEAKAGE_TERMS.yml`](TASK_LEAKAGE_TERMS.yml) — public-task leakage policy.
+- [`CONDITION_PARITY_POLICY.md`](CONDITION_PARITY_POLICY.md) +
+  [`CONDITION_CONTENT_MATRIX.csv`](CONDITION_CONTENT_MATRIX.csv) — condition parity.
+- [`ORACLE_VALIDATION_REQUIREMENTS.md`](ORACLE_VALIDATION_REQUIREMENTS.md) — oracle
+  validity bar.
+- [`PILOT_AND_POWER_POLICY.md`](PILOT_AND_POWER_POLICY.md) — staged pilot and
+  mandatory interaction-focused power simulation.
 
 Scientific protocol:
 

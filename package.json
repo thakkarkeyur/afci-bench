@@ -6,10 +6,12 @@
   "packageManager": "npm@10.8.2",
   "scripts": {
     "lint": "nx run-many --target=lint --all",
+    "lint:agent": "eslint --no-eslintrc --config .eslintrc.agent.json --resolve-plugins-relative-to . apps libs --ext .ts,.tsx,.js,.jsx",
     "test": "nx run-many --target=test --all",
     "typecheck": "tsc -p tsconfig.base.json --noEmit",
     "build": "nx run-many --target=build --all",
     "ci": "npm run lint && npm run typecheck && npm run test",
+    "ci:agent": "npm run lint:agent && npm run typecheck && npm run test",
     "serve": "nx serve api"
   },
   "dependencies": {
