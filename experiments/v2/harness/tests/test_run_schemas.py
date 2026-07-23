@@ -113,11 +113,11 @@ def _run_manifest_example():
         },
         "exclusion_status": "EXCL_NONE",
         "budget": {
-            "total": None,
-            "pre_reset": None,
+            "total_budget": None,
+            "pre_reset_allowance": None,
             "pre_reset_consumed": None,
-            "post_reset": None,
             "post_reset_allowance": None,
+            "post_reset_consumed": None,
             "unit": "tokens",
         },
     }

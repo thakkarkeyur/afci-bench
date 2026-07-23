@@ -116,8 +116,11 @@ precision/recall validation (gate **G6**).
 of whether visible CI passes.
 
 **Direct operationalization.** (1) **Hidden acceptance-test pass proportion**
-(tests withheld from the model, exercising the required behaviour) and (2)
-**acceptance-criteria coverage** (each criterion adjudicated satisfied / not).
+(tests withheld from the model, exercising the required behaviour) is the
+**confirmatory / principal completeness endpoint** (E3; claim CL07). (2)
+**Acceptance-criteria coverage** (each criterion adjudicated satisfied / not) is a
+**supporting descriptive measure** (exploratory; claim CL08) reported alongside
+E3, **not** an independent confirmatory endpoint.
 Criteria and their oracles are recorded per task in
 [`TASK_ACCEPTANCE_MATRIX.csv`](TASK_ACCEPTANCE_MATRIX.csv) and
 [`ORACLE_TRACEABILITY.csv`](ORACLE_TRACEABILITY.csv).

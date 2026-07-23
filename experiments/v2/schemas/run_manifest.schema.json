@@ -269,14 +269,14 @@
     "budget": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Budgets kept equal for reset and non-reset (RESET_PROTOCOL). pre_reset_consumed is the actual amount process A used up to the checkpoint; post_reset_allowance is the equal-across-conditions room given to process B; these are logged separately from the pre/post split.",
-      "required": ["total", "pre_reset", "pre_reset_consumed", "post_reset", "post_reset_allowance", "unit"],
+      "description": "Budgets kept equal for reset and non-reset (RESET_PROTOCOL §3). pre_reset_allowance and post_reset_allowance are FROZEN in advance with pre_reset_allowance + post_reset_allowance == total_budget; post_reset_allowance is equal across conditions and is NOT derived from actual consumption (unused pre_reset_allowance never transfers). pre_reset_consumed and post_reset_consumed are observational (what each process actually used) and never alter an allowance.",
+      "required": ["total_budget", "pre_reset_allowance", "pre_reset_consumed", "post_reset_allowance", "post_reset_consumed", "unit"],
       "properties": {
-        "total": { "type": ["number", "null"] },
-        "pre_reset": { "type": ["number", "null"] },
+        "total_budget": { "type": ["number", "null"] },
+        "pre_reset_allowance": { "type": ["number", "null"] },
         "pre_reset_consumed": { "type": ["number", "null"] },
-        "post_reset": { "type": ["number", "null"] },
         "post_reset_allowance": { "type": ["number", "null"] },
+        "post_reset_consumed": { "type": ["number", "null"] },
         "unit": { "type": "string" }
       }
     }

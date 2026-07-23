@@ -67,14 +67,18 @@ mechanism, not to how the reset was performed.
      by construction) plus the re-supplied task statement.
    - **C4 (AFCI):** the approved MAD **re-injected** as primary context, plus the
      task as secondary context.
-9. **Continue under the remaining fixed budget.** The second process runs with
-   the budget **left over** after the pre-reset portion (total minus pre-reset
-   consumption).
+9. **Continue under the frozen post-reset allowance.** The second process runs
+   under the **frozen `post_reset_allowance`** — a fixed budget set in advance,
+   **equal across all conditions** for the same (task, model). It is **not**
+   computed from actual pre-reset consumption, and **unused `pre_reset_allowance`
+   does not transfer** into the `post_reset_allowance`.
 10. **Keep equal total budgets for reset and non-reset conditions.** For a given
-    (task, condition, model), the **total** budget (tokens / turns / wall-clock,
+    (task, condition, model), the **`total_budget`** (tokens / turns / wall-clock,
     per [`OPEN_DECISIONS.md`](OPEN_DECISIONS.md) `TD-B11`) is **identical** whether
-    or not a reset occurs. The reset merely **splits** that total into a pre-reset
-    and a post-reset portion; it never grants extra budget.
+    or not a reset occurs. A reset run's total is split *in advance* into a frozen
+    `pre_reset_allowance` and a frozen `post_reset_allowance` with
+    `pre_reset_allowance + post_reset_allowance == total_budget`; the reset never
+    grants extra budget.
 
 ---
 
@@ -85,15 +89,20 @@ budget artifact. Therefore:
 
 - `total_budget(reset) == total_budget(non-reset)` for the same
   (task, condition, model).
-- **The post-reset budget allowance is equal across conditions** for the same
-  (task, model): the reset never grants one condition more room to recover than
-  another.
-- **Pre-reset consumption and post-reset allowance are logged separately.** The
-  run manifest records, distinctly: `budget.pre_reset_consumed` (what process A
-  actually used up to the checkpoint) and `budget.post_reset_allowance` (the
-  equal-across-conditions room given to process B), alongside the pre/post split
-  (`budget.pre_reset` / `budget.post_reset`) and `budget.total`.
-- `pre_reset_budget + post_reset_budget == total_budget` for a reset run.
+- **The `post_reset_allowance` is frozen and equal across conditions** for the
+  same (task, model): the reset never grants one condition more room to recover
+  than another.
+- **Allowances are frozen; consumption is observational.** A reset run's total is
+  split *in advance* into a **frozen `pre_reset_allowance`** and a **frozen
+  `post_reset_allowance`**. The `post_reset_allowance` is **not** derived from
+  actual pre-reset consumption, and **unused `pre_reset_allowance` does not
+  transfer** into the `post_reset_allowance`.
+- **The run manifest records five distinct budget fields:** `total_budget`, the
+  frozen `pre_reset_allowance` and `post_reset_allowance`, and the observational
+  `pre_reset_consumed` / `post_reset_consumed` (what each process actually used).
+  The consumption fields are recorded for auditing only and never alter an
+  allowance.
+- `pre_reset_allowance + post_reset_allowance == total_budget` for a reset run.
 
 The total budget value, and the split/allowance policy, are open decisions
 (`TD-B11`, `TD-B01`); they are not set from v1 data.

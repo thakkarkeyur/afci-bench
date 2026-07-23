@@ -44,14 +44,19 @@ rule/opportunity (E1).** Raw violation counts are retained; **applicable-rule
 satisfaction (E2) is a descriptive transformation of the same measurement, NOT an
 independent confirmatory endpoint** (see
 [`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md) D8). The **hidden
-acceptance-test pass proportion (E3)** is the **principal completeness outcome**.
+acceptance-test pass proportion (E3)** is the **principal (confirmatory)
+completeness endpoint**. **Acceptance-criteria coverage (CL08) is a supporting
+descriptive measure reported alongside E3 — exploratory, NOT an independent
+confirmatory endpoint** (analogous to how E2 supports E1; see
+[`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md) D8), so it carries
+no separate endpoint ID or confirmatory-family multiplicity slot.
 
 | ID | Endpoint | Role | Construct | Claims |
 |----|----------|------|-----------|--------|
 | **E1** | **Architecture-violation rate per applicable rule/opportunity** (raw counts retained) | **PRIMARY** (single) | CON-AC | CL01–CL03 |
 | **E2** | Applicable-rule satisfaction proportion | **Descriptive transformation** of E1 (not independent confirmatory) | CON-AC | CL04 |
 | **E3** | Hidden acceptance-test pass proportion | **Principal completeness** outcome (confirmatory, secondary to the E1 family) | CON-TC | CL07 |
-| **E4** | Condition × reset interaction on the violation rate | Confirmatory (interaction) | CON-RR | CL05, CL06 |
+| **E4** | Condition × reset interaction on the violation rate | Confirmatory (interaction) | CON-RR | CL06 |
 
 ### Hypothesis hierarchy (pre-registered order; D9)
 
