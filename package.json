@@ -12,7 +12,9 @@
     "build": "nx run-many --target=build --all",
     "ci": "npm run lint && npm run typecheck && npm run test",
     "ci:agent": "npm run lint:agent && npm run typecheck && npm run test",
-    "serve": "nx serve api"
+    "serve": "nx serve api",
+    "oracle:test": "jest -c experiments/v2/oracle/jest.config.js",
+    "oracle:typecheck": "tsc -p experiments/v2/oracle/tsconfig.json --noEmit"
   },
   "dependencies": {
     "express": "^4.18.2",

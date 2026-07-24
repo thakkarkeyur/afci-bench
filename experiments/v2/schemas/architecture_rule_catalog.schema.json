@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://afci-bench/experiments/v2/schemas/architecture_rule_catalog.schema.json",
+  "title": "AFCI-Bench v2 Architecture Rule Catalog",
+  "description": "Machine-checkable catalog of repository architecture rules. Each rule has a stable id and is traceable to a section of the canonical architecture context and to concrete repository evidence. Development scaffolding for study v2: it does not freeze the final benchmark configuration and no paid model run produced it. Advances TD-B04 partially; no rule is marked validated (TD-B12 / gates G1, G6 remain open).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "catalog_id",
+    "catalog_version",
+    "status",
+    "development_only",
+    "no_paid_run",
+    "architecture_context",
+    "vocabularies",
+    "scopes",
+    "allowed_dependencies",
+    "rules"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "catalog_id": { "type": "string" },
+    "catalog_version": { "type": "string" },
+    "status": { "type": "string", "enum": ["pre-freeze-draft", "frozen"] },
+    "development_only": { "type": "boolean" },
+    "no_paid_run": { "type": "boolean" },
+    "architecture_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": { "type": "string" },
+        "sha256": { "type": "string" },
+        "bytes": { "type": "integer" }
+      }
+    },
+    "vocabularies": { "type": "object" },
+    "scopes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["layer", "tag", "path_glob", "alias"],
+        "properties": {
+          "layer": { "type": "string" },
+          "tag": { "type": "string" },
+          "path_glob": { "type": "string" },
+          "alias": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "allowed_dependencies": {
+      "type": "object",
+      "description": "Map of scope tag -> array of allowed target scope tags. Keys are dynamic scope tags, so additionalProperties is not restricted here."
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rule_id",
+          "title",
+          "category",
+          "normative_statement",
+          "construct",
+          "rationale",
+          "severity",
+          "applicable_scope",
+          "source_context_section",
+          "source_repository_evidence",
+          "evaluation",
+          "candidate_detection_method",
+          "applicable_opportunity_definition",
+          "false_positive_risks",
+          "legitimate_alternatives",
+          "agent_visible_enforcement_status",
+          "oracle_implementation_status",
+          "validation_status",
+          "notes"
+        ],
+        "properties": {
+          "rule_id": { "type": "string" },
+          "title": { "type": "string" },
+          "category": {
+            "type": "string",
+            "enum": [
+              "dependency-direction",
+              "contract-boundary",
+              "observability",
+              "coding-discipline",
+              "change-footprint"
+            ]
+          },
+          "normative_statement": { "type": "string" },
+          "construct": {
+            "type": "string",
+            "enum": ["CON-AC", "CON-TC", "CON-RR", "CON-EC", "CON-IE", "CON-AI"]
+          },
+          "rationale": { "type": "string" },
+          "severity": { "type": "string", "enum": ["blocker", "major", "minor", "n/a"] },
+          "applicable_scope": { "type": "string" },
+          "source_context_section": { "type": "string" },
+          "source_repository_evidence": { "type": "string" },
+          "evaluation": { "type": "string", "enum": ["automated", "manual", "hybrid"] },
+          "candidate_detection_method": { "type": "string" },
+          "applicable_opportunity_definition": { "type": "string" },
+          "false_positive_risks": { "type": "string" },
+          "legitimate_alternatives": { "type": "string" },
+          "agent_visible_enforcement_status": {
+            "type": "string",
+            "enum": [
+              "excluded-from-agent-ci-enforced-in-repository-ci",
+              "excluded-from-agent-ci-no-automated-enforcement"
+            ]
+          },
+          "oracle_implementation_status": {
+            "type": "string",
+            "enum": ["implemented", "partial", "stub", "not-implemented"]
+          },
+          "validation_status": {
+            "type": "string",
+            "enum": ["not-validated", "partial", "validated"]
+          },
+          "notes": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+// import { Repo } from '@afci-bench/infra'; // historical - do not re-enable
+/* export * from '@afci-bench/infra'; */
+const doc = "core must not import @afci-bench/infra";
+export const note: string = doc + ' features/infra boundary';
+export const sample = `import { Repo } from '@afci-bench/infra'`;

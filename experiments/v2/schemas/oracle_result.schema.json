@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://afci-bench/experiments/v2/schemas/oracle_result.schema.json",
   "title": "AFCI-Bench v2 Architecture-Conformance Oracle Result",
-  "description": "Direct architectural-conformance measurement for one run: per-rule outcomes plus the violation count/rate and applicable-rule satisfaction proportion (CON-AC). Development scaffolding for study v2; no paid run produced it. Conformance is NOT churn/Delta-CodeLOC and NOT visible-CI pass.",
+  "description": "Direct architectural-conformance measurement for one run: per-rule outcomes plus the violation count/rate and applicable-rule satisfaction proportion (CON-AC). Assembled from the raw, blind architecture_finding.json; the optional raw_violation_count and *_opportunity_count fields record raw violations and frozen-opportunity accounting SEPARATELY (the applicable-opportunity denominator is frozen per task manifest, not derived from touched files), and applicable-rule satisfaction is a descriptive transformation (D8), not an independent endpoint. condition/model are appended only after blind scoring. Development scaffolding for study v2; no paid run produced it. Conformance is NOT churn/Delta-CodeLOC and NOT visible-CI pass.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -65,6 +65,32 @@
     "violation_count": { "type": "integer" },
     "rules_satisfied_count": { "type": "integer" },
     "satisfaction_proportion": { "type": ["number", "null"] },
-    "verdict": { "type": "string", "enum": ["CONFORMANT", "VIOLATIONS", "PENDING"] }
+    "verdict": {
+      "type": "string",
+      "enum": ["CONFORMANT", "VIOLATIONS", "PENDING", "FAIL_CLOSED"],
+      "description": "CONFORMANT/VIOLATIONS/PENDING are assembled from a scored architecture_finding.json. FAIL_CLOSED carries the raw finding's fail-closed verdict faithfully (kept distinct from PENDING, which means awaiting manual rating); a run that fails closed by the engine throwing instead records an INFRA_* exit_reason on the run manifest and produces no scored result."
+    },
+    "raw_violation_count": {
+      "type": "integer",
+      "description": "Optional. Count of all violations detected in the whole snapshot (recorded separately from frozen-opportunity accounting)."
+    },
+    "applicable_opportunity_count": {
+      "type": "integer",
+      "description": "Optional. Frozen applicable-opportunity denominator from the evaluator manifest; NOT derived from files/layers touched."
+    },
+    "fixed_opportunity_count": { "type": "integer" },
+    "violated_opportunity_count": { "type": "integer" },
+    "absent_opportunity_count": { "type": "integer" },
+    "manifest_id": { "type": "string" },
+    "manifest_version": { "type": "string" },
+    "evaluator_version": { "type": "string" },
+    "finding_artifact_ref": {
+      "type": "string",
+      "description": "Optional. Path to the raw architecture_finding.json this result was assembled from."
+    },
+    "blind_scored": {
+      "type": "boolean",
+      "description": "Optional. True when the finding was produced without condition/model in scope (condition/model appended afterward)."
+    }
   }
 }

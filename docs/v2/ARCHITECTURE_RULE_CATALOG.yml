@@ -1,0 +1,353 @@
+# AFCI-Bench v2 — Architecture Rule Catalog
+#
+# Machine-checkable catalog of architecture rules for this repository. Each rule
+# has a stable id and is traceable to a section of the canonical architecture
+# context (docs/v2/ARCHITECTURE_CONTEXT.md) and to concrete repository evidence
+# (tsconfig path aliases, project scope tags, and the root ESLint
+# depConstraints). The catalog is the human source of truth; the oracle consumes
+# a frozen JSON policy that mirrors the dependency matrix below.
+#
+# Development artifact only. It does NOT freeze the final benchmark
+# configuration and authorizes NO paid model run. Advances TD-B04 (author the
+# machine-checkable architecture-rule catalog) partially: the catalog and the
+# dependency-direction reference checker exist, but labelled-corpus validation,
+# mutation testing, and manual inter-rater validation (TD-B12 / gates G1, G6)
+# remain open, so no rule is marked validated.
+
+schema_version: "1.0.0"
+catalog_id: "afci-v2-architecture-rule-catalog"
+catalog_version: "0.1.0-dev"
+status: "pre-freeze-draft"
+development_only: true
+no_paid_run: true
+
+# The canonical architecture-content payload this catalog describes. The oracle
+# and any repository-instruction delivery use these exact bytes; the hash is
+# recomputed and checked by experiments/v2/harness/tests/test_architecture_catalog.py.
+architecture_context:
+  path: "docs/v2/ARCHITECTURE_CONTEXT.md"
+  sha256: "bf6f32b162a23b851596d8b489d938bef10d0b8616a50dcc039873d12ffa7a4d"
+  bytes: 8444
+
+# Controlled vocabularies (kept aligned with oracle_result.schema.json and
+# CLAIMS_CONSTRUCTS_METRICS.csv).
+vocabularies:
+  construct: [CON-AC, CON-TC, CON-RR, CON-EC, CON-IE, CON-AI]
+  severity: [blocker, major, minor, "n/a"]
+  evaluation: [automated, manual, hybrid]
+  category:
+    - dependency-direction
+    - contract-boundary
+    - observability
+    - coding-discipline
+    - change-footprint
+  oracle_implementation_status: [implemented, partial, stub, not-implemented]
+  validation_status: [not-validated, partial, validated]
+  agent_visible_enforcement_status:
+    - excluded-from-agent-ci-enforced-in-repository-ci
+    - excluded-from-agent-ci-no-automated-enforcement
+
+# Scope identities: the layer, its path, its public alias, and its scope tag.
+# Mirrors docs/v2/ARCHITECTURE_CONTEXT.md section 3 and tsconfig.base.json paths.
+scopes:
+  - { layer: contracts,     tag: "scope:contracts",     path_glob: "libs/contracts/**",     alias: "@afci-bench/contracts" }
+  - { layer: core,          tag: "scope:core",          path_glob: "libs/core/**",          alias: "@afci-bench/core" }
+  - { layer: features,      tag: "scope:features",      path_glob: "libs/features/**",      alias: "@afci-bench/features" }
+  - { layer: infra,         tag: "scope:infra",         path_glob: "libs/infra/**",         alias: "@afci-bench/infra" }
+  - { layer: observability, tag: "scope:observability", path_glob: "libs/observability/**", alias: "@afci-bench/observability" }
+  - { layer: api,           tag: "scope:api",           path_glob: "apps/api/**",           alias: null }
+
+# Allowed internal dependencies, keyed by scope tag. Intra-layer imports and
+# third-party imports are always allowed and are not listed. This matrix is the
+# machine-readable projection of the dependency-direction rules; it is asserted
+# equal to the root .eslintrc.json depConstraints by the catalog test, so it is
+# grounded in real repository evidence, not invented.
+allowed_dependencies:
+  "scope:contracts": []
+  "scope:observability": []
+  "scope:core": ["scope:contracts"]
+  "scope:features": ["scope:core", "scope:contracts", "scope:observability"]
+  "scope:infra": ["scope:contracts", "scope:observability"]
+  "scope:api": ["scope:features", "scope:infra", "scope:contracts", "scope:observability"]
+
+rules:
+  - rule_id: AR-DEP-001
+    title: Layered module-dependency direction
+    category: dependency-direction
+    normative_statement: >-
+      Every internal module import must target a layer permitted by the
+      dependency matrix (allowed_dependencies). Dependencies point inward; an
+      internal import outside the permitted set for the importing layer is a
+      boundary violation, regardless of whether it is expressed as a path alias,
+      a relative path, or a barrel/re-export.
+    construct: CON-AC
+    rationale: >-
+      Inward-pointing dependencies keep inner layers (contracts, core) stable and
+      free of outer concerns, so changes stay local and replaceable layers do not
+      leak into the domain. This is the umbrella rule; AR-DEP-002..006 are its
+      per-layer clauses evaluated by the same engine.
+    severity: blocker
+    applicable_scope: all-internal-modules
+    source_context_section: "Section 4 (Dependency-direction rules); Section 5 (Import and resolution conventions)"
+    source_repository_evidence: >-
+      tsconfig.base.json compilerOptions.paths (@afci-bench/*); each project.json
+      tags (scope:*); root .eslintrc.json @nx/enforce-module-boundaries
+      depConstraints.
+    evaluation: automated
+    candidate_detection_method: >-
+      AST-based (TypeScript compiler API): parse each source file, extract import
+      and re-export module specifiers, resolve them via ts.resolveModuleName using
+      the snapshot tsconfig (alias, relative, index/barrel), follow re-exports to
+      attribute the imported-from module, assign the resolved file to a layer by
+      frozen path glob, and compare the importer->target edge against the frozen
+      allowed_dependencies matrix over the whole repository snapshot.
+    applicable_opportunity_definition: >-
+      Frozen per task manifest as the enumerated set of dependency-direction
+      opportunities (recorded as fixed opportunity ids) the task is expected to
+      preserve or repair. The denominator is the count of applicable frozen
+      opportunities and is NOT derived from how many files or layers the change
+      happened to touch. Raw violation count (all forbidden edges detected in the
+      snapshot) and fixed-opportunity status are recorded separately.
+    false_positive_risks: >-
+      Third-party imports mistaken for internal; the sanctioned re-export pattern
+      (api imports domain types from features, which re-exports core) mis-flagged
+      as a direct api->core edge; import-like text inside comments or string
+      literals treated as real imports; intra-layer imports treated as
+      cross-layer.
+    legitimate_alternatives: >-
+      Using an allowed intermediary layer's re-export instead of a forbidden
+      direct import; introducing a boundary adapter; importing via alias or via a
+      relative path within the same allowed edge; obtaining a shared type from
+      contracts. All are accepted shapes and must not be flagged.
+    agent_visible_enforcement_status: excluded-from-agent-ci-enforced-in-repository-ci
+    oracle_implementation_status: implemented
+    validation_status: partial
+    notes: >-
+      Enforced by @nx/enforce-module-boundaries in repository CI (npm run ci) but
+      disabled in the agent-visible CI (.eslintrc.agent.json / npm run ci:agent),
+      so the coding model never sees architecture enforcement. Reference checker:
+      experiments/v2/oracle/src/checkers/dependencyDirection.ts. Synthetic unit
+      fixtures pass; labelled-corpus/mutation/inter-rater validation (G1/G6,
+      TD-B12) is not done, so validation_status is partial.
+
+  - rule_id: AR-DEP-002
+    title: Contracts import nothing internal
+    category: dependency-direction
+    normative_statement: >-
+      A module in scope:contracts must not import any other internal module; it
+      is the shared source of truth for externally visible shapes.
+    construct: CON-AC
+    rationale: >-
+      Keeping contracts dependency-free makes it a stable sink that every other
+      layer can depend on without creating cycles.
+    severity: blocker
+    applicable_scope: "scope:contracts"
+    source_context_section: "Section 4 (contracts must not import anything internal)"
+    source_repository_evidence: ".eslintrc.json depConstraints scope:contracts -> []; libs/contracts/src/index.ts imports no internal module."
+    evaluation: automated
+    candidate_detection_method: "Clause of AR-DEP-001 evaluated by the dependency-direction engine (any internal import from a contracts file is a violation)."
+    applicable_opportunity_definition: "Frozen per task manifest; opportunities enumerated for contracts-layer files. Not derived from touched files."
+    false_positive_risks: "Third-party imports (e.g. type-only utility packages) mistaken for internal modules."
+    legitimate_alternatives: "Duplicating the minimal shape locally is not allowed for external shapes; the only accepted shape is defining/importing the shape within contracts itself."
+    agent_visible_enforcement_status: excluded-from-agent-ci-enforced-in-repository-ci
+    oracle_implementation_status: implemented
+    validation_status: partial
+    notes: "Per-layer clause of AR-DEP-001; same engine and validation status."
+
+  - rule_id: AR-DEP-003
+    title: Core depends only on contracts
+    category: dependency-direction
+    normative_statement: >-
+      A module in scope:core must not import infra, features, observability, or
+      the application; core depends only on contracts (and third-party/intra-core
+      imports).
+    construct: CON-AC
+    rationale: "Core is pure domain logic; keeping IO, use cases, and cross-cutting concerns out of core preserves testable, side-effect-free domain rules."
+    severity: blocker
+    applicable_scope: "scope:core"
+    source_context_section: "Section 4 (core must not import infra/features/observability/api)"
+    source_repository_evidence: ".eslintrc.json depConstraints scope:core -> [scope:contracts]; libs/core/src/index.ts imports only @afci-bench/contracts."
+    evaluation: automated
+    candidate_detection_method: "Clause of AR-DEP-001 evaluated by the dependency-direction engine; a resolved core->{infra,features,observability,api} edge is a violation."
+    applicable_opportunity_definition: "Frozen per task manifest for core-layer files. Not derived from touched files; raw violations and fixed opportunities recorded separately."
+    false_positive_risks: "A relative path from core reaching into another layer's src attributed incorrectly if path-glob layer assignment is wrong; barrel re-export attribution errors."
+    legitimate_alternatives: "Depend on a port/interface declared in core and implemented by infra (dependency inversion); obtain shapes from contracts."
+    agent_visible_enforcement_status: excluded-from-agent-ci-enforced-in-repository-ci
+    oracle_implementation_status: implemented
+    validation_status: partial
+    notes: "Per-layer clause of AR-DEP-001. The v1 guard missed exactly this class (core->infra via @afci-bench/infra alias) because it matched literal libs/* paths."
+
+  - rule_id: AR-DEP-004
+    title: Infra depends only on contracts and observability
+    category: dependency-direction
+    normative_statement: >-
+      A module in scope:infra must not import core, features, or the application;
+      infra (adapters) depends inward on contracts and observability only.
+    construct: CON-AC
+    rationale: "Adapters must not pull in domain or use-case logic; the dependency direction is inward, so infra implements ports without knowing core."
+    severity: blocker
+    applicable_scope: "scope:infra"
+    source_context_section: "Section 4 (infra must not import core/features/api)"
+    source_repository_evidence: ".eslintrc.json depConstraints scope:infra -> [scope:contracts, scope:observability]; libs/infra/src/index.ts defines its own entity types from contracts rather than importing core."
+    evaluation: automated
+    candidate_detection_method: "Clause of AR-DEP-001; a resolved infra->{core,features,api} edge is a violation."
+    applicable_opportunity_definition: "Frozen per task manifest for infra-layer files. Not derived from touched files."
+    false_positive_risks: "Infra legitimately importing contracts/observability mis-flagged; shared structural types duplicated in infra (a deliberate choice) misread as a core import."
+    legitimate_alternatives: "Infra re-declares the persistence-facing shape from contracts (as the current repository does) or implements a core-declared port without importing core's concretions."
+    agent_visible_enforcement_status: excluded-from-agent-ci-enforced-in-repository-ci
+    oracle_implementation_status: implemented
+    validation_status: partial
+    notes: "Per-layer clause of AR-DEP-001."
+
+  - rule_id: AR-DEP-005
+    title: Application does not import core directly
+    category: dependency-direction
+    normative_statement: >-
+      A module in scope:api must not import core directly; the application reaches
+      domain types and operations through features (an allowed dependency), infra,
+      contracts, and observability.
+    construct: CON-AC
+    rationale: "Routing domain access through features keeps the composition root decoupled from the domain's internal module and localizes orchestration in the use-case layer."
+    severity: blocker
+    applicable_scope: "scope:api"
+    source_context_section: "Section 4 (api must not import core directly); Section 5 (re-exports and shared types)"
+    source_repository_evidence: ".eslintrc.json depConstraints scope:api excludes scope:core; apps/api/src/app.ts imports Order/OrderRepository from @afci-bench/features (which re-exports them from core) and documents the boundary."
+    evaluation: automated
+    candidate_detection_method: "Clause of AR-DEP-001; a resolved api->core specifier edge is a violation. The engine must NOT synthesize an api->core edge from the legitimate api->features->core re-export chain."
+    applicable_opportunity_definition: "Frozen per task manifest for application files. Not derived from touched files."
+    false_positive_risks: "The sanctioned re-export pattern (api imports a core-origin type from features) mis-flagged as a direct api->core dependency; this is the primary specificity risk for this rule."
+    legitimate_alternatives: "Import domain types re-exported by features; adapt infra entities to domain types at the boundary; import ports through features."
+    agent_visible_enforcement_status: excluded-from-agent-ci-enforced-in-repository-ci
+    oracle_implementation_status: implemented
+    validation_status: partial
+    notes: "Per-layer clause of AR-DEP-001. Its false-positive risk (re-export pattern) is exercised by the clean-barrel fixture."
+
+  - rule_id: AR-DEP-006
+    title: No cross-feature coupling
+    category: dependency-direction
+    normative_statement: >-
+      A module in scope:features must not import another feature module directly
+      and must not import infra or the application; features depend on core,
+      contracts, and observability.
+    construct: CON-AC
+    rationale: "Preventing feature-to-feature imports keeps use cases independently changeable and stops a tangle of horizontal dependencies."
+    severity: major
+    applicable_scope: "scope:features"
+    source_context_section: "Section 4 (features must not import another feature's internals, infra, or the application)"
+    source_repository_evidence: ".eslintrc.json depConstraints scope:features -> [scope:core, scope:contracts, scope:observability] (features tag not in its own allowed set)."
+    evaluation: automated
+    candidate_detection_method: "Clause of AR-DEP-001; a resolved features->{features(other),infra,api} edge is a violation. Same-module (intra-features) imports are allowed."
+    applicable_opportunity_definition: "Frozen per task manifest for features-layer files. Not derived from touched files."
+    false_positive_risks: "Intra-feature imports (within the same feature module) wrongly treated as cross-feature; shared logic legitimately extracted to core misread."
+    legitimate_alternatives: "Extract shared logic into core; coordinate features through the application; depend on a core port."
+    agent_visible_enforcement_status: excluded-from-agent-ci-enforced-in-repository-ci
+    oracle_implementation_status: implemented
+    validation_status: partial
+    notes: "Per-layer clause of AR-DEP-001. The current single-module features layer means cross-feature edges appear only under multi-feature task designs (future)."
+
+  - rule_id: AR-CONTRACT-001
+    title: Externally visible shapes live only in contracts
+    category: contract-boundary
+    normative_statement: >-
+      Externally visible request and response shapes must be declared in
+      contracts; ad-hoc externally visible shapes must not be defined inside
+      features or the application. A change to an externally visible shape updates
+      the contract, its consumers, and their tests together.
+    construct: CON-AC
+    rationale: "A single home for external shapes prevents drift between the wire format and its consumers and keeps the contract authoritative."
+    severity: major
+    applicable_scope: "scope:features, scope:api, scope:contracts"
+    source_context_section: "Section 6 (Contract rules)"
+    source_repository_evidence: "libs/contracts/src/index.ts declares OrderRequest/OrderResponse/ErrorResponse/HealthResponse; apps/api and libs/features import these rather than redefining them."
+    evaluation: hybrid
+    candidate_detection_method: >-
+      Candidate (unimplemented in this package): AST detection of exported
+      request/response-shaped interfaces declared outside contracts and used at
+      the HTTP boundary, plus manual confirmation that a shape is externally
+      visible. Not yet implemented as an oracle checker.
+    applicable_opportunity_definition: "Frozen per task manifest as the set of externally visible shapes in scope for the task. Not derived from touched files."
+    false_positive_risks: "Internal-only DTOs or view models mistaken for external contracts; type aliases that merely re-shape a contract flagged incorrectly."
+    legitimate_alternatives: "Extend the contract in contracts and adapt internally; use an internal type that is never serialized at the boundary."
+    agent_visible_enforcement_status: excluded-from-agent-ci-no-automated-enforcement
+    oracle_implementation_status: stub
+    validation_status: not-validated
+    notes: "No oracle checker implemented in this package; registered as an explicit unimplemented stub that must never report PASS. Distinguishing external from internal shapes requires manual judgement (see MANUAL_ORACLE_RUBRIC.md)."
+
+  - rule_id: AR-OBSERV-001
+    title: Request and error logging completeness
+    category: observability
+    normative_statement: >-
+      Every request handler records a correlation identifier, the operation, the
+      outcome status, and the latency; every error record includes the
+      correlation identifier, an error type, and a message. Logging is performed
+      through the observability layer.
+    construct: CON-AC
+    rationale: "Uniform structured logging makes requests traceable and errors diagnosable, and keeps logging out of ad-hoc call sites."
+    severity: major
+    applicable_scope: "scope:api, scope:features, scope:observability"
+    source_context_section: "Section 7 (Observability rules)"
+    source_repository_evidence: "libs/observability/src/index.ts Logger.logRequest/logError with correlationId/operation/status/latencyMs and errorType/message; features and api call the logger at handler boundaries."
+    evaluation: hybrid
+    candidate_detection_method: >-
+      Candidate (unimplemented in this package): AST detection of request-handler
+      entry points and of logger calls carrying the required fields, plus manual
+      confirmation of completeness. Not yet implemented as an oracle checker.
+    applicable_opportunity_definition: "Frozen per task manifest as the set of handlers/error paths in scope. Not derived from touched files."
+    false_positive_risks: "Fields supplied indirectly (spread objects, wrappers) missed by shallow AST inspection; non-handler functions mistaken for handlers."
+    legitimate_alternatives: "Populate the required fields via a logging helper/middleware; compute latency at the handler boundary."
+    agent_visible_enforcement_status: excluded-from-agent-ci-no-automated-enforcement
+    oracle_implementation_status: stub
+    validation_status: not-validated
+    notes: "Registered as an explicit unimplemented stub that must never report PASS. Field-completeness is partly manual."
+
+  - rule_id: AR-CODE-001
+    title: Coding and change discipline
+    category: coding-discipline
+    normative_statement: >-
+      Functions stay small and single-purpose; business logic is not duplicated
+      across layers; behavior changes are accompanied by added or adjusted tests;
+      changes stay local and do not refactor unrelated modules.
+    construct: CON-AC
+    rationale: "These disciplines keep the codebase reviewable and changes attributable, and prevent architectural erosion through incidental edits."
+    severity: minor
+    applicable_scope: all-internal-modules
+    source_context_section: "Section 8 (Coding and change discipline)"
+    source_repository_evidence: "MAD_v0 section 6 coding rules; small pure functions in libs/core/src/index.ts; localized handler logic in apps/api/src/app.ts."
+    evaluation: manual
+    candidate_detection_method: >-
+      Manual rubric judgement (see MANUAL_ORACLE_RUBRIC.md), optionally supported
+      by descriptive automated signals (function size, duplication, test-diff
+      presence). Not implemented as an automated pass/fail oracle checker.
+    applicable_opportunity_definition: "Frozen per task manifest as the set of change-discipline expectations for the task. Not derived from touched files."
+    false_positive_risks: "Legitimately large-but-cohesive functions flagged; test presence miscounted; necessary in-scope edits mistaken for unrelated refactors."
+    legitimate_alternatives: "Multiple valid decompositions; tests added at the appropriate layer; refactors that are genuinely in-scope for the change."
+    agent_visible_enforcement_status: excluded-from-agent-ci-no-automated-enforcement
+    oracle_implementation_status: stub
+    validation_status: not-validated
+    notes: "Manual rule; contributes to a confirmatory endpoint only after blinded double rating with kappa >= 0.70 (MANUAL_RATING_PROTOCOL.md). Registered as an unimplemented automated stub that must never report PASS."
+
+  - rule_id: AR-CHANGE-FOOTPRINT-001
+    title: Change footprint (out-of-scope surface)
+    category: change-footprint
+    normative_statement: >-
+      The set of files changed outside the task's in-scope surface is recorded as
+      the change footprint. A large out-of-scope footprint is a descriptive
+      engineering-cost signal, not an architecture-conformance violation.
+    construct: CON-EC
+    rationale: "Change footprint characterizes engineering cost and blast radius; it is retained descriptively and must not be conflated with architectural drift."
+    severity: minor
+    applicable_scope: all-internal-modules
+    source_context_section: "Section 8 (keep changes local)"
+    source_repository_evidence: "Unified diff versus the frozen base SHA restricted to the out-of-scope surface (RUN_ARTIFACT_MATRIX.csv OT-EC-CHURN)."
+    evaluation: automated
+    candidate_detection_method: >-
+      Candidate (unimplemented in this package): diff versus base SHA classified
+      by in-scope vs out-of-scope surface from the task manifest. Descriptive
+      counts only; no pass/fail.
+    applicable_opportunity_definition: "The in-scope/out-of-scope surface is frozen per task manifest. Footprint is a count, not an opportunity denominator; it never contributes to the conformance rate."
+    false_positive_risks: "Formatting-only or generated-file changes inflating the count; legitimately broad-but-in-scope changes misread as sprawl."
+    legitimate_alternatives: "Any correct solution whose footprint stays within the in-scope surface; several footprints can be equally acceptable."
+    agent_visible_enforcement_status: excluded-from-agent-ci-no-automated-enforcement
+    oracle_implementation_status: stub
+    validation_status: not-validated
+    notes: "Secondary/descriptive measure (CON-EC), never a confirmatory architecture endpoint (D8). Registered as an unimplemented stub."

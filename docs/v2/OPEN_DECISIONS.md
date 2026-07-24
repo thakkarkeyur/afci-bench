@@ -70,6 +70,20 @@ is **open** (none resolved here — the CI/leakage **mechanisms** are delivered 
 tested, but the runner-time enforcement, authored suite, frozen hashes,
 container, pilot simulation, and dry runs all remain outstanding).
 
+**Oracle-foundation package: partial advances, none resolved.** `TD-B04` is
+partially advanced — the machine-checkable architecture-rule catalog
+(`ARCHITECTURE_RULE_CATALOG.yml`) and the alias/barrel/re-export-aware
+dependency-direction reference checker (`experiments/v2/oracle/`) exist with
+synthetic unit validation — but the catalog is **not frozen** and `TD-B04` stays
+**open**. `TD-B12` is partially advanced — alias/barrel/re-export +
+moved/deleted-code + full-repository evaluation are implemented and unit-validated
+— but the labelled corpus, the multi-category mutation set, and blinded
+inter-rater κ ≥ 0.70 are **not** done, so `TD-B12` stays **open**. The
+hidden-evaluator boundary and mount policy (`HIDDEN_EVALUATOR_BOUNDARY.md`,
+`EVALUATOR_MOUNT_POLICY.md`) are delivered and machine-checked, but runner-time
+enforcement (`TD-B16`) and authored per-task hidden material (`TD-B05`) remain
+**open**. Gates **G1** and **G6** are **not** passed.
+
 ---
 
 ## Non-blocking decisions (TD-N01 – TD-N06)

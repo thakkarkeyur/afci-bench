@@ -1,0 +1,3 @@
+import { getRepo } from '@afci-bench/infra';
+import { wrap } from './helper';
+export const x = wrap(getRepo());

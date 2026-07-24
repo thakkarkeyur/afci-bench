@@ -1,0 +1,2 @@
+rating_id,validation_sample_id,rule_id,rater_id,rating,confidence,evidence_ref,rubric_version,blinded,notes
+RATE-EXAMPLE-001,SAMPLE-XXXX,AR-CODE-001,rater-A,pending,pending,path/to/evidence#Lnn,0.0.0-dev,yes,example template row - no real ratings conducted in this package (blinded - no condition/model column by design)

@@ -1,0 +1,5 @@
+import { OrderStatus } from '@afci-bench/contracts';
+export interface Order {
+  id: string;
+  status: OrderStatus;
+}

@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://afci-bench/experiments/v2/schemas/evaluator_manifest.schema.json",
+  "title": "AFCI-Bench v2 Evaluator Manifest (frozen, external)",
+  "description": "The frozen, externally mounted manifest that tells the architecture-conformance oracle what to evaluate for one task: applicable rule ids, the FROZEN fixed opportunity set (the applicable-opportunity denominator), required/optional/prohibited areas, legitimate-alternative references, manual-rubric and hidden-test references, a checkpoint reference, evaluator content hashes, invalidation status, and the frozen dependency policy the reference checker applies. It is mounted OUTSIDE the coding worktree (see EVALUATOR_MOUNT_POLICY.md). Development scaffolding for study v2: committed instances are templates/synthetic and MUST carry no task-specific answers (answers_populated=false). No paid run produced it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "manifest_id",
+    "manifest_version",
+    "task_id",
+    "base_sha",
+    "status",
+    "invalidation",
+    "applicable_rule_ids",
+    "opportunities",
+    "areas",
+    "legitimate_alternatives",
+    "manual_rubric_refs",
+    "hidden_test_refs",
+    "checkpoint_ref",
+    "evaluator_hashes",
+    "dependency_policy",
+    "answers_populated"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "manifest_id": { "type": "string" },
+    "manifest_version": { "type": "string" },
+    "task_id": {
+      "type": ["string", "null"],
+      "description": "Task identifier placeholder. Null or a TASK-TEMPLATE-* id in committed templates; a real task id only in externally mounted, private manifests."
+    },
+    "base_sha": { "type": "string" },
+    "status": { "type": "string", "enum": ["template", "draft", "frozen"] },
+    "invalidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invalidated", "reason", "superseded_by"],
+      "properties": {
+        "invalidated": { "type": "boolean" },
+        "reason": { "type": ["string", "null"] },
+        "superseded_by": { "type": ["string", "null"] }
+      }
+    },
+    "applicable_rule_ids": { "type": "array", "items": { "type": "string" } },
+    "opportunities": {
+      "type": "array",
+      "description": "The FROZEN fixed opportunity set. Its size is the applicable-opportunity denominator; it is frozen per task manifest and NOT derived from how many files/layers a model touched. Each opportunity locates where a rule applies; it carries no expected implementation answer.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["opportunity_id", "rule_id", "locator"],
+        "properties": {
+          "opportunity_id": { "type": "string" },
+          "rule_id": { "type": "string" },
+          "locator": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Where the rule applies. Structural only (importer path/scope and forbidden target layers); never an implementation answer.",
+            "required": ["importer_path", "scope"],
+            "properties": {
+              "importer_path": { "type": ["string", "null"] },
+              "scope": { "type": ["string", "null"] },
+              "forbidden_target_layers": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "description": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "areas": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Structural surface areas as path globs. Required/optional/prohibited AREAS (not answers): which parts of the tree the task may touch. Kept out of the coding worktree.",
+      "required": ["required", "optional", "prohibited"],
+      "properties": {
+        "required": { "type": "array", "items": { "type": "string" } },
+        "optional": { "type": "array", "items": { "type": "string" } },
+        "prohibited": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "legitimate_alternatives": {
+      "type": "array",
+      "description": "References to accepted legitimate-alternative solution shapes (frozen before confirmatory data). Empty in committed templates (no answers).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "ref"],
+        "properties": {
+          "id": { "type": "string" },
+          "ref": { "type": "string" },
+          "description": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "manual_rubric_refs": { "type": "array", "items": { "type": "string" } },
+    "hidden_test_refs": { "type": "array", "items": { "type": "string" } },
+    "checkpoint_ref": { "type": ["string", "null"] },
+    "evaluator_hashes": {
+      "type": "object",
+      "description": "Map of mounted evaluator file path -> SHA-256, recorded so the run manifest can prove provenance without exposing contents.",
+      "additionalProperties": { "type": "string" }
+    },
+    "dependency_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Frozen policy the dependency-direction reference checker applies. Repository-architecture-level (same across tasks on a base SHA); NOT a task answer. Layers are assigned by frozen path globs so a model cannot relabel a file by editing tsconfig.",
+      "required": ["alias_config_path", "source_globs", "layers", "allowed"],
+      "properties": {
+        "alias_config_path": {
+          "type": "string",
+          "description": "Path, relative to the snapshot root, of the tsconfig whose compilerOptions.paths/baseUrl drive alias resolution."
+        },
+        "source_globs": { "type": "array", "items": { "type": "string" } },
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "path_globs"],
+            "properties": {
+              "id": { "type": "string" },
+              "path_globs": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "allowed": {
+          "type": "object",
+          "description": "Map of layer id -> array of allowed target layer ids. Intra-layer and third-party imports are always allowed."
+        }
+      }
+    },
+    "answers_populated": {
+      "type": "boolean",
+      "description": "MUST be false for any manifest committed to the public repository: committed manifests are templates/synthetic and carry no task-specific answers."
+    }
+  }
+}

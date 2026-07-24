@@ -205,7 +205,7 @@
       "additionalProperties": false,
       "required": ["status", "artifact_path", "artifact_sha256"],
       "properties": {
-        "status": { "type": "string", "enum": ["CONFORMANT", "VIOLATIONS", "PENDING"] },
+        "status": { "type": "string", "enum": ["CONFORMANT", "VIOLATIONS", "PENDING", "FAIL_CLOSED"] },
         "artifact_path": { "type": "string" },
         "artifact_sha256": { "type": ["string", "null"] }
       }
@@ -278,6 +278,22 @@
         "post_reset_allowance": { "type": ["number", "null"] },
         "post_reset_consumed": { "type": ["number", "null"] },
         "unit": { "type": "string" }
+      }
+    },
+    "evaluator_mount": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional. Provenance of the hidden-evaluator mount for this run (docs/v2/EVALUATOR_MOUNT_POLICY.md §5). Records the mounted manifest identity and per-file content hashes so the run is reproducible, WITHOUT exposing manifest or hidden-test contents. mount_outside_worktree must be true and contents_exposed must be false for a valid run.",
+      "required": ["manifest_id", "manifest_version", "mount_outside_worktree", "content_hashes", "contents_exposed"],
+      "properties": {
+        "manifest_id": { "type": "string" },
+        "manifest_version": { "type": "string" },
+        "mount_outside_worktree": { "type": "boolean" },
+        "content_hashes": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "contents_exposed": { "type": "boolean" }
       }
     }
   }

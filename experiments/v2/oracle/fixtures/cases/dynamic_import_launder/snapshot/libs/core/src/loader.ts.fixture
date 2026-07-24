@@ -1,0 +1,5 @@
+export async function load(): Promise<unknown> {
+  const a = await import(`@afci-bench/infra`);
+  const b = require(`@afci-bench/infra`);
+  return [a, b];
+}

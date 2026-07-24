@@ -1,0 +1,2 @@
+import { Repo } from '@afci-bench/core';
+export const r = new Repo();

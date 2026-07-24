@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://afci-bench/experiments/v2/schemas/architecture_finding.schema.json",
+  "title": "AFCI-Bench v2 Architecture Finding (raw, blind oracle output)",
+  "description": "Raw, deterministic output of the architecture-conformance oracle for one scored repository snapshot, produced by blind scoring. It carries NO condition and NO model identity (those are appended by the harness only after scoring, on oracle_result.json / run_manifest.json). Records per-rule evaluation, per-finding evidence paths and locations, evaluation mode, evaluator version, and separated raw-violation vs frozen-opportunity accounting. Development scaffolding for study v2; no paid run produced it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evaluator",
+    "manifest_ref",
+    "base_sha",
+    "snapshot_ref",
+    "rules_evaluated",
+    "findings",
+    "raw_violation_count",
+    "opportunity_accounting",
+    "deterministic_order",
+    "verdict"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "evaluator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "engine", "alias_aware", "deterministic"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "engine": { "type": "string", "enum": ["typescript-compiler-api", "ast", "other"] },
+        "alias_aware": { "type": "boolean" },
+        "deterministic": { "type": "boolean" }
+      }
+    },
+    "manifest_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest_id", "manifest_version", "manifest_sha256"],
+      "properties": {
+        "manifest_id": { "type": "string" },
+        "manifest_version": { "type": "string" },
+        "manifest_sha256": { "type": ["string", "null"] }
+      }
+    },
+    "base_sha": { "type": "string" },
+    "snapshot_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Identity of the scored snapshot. Deliberately carries no condition tag or model identity so scoring is blind.",
+      "required": ["id", "sha256"],
+      "properties": {
+        "id": { "type": "string" },
+        "sha256": { "type": ["string", "null"] }
+      }
+    },
+    "scored_at": { "type": ["string", "null"] },
+    "rules_evaluated": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule_id", "evaluation_mode", "oracle_implementation_status", "status"],
+        "properties": {
+          "rule_id": { "type": "string" },
+          "evaluation_mode": { "type": "string", "enum": ["automated", "manual"] },
+          "oracle_implementation_status": {
+            "type": "string",
+            "enum": ["implemented", "partial", "stub", "not-implemented"]
+          },
+          "status": { "type": "string", "enum": ["evaluated", "unimplemented", "error"] }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "finding_id",
+          "rule_id",
+          "opportunity_id",
+          "violation",
+          "status",
+          "severity",
+          "evaluation_mode",
+          "automated",
+          "confidence",
+          "evidence_paths",
+          "evidence_locations",
+          "resolution_chain",
+          "message"
+        ],
+        "properties": {
+          "finding_id": { "type": "string" },
+          "rule_id": { "type": "string" },
+          "opportunity_id": { "type": ["string", "null"] },
+          "violation": { "type": "boolean" },
+          "status": {
+            "type": "string",
+            "enum": ["VIOLATION", "SATISFIED", "NOT_APPLICABLE", "UNIMPLEMENTED", "ERROR"]
+          },
+          "severity": { "type": "string", "enum": ["blocker", "major", "minor", "n/a"] },
+          "evaluation_mode": { "type": "string", "enum": ["automated", "manual"] },
+          "automated": { "type": "boolean" },
+          "confidence": { "type": "string", "enum": ["certain", "heuristic", "manual-required"] },
+          "importer_layer": { "type": ["string", "null"] },
+          "target_layer": { "type": ["string", "null"] },
+          "evidence_paths": { "type": "array", "items": { "type": "string" } },
+          "evidence_locations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "line", "column"],
+              "properties": {
+                "path": { "type": "string" },
+                "line": { "type": "integer" },
+                "column": { "type": "integer" },
+                "snippet": { "type": ["string", "null"] }
+              }
+            }
+          },
+          "resolution_chain": { "type": "array", "items": { "type": "string" } },
+          "message": { "type": "string" }
+        }
+      }
+    },
+    "raw_violation_count": { "type": "integer" },
+    "opportunity_accounting": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Frozen-opportunity accounting. applicable_opportunity_count is the frozen denominator from the evaluator manifest; it is NOT derived from how many files/layers the change touched. Raw violations (raw_violation_count) are recorded separately from fixed opportunities.",
+      "required": [
+        "applicable_opportunity_count",
+        "fixed_opportunity_count",
+        "violated_opportunity_count",
+        "absent_opportunity_count"
+      ],
+      "properties": {
+        "applicable_opportunity_count": { "type": "integer" },
+        "fixed_opportunity_count": { "type": "integer" },
+        "violated_opportunity_count": { "type": "integer" },
+        "absent_opportunity_count": { "type": "integer" }
+      }
+    },
+    "deterministic_order": { "type": "boolean" },
+    "verdict": {
+      "type": "string",
+      "enum": ["CONFORMANT", "VIOLATIONS", "PENDING", "FAIL_CLOSED"]
+    }
+  }
+}

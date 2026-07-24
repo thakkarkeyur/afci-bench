@@ -1,0 +1,2 @@
+import { useFoo } from '../../core/src/index';
+export const y = (): string => useFoo({ id: 'x' });

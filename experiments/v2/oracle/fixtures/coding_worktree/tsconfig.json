@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@afci-bench/contracts": ["libs/contracts/src/index.ts"],
+      "@afci-bench/core": ["libs/core/src/index.ts"]
+    }
+  }
+}

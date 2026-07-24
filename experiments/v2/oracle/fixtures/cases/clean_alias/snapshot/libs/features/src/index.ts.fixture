@@ -1,0 +1,2 @@
+import { useFoo } from '@afci-bench/core';
+export const run = (): string => useFoo({ id: 'x' });

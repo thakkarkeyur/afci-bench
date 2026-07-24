@@ -1,0 +1,2 @@
+import { Foo } from '@afci-bench/contracts';
+export const useFoo = (f: Foo): string => f.id;

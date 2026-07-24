@@ -105,7 +105,53 @@ completeness outcome (CON-TC / E3).
 
 ## 7. Status
 
-The oracle, guard, rule catalog, acceptance manifest, labelled corpus, and
-legitimate-alternatives set **do not exist yet** and are **not built in this work
-package**. These requirements are the acceptance bar for gates **G1** and **G6**
-and for blocking decisions **`TD-B04`**, **`TD-B05`**, **`TD-B12`**.
+This package delivers the **oracle framework** and the **dependency-direction
+reference checker** with **synthetic unit validation**. It does **not** validate
+the oracle on a labelled/mutation/manual corpus and authors **no** task-specific
+material. Gates **G1** and **G6** and blocking decisions **`TD-B04`**,
+**`TD-B05`**, **`TD-B12`** remain **open**; none is resolved here.
+
+**Implemented in this package**
+
+- Oracle framework — deterministic, blind (no condition/model), fail-closed —
+  `experiments/v2/oracle/` (TypeScript compiler API; not regex import matching).
+- Dependency-direction reference checker (`AR-DEP-001` family): alias, relative,
+  index/barrel, and re-export resolution; moved/deleted-code handling; whole-
+  repository (not added-line-only) evaluation. It resolves the repository's real
+  `@afci-bench/*` aliases and barrels; the committed self-scan test
+  (`experiments/v2/oracle/tests/realRepo.test.ts`) scores the real repository
+  source as `CONFORMANT` and confirms the sanctioned api→features→core re-export
+  is not false-flagged.
+- Machine-checkable rule catalog (`TD-B04`, **partial**) —
+  `ARCHITECTURE_RULE_CATALOG.yml` + `architecture_rule_catalog.schema.json` +
+  `ARCHITECTURE_RULE_TRACEABILITY.csv`, grounded in the real `.eslintrc.json`
+  depConstraints.
+- Synthetic unit validation — `experiments/v2/oracle/fixtures/` + Jest: seeded
+  alias/relative/barrel violations detected; known-good and a legitimate
+  alternative not flagged; comments/strings create no false import; moved/deleted
+  handled; deterministic ordering; blindness to condition/model labels; unknown
+  and unimplemented rules cannot report PASS; malformed alias config fails closed.
+- Hidden-evaluator boundary and mount policy
+  ([`HIDDEN_EVALUATOR_BOUNDARY.md`](HIDDEN_EVALUATOR_BOUNDARY.md),
+  [`EVALUATOR_MOUNT_POLICY.md`](EVALUATOR_MOUNT_POLICY.md)) with a machine-checkable
+  mount-rejection test and a coding-worktree-cleanliness test.
+- Manual-rubric foundation ([`MANUAL_ORACLE_RUBRIC.md`](MANUAL_ORACLE_RUBRIC.md),
+  [`MANUAL_RATING_PROTOCOL.md`](MANUAL_RATING_PROTOCOL.md)).
+
+**Future — NOT built here; required before G1/G6**
+
+- Known-good **diverse-solution** specificity corpus (multiple correct shapes per
+  task); only a single legitimate-alternative fixture exists so far.
+- Seeded **multi-category mutation** corpus covering the contract, observability,
+  and coding-discipline rules (currently explicit unimplemented stubs), with
+  precision/recall on a labelled set.
+- **Manual inter-rater** validation (two blinded raters, κ ≥ 0.70) for the manual
+  rules.
+- **Task-specific manifest** validation: authored per-task frozen manifests,
+  fixed-opportunity denominators, hidden acceptance tests, and legitimate
+  alternatives (`TD-B05`), validated end-to-end.
+- Acceptance oracle and guard precision/recall on the full labelled corpus.
+
+These requirements remain the acceptance bar for gates **G1** and **G6** and for
+blocking decisions **`TD-B04`**, **`TD-B05`**, **`TD-B12`**. No oracle threshold
+is invented here beyond the stated κ ≥ 0.70.
