@@ -84,6 +84,26 @@ hidden-evaluator boundary and mount policy (`HIDDEN_EVALUATOR_BOUNDARY.md`,
 enforcement (`TD-B16`) and authored per-task hidden material (`TD-B05`) remain
 **open**. Gates **G1** and **G6** are **not** passed.
 
+**Pilot task-authoring package: partial advances, none resolved.** The pilot
+task candidates (six primary `PT01`–`PT06`, two reserve `PR01`–`PR02`) have been
+**authored** as public functional task bodies
+([`experiments/v2/tasks/public/`](../../experiments/v2/tasks/public/)), and the
+public-task leakage validator reports **OK** for every one — a partial advance on
+`TD-B17` (the authored draft suite is leakage-clean and self-checked), which
+**stays open** pending independent review at freeze. All hidden evaluator material
+for these candidates (per-task manifests, hidden acceptance plans, fixed
+opportunity sets, expected/prohibited areas, legitimate alternatives, reset
+predicates, threat reviews) lives **only in a separate local private evaluator
+repository** and is absent from this repository, so `TD-B05` (hidden
+acceptance/alternatives/out-of-scope) and `TD-B14` (task-suite selection + layer
+taxonomy) are **partially advanced but remain open** — the material is drafted,
+not approved or frozen, and its task-specific oracle validity is unverified.
+`TD-B13` (benchmark discrimination) is **untouched**: no pilot run occurred. Every
+private manifest is status `review` (not frozen); the architecture oracle refuses
+to score it (`MANIFEST_NOT_FROZEN`). No final task/repetition/run count and no
+numerical reset budget were selected. Gates **G1** and **G2** remain **not
+passed**; the protocol remains **pre-freeze**.
+
 ---
 
 ## Non-blocking decisions (TD-N01 – TD-N06)

@@ -181,6 +181,25 @@ def test_discovery_excludes_readme(tmp_path):
     assert "T01_functional.md" in names
 
 
-def test_real_tasks_dir_has_no_public_tasks_yet():
-    # only README.md exists under experiments/v2/tasks today
-    assert v.discover_public_tasks() == []
+def test_discovery_includes_public_subdir(tmp_path):
+    # authored pilot task bodies live under experiments/v2/tasks/public/
+    pub = tmp_path / "public"
+    pub.mkdir()
+    (pub / "PT01.md").write_text(FUNCTIONAL_ONLY, encoding="utf-8")
+    (pub / "README.md").write_text("# readme with architecture word", encoding="utf-8")
+    found = {p.name for p in v.discover_public_tasks(tmp_path)}
+    assert "PT01.md" in found
+    assert "README.md" not in found
+
+
+def test_authored_public_task_suite_is_discovered_and_leakage_free():
+    # The pilot task candidates have been authored under experiments/v2/tasks/public/.
+    # Every one must be discovered and pass the leakage validator (TD-B17 for the
+    # authored draft suite). Hidden answers live only in the private evaluator repo.
+    found = v.discover_public_tasks()
+    names = {p.name for p in found}
+    expected = {f"PT0{i}.md" for i in range(1, 7)} | {"PR01.md", "PR02.md"}
+    assert expected <= names, f"missing authored public tasks: {expected - names}"
+    for p in found:
+        result = v.validate_task_file(p, TERMS)
+        assert result.ok, f"leakage in {p}: {[f.__dict__ for f in result.findings]} / {result.exception_errors}"

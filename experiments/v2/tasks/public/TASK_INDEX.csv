@@ -1,0 +1,9 @@
+task_id,title,functional_category,primary_or_reserve,task_status,public_task_sha256,visible_ci_command,scope_category,leakage_validation_status,hidden_evaluator_package_id
+PT01,Retrieve a single order by its identifier,read-endpoint,primary,candidate,edadcd79a7ed477986c148ec525e0695b17a7ed3e1d38d051d07fb55c6b0e64f,npm run ci:agent,small,pass,EM-PT01
+PT02,List a customer's orders with a total count,list-endpoint,primary,candidate,b755f284e6148fe6d038313e451694d67919735c552b1ad719b14b5516c4cfba,npm run ci:agent,medium,pass,EM-PT02
+PT03,Change the status of an existing order,write-endpoint,primary,candidate,194308facc16d8ef4de8ffeeb2a8bd981f2a8c591f9c78ca7db8dffb8489f7b8,npm run ci:agent,medium,pass,EM-PT03
+PT04,Emit structured request and error logs for read traffic,logging,primary,candidate,62740ec14d829d997debfe36d563419611c58597467d97e8a27d105e9c21ef36,npm run ci:agent,medium,pass,EM-PT04
+PT05,Apply an order-level volume discount to the total,calculation,primary,candidate,f6efc772e76d6c287e0c71daaa93c7e1d9e62e72a1b37878df70113269ed27b3,npm run ci:agent,medium,pass,EM-PT05
+PT06,Return a consistent not-found error across order endpoints,error-handling,primary,candidate,1657163baad1eba67eacbc431a04bda741cb75fca1995337820aeaac573eef6b,npm run ci:agent,medium,pass,EM-PT06
+PR01,Guarantee cent-exact order totals for fractional unit prices,calculation,reserve,candidate,95f885aa81068b6461a0dd2a01309b5b2080e76e67e14df9956688b76e4dc224,npm run ci:agent,small,pass,EM-PR01
+PR02,Cancel an order with terminal-state guards,write-endpoint,reserve,candidate,d6190ac008d81e3cb12f9164db34c89097819d01c94dd8a5c02d5830c1ac46c1,npm run ci:agent,medium,pass,EM-PR02

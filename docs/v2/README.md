@@ -47,6 +47,27 @@ decisions are tracked as explicit blockers in
 - [`PILOT_AND_POWER_POLICY.md`](PILOT_AND_POWER_POLICY.md) — staged pilot and
   mandatory interaction-focused power simulation.
 
+### Pilot task candidates (this work package)
+
+- [`experiments/v2/tasks/public/`](../../experiments/v2/tasks/public/) — six
+  primary (`PT01`–`PT06`) and two reserve (`PR01`–`PR02`) **public functional
+  task bodies**, plus `TASK_INDEX.csv`, `TASK_SCHEMA.yml`,
+  `TASK_AUTHORING_REPORT.md`, and the front-matter schema
+  [`public_task.schema.json`](../../experiments/v2/schemas/public_task.schema.json).
+  Each body states functional requirements and observable behaviour only; the
+  public-task leakage validator reports OK for all (partial advance on `TD-B17`).
+- **Hidden evaluator packages** for these candidates (per-task manifests, hidden
+  acceptance plans, fixed opportunity sets, expected/prohibited areas, legitimate
+  alternatives, reset predicates, threat reviews) exist **only in a separate
+  local private evaluator repository**, never in this repository. Every manifest
+  is status `review` (not frozen); the architecture oracle refuses to score it
+  (`MANIFEST_NOT_FROZEN`).
+- **Status:** candidates authored, **not approved and not frozen**. Task-specific
+  oracle validity, hidden-acceptance validation, reset-checkpoint review, and
+  benchmark discrimination remain open; gates **G1/G2 not passed**; the protocol
+  remains **PRE-FREEZE**; **no pilot model execution occurred** and no
+  task/repetition/run count or numerical budget was selected.
+
 Scientific protocol:
 
 - [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) — RQ1–RQ4 and construct
@@ -69,7 +90,12 @@ Evidence matrices:
   [`TASK_ACCEPTANCE_MATRIX.csv`](TASK_ACCEPTANCE_MATRIX.csv),
   [`TASK_LAYER_MATRIX.csv`](TASK_LAYER_MATRIX.csv),
   [`ORACLE_TRACEABILITY.csv`](ORACLE_TRACEABILITY.csv) — task/oracle templates
-  (hidden answers deliberately not populated).
+  plus **redacted** per-candidate rows: every task-specific hidden field is
+  `stored_in_private_evaluator_repo`, never a real rule id, expected area, or
+  hidden criterion.
+- [`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv) — public
+  per-candidate view (id, title, functional category, public task hash, visible
+  CI command, scope, leakage-validation status); carries no hidden answer.
 - [`MODEL_REGISTRY.yml`](MODEL_REGISTRY.yml) /
   [`MODEL_REGISTRY.csv`](MODEL_REGISTRY.csv) — verified model info; no primary
   model selected.

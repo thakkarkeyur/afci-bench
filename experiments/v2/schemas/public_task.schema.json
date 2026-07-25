@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://afci-bench/experiments/v2/schemas/public_task.schema.json",
+  "title": "AFCI-Bench v2 Public Task front-matter (functional, no hidden answers)",
+  "description": "Validates the YAML front-matter of a PUBLIC v2 task body (experiments/v2/tasks/public/*.md). Public tasks carry functional metadata only; all architecture answers live in the separate private evaluator repository. This schema deliberately admits no field that could carry a hidden answer.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "category",
+    "kind",
+    "status",
+    "visible_validation"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "calculation",
+        "error-handling",
+        "list-endpoint",
+        "logging",
+        "read-endpoint",
+        "write-endpoint"
+      ]
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "reserve"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "candidate"
+      ]
+    },
+    "visible_validation": {
+      "type": "string",
+      "enum": [
+        "npm run ci:agent"
+      ]
+    },
+    "leakage_exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}

@@ -212,9 +212,14 @@ def is_v1_path(path) -> bool:
 
 
 def discover_public_tasks(tasks_dir=DEFAULT_TASKS_DIR) -> List[Path]:
+    """Discover public v2 task files. Scans the top-level tasks directory and the
+    ``public/`` subdirectory (the authored pilot task bodies live in
+    ``experiments/v2/tasks/public/``). README files and any v1/v0 path are never
+    returned."""
     tasks_dir = Path(tasks_dir)
+    candidates = list(tasks_dir.glob("*.md")) + list((tasks_dir / "public").glob("*.md"))
     out: List[Path] = []
-    for p in sorted(tasks_dir.glob("*.md")):
+    for p in sorted(candidates):
         if p.name.lower() == "readme.md":
             continue
         if is_v1_path(p):

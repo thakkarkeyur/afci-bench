@@ -1,0 +1,52 @@
+# AFCI-Bench v2 - public task body schema (functional only).
+#
+# Every public task (experiments/v2/tasks/public/<id>.md) is a Markdown file with
+# a YAML front-matter block followed by functional prose sections. Public tasks
+# contain functional requirements and observable behaviour ONLY: no architecture,
+# no hidden acceptance criteria, no evaluator rules. Hidden answers live in the
+# separate private evaluator repository. JSON-Schema for the front-matter:
+# experiments/v2/schemas/public_task.schema.json.
+
+version: "1.0.0"
+
+front_matter:
+  required_fields:
+    - id                  # neutral identifier: PT01-PT06 (primary), PR01-PR02 (reserve)
+    - title               # functional, human-readable
+    - category            # functional category (see enum)
+    - kind                # primary | reserve
+    - status              # candidate (authored, NOT approved or frozen)
+    - visible_validation  # the only validation command exposed to the model
+  category_enum:
+    - read-endpoint
+    - list-endpoint
+    - write-endpoint
+    - observability
+    - calculation
+    - error-handling
+  visible_validation_value: "npm run ci:agent"
+
+body_sections:
+  # Recommended section order; all functional, none architectural.
+  - Objective
+  - User-visible behaviour
+  - Inputs and outputs
+  - Error behaviour        # where functionally relevant
+  - Constraints            # ordinary, non-architectural constraints only
+  - Functional completion criteria
+  - Validation             # must reference: npm run ci:agent
+
+prohibited_content:
+  # The concrete prohibited-term list is defined once, publicly, by the policy and
+  # is enforced mechanically. It is intentionally not re-enumerated here.
+  policy: docs/v2/TASK_AUTHORING_POLICY.md
+  terms: docs/v2/TASK_LEAKAGE_TERMS.yml
+  summary: >-
+    A public task states functional requirements and observable behaviour only.
+    Any hidden design detail (the reviewed prohibited-term list covers it) is
+    withheld to the private evaluator repository.
+
+leakage_validation:
+  validator: experiments/v2/tasks/validate_public_tasks.py
+  terms: docs/v2/TASK_LEAKAGE_TERMS.yml
+  requirement: "every public task must report OK (no hard leak, no uncovered review term)"
