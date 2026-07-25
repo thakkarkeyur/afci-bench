@@ -49,11 +49,19 @@ describe('real repository self-scan (dogfood)', () => {
         path.join(snapshotDir, 'tsconfig.base.json'),
       );
 
-      // Mount the committed template manifest OUTSIDE the snapshot.
+      // Mount a FROZEN synthetic manifest OUTSIDE the snapshot. The committed
+      // template is intentionally status:"template" (and now correctly fails
+      // closed for scoring), so we promote a copy of it to a scorable frozen,
+      // non-invalidated manifest without touching the committed file.
       const evalDir = path.join(tmp, 'evaluator');
       fs.mkdirSync(evalDir, { recursive: true });
       const manifestPath = path.join(evalDir, 'manifest.json');
-      fs.copyFileSync(TEMPLATE_MANIFEST, manifestPath);
+      const frozen = JSON.parse(fs.readFileSync(TEMPLATE_MANIFEST, 'utf-8'));
+      frozen.manifest_id = 'EM-REALREPO-FROZEN';
+      frozen.manifest_version = '0.1.0-dev';
+      frozen.status = 'frozen';
+      frozen.invalidation = { invalidated: false, reason: null, superseded_by: null };
+      fs.writeFileSync(manifestPath, JSON.stringify(frozen, null, 2), 'utf-8');
 
       const r = evaluateSnapshot({ snapshotDir, manifestPath, snapshotId: 'real-repo' });
 

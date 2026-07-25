@@ -11,10 +11,15 @@ export type OracleFailReason =
   | 'MANIFEST_MISSING' // manifest file absent or unreadable
   | 'MANIFEST_MALFORMED' // manifest is not valid JSON / fails structural validation
   | 'MANIFEST_VERSION_UNRESOLVED' // manifest id/version missing or unresolved
+  | 'MANIFEST_LIFECYCLE_MISSING' // manifest status / invalidation lifecycle fields are missing or malformed
+  | 'MANIFEST_NOT_FROZEN' // manifest status is not exactly 'frozen' (template/draft/review/deprecated/other)
+  | 'MANIFEST_INVALIDATED' // manifest is marked invalidated and must not be scored for evidence
+  | 'DUPLICATE_OPPORTUNITY_ID' // two frozen opportunities share an opportunity_id
+  | 'INVALID_OPPORTUNITY_RULE' // an opportunity references an unknown / non-applicable / non-scoring rule id
   | 'UNKNOWN_RULE_ID' // an applicable rule id is not registered
   | 'MISSING_EVALUATOR_FILE' // a referenced evaluator/alias file does not exist
   | 'MALFORMED_ALIAS_CONFIG' // the snapshot tsconfig cannot be parsed
-  | 'INCOMPLETE_SCORING'; // a rule could not be evaluated to completion
+  | 'INCOMPLETE_SCORING'; // a rule could not be evaluated to completion, or an opportunity was dropped from accounting
 
 export class OracleError extends Error {
   public readonly reason: OracleFailReason;

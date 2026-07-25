@@ -26,6 +26,9 @@ function isStringArray(v: unknown): v is string[] {
 
 const UNRESOLVED_TOKENS = new Set(['', 'unresolved', 'todo', 'tbd', 'null']);
 
+/** Recognized manifest lifecycle states (mirrors evaluator_manifest.schema.json). */
+export const VALID_MANIFEST_STATUSES = ['template', 'draft', 'review', 'frozen', 'deprecated'];
+
 function requireResolved(value: unknown, field: string): string {
   if (typeof value !== 'string' || UNRESOLVED_TOKENS.has(value.trim().toLowerCase())) {
     throw new OracleError(
@@ -74,7 +77,7 @@ function parseOpportunities(raw: unknown): Opportunity[] {
   if (!Array.isArray(raw)) {
     throw new OracleError('MANIFEST_MALFORMED', 'opportunities must be an array');
   }
-  return raw.map((o, i) => {
+  const opportunities = raw.map((o, i) => {
     if (!isObject(o) || typeof o.opportunity_id !== 'string' || typeof o.rule_id !== 'string' || !isObject(o.locator)) {
       throw new OracleError('MANIFEST_MALFORMED', `opportunities[${i}] is malformed`);
     }
@@ -91,6 +94,30 @@ function parseOpportunities(raw: unknown): Opportunity[] {
       description: typeof o.description === 'string' ? o.description : null,
     };
   });
+
+  // Fail closed on duplicate opportunity_id values (P1-1). opportunity_id is a
+  // UNIQUE KEY: the engine keys id-Sets on it while sizing the denominator by
+  // array length, so a repeat would silently mis-score the primary endpoint.
+  // JSON Schema cannot express object-property uniqueness, so the loader is the
+  // authoritative guard. We reject rather than deduplicate, and the error lists
+  // the offending id(s) deterministically (sorted) for reproducibility.
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const o of opportunities) {
+    if (seen.has(o.opportunity_id)) {
+      duplicates.add(o.opportunity_id);
+    }
+    seen.add(o.opportunity_id);
+  }
+  if (duplicates.size > 0) {
+    const ids = Array.from(duplicates).sort().join(', ');
+    throw new OracleError(
+      'DUPLICATE_OPPORTUNITY_ID',
+      `evaluator manifest contains duplicate opportunity_id value(s): ${ids}`,
+      `${duplicates.size} duplicated id(s)`,
+    );
+  }
+  return opportunities;
 }
 
 /** Read, parse, and structurally validate the manifest at `manifestPath`. */
@@ -114,6 +141,24 @@ export function loadManifest(manifestPath: string): EvaluatorManifest {
   const manifest_id = requireResolved(raw.manifest_id, 'manifest_id');
   const manifest_version = requireResolved(raw.manifest_version, 'manifest_version');
 
+  // Lifecycle fields must be present and well-typed (P1-3). The value gate
+  // (must be 'frozen' and not invalidated) is enforced at scoring time by the
+  // engine (assertManifestScorable); here we only fail closed on missing or
+  // malformed lifecycle data so a manifest with no lifecycle can never be scored.
+  if (typeof raw.status !== 'string' || !VALID_MANIFEST_STATUSES.includes(raw.status)) {
+    throw new OracleError(
+      'MANIFEST_LIFECYCLE_MISSING',
+      `manifest 'status' is required and must be one of ${VALID_MANIFEST_STATUSES.join('/')}`,
+      String(raw.status),
+    );
+  }
+  if (!isObject(raw.invalidation) || typeof raw.invalidation.invalidated !== 'boolean') {
+    throw new OracleError(
+      'MANIFEST_LIFECYCLE_MISSING',
+      "manifest 'invalidation.invalidated' (boolean) is required",
+    );
+  }
+
   if (!isStringArray(raw.applicable_rule_ids)) {
     throw new OracleError('MANIFEST_MALFORMED', 'applicable_rule_ids must be a string array');
   }
@@ -127,15 +172,14 @@ export function loadManifest(manifestPath: string): EvaluatorManifest {
     manifest_version,
     task_id: typeof raw.task_id === 'string' ? raw.task_id : null,
     base_sha: typeof raw.base_sha === 'string' ? raw.base_sha : '',
-    status: (raw.status as EvaluatorManifest['status']) ?? 'template',
-    invalidation: isObject(raw.invalidation)
-      ? {
-          invalidated: raw.invalidation.invalidated === true,
-          reason: typeof raw.invalidation.reason === 'string' ? raw.invalidation.reason : null,
-          superseded_by:
-            typeof raw.invalidation.superseded_by === 'string' ? raw.invalidation.superseded_by : null,
-        }
-      : { invalidated: false, reason: null, superseded_by: null },
+    // status and invalidation.invalidated are validated as present above.
+    status: raw.status as EvaluatorManifest['status'],
+    invalidation: {
+      invalidated: raw.invalidation.invalidated === true,
+      reason: typeof raw.invalidation.reason === 'string' ? raw.invalidation.reason : null,
+      superseded_by:
+        typeof raw.invalidation.superseded_by === 'string' ? raw.invalidation.superseded_by : null,
+    },
     applicable_rule_ids: raw.applicable_rule_ids,
     opportunities,
     areas: isObject(raw.areas)

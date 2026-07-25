@@ -49,6 +49,7 @@ export interface ManifestOverrides {
   applicable_rule_ids?: string[];
   opportunities?: unknown[];
   status?: string;
+  invalidation?: { invalidated: boolean; reason: string | null; superseded_by: string | null };
   answers_populated?: boolean;
 }
 
@@ -82,8 +83,11 @@ export function baseManifest(overrides: ManifestOverrides = {}): Record<string, 
     manifest_version: overrides.manifest_version ?? '0.1.0-dev',
     task_id: overrides.task_id ?? null,
     base_sha: '0'.repeat(40),
-    status: overrides.status ?? 'template',
-    invalidation: { invalidated: false, reason: null, superseded_by: null },
+    // Default to a scorable (frozen, non-invalidated) manifest: these helpers
+    // build manifests for SCORING tests. Lifecycle-failure tests override status
+    // / invalidation explicitly.
+    status: overrides.status ?? 'frozen',
+    invalidation: overrides.invalidation ?? { invalidated: false, reason: null, superseded_by: null },
     applicable_rule_ids: overrides.applicable_rule_ids ?? ['AR-DEP-001'],
     opportunities: overrides.opportunities ?? [],
     areas: { required: [], optional: [], prohibited: [] },

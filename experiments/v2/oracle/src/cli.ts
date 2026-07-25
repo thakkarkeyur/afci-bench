@@ -4,8 +4,10 @@
  * Runs the oracle over a final repository snapshot using a frozen, externally
  * mounted manifest and prints the raw architecture_finding JSON. It is an
  * EVALUATOR, run only after model generation ends; it invokes no model. Exit
- * codes: 0 CONFORMANT, 2 VIOLATIONS, 3 fail-closed (OracleError), 4 PENDING
- * (an applicable rule is unimplemented), 1 unexpected error.
+ * codes: 0 CONFORMANT, 2 VIOLATIONS, 3 fail-closed (OracleError — includes a
+ * non-frozen/invalidated manifest, a duplicate opportunity_id, or an opportunity
+ * with an invalid rule; kept distinct from an ordinary VIOLATIONS result),
+ * 4 PENDING (an applicable rule is unimplemented), 1 unexpected error.
  *
  * Usage:
  *   ts-node experiments/v2/oracle/src/cli.ts \

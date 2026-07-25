@@ -24,8 +24,18 @@ run and invokes **no** model.
   `@afci-bench/*` aliases and `src/index.ts` barrels; a real-repository run reports
   `CONFORMANT` and does not false-flag the sanctioned api→features→core re-export.
 - **Fail-closed** on: evaluator mount inside the coding worktree
-  (`INFRA_EVALUATOR_MOUNT`), missing/malformed/unresolved manifest, unknown rule
-  id, malformed/missing alias config, and incomplete scoring.
+  (`INFRA_EVALUATOR_MOUNT`), missing/malformed/unresolved manifest, missing or
+  malformed lifecycle fields (`MANIFEST_LIFECYCLE_MISSING`), a manifest that is
+  not lifecycle-valid for evidentiary use — status not exactly `frozen`
+  (`MANIFEST_NOT_FROZEN`) or invalidated (`MANIFEST_INVALIDATED`) — a duplicate
+  `opportunity_id` (`DUPLICATE_OPPORTUNITY_ID`), an opportunity referencing an
+  unknown / non-applicable / non-scoring rule (`INVALID_OPPORTUNITY_RULE`),
+  unknown rule id, malformed/missing alias config, and incomplete scoring
+  (including any opportunity dropped from accounting). A lifecycle/integrity
+  refusal is an `OracleError` (CLI exit 3), kept distinct from an ordinary
+  `VIOLATIONS` result (exit 2). The scored finding records manifest lifecycle
+  provenance (`manifest_ref.status` / `manifest_ref.invalidated`); the
+  invalidation *reason* is never surfaced.
 - **Explicit unimplemented stubs**: the contract/observability/coding-discipline/
   change-footprint rules are registered but report `UNIMPLEMENTED` — they can never
   report PASS until built.

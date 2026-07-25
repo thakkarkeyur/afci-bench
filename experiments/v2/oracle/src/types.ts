@@ -68,6 +68,10 @@ export interface ArchitectureFinding {
     manifest_id: string;
     manifest_version: string;
     manifest_sha256: string | null;
+    /** Lifecycle provenance: a scored finding is only ever produced from a frozen manifest. */
+    status: string;
+    /** Invalidation provenance: always false for a scored finding (invalidated manifests fail closed). */
+    invalidated: boolean;
   };
   base_sha: string;
   snapshot_ref: { id: string; sha256: string | null };
@@ -115,7 +119,7 @@ export interface EvaluatorManifest {
   manifest_version: string;
   task_id: string | null;
   base_sha: string;
-  status: 'template' | 'draft' | 'frozen';
+  status: 'template' | 'draft' | 'review' | 'frozen' | 'deprecated';
   invalidation: { invalidated: boolean; reason: string | null; superseded_by: string | null };
   applicable_rule_ids: string[];
   opportunities: Opportunity[];

@@ -33,7 +33,11 @@
       "description": "Task identifier placeholder. Null or a TASK-TEMPLATE-* id in committed templates; a real task id only in externally mounted, private manifests."
     },
     "base_sha": { "type": "string" },
-    "status": { "type": "string", "enum": ["template", "draft", "frozen"] },
+    "status": {
+      "type": "string",
+      "enum": ["template", "draft", "review", "frozen", "deprecated"],
+      "description": "Lifecycle state. The oracle scores ONLY a manifest whose status is exactly 'frozen' and whose invalidation.invalidated is false; every other state fails closed (enforced by the engine, not merely this schema)."
+    },
     "invalidation": {
       "type": "object",
       "additionalProperties": false,
@@ -47,7 +51,8 @@
     "applicable_rule_ids": { "type": "array", "items": { "type": "string" } },
     "opportunities": {
       "type": "array",
-      "description": "The FROZEN fixed opportunity set. Its size is the applicable-opportunity denominator; it is frozen per task manifest and NOT derived from how many files/layers a model touched. Each opportunity locates where a rule applies; it carries no expected implementation answer.",
+      "uniqueItems": true,
+      "description": "The FROZEN fixed opportunity set. Its size is the applicable-opportunity denominator; it is frozen per task manifest and NOT derived from how many files/layers a model touched. Each opportunity locates where a rule applies; it carries no expected implementation answer. opportunity_id MUST be unique across this array — JSON Schema cannot express object-property uniqueness, so the oracle loader is the authoritative guard and fails closed (DUPLICATE_OPPORTUNITY_ID) on any repeat; uniqueItems here is a weaker backstop that only catches fully-identical entries.",
       "items": {
         "type": "object",
         "additionalProperties": false,

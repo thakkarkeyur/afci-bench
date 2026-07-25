@@ -5,8 +5,12 @@
  * externally mounted evaluator manifest. It takes NO condition and NO model
  * parameter, so scoring is blind. It fails closed (throws OracleError) on an
  * evaluator mount inside the worktree, a missing/malformed/unresolved manifest,
- * an unknown rule id, a malformed/missing alias config, or an incomplete scoring
- * pass. Unimplemented rules report UNIMPLEMENTED and never PASS.
+ * a manifest that is not lifecycle-valid for evidentiary use (status not exactly
+ * 'frozen', or invalidated, or missing lifecycle fields), a duplicate
+ * opportunity_id, an opportunity referencing an unknown/non-applicable/non-scoring
+ * rule, an unknown applicable rule id, a malformed/missing alias config, or an
+ * incomplete scoring pass (an opportunity dropped from accounting). Unimplemented
+ * rules report UNIMPLEMENTED and never PASS.
  */
 
 import * as crypto from 'crypto';
@@ -28,6 +32,7 @@ import {
 } from './types';
 import { descriptorFor, isKnownRule } from './checkers/registry';
 import { DEP_FAMILY_RULE_IDS, runDependencyDirection } from './checkers/dependencyDirection';
+import { assertManifestScorable, assertOpportunityRulesValid } from './manifestIntegrity';
 
 export const EVALUATOR_NAME = 'afci-arch-oracle';
 export const EVALUATOR_VERSION = '0.1.0-dev';
@@ -61,8 +66,13 @@ export function evaluateSnapshot(opts: EvaluateOptions): ArchitectureFinding {
     throw new OracleError('MISSING_EVALUATOR_FILE', 'snapshot directory does not exist', opts.snapshotDir);
   }
 
-  // 3. Load + structurally validate the manifest (fail closed on issues).
+  // 3. Load + structurally validate the manifest (fail closed on issues:
+  //    malformed JSON, unresolved id/version, missing lifecycle fields, and
+  //    duplicate opportunity_id values are all rejected by the loader).
   const manifest = loadManifest(opts.manifestPath);
+
+  // 3b. Lifecycle gate (P1-3): score ONLY a frozen, non-invalidated manifest.
+  assertManifestScorable(manifest);
 
   // 4. Every applicable rule id must be known (registered).
   for (const ruleId of manifest.applicable_rule_ids) {
@@ -70,6 +80,11 @@ export function evaluateSnapshot(opts: EvaluateOptions): ArchitectureFinding {
       throw new OracleError('UNKNOWN_RULE_ID', `applicable rule id '${ruleId}' is not registered`);
     }
   }
+
+  // 4b. Every frozen opportunity must reference a rule that is known, in force,
+  //     and scored by the active checker (P1-2). This is what stops an
+  //     opportunity from being silently dropped from accounting below.
+  assertOpportunityRulesValid(manifest);
 
   // 5. Frozen layer map + snapshot alias config (fail closed if malformed/missing).
   const layerMap = new LayerMap(manifest.dependency_policy.layers);
@@ -183,6 +198,31 @@ export function evaluateSnapshot(opts: EvaluateOptions): ArchitectureFinding {
     absent_opportunity_count: depOpportunities.filter((o) => absentOppIds.has(o.opportunity_id)).length,
   };
 
+  // 10b. Reconcile the accounting (fail closed rather than under-count). After
+  // the P1-2 validation every frozen opportunity is an in-force dep-family
+  // scoring opportunity, so NONE may be dropped by the dep-family filter, and
+  // (opportunity_ids being unique, P1-1) each is bucketed exactly once. If either
+  // invariant does not hold, the denominator would silently disagree with the
+  // uniquely-scored opportunity set — refuse to emit a result.
+  if (depOpportunities.length !== manifest.opportunities.length) {
+    throw new OracleError(
+      'INCOMPLETE_SCORING',
+      'a frozen opportunity was excluded from accounting (denominator != scoring-opportunity set)',
+      `accounted=${depOpportunities.length} manifest=${manifest.opportunities.length}`,
+    );
+  }
+  const bucketed =
+    oppAccounting.fixed_opportunity_count +
+    oppAccounting.violated_opportunity_count +
+    oppAccounting.absent_opportunity_count;
+  if (bucketed !== oppAccounting.applicable_opportunity_count) {
+    throw new OracleError(
+      'INCOMPLETE_SCORING',
+      'frozen-opportunity accounting is incomplete (applicable != fixed + violated + absent)',
+      `applicable=${oppAccounting.applicable_opportunity_count} fixed+violated+absent=${bucketed}`,
+    );
+  }
+
   // 11. Verdict.
   const anyUnimplemented = rulesEvaluated.some((r) => r.status === 'unimplemented');
   let verdict: Verdict;
@@ -207,6 +247,10 @@ export function evaluateSnapshot(opts: EvaluateOptions): ArchitectureFinding {
       manifest_id: manifest.manifest_id,
       manifest_version: manifest.manifest_version,
       manifest_sha256: sha256File(opts.manifestPath),
+      // Lifecycle provenance (P1-3). A scored finding is only ever produced from
+      // a frozen, non-invalidated manifest; recorded so a consumer can confirm it.
+      status: manifest.status,
+      invalidated: manifest.invalidation.invalidated,
     },
     base_sha: manifest.base_sha,
     snapshot_ref: { id: opts.snapshotId ?? path.basename(path.resolve(opts.snapshotDir)), sha256: null },

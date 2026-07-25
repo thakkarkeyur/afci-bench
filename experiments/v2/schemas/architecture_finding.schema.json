@@ -35,11 +35,14 @@
     "manifest_ref": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["manifest_id", "manifest_version", "manifest_sha256"],
+      "description": "Identity and lifecycle provenance of the frozen manifest this finding was scored against. status/invalidated record that the manifest was lifecycle-valid; a finding is only ever produced from a frozen, non-invalidated manifest (the engine fails closed otherwise). The invalidation reason is deliberately NOT recorded here.",
+      "required": ["manifest_id", "manifest_version", "manifest_sha256", "status", "invalidated"],
       "properties": {
         "manifest_id": { "type": "string" },
         "manifest_version": { "type": "string" },
-        "manifest_sha256": { "type": ["string", "null"] }
+        "manifest_sha256": { "type": ["string", "null"] },
+        "status": { "type": "string", "enum": ["frozen"] },
+        "invalidated": { "type": "boolean" }
       }
     },
     "base_sha": { "type": "string" },
