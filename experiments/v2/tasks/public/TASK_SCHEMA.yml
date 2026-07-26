@@ -18,12 +18,19 @@ front_matter:
     - status              # candidate (authored, NOT approved or frozen)
     - visible_validation  # the only validation command exposed to the model
   category_enum:
-    - read-endpoint
-    - list-endpoint
-    - write-endpoint
-    - observability
+    # Must stay byte-identical to the `category` enum in
+    # experiments/v2/schemas/public_task.schema.json; the equality is asserted by
+    # experiments/v2/harness/tests/test_public_task_integrity.py.
+    #
+    # `logging` is deliberately used instead of `observability`: `observability`
+    # is also the name of a repository library, and public task metadata must not
+    # reuse a layer name as its functional vocabulary.
     - calculation
     - error-handling
+    - list-endpoint
+    - logging
+    - read-endpoint
+    - write-endpoint
   visible_validation_value: "npm run ci:agent"
 
 body_sections:

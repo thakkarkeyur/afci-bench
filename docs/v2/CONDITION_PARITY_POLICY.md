@@ -24,6 +24,20 @@ Conditions: [`CONDITIONS.md`](CONDITIONS.md). Blocker for the frozen hashes:
   [`RESET_PROTOCOL.md`](RESET_PROTOCOL.md)).
 - The **evidentiary environment** (isolated container + dedicated identity,
   `context_audit` CLEAN) — D11 / `TD-B19`.
+- The **model-visible worktree substrate**. Every condition receives the same
+  allowlisted snapshot (`apps/`, `libs/`, build/type-check/test configuration, the
+  agent-visible lint config) and **no** explicit architecture material: no
+  `ARCHITECTURE_CONTEXT.md`, no `ARCHITECTURE_RULE_CATALOG.yml`, no
+  architecture-enforcing `.eslintrc.json`, no `docs/`, `experiments/`, `paper/` or
+  `archive/`. The snapshot manifest's `content_hash` makes substrate parity
+  mechanically checkable, and the only permitted per-condition difference inside
+  the worktree is C3's single approved repository-instruction file. See
+  [`MODEL_VISIBLE_WORKTREE_POLICY.md`](MODEL_VISIBLE_WORKTREE_POLICY.md);
+  runner-time enforcement is **`TD-B22`** (open).
+
+  Without this, parity was broken at the root: the architecture payload and the
+  oracle's rule catalog were repository files inside every condition's worktree,
+  so C1 was not a no-architecture arm at all.
 
 ## 2. C3 vs C4 — the delivery-channel contrast (D4, D5)
 
@@ -33,7 +47,12 @@ bytes). The **only** intended difference is the **delivery channel**:
 - **C3:** the architecture content is delivered as a **persistent
   repository-instruction file** (it stays in place across the reset).
 - **C4:** the same content is delivered as **explicit governed prompt
-  injection**, and is **re-injected** as primary context after a reset.
+  injection**, and is **re-injected** as primary context after a reset. C4's
+  prepared worktree carries **no** persistent instruction file.
+
+The preparation mechanism records `architecture_sha256` for both conditions, so
+the byte-identity requirement (`TD-B18`) is checked mechanically: the same payload
+hash must appear on C3 and C4 with different `architecture_delivery` values.
 
 Rules:
 

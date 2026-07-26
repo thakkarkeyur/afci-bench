@@ -21,6 +21,18 @@ given model (see [`MODEL_EXECUTION_CONTROLS.md`](MODEL_EXECUTION_CONTROLS.md) §
 conditions.** "MAD" = the approved **Minimum Architecture Document** rule set for
 the task.
 
+**The model-visible worktree is identical across C1–C4 and contains no explicit
+architecture material.** It is built from an allowlist (source substrate +
+build/type-check/test configuration + the agent-visible lint config) by
+[`MODEL_VISIBLE_WORKTREE_POLICY.md`](MODEL_VISIBLE_WORKTREE_POLICY.md), which
+excludes `docs/` (including `ARCHITECTURE_CONTEXT.md` and
+`ARCHITECTURE_RULE_CATALOG.yml`), `experiments/`, `paper/`, `archive/` and the
+architecture-enforcing `.eslintrc.json`. Before that mechanism existed the
+worktree was the whole repository, so the architecture payload and the oracle's
+rule catalog were readable in every condition — including this C1 baseline —
+which would have confounded the primary C4-vs-C1 contrast. Runner-time
+enforcement is **`TD-B22`** (open); no run may be counted until it is closed.
+
 ---
 
 ## 1. The four conditions
@@ -93,6 +105,10 @@ behaviour**. Each field is also a column in
   prompt).
 - **Prohibited files:** all persistent Claude context — any `CLAUDE.md`,
   `CLAUDE.local.md`, `.claude/*`, auto-memory, MAD file, or generic-guidance file.
+  This includes any **repository-resident** architecture document: the prepared
+  worktree carries no `ARCHITECTURE_CONTEXT.md`, no
+  `ARCHITECTURE_RULE_CATALOG.yml`, and no architecture-enforcing `.eslintrc.json`
+  (see [`MODEL_VISIBLE_WORKTREE_POLICY.md`](MODEL_VISIBLE_WORKTREE_POLICY.md)).
 - **Token-count rule:** reference zero guidance tokens; **not** token-matched.
 - **Context-audit requirement:** `context_audit.json` verdict **CLEAN** with an
   **empty** approved allowlist; `component_status` all `none`; sterile

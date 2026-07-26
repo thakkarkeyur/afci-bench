@@ -12,6 +12,19 @@ tested by [`experiments/v2/harness/tests/test_context_isolation.py`](../../exper
 Per-source mitigation is tabulated in
 [`CONTEXT_SOURCE_MATRIX.csv`](CONTEXT_SOURCE_MATRIX.csv).
 
+**Workspace isolation is a separate, mandatory step.** Context isolation covers
+Claude's *environment* (HOME, config dir, memory, settings, session reuse). It
+does **not** by itself control what the model can read inside its workspace. The
+model-visible worktree is built from an allowlist by
+[`MODEL_VISIBLE_WORKTREE_POLICY.md`](MODEL_VISIBLE_WORKTREE_POLICY.md) /
+[`prepare_model_worktree.py`](../../experiments/v2/harness/prepare_model_worktree.py),
+which excludes `docs/` (including the architecture payload and the oracle rule
+catalog), `experiments/`, `paper/`, `archive/` and the architecture-enforcing
+`.eslintrc.json`. A `CLEAN` `context_audit.json` verdict is therefore **necessary
+but not sufficient**: a run is only isolated if its worktree was also prepared by
+that mechanism. Runner-time enforcement of both is **`TD-B22`** / **`TD-B16`**
+(open).
+
 ## 1. Development vs. experimental sessions
 
 | | Development session | Experimental session |

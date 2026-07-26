@@ -14,9 +14,15 @@ Blocking decisions: **`TD-B16`** (runner-time CI/evaluator separation),
 
 ## 1. Definitions
 
-- **Coding worktree** — the repository snapshot the model edits and the only tree
-  its `ci:agent` runs against. Denote its absolute, symlink-resolved real path
-  `W`.
+- **Coding worktree** — the **prepared** model-visible snapshot the model edits
+  and the only tree its `ci:agent` runs against. Denote its absolute,
+  symlink-resolved real path `W`. `W` is **not** a checkout of the whole
+  repository: it is built from an allowlist by
+  [`MODEL_VISIBLE_WORKTREE_POLICY.md`](MODEL_VISIBLE_WORKTREE_POLICY.md) /
+  [`prepare_model_worktree.py`](../../experiments/v2/harness/prepare_model_worktree.py),
+  which excludes `docs/`, `experiments/`, `paper/` and `archive/` — and therefore
+  the explicit architecture payload and rule catalog — from every condition.
+  Runner-time enforcement of that step is **`TD-B22`** (open).
 - **Evaluator mount** — the directory holding the frozen `evaluator_manifest.json`,
   the hidden tests, and (after scoring) the scoring outputs. Denote its absolute,
   symlink-resolved real path `E`.

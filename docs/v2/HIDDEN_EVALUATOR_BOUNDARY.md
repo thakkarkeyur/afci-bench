@@ -36,10 +36,11 @@ If any such artifact is detected inside the coding worktree, the run is invalid:
 the harness records `SETUP_CONTAMINATED` (setup-time) or `INFRA_EVALUATOR_MOUNT`
 (a mount placed inside the worktree) and the run is not scored.
 
-## 2. What the public repository MAY contain
+## 2. What the public repository MAY contain — and why that is NOT the same as
+## what the model sees
 
-The public repository (which the model may see) may contain, because none of it
-reveals a task-specific answer:
+The public repository may contain, because none of it reveals a task-specific
+answer:
 
 - evaluator **schemas** (`experiments/v2/schemas/*.schema.json`);
 - generic **engine code** (the oracle framework and the dependency-direction
@@ -49,10 +50,36 @@ reveals a task-specific answer:
 - **documentation** (this file, the rule catalog, the manual rubric, policies);
 - **empty templates** without task answers.
 
-The distinction is answer-bearing content, not architecture content: the
-canonical architecture context ([`ARCHITECTURE_CONTEXT.md`](ARCHITECTURE_CONTEXT.md))
-is deliberately deliverable to the model; the task-specific manifest and hidden
-tests are not.
+**None of this reaches the coding model.** An earlier revision of this section
+said the canonical architecture context was "deliberately deliverable to the
+model" and drew the line at *answer-bearing* content only. An independent review
+showed that reading was unsound: because the coding worktree was the whole
+repository, [`ARCHITECTURE_CONTEXT.md`](ARCHITECTURE_CONTEXT.md) (the explicit
+architecture payload) and
+[`ARCHITECTURE_RULE_CATALOG.yml`](ARCHITECTURE_RULE_CATALOG.yml) (the rule
+catalog the oracle scores against) were readable in **every** condition,
+including the no-guidance C1 baseline — a direct confound on the primary
+C4-vs-C1 contrast, and a contradiction of C1's own prohibited-files list in
+[`CONDITIONS.md`](CONDITIONS.md) §3.
+
+The line is therefore drawn at the **model-visible worktree**, not at the
+repository:
+
+- The architecture payload is **content that must be delivered by channel**, to
+  C3 and C4 only, through the mechanism their condition specifies. It is never
+  present as a repository file the model can read.
+- The coding worktree is **built** by
+  [`MODEL_VISIBLE_WORKTREE_POLICY.md`](MODEL_VISIBLE_WORKTREE_POLICY.md) from an
+  allowlist (`apps/`, `libs/`, build/type-check/test configuration, the
+  agent-visible lint config). `docs/`, `experiments/`, `paper/` and `archive/` are
+  excluded wholesale, so every document listed above — including this one — is
+  absent from the model's worktree.
+- What deliberately remains visible is the **substrate**: folder names, nx scope
+  tags, path aliases, source code and existing visible tests (D3). The implicit
+  architectural tension stays real; only the explicit statement of the rules is
+  removed.
+
+Runner-time enforcement of that preparation step is **`TD-B22`** and is **open**.
 
 ## 3. Where task-specific hidden material must reside
 

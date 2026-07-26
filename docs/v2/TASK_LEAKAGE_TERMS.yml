@@ -1,23 +1,46 @@
-# AFCI-Bench v2 — public-task architecture-leakage terms.
+# AFCI-Bench v2 — public-task leakage terms.
 #
 # Consumed by experiments/v2/tasks/validate_public_tasks.py. Applies ONLY to
-# future PUBLIC v2 task files (experiments/v2/tasks/*.md). It NEVER scans or
-# modifies v1 tasks (archive/, experiments/tasks_v0/). Purpose: keep the hidden
-# architecture out of the public task statement (CRITICAL_DESIGN_DECISIONS D2).
-# Blocker for validating the authored public-task suite: TD-B17.
+# PUBLIC v2 task files under experiments/v2/tasks/ (recursively; see the
+# validator's discovery rules). It NEVER scans or modifies v1 tasks (archive/,
+# experiments/tasks_v0/). Purpose: keep every hidden design detail out of the
+# public task statement (CRITICAL_DESIGN_DECISIONS D2), not only the module
+# architecture. Blocker for validating the authored public-task suite: TD-B17.
 #
 # Two tiers:
-#   hard_leak       - architecture INSTRUCTIONS. Reveal the hidden architecture;
-#                     may NEVER appear in a public task and may NEVER be excepted.
+#   hard_leak       - instructions or clues that reveal hidden design. May NEVER
+#                     appear in a public task and may NEVER be excepted.
 #                     Fail closed.
 #   review_required - ambiguous terms that CAN be legitimate functional language.
 #                     Flagged for REVIEW; a finding passes only if a matching
-#                     reviewed exception (front-matter `leakage_exceptions`) with a
-#                     non-empty justification AND reviewer exists.
+#                     APPROVED reviewed exception (front-matter
+#                     `leakage_exceptions` carrying pattern id, exact location,
+#                     justification, reviewer and approval state) exists.
 #
-# Patterns are Python `re` regexes, matched case-insensitively per line.
+# Patterns are Python `re` regexes, matched case-insensitively. They are applied
+# BOTH to each physical line and to normalised logical text (wrapped prose joined
+# within a paragraph or list item), so a phrase split across a line break is
+# still detected. Front-matter string values are scanned with the same patterns.
+#
+# Leakage families covered (review requirement D3):
+#   architecture/MAD instructions ......... HL-MAD, HL-BOUNDARIES,
+#                                           HL-FOLLOW-ARCH, HL-EXISTING-PATTERN,
+#                                           HL-ARCH-ACCEPTANCE
+#   dependency-direction statements ....... HL-DEP-DIRECTION
+#   layer / contract / port placement ..... HL-LAYER-PRESCRIPTIVE,
+#                                           HL-CONTRACT-PORT-PLACEMENT,
+#                                           HL-PLACEMENT
+#   prescribed repository paths ........... HL-REPO-PATH
+#   source filenames as instructions ...... HL-SOURCE-FILENAME
+#   hidden-test / withheld-grading clues .. HL-HIDDEN-TEST
+#   reset / checkpoint / restart clues .... HL-RESET-CLUE
+#   condition names (C1-C4) ............... HL-CONDITION-NAME
+#   opportunity and rule ids .............. HL-OPPORTUNITY-ID
+#   evaluator / oracle clues .............. HL-EVALUATOR-CLUE
+#   expected-implementation descriptions .. HL-EXPECTED-IMPL
+#   legitimate-alternative disclosures .... HL-LEGIT-ALT
 
-version: "1.0.0"
+version: "2.0.0"
 
 hard_leak:
   - id: HL-MAD
@@ -42,7 +65,7 @@ hard_leak:
 
   - id: HL-DEP-DIRECTION
     category: dependency-direction
-    pattern: 'dependency direction|import direction|must not import|may only depend|depend(s)? only on|not allowed to import|allowed to import from|inward dependenc|point(s|ing)? inward'
+    pattern: 'dependency direction|import direction|must not import|may not import|cannot import|should not import|may only depend|depend(s)? only on|not allowed to import|allowed to import from|inward dependenc|point(s|ing)? inward|import(s)? (only )?(from )?(the )?(core|infra(structure)?|feature|domain|contracts?|observability) '
     why: specifies permitted/prohibited dependency directions
 
   - id: HL-LAYER-PRESCRIPTIVE
@@ -59,6 +82,56 @@ hard_leak:
     category: architecture-acceptance-criteria
     pattern: '(pass|satisfy|conform to|not violate|respect) .{0,30}(architecture|boundary|layering|module boundar)|no (architecture|boundary|layering) violation'
     why: architecture-specific acceptance/observability requirement
+
+  - id: HL-REPO-PATH
+    category: prescribed-repository-path
+    pattern: '\b(apps|libs|lib|docs|experiments|paper|archive|node_modules|dist)/[A-Za-z0-9_.*-]+|(^|[\s`(])src/[A-Za-z0-9_.*-]+|@afci-bench/'
+    why: prescribes a repository file or directory path (an implementation answer)
+
+  - id: HL-SOURCE-FILENAME
+    category: source-filename-instruction
+    pattern: '\b[A-Za-z0-9_-]+\.(ts|tsx|js|jsx|mjs|cjs)\b|\bindex\.(ts|js)\b|\bbarrel file\b'
+    why: names a source file, which is an implementation-placement instruction
+
+  - id: HL-PLACEMENT
+    category: required-or-prohibited-placement
+    pattern: '(required|prohibited|expected|forbidden|permitted|allowed|out-of-scope) (layer|layers|area|areas|director(y|ies)|package|placement|file surface)|must (be )?(placed|located|declared|implemented|defined) (in|under|inside|at)\b|belongs (in|under|inside)\b|(place|put|move|define|declare|implement) (it|them|this|the [A-Za-z ]{1,30}) (in|under|inside) (the )?(apps|libs|src|[a-z-]+/)'
+    why: states required or prohibited placement of files, areas or layers
+
+  - id: HL-HIDDEN-TEST
+    category: hidden-test-clue
+    pattern: 'hidden (test|tests|suite|acceptance|criteri|answer|check)|withheld|grading suite|grader(s)?\b|\bgraded\b|not visible to the model|secret test|invisible test|the tests will (assert|check|verify)|assert(s|ed)? by the (test|suite|harness)'
+    why: reveals what the withheld grading suite inspects
+
+  - id: HL-RESET-CLUE
+    category: reset-or-checkpoint-clue
+    pattern: '\bcheckpoint\b|\bCK-[A-Z0-9]|reset (point|predicate|checkpoint|protocol|state)|session (restart|reset|is restarted|will be restarted)|restart(ed|s)? (your|the) (session|process)|mid-?task reset|--continue\b|--resume\b|--session-id'
+    why: reveals the reset/checkpoint protocol
+
+  - id: HL-CONDITION-NAME
+    category: condition-name
+    pattern: '\bC[1-4]\b|condition (C[1-4]|one|two|three|four)\b|token-matched|\bplacebo\b|\bAFCI\b'
+    why: names an experimental condition
+
+  - id: HL-OPPORTUNITY-ID
+    category: opportunity-or-rule-id
+    pattern: '\bOPP-[A-Z0-9]|\bAR-[A-Z0-9]{2,}|\bAC-[A-Z0-9]{2,}|opportunity (id|ids|set)|fixed[- ]opportunit|architecture[- ]rule id|\brule id(s)?\b'
+    why: exposes an opportunity id or architecture-rule id
+
+  - id: HL-EVALUATOR-CLUE
+    category: evaluator-or-oracle-clue
+    pattern: '\boracle\b|\bevaluator\b|evaluator_manifest|oracle_result|architecture_finding|acceptance_result|guard_result|\bmanifest_id\b|scoring (output|rule|manifest)|\bscored\b|conformance score'
+    why: reveals the evaluator/oracle machinery
+
+  - id: HL-EXPECTED-IMPL
+    category: expected-implementation
+    pattern: 'expected (implementation|solution|approach|answer)|reference (implementation|solution)|canonical (implementation|solution|answer|approach)|intended (implementation|solution|design)|model answer|the correct implementation is'
+    why: describes the expected implementation
+
+  - id: HL-LEGIT-ALT
+    category: legitimate-alternative
+    pattern: 'legitimate (alternativ|answer)|accepted alternativ|permitted alternativ|allowed alternativ|alternative solution shape|acceptable solution shape'
+    why: discloses the pre-frozen legitimate-alternative set
 
 review_required:
   - id: RR-LAYER
@@ -82,3 +155,15 @@ review_required:
   - id: RR-MODULE
     category: module-term
     pattern: '\bmodule(s)?\b'
+  - id: RR-REPOSITORY
+    category: repository-term
+    pattern: '\brepositor(y|ies)\b'
+  - id: RR-USE-CASE
+    category: use-case-term
+    pattern: '\buse[- ]case(s)?\b'
+  - id: RR-ADAPTER
+    category: adapter-term
+    pattern: '\badapter(s)?\b'
+  - id: RR-CONFIG-FILE
+    category: configuration-filename
+    pattern: '\b(package(-lock)?\.json|tsconfig[A-Za-z0-9_.-]*\.json|nx\.json|project\.json|jest\.(config|preset)[A-Za-z0-9_.-]*|\.eslintrc[A-Za-z0-9_.-]*)\b'

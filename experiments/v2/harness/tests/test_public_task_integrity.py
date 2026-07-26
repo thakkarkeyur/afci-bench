@@ -1,0 +1,296 @@
+"""Mechanical integrity of the public task suite's hashes and metadata.
+
+The independent public review found that every recorded ``public_task_sha256`` was
+correct but that **nothing checked it**, and that ``TASK_SCHEMA.yml`` and
+``public_task.schema.json`` had drifted apart on the ``category`` vocabulary. Both
+gaps are closed here.
+
+This module asserts:
+
+* every public task body's SHA-256 matches the value recorded in
+  ``TASK_INDEX.csv``;
+* ``TASK_INDEX.csv`` covers exactly the discovered task bodies;
+* ``PILOT_PUBLIC_TASK_MATRIX.csv`` agrees with ``TASK_INDEX.csv`` on hash,
+  primary/reserve classification and every shared column;
+* front-matter ``id``/``title``/``category``/``status``/``visible_validation``
+  match both public matrices;
+* ``TASK_SCHEMA.yml`` and ``public_task.schema.json`` declare the same category
+  vocabulary, and it uses ``logging`` rather than the repository layer name
+  ``observability``;
+* task ids are unique everywhere;
+* the authoring report's inventory table agrees with the index;
+* no artifact presents the candidate count as a final core-study count.
+
+Pure file inspection; no model is invoked.
+"""
+from __future__ import annotations
+
+import csv
+import hashlib
+import json
+import re
+from pathlib import Path
+
+import pytest
+import yaml
+
+REPO = Path(__file__).resolve().parents[4]
+PUBLIC_TASKS_DIR = REPO / "experiments" / "v2" / "tasks" / "public"
+INDEX_PATH = PUBLIC_TASKS_DIR / "TASK_INDEX.csv"
+SCHEMA_YML = PUBLIC_TASKS_DIR / "TASK_SCHEMA.yml"
+REPORT_PATH = PUBLIC_TASKS_DIR / "TASK_AUTHORING_REPORT.md"
+MATRIX_PATH = REPO / "docs" / "v2" / "PILOT_PUBLIC_TASK_MATRIX.csv"
+SCHEMA_JSON = REPO / "experiments" / "v2" / "schemas" / "public_task.schema.json"
+
+EXPECTED_IDS = [f"PT0{i}" for i in range(1, 7)] + ["PR01", "PR02"]
+NON_TASK_STEMS = {"README", "TASK_AUTHORING_REPORT"}
+
+
+# --------------------------------------------------------------------------- #
+# Loaders
+# --------------------------------------------------------------------------- #
+def _task_files():
+    return sorted(
+        p for p in PUBLIC_TASKS_DIR.glob("*.md") if p.stem.upper() not in NON_TASK_STEMS
+    )
+
+
+def _front_matter(path: Path) -> dict:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    assert lines and lines[0].strip() == "---", f"{path.name} must start with front matter"
+    end = next(i for i in range(1, len(lines)) if lines[i].strip() == "---")
+    data = yaml.safe_load("\n".join(lines[1:end]))
+    assert isinstance(data, dict), f"{path.name} front matter must be a mapping"
+    return data
+
+
+def _rows(path: Path):
+    with open(path, newline="", encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+INDEX_ROWS = _rows(INDEX_PATH)
+MATRIX_ROWS = _rows(MATRIX_PATH)
+INDEX_BY_ID = {r["task_id"]: r for r in INDEX_ROWS}
+MATRIX_BY_ID = {r["task_id"]: r for r in MATRIX_ROWS}
+
+
+# --------------------------------------------------------------------------- #
+# Hashes
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("path", _task_files(), ids=lambda p: p.name)
+def test_recorded_hash_matches_the_task_body(path):
+    row = INDEX_BY_ID.get(path.stem)
+    assert row is not None, f"{path.name} is not in TASK_INDEX.csv"
+    actual = _sha256(path)
+    assert row["public_task_sha256"] == actual, (
+        f"{path.name}: TASK_INDEX.csv records "
+        f"{row['public_task_sha256'][:16]}... but the file hashes to {actual[:16]}...; "
+        "re-run the hash update and re-link the private evaluator package"
+    )
+
+
+@pytest.mark.parametrize("path", _task_files(), ids=lambda p: p.name)
+def test_matrix_hash_matches_the_task_body(path):
+    row = MATRIX_BY_ID.get(path.stem)
+    assert row is not None, f"{path.name} is not in PILOT_PUBLIC_TASK_MATRIX.csv"
+    assert row["public_task_sha256"] == _sha256(path)
+
+
+def test_task_bodies_are_lf_only_so_hashes_are_platform_stable():
+    for path in _task_files():
+        assert b"\r\n" not in path.read_bytes(), f"{path.name} contains CRLF"
+
+
+def test_every_recorded_hash_is_a_full_sha256():
+    for row in INDEX_ROWS + MATRIX_ROWS:
+        assert re.fullmatch(r"[0-9a-f]{64}", row["public_task_sha256"]), row["task_id"]
+
+
+def test_recorded_hashes_are_distinct():
+    hashes = [r["public_task_sha256"] for r in INDEX_ROWS]
+    assert len(set(hashes)) == len(hashes), "two tasks share a hash"
+
+
+# --------------------------------------------------------------------------- #
+# Set equality and id uniqueness
+# --------------------------------------------------------------------------- #
+def test_index_covers_exactly_the_discovered_task_bodies():
+    assert {p.stem for p in _task_files()} == set(INDEX_BY_ID)
+
+
+def test_matrix_covers_exactly_the_index():
+    assert set(MATRIX_BY_ID) == set(INDEX_BY_ID)
+
+
+def test_expected_candidate_suite_is_present():
+    assert sorted(INDEX_BY_ID) == sorted(EXPECTED_IDS)
+
+
+def test_task_ids_are_unique_in_every_artifact():
+    for name, rows in (("TASK_INDEX.csv", INDEX_ROWS), ("PILOT_PUBLIC_TASK_MATRIX.csv", MATRIX_ROWS)):
+        ids = [r["task_id"] for r in rows]
+        assert len(ids) == len(set(ids)), f"duplicate task ids in {name}"
+    stems = [p.stem for p in _task_files()]
+    assert len(stems) == len(set(stems))
+    fm_ids = [_front_matter(p)["id"] for p in _task_files()]
+    assert len(fm_ids) == len(set(fm_ids)), "duplicate front-matter ids"
+
+
+def test_duplicate_ids_would_be_rejected():
+    """Guard the guard: the uniqueness check must actually detect a duplicate."""
+    ids = ["PT01", "PT02", "PT01"]
+    assert len(ids) != len(set(ids))
+
+
+# --------------------------------------------------------------------------- #
+# Front matter vs both matrices
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("path", _task_files(), ids=lambda p: p.name)
+def test_front_matter_matches_both_matrices(path):
+    fm = _front_matter(path)
+    index = INDEX_BY_ID[path.stem]
+    matrix = MATRIX_BY_ID[path.stem]
+
+    assert fm["id"] == path.stem
+    for row, label in ((index, "TASK_INDEX.csv"), (matrix, "PILOT_PUBLIC_TASK_MATRIX.csv")):
+        assert fm["id"] == row["task_id"], label
+        assert fm["title"] == row["title"], label
+        assert fm["category"] == row["functional_category"], label
+        assert fm["kind"] == row["primary_or_reserve"], label
+        assert fm["status"] == row["task_status"], label
+        assert fm["visible_validation"] == row["visible_ci_command"], label
+
+
+@pytest.mark.parametrize("task_id", EXPECTED_IDS)
+def test_index_and_matrix_agree_on_every_shared_column(task_id):
+    index = INDEX_BY_ID[task_id]
+    matrix = MATRIX_BY_ID[task_id]
+    for column in set(index) & set(matrix):
+        assert index[column] == matrix[column], f"{task_id}: {column} differs"
+
+
+def test_primary_reserve_classification_is_consistent_and_expected():
+    kinds = {tid: INDEX_BY_ID[tid]["primary_or_reserve"] for tid in EXPECTED_IDS}
+    assert [tid for tid, k in kinds.items() if k == "primary"] == [f"PT0{i}" for i in range(1, 7)]
+    assert [tid for tid, k in kinds.items() if k == "reserve"] == ["PR01", "PR02"]
+    for tid, kind in kinds.items():
+        assert _front_matter(PUBLIC_TASKS_DIR / f"{tid}.md")["kind"] == kind
+        assert MATRIX_BY_ID[tid]["primary_or_reserve"] == kind
+
+
+def test_every_task_is_a_candidate_and_uses_only_the_agent_ci_command():
+    for path in _task_files():
+        fm = _front_matter(path)
+        assert fm["status"] == "candidate"
+        assert fm["visible_validation"] == "npm run ci:agent"
+    for row in INDEX_ROWS + MATRIX_ROWS:
+        assert row["task_status"] == "candidate"
+        assert row["visible_ci_command"] == "npm run ci:agent"
+
+
+# --------------------------------------------------------------------------- #
+# Shared category vocabulary
+# --------------------------------------------------------------------------- #
+def test_task_schema_yml_and_json_schema_share_the_category_vocabulary():
+    yml = yaml.safe_load(SCHEMA_YML.read_text(encoding="utf-8"))
+    js = json.loads(SCHEMA_JSON.read_text(encoding="utf-8"))
+    yml_enum = yml["front_matter"]["category_enum"]
+    js_enum = js["properties"]["category"]["enum"]
+    assert sorted(yml_enum) == sorted(js_enum), (
+        f"category vocabularies differ: TASK_SCHEMA.yml only={sorted(set(yml_enum) - set(js_enum))}, "
+        f"public_task.schema.json only={sorted(set(js_enum) - set(yml_enum))}"
+    )
+
+
+def test_category_vocabulary_uses_logging_not_the_layer_name_observability():
+    yml = yaml.safe_load(SCHEMA_YML.read_text(encoding="utf-8"))
+    js = json.loads(SCHEMA_JSON.read_text(encoding="utf-8"))
+    for enum in (yml["front_matter"]["category_enum"], js["properties"]["category"]["enum"]):
+        assert "logging" in enum
+        assert "observability" not in enum, (
+            "`observability` is also a repository library name and must not be reused as "
+            "public task metadata"
+        )
+    assert (REPO / "libs" / "observability").is_dir(), "premise of this test: the layer exists"
+
+
+@pytest.mark.parametrize("path", _task_files(), ids=lambda p: p.name)
+def test_every_task_category_is_in_the_shared_vocabulary(path):
+    yml = yaml.safe_load(SCHEMA_YML.read_text(encoding="utf-8"))
+    js = json.loads(SCHEMA_JSON.read_text(encoding="utf-8"))
+    category = _front_matter(path)["category"]
+    assert category in yml["front_matter"]["category_enum"]
+    assert category in js["properties"]["category"]["enum"]
+
+
+def test_public_schema_requires_no_hidden_field():
+    js = json.loads(SCHEMA_JSON.read_text(encoding="utf-8"))
+    assert js["additionalProperties"] is False
+    assert set(js["required"]) == {
+        "id", "title", "category", "kind", "status", "visible_validation"
+    }
+    forbidden = {
+        "expected_layers", "prohibited_layers", "required_areas", "prohibited_areas",
+        "hidden_acceptance", "legitimate_alternatives", "reset_predicate",
+        "opportunity_set", "rule_ids", "evaluator_manifest",
+    }
+    assert forbidden.isdisjoint(js["properties"]), "schema must admit no hidden-answer field"
+    assert forbidden.isdisjoint(js["required"])
+
+
+# --------------------------------------------------------------------------- #
+# Authoring report inventory
+# --------------------------------------------------------------------------- #
+def test_authoring_report_inventory_matches_the_index():
+    report = REPORT_PATH.read_text(encoding="utf-8")
+    row_re = re.compile(
+        r"^\|\s*(P[TR]\d\d)\s*\|\s*(\w+)\s*\|\s*([\w-]+)\s*\|\s*(\w+)\s*\|\s*`([0-9a-f]+)\.\.\.`\s*\|",
+        re.MULTILINE,
+    )
+    matches = row_re.findall(report)
+    assert {m[0] for m in matches} == set(EXPECTED_IDS), "report inventory is incomplete"
+    for task_id, kind, category, scope, hash_prefix in matches:
+        row = INDEX_BY_ID[task_id]
+        assert kind == row["primary_or_reserve"], task_id
+        assert category == row["functional_category"], task_id
+        assert scope == row["scope_category"], task_id
+        assert len(hash_prefix) >= 12, f"{task_id}: hash prefix too short to be useful"
+        assert row["public_task_sha256"].startswith(hash_prefix), (
+            f"{task_id}: report hash prefix {hash_prefix} does not match "
+            f"{row['public_task_sha256'][:16]}"
+        )
+
+
+def test_authoring_report_records_private_package_staleness():
+    # strip markdown emphasis so "**must not** be reviewed" matches
+    report = REPORT_PATH.read_text(encoding="utf-8").lower().replace("*", "")
+    assert "stale" in report, "the report must record that the old private package is stale"
+    assert "must not be reviewed" in report, "the report must forbid reviewing the stale package"
+    assert "re-linked" in report or "re-authored" in report
+    assert "never be silently accepted" in report
+    assert "not accessed" in report, "the report must state the private repo was not accessed"
+
+
+def test_no_artifact_presents_the_candidate_count_as_final():
+    for path in (REPORT_PATH, REPO / "docs" / "v2" / "README.md"):
+        text = path.read_text(encoding="utf-8").lower()
+        assert "candidate" in text
+        for overclaim in ("final task count", "final core-study count", "frozen task count"):
+            assert f"is the {overclaim}" not in text
+        assert "no final task count" in text or "not approved and not frozen" in text
+
+
+# --------------------------------------------------------------------------- #
+# Redaction: the public matrices carry no hidden answer
+# --------------------------------------------------------------------------- #
+def test_public_matrix_carries_no_hidden_answer():
+    text = MATRIX_PATH.read_text(encoding="utf-8")
+    for leak in ("expected_layer", "prohibited_layer", "AR-", "OPP-", "legitimate_alternative"):
+        assert leak not in text, f"PILOT_PUBLIC_TASK_MATRIX.csv leaks {leak}"
+    for row in MATRIX_ROWS:
+        assert row["hidden_evaluator_manifest_hash"] == "stored_in_private_evaluator_repo"

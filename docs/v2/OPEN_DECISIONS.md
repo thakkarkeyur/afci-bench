@@ -24,12 +24,13 @@ that none is yet marked resolved.
 
 ## Counts
 
-- **Blocking decisions: 21** (`TD-B01`–`TD-B21`) — must be resolved before the
+- **Blocking decisions: 22** (`TD-B01`–`TD-B22`) — must be resolved before the
   corresponding data collection; all are cited inline across the protocol files.
-  `TD-B16`–`TD-B21` were added by the pre-execution design-review reconciliation.
+  `TD-B16`–`TD-B21` were added by the pre-execution design-review reconciliation;
+  `TD-B22` was added by the independent public review of the pilot task package.
 - **Non-blocking decisions: 6** (`TD-N01`–`TD-N06`) — refinements that do not
   block the confirmatory design.
-- **Total open decisions: 27.** None resolved (pre-freeze draft, not a
+- **Total open decisions: 28.** None resolved (pre-freeze draft, not a
   data-collection package).
 
 A **blocking** decision, if left unresolved, would invalidate or bias the
@@ -39,7 +40,7 @@ confirmatory analysis.
 
 ---
 
-## Blocking decisions (TD-B01 – TD-B21)
+## Blocking decisions (TD-B01 – TD-B22)
 
 | ID | Decision | Owner | Resolved during | Gate |
 |----|----------|-------|-----------------|------|
@@ -64,8 +65,10 @@ confirmatory analysis.
 | **TD-B19** | Isolated container + dedicated identity + CLEAN context audit (managed policy absent) for every counted run | Harness Engineer | container baseline | — |
 | **TD-B20** | Interaction-focused power simulation (condition × reset), mandatory before the core grid; final counts simulation-determined | Statistician | pilot | G2/G3 |
 | **TD-B21** | Runtime model-id dry runs (Q1 resolved-id readback; Q8 invalid-id rejection), blocking before the paid pilot | Harness Engineer | after dry-run validation (TD-B02) | — |
+| **TD-B22** | **Runner-time enforcement of the model-visible worktree policy**: every counted run's worktree built from the allowlist by `prepare_model_worktree.py`; **no** `ARCHITECTURE_CONTEXT.md`, `ARCHITECTURE_RULE_CATALOG.yml` or architecture-enforcing `.eslintrc.json` in any condition's workspace; C3 persistent payload / C4 prompt-only payload verified; snapshot `content_hash` recorded per run | Harness Engineer | after the runner exists (TD-B02) | G3/G4/G5 |
 
-Added by the pre-execution design-review reconciliation: `TD-B16`–`TD-B21`. Each
+Added by the pre-execution design-review reconciliation: `TD-B16`–`TD-B21`; added
+by the independent public review of the pilot task package: `TD-B22`. Each
 is **open** (none resolved here — the CI/leakage **mechanisms** are delivered and
 tested, but the runner-time enforcement, authored suite, frozen hashes,
 container, pilot simulation, and dry runs all remain outstanding).
@@ -103,6 +106,27 @@ private manifest is status `review` (not frozen); the architecture oracle refuse
 to score it (`MANIFEST_NOT_FROZEN`). No final task/repetition/run count and no
 numerical reset budget were selected. Gates **G1** and **G2** remain **not
 passed**; the protocol remains **pre-freeze**.
+
+**Public pilot-task repair package: new blocker opened, none resolved.** An
+independent review of the public pilot task package found four task defects
+(`PT06` impossible against the frozen base; `PT04` partly unsatisfiable; `PT02`
+and `PT03` leaving their JSON wire formats undefined), two fairness gaps
+(unpinned `error` values; `PR01`'s worked example already satisfied at the base),
+four demonstrated bypasses in the leakage validator (front matter unscanned;
+line-scoped hard-leak matching; only the architecture family covered; nested task
+files undiscovered), and a workspace confound. The task bodies were repaired and
+re-hashed, the validator was hardened with regression tests for every demonstrated
+bypass, and public hash/index/matrix integrity is now machine-checked. `TD-B17`
+(public-task leakage validation of the authored suite) is **further advanced but
+still open** — the mechanism is stronger and the suite is clean, but independent
+approval at freeze has not happened. `TD-B05`/`TD-B14` remain **open and are now
+further behind**: `PT04` and `PT06` changed subject matter, so their hidden
+packages must be re-authored, and every other candidate's pinned public-task hash
+changed. The workspace confound is tracked as the new blocking decision
+**`TD-B22`**: the delivered `prepare_model_worktree.py` mechanism and its nine
+proofs are development-time only, and **runner-time enforcement does not exist**
+because the live runner does not exist (`TD-B02`). Gates **G1**, **G2**, **G3**,
+**G4** and **G5** remain **not passed**; the protocol remains **pre-freeze**.
 
 ---
 

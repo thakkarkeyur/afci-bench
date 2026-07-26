@@ -47,7 +47,7 @@ decisions are tracked as explicit blockers in
 - [`PILOT_AND_POWER_POLICY.md`](PILOT_AND_POWER_POLICY.md) — staged pilot and
   mandatory interaction-focused power simulation.
 
-### Pilot task candidates (this work package)
+### Pilot task candidates (repaired after independent public review)
 
 - [`experiments/v2/tasks/public/`](../../experiments/v2/tasks/public/) — six
   primary (`PT01`–`PT06`) and two reserve (`PR01`–`PR02`) **public functional
@@ -56,17 +56,53 @@ decisions are tracked as explicit blockers in
   [`public_task.schema.json`](../../experiments/v2/schemas/public_task.schema.json).
   Each body states functional requirements and observable behaviour only; the
   public-task leakage validator reports OK for all (partial advance on `TD-B17`).
+- **Repairs.** An independent review found four task defects that would have
+  invalidated the evidence — `PT06` was impossible against the frozen base, `PT04`
+  was partly unsatisfiable, and `PT02`/`PT03` left their JSON wire formats
+  undefined — plus two fairness gaps (unpinned `error` values; `PR01`'s worked
+  example already satisfied at the base). All are repaired; `PT04` and `PT06` were
+  rewritten onto behaviour that exists at the base. **Seven of the eight task
+  hashes changed** (only `PT05` is unchanged). Every response key, request key,
+  status code and pinned `error` value is now stated publicly, so no hidden test
+  can enforce an unstated string. Details:
+  [`TASK_AUTHORING_REPORT.md`](../../experiments/v2/tasks/public/TASK_AUTHORING_REPORT.md).
 - **Hidden evaluator packages** for these candidates (per-task manifests, hidden
   acceptance plans, fixed opportunity sets, expected/prohibited areas, legitimate
   alternatives, reset predicates, threat reviews) exist **only in a separate
   local private evaluator repository**, never in this repository. Every manifest
   is status `review` (not frozen); the architecture oracle refuses to score it
   (`MANIFEST_NOT_FROZEN`).
-- **Status:** candidates authored, **not approved and not frozen**. Task-specific
-  oracle validity, hidden-acceptance validation, reset-checkpoint review, and
-  benchmark discrimination remain open; gates **G1/G2 not passed**; the protocol
-  remains **PRE-FREEZE**; **no pilot model execution occurred** and no
-  task/repetition/run count or numerical budget was selected.
+- **The previously created private evaluator commit is STALE.** It was built
+  against the old public task hashes. It **must not** be reviewed, approved,
+  frozen, or used for Stage 0 or any pilot. Private manifests and hidden plans
+  must be re-authored or re-linked against the new hashes **after** this public
+  package is independently approved, and a private hash must never be silently
+  accepted against a changed public task. The private repository was not accessed
+  while producing this package, and its filesystem location appears in no public
+  file.
+- **Status:** candidates authored and repaired, **not approved and not frozen**.
+  Task-specific oracle validity, hidden-acceptance validation, reset-checkpoint
+  review, and benchmark discrimination remain open; gates **G1/G2 not passed**;
+  the protocol remains **PRE-FREEZE**; **no pilot model execution occurred** and
+  **no final task count**, repetition count, run count or numerical budget was
+  selected. The eight candidates are candidates, not a core-study task set.
+
+### Model-visible worktree isolation
+
+- [`MODEL_VISIBLE_WORKTREE_POLICY.md`](MODEL_VISIBLE_WORKTREE_POLICY.md) +
+  [`prepare_model_worktree.py`](../../experiments/v2/harness/prepare_model_worktree.py)
+  — allowlist-first, fail-closed construction of the coding model's worktree. The
+  same review found that the worktree was the whole repository, which put
+  [`ARCHITECTURE_CONTEXT.md`](ARCHITECTURE_CONTEXT.md) and
+  [`ARCHITECTURE_RULE_CATALOG.yml`](ARCHITECTURE_RULE_CATALOG.yml) inside **every**
+  condition's workspace including the C1 baseline — a direct confound on the
+  primary C4-vs-C1 contrast. The prepared snapshot now contains the source
+  substrate only, keeps the implicit architectural clues (folder names, scope
+  tags, path aliases, code, visible tests) and excludes every explicit
+  architecture, protocol, oracle and evaluator artifact.
+- **Runner-time enforcement does not exist** — the live runner does not exist
+  (`TD-B02`). It is tracked as the new blocking decision **`TD-B22`**, and no run
+  may be counted until it is closed.
 
 Scientific protocol:
 
