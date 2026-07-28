@@ -276,6 +276,72 @@ def test_authoring_report_records_private_package_staleness():
     assert "not accessed" in report, "the report must state the private repo was not accessed"
 
 
+def test_authoring_report_scopes_the_pt06_amendment_staleness_to_pt06():
+    """The PT06 amendment changed one task body, so its staleness must be scoped.
+
+    A blanket "the private package is stale" would force needless re-authoring of
+    seven packages that are still linked to reviewed public bytes; a silent amendment
+    would let a superseded PT06 package be reviewed as complete. The report must say
+    exactly which is which.
+    """
+    report = REPORT_PATH.read_text(encoding="utf-8").replace("*", "")
+    lowered = report.lower()
+    assert "only pt06's private package becomes stale" in lowered, (
+        "the report must scope this amendment's staleness to PT06"
+    )
+    assert "must not be reviewed as a complete eight-task package" in lowered, (
+        "the report must forbid reviewing the private commit as a complete package"
+    )
+    assert "substantively re-authored" in lowered, (
+        "PT06's private package changed subject matter and must be re-authored, "
+        "not merely re-hashed"
+    )
+    assert "0e77d49" in report, (
+        "the report must name the public commit whose bytes the other seven "
+        "packages remain linked to"
+    )
+    assert "seven" in lowered and "pt04" in lowered
+
+
+def test_pt06_hash_transition_is_recorded_with_both_hashes():
+    """Hash linkage: the amendment records the hash it replaced and the new one."""
+    report = REPORT_PATH.read_text(encoding="utf-8")
+    new_hash = INDEX_BY_ID["PT06"]["public_task_sha256"]
+    assert new_hash.startswith("ae87303c6be53fe1"), (
+        "PT06's recorded hash changed again; update the amendment's recorded "
+        "transition so old->new linkage stays auditable"
+    )
+    prefixes = re.findall(r"`([0-9a-f]{16})\.\.\.`", report)
+    assert new_hash[:16] in prefixes, "the amendment must record PT06's new hash"
+    assert "3994a158ad39f629" in prefixes, (
+        "the amendment must record the superseded PT06 hash, so a private package "
+        "pinned to it is identifiable"
+    )
+
+
+def test_no_candidate_requires_an_externally_unprovokable_failure():
+    """PT06's amendment removed the suite's only 500 requirement.
+
+    Nothing may reintroduce one: at the base substrate no external caller can provoke
+    an unexpected server failure without an injection seam, so a hidden test asserting
+    it would be unsatisfiable by fair means.
+    """
+    for path in _task_files():
+        text = path.read_text(encoding="utf-8")
+        assert "InternalServerError" not in text, (
+            f"{path.name} pins an unexpected-server-failure error value"
+        )
+        assert not re.search(r"HTTP 500|status(?: code)? 500", text), (
+            f"{path.name} requires an HTTP 500 response"
+        )
+    report = REPORT_PATH.read_text(encoding="utf-8")
+    vocabulary = re.findall(r"^\|\s*[^|]+\|\s*(\d{3})\s*\|\s*`(\w+)`\s*\|", report, re.MULTILINE)
+    assert vocabulary, "the pinned error-value vocabulary table is missing"
+    assert all(status != "500" for status, _ in vocabulary), (
+        "the report still licenses a 500 response that no candidate requires"
+    )
+
+
 def test_no_artifact_presents_the_candidate_count_as_final():
     for path in (REPORT_PATH, REPO / "docs" / "v2" / "README.md"):
         text = path.read_text(encoding="utf-8").lower()

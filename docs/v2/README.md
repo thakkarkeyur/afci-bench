@@ -66,21 +66,46 @@ decisions are tracked as explicit blockers in
   status code and pinned `error` value is now stated publicly, so no hidden test
   can enforce an unstated string. Details:
   [`TASK_AUTHORING_REPORT.md`](../../experiments/v2/tasks/public/TASK_AUTHORING_REPORT.md).
+- **`PT06` amendment — every required behaviour is now externally testable.** The
+  repaired `PT06` still required one behaviour no external caller can provoke at the
+  base: a failure that is *not* caused by invalid input, answered HTTP 500 with
+  `error` `InternalServerError`. Validating it would have needed a failure-injection
+  hook, test-only route, special header or environment flag in the shared source
+  substrate — a seam that is itself a design answer. `PT06` is re-scoped to the
+  rejection envelope of `POST /orders` (new title: *Return a consistent
+  validation-error envelope for order creation*): the existing semantic-validation
+  failures and a body that cannot be parsed as JSON must answer the **same** HTTP 400
+  body `{ "error": "ValidationError", "message", "correlationId" }`, and success is
+  unchanged. Three existing validation rules are named publicly (empty `customerId`,
+  empty `items`, non-positive `quantity`); no new domain rule was invented. The base
+  answers an unparseable body 400 **as HTML** with none of those keys, so the task
+  needs a genuine change and is not already satisfied — machine-checked by
+  [`test_pt06_feasibility.py`](../../experiments/v2/harness/tests/test_pt06_feasibility.py).
+  **Only `PT06`'s hash changed** (`3994a158…` → `ae87303c…`); `apps/` and `libs/` are
+  byte-identical, and no candidate requires an HTTP 500 response any more.
 - **Hidden evaluator packages** for these candidates (per-task manifests, hidden
   acceptance plans, fixed opportunity sets, expected/prohibited areas, legitimate
   alternatives, reset predicates, threat reviews) exist **only in a separate
   local private evaluator repository**, never in this repository. Every manifest
   is status `review` (not frozen); the architecture oracle refuses to score it
   (`MANIFEST_NOT_FROZEN`).
-- **The previously created private evaluator commit is STALE.** It was built
-  against the old public task hashes. It **must not** be reviewed, approved,
-  frozen, or used for Stage 0 or any pilot. Private manifests and hidden plans
-  must be re-authored or re-linked against the new hashes **after** this public
-  package is independently approved, and a private hash must never be silently
-  accepted against a changed public task. The private repository was not accessed
-  while producing this package, and its filesystem location appears in no public
-  file.
-- **Status:** candidates authored and repaired, **not approved and not frozen**.
+- **The private evaluator commit built against the pre-repair hashes is STALE.** It
+  **must not** be reviewed, approved, frozen, or used for Stage 0 or any pilot.
+  Private manifests and hidden plans must be re-authored or re-linked against the new
+  hashes **after** this public package is independently approved, and a private hash
+  must never be silently accepted against a changed public task. The private
+  repository was not accessed while producing this package, and its filesystem
+  location appears in no public file.
+- **The `PT06` amendment makes one further private package stale — `PT06`'s only.**
+  The private commit created against the public bytes of commit `0e77d49`
+  (`5733ca6`) **must not be reviewed as a complete eight-task package** until `PT06`
+  is updated; `PT06`'s package must be **substantively re-authored** (its subject
+  matter changed again), and only after this public amendment is independently
+  approved. The seven other packages — `PT04` among them — remain linked to the
+  public task bytes reviewed at `0e77d49`, which are byte-identical here, so this
+  amendment forces no re-linking for them. They are still status `review`, still not
+  frozen. The private repository was not accessed while producing this amendment.
+- **Status:** candidates authored, repaired and amended, **not approved and not frozen**.
   Task-specific oracle validity, hidden-acceptance validation, reset-checkpoint
   review, and benchmark discrimination remain open; gates **G1/G2 not passed**;
   the protocol remains **PRE-FREEZE**; **no pilot model execution occurred** and

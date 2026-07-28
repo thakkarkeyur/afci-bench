@@ -128,6 +128,31 @@ proofs are development-time only, and **runner-time enforcement does not exist**
 because the live runner does not exist (`TD-B02`). Gates **G1**, **G2**, **G3**,
 **G4** and **G5** remain **not passed**; the protocol remains **pre-freeze**.
 
+**`PT06` amendment: one candidate re-scoped, nothing resolved.** A further review
+found that the repaired `PT06` still required a behaviour **no external caller can
+provoke** against the unchanged source substrate — a failure that is not caused by
+invalid input, answered HTTP 500 with `error` `InternalServerError`. Validating it
+would have required a failure-injection hook, test-only route, special header,
+environment flag or other implementation-specific seam in the substrate every
+condition shares, which is itself a design answer and was refused. `PT06` is
+re-scoped to the rejection envelope of `POST /orders`: the existing
+semantic-validation failures and an unparseable JSON body must answer the same HTTP
+400 `ValidationError` body, success unchanged. Three existing validation rules are
+named publicly and feasibility is machine-checked
+([`test_pt06_feasibility.py`](../../experiments/v2/harness/tests/test_pt06_feasibility.py));
+the base answers an unparseable body as HTML today, so the task is not already
+satisfied. Only `PT06`'s public bytes and hash changed
+(`3994a158…` → `ae87303c…`); `apps/` and `libs/` are byte-identical. `TD-B17` is
+**further advanced but still open** — the amended body is leakage-clean and now
+feasibility-checked, but independent approval at freeze has not happened.
+`TD-B05`/`TD-B14` remain **open**: **only `PT06`'s** private package is made stale by
+this amendment and must be **substantively re-authored** after the amendment is
+approved; the seven others (including `PT04`) stay linked to the public bytes
+reviewed at `0e77d49`, and the private commit built against those bytes must not be
+reviewed as a complete eight-task package until `PT06` is updated. No model ran, no
+task count was fixed, gates **G1**–**G5** remain **not passed**, and the protocol
+remains **pre-freeze**.
+
 ---
 
 ## Non-blocking decisions (TD-N01 – TD-N06)
