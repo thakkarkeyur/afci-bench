@@ -19,7 +19,9 @@ externally reachable, and the two properties that keep the task honest: that it 
 * Each semantic-invalid case PT06 names publicly is an existing validation rule,
   reachable from the current create-order input.
 * The create-order rejection path already answers HTTP 400 with the three-key
-  envelope and ``error`` exactly ``ValidationError``.
+  envelope and ``error`` exactly ``ValidationError``, through the framework's JSON
+  response helper - so the ``application/json`` media type PT06 pins is an
+  already-satisfied property of that path and only has to be preserved there.
 * The success path already answers HTTP 201, so "unchanged on success" is meaningful.
 * No JSON-parse-failure branch and no response-shaping error handler exist yet, so
   the unparseable-JSON body cannot yet receive that envelope: the task requires a
@@ -166,6 +168,32 @@ def test_semantic_rejection_already_answers_400_with_the_three_key_envelope(app_
     assert re.search(r"\.status\(400\)", app_src)
     for key in ENVELOPE_KEYS:
         assert key in app_src, f"the rejection body has no {key} key at the base"
+
+
+def test_the_semantic_rejection_already_declares_a_json_media_type(app_src):
+    """PT06 pins a JSON response media type; on the preserved path it already holds.
+
+    The create-order rejection is sent through the framework's JSON response helper,
+    which declares an ``application/json`` media type. So the media-type requirement
+    PT06 states is satisfied already for the semantic-validation kind and only has to
+    be *preserved* there - it invents no behaviour the substrate cannot produce. This
+    asserts an existing property of the base, not a way to build the other path.
+    """
+    assert re.search(r"\.status\(400\)\.json\(", app_src), (
+        "the create-order rejection no longer answers through the JSON response "
+        "helper, so PT06's application/json media-type requirement would no longer "
+        "be an already-satisfied property of the preserved path"
+    )
+
+
+def test_pt06_states_the_json_media_type_requirement(pt06):
+    """The requirement is public, so no unstated media type can be enforced."""
+    assert "application/json" in pt06
+    assert "Content-Type" in pt06
+    assert "media type" in pt06.lower(), (
+        "PT06 must state the response media-type requirement in words, not leave it "
+        "implicit in 'the body is JSON'"
+    )
 
 
 def test_the_envelope_keys_are_the_public_response_shape():

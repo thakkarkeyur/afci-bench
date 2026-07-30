@@ -1,6 +1,6 @@
 # AFCI-Bench v2 - Public Task Authoring Report
 
-Status: **candidate** pilot task materials - authored, repaired, and amended (PT06), NOT approved, NOT frozen. The scientific protocol remains **PRE-FREEZE**. No benchmark run, paid model call, or task-count freeze accompanies this report.
+Status: **candidate** pilot task materials - authored, repaired, amended (PT06), and clarified (PT06's rejection contract), NOT approved, NOT frozen. The scientific protocol remains **PRE-FREEZE**. No benchmark run, paid model call, or task-count freeze accompanies this report.
 
 ## What was authored
 
@@ -48,6 +48,7 @@ Binding constraints on every private evaluator package built for these candidate
 4. `correlationId` remains present on every error body, exactly as the base substrate already returns it. A visible test in the repository asserts it, so removing it would break `npm run ci:agent`; the two documented failure keys are `error` and `message`.
 5. Where a task states that ordering is not part of the required behaviour (PT02's `orders` array), hidden validation **must** be order-independent.
 6. No hidden test may assert a key, string, status code or ordering that the public task body does not state.
+7. No hidden test may assert a **response header** - its presence, its absence or its value - that the public task body does not state. Response headers were not enumerated in constraint 6, and a header is exactly as unstated-assertable as a body key; PT06's rejection-contract clarification below is the first task to state one explicitly.
 
 ## PT06 amendment: every required behaviour is externally testable
 
@@ -117,8 +118,89 @@ identical in every required respect.
 The task's scope classification (`medium`) and its single visible validation command
 (`npm run ci:agent`) are unchanged.
 
-PT06's SHA-256 changed with this amendment
-(`3994a158ad39f629...` -> `ae87303c6be53fe1...`). **No other task body changed**, so
+## PT06 rejection-contract clarification
+
+An independent review of the amendment above accepted its feasibility work and found
+no defect that invalidated it, but identified two places where PT06's public text did
+not fully determine the behaviour a conforming solution must produce. Either could
+have let a solution satisfy every stated criterion and still fail acceptance, which
+is precisely the failure mode the public task body exists to prevent. Both are now
+closed in PT06's text.
+
+**1. The response media type is now stated, not implied.** The amendment said only
+that the rejection body "is JSON - never HTML, never empty". That constrains the body
+payload, not the media type the response declares: a solution that serialises the
+envelope and sends it as a string produces a parseable JSON body under a `text/html`
+media type, satisfying the old sentence and every completion criterion while failing
+any check that reads the response as JSON. The observed base behaviour shows the two
+paths already differ on exactly this axis - the semantic rejection declares
+`application/json; charset=utf-8`, the parse failure declares `text/html;
+charset=utf-8`. PT06 now requires, for both covered rejections, a `Content-Type`
+response header whose media type begins with `application/json`, and states that no
+other response header is part of its required behaviour.
+
+**2. The covered rejections are now bounded to exactly two kinds.** The amendment
+opened with an unqualified "a rejected `POST /orders` request answers with HTTP 400"
+and closed with "nothing beyond the rejection response of `POST /orders` has to
+change", while its completion criteria pinned only two kinds. That gap is reachable
+from outside: at the base an over-large body is answered HTTP 413 and an unsupported
+charset HTTP 415, both as HTML. Under the broad reading a solution must remap those
+to the envelope; under the narrow reading it must not - and the most natural
+implementation of the broad reading silently rewrites them. PT06 now names its two
+covered kinds in a **Scope** section, states that every other transport-level or
+body-parsing rejection (HTTP 413, HTTP 415, an aborted request, and any other) is
+outside its scope and keeps its current status code and body, and uses that same
+bounded wording in its completion criteria.
+
+Neither clarification adds a requirement that is not externally observable, and
+neither prescribes how the behaviour is produced.
+
+### PT06 acceptance scope (binding on PT06's private evaluator package)
+
+Recorded here so the re-authored package cannot drift from the public text:
+
+1. PT06 acceptance **may** assert that the rejection response carries a
+   `Content-Type` header whose media type begins with `application/json`. Parameters
+   after the media type are not constrained, so an assertion must not require an
+   exact header string.
+2. PT06 acceptance **must not** assert any other response header - not its presence,
+   not its absence, not its value. `x-correlation-id` in particular is not part of
+   PT06's required behaviour, even though the base sets it on the paths that already
+   build the envelope.
+3. PT06 covers **only** the two kinds its **Scope** section names: a semantic
+   input-validation failure of a body that was parsed as JSON, and a JSON parse
+   failure of a request sent with `Content-Type: application/json`.
+4. HTTP 413, HTTP 415, aborted requests and every other transport-level or
+   body-parsing rejection are **outside** PT06's acceptance scope. No PT06 acceptance
+   test may require them to answer HTTP 400, to carry `error` `ValidationError`, or to
+   carry PT06's envelope; and none may be used to fail a solution that leaves them as
+   they are today.
+5. `message` wording remains unconstrained: acceptance may assert only that it is a
+   non-empty string.
+
+As before, no PT06 acceptance test may assert a 500 response or induce an internal
+failure.
+
+### Architecture-opportunity adequacy for the amended PT06 (private, deferred)
+
+The amendment reduced PT06's novel work from two required changes to one, and the
+feasibility evidence for it is **functional only** - by design, since a public task
+body and its public feasibility test must stay architecture-neutral. Whether the
+amended PT06 still carries a non-empty fixed opportunity set is therefore **not**
+settled by this public package, and deliberately cannot be: settling it publicly
+would mean publishing the very material that must stay private.
+
+Classification: a **future private-evaluator blocker** under **TD-B05** / **TD-B14**,
+gated by **G1**. It is **not** a defect in PT06's public text, and no opportunity,
+applicable rule or expected area has been added to any public artifact to address it.
+It must be demonstrated during the substantive private re-authoring of PT06's package,
+before that package may be approved or frozen.
+
+PT06's SHA-256 has now changed twice: once with the amendment
+(`3994a158ad39f629...` -> `ae87303c6be53fe1...`) and once with this clarification
+(`ae87303c6be53fe1...` -> `3e0f84cfef1f9fbf...`). The current pinned value is
+`3e0f84cfef1f9fbf...`; the two earlier values are recorded so a private package
+pinned to either is identifiable. **No other task body changed** in either step, so
 every other pinned public-task hash recorded at public commit `0e77d49` still holds.
 
 ## Feasibility against the frozen base substrate
@@ -142,14 +224,14 @@ A clean result means **no detected leakage**. It is not proof of scientific vali
 | PT03 | primary | write-endpoint | medium | `cbfce1ca232cb9b6...` |
 | PT04 | primary | logging | medium | `f349b150b1d8fe56...` |
 | PT05 | primary | calculation | medium | `f6efc772e76d6c28...` |
-| PT06 | primary | error-handling | medium | `ae87303c6be53fe1...` |
+| PT06 | primary | error-handling | medium | `3e0f84cfef1f9fbf...` |
 | PR01 | reserve | calculation | small | `0e1527bce4149883...` |
 | PR02 | reserve | write-endpoint | medium | `e89a4aab236813c0...` |
 
 Relative to the suite recorded before the repair package, only PT05 is byte-identical
 and the other seven changed. Relative to public commit `0e77d49`, **only PT06
-changed**: it carries the amended body above, and the other seven bodies are
-byte-identical to their `0e77d49` bytes.
+changed**: it carries the amended and clarified body above, and the other seven bodies
+are byte-identical to their `0e77d49` bytes.
 
 ## Private evaluator package staleness (mandatory)
 
@@ -162,32 +244,42 @@ repair package** is **stale** and must be treated as such:
 - re-linking may only happen **after** this public work package is independently approved, so the hashes it pins are the approved ones;
 - the oracle continues to refuse to score a non-frozen manifest (`MANIFEST_NOT_FROZEN`).
 
-### Staleness introduced by the PT06 amendment (scope: PT06 only)
+### Staleness introduced by the PT06 amendment and clarification (scope: PT06 only)
 
 A private evaluator commit was subsequently created against the public task bytes of
-public commit `0e77d49` (private commit `5733ca6`). The PT06 amendment above changes
-**only** PT06's public bytes, so its effect on that private commit is exactly scoped:
+public commit `0e77d49`: private commit
+`5733ca6151f7739c7105a5c1405fcbc8fb3cb59d` (`5733ca6`). The PT06 amendment and the
+PT06 rejection-contract clarification above change **only** PT06's public bytes, so
+their combined effect on that private commit is exactly scoped:
 
-- **only PT06's private package becomes stale** because of this amendment;
+- **only PT06's private package becomes stale** because of this amendment and this
+  clarification;
 - the **seven** packages other than PT06 - PT04 among them - remain linked to the
   public task bytes that were independently reviewed at public commit `0e77d49`, which
-  are byte-identical to the bytes recorded here, so they need no re-linking for this
-  amendment;
+  are byte-identical to the bytes recorded here, so they need no re-linking for either
+  change;
 - PT06's private package must be **substantively re-authored**, not merely re-hashed:
-  its subject matter changed again (the unexpected-server-failure requirement is gone
-  and the rejection envelope now covers the unparseable-JSON path), so its hidden
+  its subject matter changed again (the unexpected-server-failure requirement is gone,
+  the rejection envelope now covers the unparseable-JSON path, the response media type
+  is now pinned and the covered rejections are now bounded to two kinds), so its hidden
   acceptance plan, expected/prohibited areas, fixed opportunity set,
   legitimate-alternative list and reset predicate must all be reconsidered against the
-  amended public text;
-- re-authoring may only happen **after** this public amendment is independently
-  approved, so the hash it pins (`ae87303c6be53fe1...`) is the approved one;
+  amended and clarified public text, under the PT06 acceptance-scope constraints
+  recorded above;
+- that re-authoring must also demonstrate a non-empty fixed opportunity set for the
+  amended PT06, which this public package deliberately does not and cannot settle
+  (TD-B05/TD-B14, gate G1);
+- re-authoring may only happen **after** this public amendment and clarification are
+  independently approved, so the hash it pins (`3e0f84cfef1f9fbf...`) is the approved
+  one. A package pinned to `3994a158ad39f629...` or to `ae87303c6be53fe1...` is pinned
+  to superseded public bytes;
 - private commit `5733ca6` **must not be reviewed as a complete eight-task package**
   until PT06 is updated. Reviewing it as complete would review a PT06 package built
   against superseded public bytes;
 - as before, a private manifest hash must never be silently accepted against a changed
   public task, and every private manifest remains status `review` (not frozen).
 
-The private evaluator repository was **not** accessed, inspected, or modified while producing this report or this amendment. Its filesystem location is deliberately not recorded in any public file, and no private manifest, hidden plan or other private content is reproduced here - the private commit identifier above is an identifier only.
+The private evaluator repository was **not** accessed, inspected, or modified while producing this report, this amendment, or this clarification. Its filesystem location is deliberately not recorded in any public file, and no private manifest, hidden plan or other private content is reproduced here - the private commit identifier above is an identifier only.
 
 ## Model-visible worktree isolation
 
@@ -196,8 +288,9 @@ The review also found that the coding model's worktree was the whole repository,
 ## What was deliberately NOT done
 
 - No task was selected, rejected, or difficulty-tuned using any observed or expected AFCI advantage (CRITICAL_DESIGN_DECISIONS D3/D10).
-- No candidate task was implemented; no reference or expected solution exists in this repository. PT06 in particular was **not** implemented as part of its amendment.
+- No candidate task was implemented; no reference or expected solution exists in this repository. PT06 in particular was **not** implemented as part of its amendment or of its rejection-contract clarification.
 - **No validation seam was added to the source substrate.** No failure-injection hook, test-only route, special header, environment flag or other implementation-specific seam was introduced to make any requirement observable; `apps/` and `libs/` are byte-identical to their state at public commit `0e77d49`.
+- **No architecture opportunity was added publicly.** The rejection-contract clarification adds no architecture wording, applicable rule, expected or prohibited area, or task-specific opportunity to PT06 or to any other public artifact; PT06 remains architecture-neutral, and the adequacy of its fixed opportunity set stays a private, deferred question (TD-B05/TD-B14, G1).
 - No hidden acceptance test or hidden evaluator answer was added publicly.
 - **No final task count**, repetition count, run count, model, or numerical budget was selected. The eight candidates are candidates, not a core-study task set.
 - No hidden evaluator package was frozen; the oracle continues to refuse to score a review-status package (`MANIFEST_NOT_FROZEN`).

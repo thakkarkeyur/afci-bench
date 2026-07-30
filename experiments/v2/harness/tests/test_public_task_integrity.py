@@ -303,20 +303,95 @@ def test_authoring_report_scopes_the_pt06_amendment_staleness_to_pt06():
     assert "seven" in lowered and "pt04" in lowered
 
 
-def test_pt06_hash_transition_is_recorded_with_both_hashes():
-    """Hash linkage: the amendment records the hash it replaced and the new one."""
+def test_pt06_hash_transition_is_recorded_with_every_hash_in_the_chain():
+    """Hash linkage: every PT06 hash in the chain stays recorded and auditable.
+
+    PT06's public bytes have changed twice since they were first repaired - once for
+    the feasibility amendment, once for the rejection-contract clarification. A private
+    package may be pinned to any of the three, so all three must remain identifiable
+    from the report, and the current one must be the one the index records.
+    """
     report = REPORT_PATH.read_text(encoding="utf-8")
     new_hash = INDEX_BY_ID["PT06"]["public_task_sha256"]
-    assert new_hash.startswith("ae87303c6be53fe1"), (
-        "PT06's recorded hash changed again; update the amendment's recorded "
-        "transition so old->new linkage stays auditable"
+    assert new_hash.startswith("3e0f84cfef1f9fbf"), (
+        "PT06's recorded hash changed again; extend the recorded transition chain so "
+        "old->new linkage stays auditable"
     )
     prefixes = re.findall(r"`([0-9a-f]{16})\.\.\.`", report)
-    assert new_hash[:16] in prefixes, "the amendment must record PT06's new hash"
-    assert "3994a158ad39f629" in prefixes, (
-        "the amendment must record the superseded PT06 hash, so a private package "
-        "pinned to it is identifiable"
+    assert new_hash[:16] in prefixes, "the report must record PT06's current hash"
+    for superseded in ("3994a158ad39f629", "ae87303c6be53fe1"):
+        assert superseded in prefixes, (
+            f"the report must keep recording superseded PT06 hash {superseded}, so a "
+            "private package pinned to it is identifiable"
+        )
+
+
+def test_report_records_the_pt06_acceptance_scope_constraints():
+    """The public text now pins a response header, so the acceptance bound must be
+    recorded publicly - both what PT06 acceptance may assert and what it may not."""
+    report = REPORT_PATH.read_text(encoding="utf-8").replace("*", "")
+    lowered = report.lower()
+    assert "pt06 acceptance scope" in lowered, (
+        "the report must carry a PT06 acceptance-scope section"
     )
+    assert "may assert that the rejection response carries a" in lowered and (
+        "application/json" in lowered
+    ), "the report must state that PT06 acceptance may assert the JSON media type"
+    assert "must not assert any other response header" in lowered, (
+        "the report must forbid PT06 acceptance asserting any other response header"
+    )
+    assert "x-correlation-id" in lowered, (
+        "the report must name x-correlation-id as a header PT06 does not require"
+    )
+    assert "outside" in lowered and "413" in report and "415" in report, (
+        "the report must place HTTP 413/415 outside PT06's acceptance scope"
+    )
+    assert "wording remains unconstrained" in lowered, (
+        "the report must keep message wording unconstrained"
+    )
+    # The generalised binding constraint that closes the enumeration gap.
+    assert "no hidden test may assert a response header" in lowered, (
+        "the binding constraints must cover response headers, not only body keys"
+    )
+
+
+def test_report_defers_pt06_architecture_opportunity_adequacy_to_the_private_package():
+    """Opportunity-set adequacy is a private blocker, not a public task defect.
+
+    It must be recorded as deferred private work under TD-B05/TD-B14 and G1, and the
+    report must say plainly that nothing was added publicly to address it.
+    """
+    report = REPORT_PATH.read_text(encoding="utf-8").replace("*", "")
+    lowered = report.lower()
+    assert "future private-evaluator blocker" in lowered, (
+        "opportunity-set adequacy must be classified as a private-evaluator blocker"
+    )
+    assert "TD-B05" in report and "TD-B14" in report and "G1" in report
+    assert "not a defect in pt06's public text" in lowered, (
+        "the report must state this is not a public PT06 defect"
+    )
+    assert "non-empty fixed opportunity set" in lowered, (
+        "the report must state what has to be demonstrated privately"
+    )
+    assert "before that package may be approved or frozen" in lowered, (
+        "the demonstration must gate private approval/freeze"
+    )
+    assert "no architecture opportunity was added publicly" in lowered, (
+        "the report must record that nothing architecture-shaped was added publicly"
+    )
+
+
+def test_report_records_the_full_private_commit_identifier_without_a_path():
+    """The stale private commit is identified by full SHA, never by filesystem path."""
+    report = REPORT_PATH.read_text(encoding="utf-8")
+    assert "5733ca6151f7739c7105a5c1405fcbc8fb3cb59d" in report, (
+        "the report must record the full private commit identifier that is stale "
+        "for PT06 only"
+    )
+    assert not re.search(r"[A-Za-z]:[\\/]", report), (
+        "the report must not contain an absolute filesystem path"
+    )
+    assert "identifier only" in report.lower()
 
 
 def test_no_candidate_requires_an_externally_unprovokable_failure():

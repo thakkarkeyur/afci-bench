@@ -83,6 +83,27 @@ decisions are tracked as explicit blockers in
   [`test_pt06_feasibility.py`](../../experiments/v2/harness/tests/test_pt06_feasibility.py).
   **Only `PT06`'s hash changed** (`3994a158…` → `ae87303c…`); `apps/` and `libs/` are
   byte-identical, and no candidate requires an HTTP 500 response any more.
+- **`PT06` rejection-contract clarification — the contract is now fully determined.**
+  An independent review of the amendment found two places where `PT06`'s text left a
+  conforming solution able to satisfy every stated criterion and still fail
+  acceptance. Both are closed. (1) **Response media type stated, not implied:** "the
+  body is JSON" constrained the payload, not the declared media type, so a serialised
+  envelope sent under `text/html` conformed to the letter while failing any check that
+  reads the response as JSON. `PT06` now requires a `Content-Type` response header
+  whose media type begins with `application/json` on both covered rejections, and
+  states that **no other response header** is part of its required behaviour — which
+  also stops a private test asserting `x-correlation-id`. (2) **Covered rejections
+  bounded to exactly two kinds:** an unqualified "a rejected `POST /orders` request
+  answers HTTP 400" was reachably false — the base answers an over-large body HTTP 413
+  and an unsupported charset HTTP 415, both as HTML. `PT06` now names its two covered
+  kinds in a **Scope** section (a semantic input-validation failure of a parsed body;
+  a JSON parse failure sent as `application/json`) and states that HTTP 413, HTTP 415,
+  aborted requests and every other transport-level or body-parsing rejection are
+  **outside** its scope and keep their current status codes and bodies. The same
+  bounded wording is used in its completion criteria. **Only `PT06`'s hash changed
+  again** (`ae87303c…` → `3e0f84cf…`); `apps/` and `libs/` remain byte-identical, and
+  no architecture wording, applicable rule, expected area or task-specific opportunity
+  was added to any public artifact.
 - **Hidden evaluator packages** for these candidates (per-task manifests, hidden
   acceptance plans, fixed opportunity sets, expected/prohibited areas, legitimate
   alternatives, reset predicates, threat reviews) exist **only in a separate
@@ -96,16 +117,27 @@ decisions are tracked as explicit blockers in
   must never be silently accepted against a changed public task. The private
   repository was not accessed while producing this package, and its filesystem
   location appears in no public file.
-- **The `PT06` amendment makes one further private package stale — `PT06`'s only.**
-  The private commit created against the public bytes of commit `0e77d49`
-  (`5733ca6`) **must not be reviewed as a complete eight-task package** until `PT06`
-  is updated; `PT06`'s package must be **substantively re-authored** (its subject
-  matter changed again), and only after this public amendment is independently
-  approved. The seven other packages — `PT04` among them — remain linked to the
-  public task bytes reviewed at `0e77d49`, which are byte-identical here, so this
-  amendment forces no re-linking for them. They are still status `review`, still not
-  frozen. The private repository was not accessed while producing this amendment.
-- **Status:** candidates authored, repaired and amended, **not approved and not frozen**.
+- **The `PT06` amendment and clarification make one further private package stale —
+  `PT06`'s only.** The private commit created against the public bytes of commit
+  `0e77d49` (`5733ca6151f7739c7105a5c1405fcbc8fb3cb59d`) **must not be reviewed as a
+  complete eight-task package** until `PT06` is updated; `PT06`'s package must be
+  **substantively re-authored** (its subject matter changed again), and only after this
+  public amendment and clarification are independently approved, so the hash it pins
+  (`3e0f84cf…`) is the approved one. The seven other packages — `PT04` among them —
+  remain linked to the public task bytes reviewed at `0e77d49`, which are
+  byte-identical here, so neither change forces re-linking for them. They are still
+  status `review`, still not frozen. The private repository was not accessed while
+  producing this amendment or this clarification.
+- **`PT06`'s architecture-opportunity adequacy is a private, deferred question.** The
+  amendment reduced `PT06`'s novel work to a single error path, and its public
+  feasibility evidence is functional only — deliberately, because a public task body
+  must stay architecture-neutral. Whether the amended `PT06` still carries a non-empty
+  fixed opportunity set is a **future private-evaluator blocker** under
+  **TD-B05**/**TD-B14**, gated by **G1**. It is **not** a defect in `PT06`'s public
+  text, and nothing was added publicly to address it; it must be demonstrated during
+  the substantive private re-authoring of `PT06`'s package, before that package may be
+  approved or frozen.
+- **Status:** candidates authored, repaired, amended and clarified, **not approved and not frozen**.
   Task-specific oracle validity, hidden-acceptance validation, reset-checkpoint
   review, and benchmark discrimination remain open; gates **G1/G2 not passed**;
   the protocol remains **PRE-FREEZE**; **no pilot model execution occurred** and

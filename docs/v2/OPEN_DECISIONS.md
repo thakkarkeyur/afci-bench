@@ -153,6 +153,37 @@ reviewed as a complete eight-task package until `PT06` is updated. No model ran,
 task count was fixed, gates **G1**–**G5** remain **not passed**, and the protocol
 remains **pre-freeze**.
 
+**`PT06` rejection contract clarified: two under-determinations closed, nothing
+resolved.** An independent review of the amendment above found no defect that
+invalidated it, but two places where `PT06`'s public text did not fully determine the
+required behaviour — either of which could have let a conforming solution satisfy every
+stated criterion and still fail acceptance. (1) The text constrained the rejection
+*body* ("JSON — never HTML, never empty") but not the *declared media type*, so a
+serialised envelope sent under `text/html` conformed to the letter. `PT06` now requires
+a `Content-Type` response header whose media type begins with `application/json` on
+both covered rejections, and states that **no other response header** is part of its
+required behaviour. (2) The text opened with an unqualified "a rejected `POST /orders`
+request answers with HTTP 400" while pinning only two kinds in its criteria; that gap
+is externally reachable, because the base answers an over-large body **HTTP 413** and
+an unsupported charset **HTTP 415**, both as HTML. `PT06` now names exactly two covered
+kinds in a **Scope** section and states that HTTP 413, HTTP 415, aborted requests and
+every other transport-level or body-parsing rejection are outside its scope and keep
+their current status codes and bodies. Only `PT06`'s public bytes and hash changed
+(`ae87303c…` → `3e0f84cf…`); `apps/` and `libs/` are byte-identical, and **no**
+architecture wording, applicable rule, expected area or task-specific opportunity was
+added to any public artifact. `TD-B17` is **further advanced but still open**.
+`TD-B05`/`TD-B14` remain **open** and their `PT06` scope is unchanged: still **only**
+`PT06`'s private package is stale, it must be **substantively re-authored** under the
+`PT06` acceptance-scope constraints now recorded publicly, and private commit
+`5733ca6151f7739c7105a5c1405fcbc8fb3cb59d` must not be reviewed as a complete
+eight-task package until it is. Separately, whether the amended `PT06` still carries a
+**non-empty fixed opportunity set** is a **future private-evaluator blocker** under
+`TD-B05`/`TD-B14`, gated by **G1** — not a defect in `PT06`'s public text, deliberately
+not settleable in public without publishing private material, and to be demonstrated
+during that private re-authoring before the package may be approved or frozen. No model
+ran, no task count was fixed, gates **G1**–**G5** remain **not passed**, and the
+protocol remains **pre-freeze**.
+
 ---
 
 ## Non-blocking decisions (TD-N01 – TD-N06)
