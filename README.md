@@ -87,6 +87,35 @@ Conformance utilities are in `experiments/scripts/`:
 These scripts support patch-level conformance checks aligned to MAD constraints (e.g., ports placement, contract ownership,
 observability heuristics). They are included for paper transparency and as a foundation for expanded reproducibility.
 
+> **These are the v0 heuristics.** They are **not** the study-v2 measurement model, and their breadth must not be read as the
+> scope of v2's confirmatory endpoint — see *Study v2* below.
+
+---
+
+## Study v2 (in development — pre-freeze)
+
+Study-v2 design documents live in [`docs/v2/`](docs/v2/README.md) and the v2 oracle/harness in
+[`experiments/v2/`](experiments/v2/). v2 is a **pre-freeze draft**: it authorizes no paid model run, freezes no benchmark
+configuration or task/repetition/run count, and **no benchmark result exists**. Nothing in v2 changes the immutable v0
+artifacts above.
+
+**The v2 confirmatory construct is deliberately narrow.** The single primary endpoint (**E1**) is the
+**dependency-direction violation rate per applicable frozen opportunity**, and it measures **layered dependency-direction
+conformance** only:
+
+- **E1 does not directly measure** contract ownership, port/interface placement, observability completeness, duplicated
+  logic, or general business-logic placement. Those dimensions remain **pre-registered secondary / manual** evidence
+  (construct `CON-ACB`), and any confirmatory use requires blinded double rating with **Cohen's κ ≥ 0.70**.
+- **E1 must not be described as broad or general architectural conformance**, and architectural *integrity* (`CON-AI`) is
+  not directly measured by any single v2 metric.
+- E1's numerator is `opportunity_accounting.violated_opportunity_count` and its offset is
+  `opportunity_accounting.applicable_opportunity_count`; `applicable_rule_count` is not an admissible offset, and a task
+  with zero applicable opportunities is **structurally ineligible** for E1 rather than counted as zero violations.
+
+See [`docs/v2/RESEARCH_QUESTIONS.md`](docs/v2/RESEARCH_QUESTIONS.md) for the construct definitions and
+[`docs/v2/STATISTICAL_ANALYSIS_PLAN.md`](docs/v2/STATISTICAL_ANALYSIS_PLAN.md) §2/§2.1 for the endpoints and their pinned
+accounting.
+
 ---
 
 ## Notes on full reproduction

@@ -96,7 +96,10 @@ def test_claims_matrix_schema_and_status():
             "unsupported_claim_risk", "status", "notes",
         ]
         assert reader.fieldnames == expected, reader.fieldnames
-        constructs = {"CON-AC", "CON-TC", "CON-RR", "CON-EC", "CON-IE", "CON-AI"}
+        # CON-AC is narrowed to layered dependency-direction conformance (E1);
+        # CON-ACB is broader architectural conformance that E1 does NOT directly
+        # measure (suite-classification decision D).
+        constructs = {"CON-AC", "CON-ACB", "CON-TC", "CON-RR", "CON-EC", "CON-IE", "CON-AI"}
         rows = list(reader)
     assert rows, "no claims"
     for r in rows:

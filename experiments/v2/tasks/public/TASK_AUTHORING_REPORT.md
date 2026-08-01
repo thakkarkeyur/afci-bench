@@ -1,6 +1,8 @@
 # AFCI-Bench v2 - Public Task Authoring Report
 
-Status: **candidate** pilot task materials - authored, repaired, amended (PT06), and clarified (PT06's rejection contract), NOT approved, NOT frozen. The scientific protocol remains **PRE-FREEZE**. No benchmark run, paid model call, or task-count freeze accompanies this report.
+Status: **candidate** pilot task materials - authored, repaired, amended (PT06), clarified (PT06's rejection contract), and now **classified for analysis eligibility**, NOT approved, NOT frozen. The scientific protocol remains **PRE-FREEZE**. No benchmark run, paid model call, or task-count freeze accompanies this report.
+
+The confirmatory construct is **narrow**: endpoint E1 is the **dependency-direction violation rate per applicable frozen opportunity** and measures **layered dependency-direction conformance only**. See *Coverage* below for the four distinct coverage categories and which single one E1 scores, and *Suite classification* for per-task eligibility.
 
 ## What was authored
 
@@ -11,6 +13,27 @@ Status: **candidate** pilot task materials - authored, repaired, amended (PT06),
 ## Coverage
 
 The six primary candidates were selected, before any model outcome existed, to collectively span the pre-declared coverage areas recorded in the private selection policy and coverage matrix. The per-candidate coverage mapping is a hidden design detail and is withheld from this public report.
+
+### Four coverage categories, only one of which E1 measures
+
+"Coverage" was previously written as if it were a single property. It is not, and conflating the four categories below would over-state what the confirmatory endpoint measures. **Each category is distinct, and only category 4 is directly scored by E1.**
+
+| # | Coverage category | What it means | Measured by |
+| --- | --- | --- | --- |
+| 1 | **Task subject-matter coverage** | the functional spread of the candidate suite (read endpoint, list endpoint, write endpoint, logging, calculation, error handling) | nothing automated - a selection property of the suite, asserted in the index/matrix and reviewable from the public bodies |
+| 2 | **Hidden functional coverage** | which required behaviours the hidden acceptance tests exercise per task | E3, the hidden acceptance-test pass proportion (`CON-TC`) - **not** E1 |
+| 3 | **Manual-rubric coverage** | which broader architecture dimensions a blinded rater adjudicates (contract ownership, port/interface placement, observability completeness, duplicated logic, general business-logic placement) | manual rubric under `CON-ACB`, secondary evidence only, confirmatory **only** at Cohen's kappa >= 0.70 - **not** E1 |
+| 4 | **Directly scored E1 coverage** | which frozen dependency-direction opportunities the architecture oracle scores | **E1** - the dependency-direction violation rate per applicable frozen opportunity |
+
+Correcting the record, since the earlier single-notion wording could be read as claiming that every category is directly measured by the primary endpoint:
+
+- **Five of the six primary candidates currently contribute to E1.** `PT01`-`PT05` are `scored`; `PT06` is `functional-only` - a valid primary functional candidate that is structurally excluded from E1 while still contributing to hidden functional acceptance, cost and pre-registered exploratory analyses. `PR01` and `PR02` are `inactive-reserve` and contribute to no endpoint.
+- **All current scored E1 opportunities use dependency-direction rules** (the `AR-DEP-001..006` family). No contract-boundary, observability, coding-discipline or change-footprint rule is scored into E1: each is an unimplemented oracle stub that reports `UNIMPLEMENTED` and can never report PASS.
+- **The opportunity instances reduce to a small number of repeated boundary decisions.** They are not independent observations; the same few layer-boundary judgements recur across tasks, so the power simulation must model that pseudo-replication (`TD-B30`).
+- **Task count and final opportunity count remain unfrozen** (`TD-B10`/`TD-B14`/`TD-B20`, and `TD-B05`/`TD-B14` for the per-task opportunity sets). The eight candidates are candidates.
+- **No statement here implies that categories 1-3 are directly measured by E1.** Subject-matter breadth, hidden functional coverage and manual-rubric coverage are separate evidence types with separate endpoints or no endpoint at all. **E1 must not be described as broad or general architectural conformance** (gate **G8**).
+
+Per-candidate E1 eligibility is recorded publicly in `TASK_INDEX.csv` and `docs/v2/PILOT_PUBLIC_TASK_MATRIX.csv` (`e1_analysis_eligibility`). Which specific opportunities exist per task, and their contents, remain private: nothing in this section discloses a private opportunity answer or any exact private evaluator content.
 
 ## Repairs applied after independent public review
 
@@ -215,18 +238,39 @@ The public-task leakage validator (`experiments/v2/tasks/validate_public_tasks.p
 
 A clean result means **no detected leakage**. It is not proof of scientific validity. This advances TD-B17 for the authored draft suite; **TD-B17 remains open** pending independent review at freeze.
 
+## Suite classification (analysis eligibility)
+
+An independently approved suite-level decision narrowed the confirmatory construct to **layered dependency-direction conformance**. Analysis eligibility is now an explicit, machine-checked field (`e1_analysis_eligibility`) in `TASK_INDEX.csv` and `docs/v2/PILOT_PUBLIC_TASK_MATRIX.csv`. The existing primary/reserve classification is **unchanged**; eligibility is a separate axis.
+
+| Value | Meaning | Tasks |
+| --- | --- | --- |
+| `scored` | carries applicable frozen dependency-direction opportunities; contributes to E1 | PT01, PT02, PT03, PT04, PT05 |
+| `functional-only` | valid primary functional candidate, **structurally excluded from E1**; still contributes to hidden functional acceptance, cost and pre-registered exploratory analyses | PT06 |
+| `inactive-reserve` | pre-declared reserve, **not activated**; contributes to no endpoint | PR01, PR02 |
+
+Binding consequences:
+
+- **`PT06` is excluded from E1 without being a failed run.** Exclusion is a statement about architectural exposure, not about the task's validity or a run's success. `PT06` is not coded as zero violations, not entered with a zero numerator, and not coded `NO_PATCH`/`REFUSAL`/`INVALID_CODE`.
+- **A task with `applicable_opportunity_count = 0` is structurally ineligible for E1**, never entered as zero violations (`docs/v2/STATISTICAL_ANALYSIS_PLAN.md` §2.1).
+- **No reserve was activated.** `PR01` and `PR02` enter no endpoint.
+- **`PR02` must not be promoted.** Its terminal-state completion criterion (cancelling a `shipped` or `delivered` order answers HTTP 409 `ConflictError`) is **not externally reachable** through the current public interface: no public endpoint can move an order out of its created status and `PR02` creates none. `PR02` cannot be activated until the criterion is repaired **and** the repair is independently re-approved (**TD-B26**). Its public body is **not** modified by this work package.
+- **Broader architecture dimensions remain secondary/manual evidence** under `CON-ACB` and are never pooled into E1.
+- **`PT03`'s public repeat-request contract is contradictory and is recorded, not fixed.** It permits a change to any of the five accepted values - including `delivered` and `cancelled` - while also requiring that repeating the same request returns the same stored status *and* that a current status of `delivered` or `cancelled` answers HTTP 409 `ConflictError`. A target of `delivered` or `cancelled` cannot satisfy both. This needs a **separate public task amendment** and a **private relink**, tracked as **TD-B25**. `PT03`'s body and hash are unchanged here.
+- **Architecture-revealing source comments are recorded, not neutralised.** Model-visible TypeScript comments in the shared substrate explicitly state some scored dependency rules to every condition, including the C1 baseline, and one shows a worked boundary-violation example. That may make C1 partly guided and floor the primary contrast (**TD-B23**), and the worktree leakage sweep does not yet read source content to detect it (**TD-B24**). `apps/` and `libs/` are **unchanged** by this work package.
+- **No task body, task content hash, manifest, endpoint or protocol was frozen**, and no oracle change was made.
+
 ## Public task inventory
 
-| Task | Kind | Category | Scope | Public task SHA-256 |
-| --- | --- | --- | --- | --- |
-| PT01 | primary | read-endpoint | small | `6c938822fe19cd6e...` |
-| PT02 | primary | list-endpoint | medium | `ec4b60057708b20c...` |
-| PT03 | primary | write-endpoint | medium | `cbfce1ca232cb9b6...` |
-| PT04 | primary | logging | medium | `f349b150b1d8fe56...` |
-| PT05 | primary | calculation | medium | `f6efc772e76d6c28...` |
-| PT06 | primary | error-handling | medium | `3e0f84cfef1f9fbf...` |
-| PR01 | reserve | calculation | small | `0e1527bce4149883...` |
-| PR02 | reserve | write-endpoint | medium | `e89a4aab236813c0...` |
+| Task | Kind | Category | Scope | Public task SHA-256 | E1 analysis eligibility |
+| --- | --- | --- | --- | --- | --- |
+| PT01 | primary | read-endpoint | small | `6c938822fe19cd6e...` | scored |
+| PT02 | primary | list-endpoint | medium | `ec4b60057708b20c...` | scored |
+| PT03 | primary | write-endpoint | medium | `cbfce1ca232cb9b6...` | scored |
+| PT04 | primary | logging | medium | `f349b150b1d8fe56...` | scored |
+| PT05 | primary | calculation | medium | `f6efc772e76d6c28...` | scored |
+| PT06 | primary | error-handling | medium | `3e0f84cfef1f9fbf...` | functional-only |
+| PR01 | reserve | calculation | small | `0e1527bce4149883...` | inactive-reserve |
+| PR02 | reserve | write-endpoint | medium | `e89a4aab236813c0...` | inactive-reserve |
 
 Relative to the suite recorded before the repair package, only PT05 is byte-identical
 and the other seven changed. Relative to public commit `0e77d49`, **only PT06
@@ -295,3 +339,10 @@ The review also found that the coding model's worktree was the whole repository,
 - **No final task count**, repetition count, run count, model, or numerical budget was selected. The eight candidates are candidates, not a core-study task set.
 - No hidden evaluator package was frozen; the oracle continues to refuse to score a review-status package (`MANIFEST_NOT_FROZEN`).
 - Task-specific oracle validity, hidden-acceptance validation, reset checkpoint review, and benchmark discrimination remain open (G1/G2 not passed).
+- **No task body or task content hash changed for the suite classification.** All eight bodies are byte-identical to their state at public commit `fef5987`, and all eight recorded SHA-256 values are unchanged. Classification is metadata, never a task edit.
+- **`PT03`'s repeat-request contradiction was NOT fixed** - it is recorded as blocking decision **TD-B25** and requires a separate public amendment plus a private relink.
+- **Architecture-revealing source comments were NOT neutralised** - recorded as **TD-B23** (with the leakage-scanner gap as **TD-B24**); `apps/` and `libs/` are unchanged.
+- **No reserve task was activated**, and `PR02` was **not** promoted (**TD-B26**).
+- **The oracle was not implemented or changed**, and `AR-CONTRACT-001`/`AR-CODE-001` were **not** implemented: broadening E1 is future work (**TD-B33**) and must never readmit an excluded task post hoc.
+- **No blocker was closed.** Eleven were opened (`TD-B23`-`TD-B33`); the registry now holds 33 blocking and 6 non-blocking decisions, all `open`.
+- **No private opportunity answer or exact private evaluator content is disclosed here.** Where a private identifier is named at all it is named as an identifier only.

@@ -118,24 +118,54 @@ sharpens a blocker, the `TD-*` id is named and lives in
 
 ## D8 — Primary endpoint
 
-- **Primary outcome: the architecture-violation rate per applicable
-  rule/opportunity** (CON-AC), analysed as a rate with an exposure offset.
-- **Raw violation counts are retained.**
-- **Applicable-rule satisfaction is a descriptive transformation** of the same
-  measurement — reported for interpretability, **not** an independent
+- **Primary outcome: the dependency-direction violation rate per applicable
+  frozen opportunity** (CON-AC), analysed as a rate with an exposure offset.
+- **Raw violation counts are retained** as a separate descriptive diagnostic
+  series, never substituted into the rate.
+- **Applicable-frozen-opportunity satisfaction is a descriptive transformation**
+  of the same measurement — reported for interpretability, **not** an independent
   confirmatory endpoint.
 - The **hidden acceptance-test pass proportion** (CON-TC) is the **principal
   completeness outcome**.
 - See [`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §2 (endpoint
-  E1 primary; E2 descriptive).
+  E1 primary; E2 descriptive) and §2.1 (pinned accounting).
+
+### D8 scope narrowing (suite-classification decision D)
+
+The **structure** of D8 is unchanged — one primary endpoint, analysed as a rate
+with an exposure offset, with satisfaction as a descriptive transformation. What
+is narrowed is **which construct that endpoint measures**:
+
+- E1 is renamed **"dependency-direction violation rate per applicable frozen
+  opportunity"** and measures **layered dependency-direction conformance**
+  (`AR-DEP-001…006`) only.
+- E1's numerator is `opportunity_accounting.violated_opportunity_count`; its
+  denominator/offset is `opportunity_accounting.applicable_opportunity_count`.
+  **`applicable_rule_count` is not an admissible offset**, and stub or
+  unimplemented rules must not enlarge the denominator.
+- **E1 does not directly measure** contract ownership, port/interface placement,
+  observability completeness, duplicated logic, or general business-logic
+  placement. Those are **CON-ACB** — pre-registered secondary/manual evidence
+  whose confirmatory use requires blinded double rating with **Cohen's κ ≥ 0.70**
+  ([`MANUAL_RATING_PROTOCOL.md`](MANUAL_RATING_PROTOCOL.md)).
+- **The paper must not describe E1 as broad or general architectural
+  conformance** (gate **G8**).
+- A task with `applicable_opportunity_count = 0` is **structurally ineligible**
+  for E1, not coded as zero violations and not a failed run. Per-candidate
+  eligibility is public
+  ([`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv)): `PT01`–`PT05`
+  `scored`, `PT06` `functional-only`, `PR01`/`PR02` `inactive-reserve`.
+
+This narrowing resolves no blocking decision, freezes nothing, and is itself
+pending independent classification review.
 
 ## D9 — Hypothesis hierarchy
 
 Ordered; **no numerical success thresholds are set** (thresholds/power are
 `TD-B07`, pilot-set, never from v1):
 
-1. **C4 vs C1** on the architecture-violation rate.
-2. **Condition × reset interaction** on the architecture-violation rate.
+1. **C4 vs C1** on the dependency-direction violation rate.
+2. **Condition × reset interaction** on the dependency-direction violation rate.
 3. **C4 vs C2**.
 4. **C4 vs C3**, allowing **superiority, equivalence, or inferiority** (D4).
 5. **Hidden acceptance outcomes** (completeness).

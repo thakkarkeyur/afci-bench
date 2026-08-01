@@ -137,12 +137,64 @@ decisions are tracked as explicit blockers in
   text, and nothing was added publicly to address it; it must be demonstrated during
   the substantive private re-authoring of `PT06`'s package, before that package may be
   approved or frozen.
-- **Status:** candidates authored, repaired, amended and clarified, **not approved and not frozen**.
+- **Status:** candidates authored, repaired, amended, clarified and **classified for
+  analysis eligibility**, **not approved and not frozen**.
   Task-specific oracle validity, hidden-acceptance validation, reset-checkpoint
   review, and benchmark discrimination remain open; gates **G1/G2 not passed**;
   the protocol remains **PRE-FREEZE**; **no pilot model execution occurred** and
   **no final task count**, repetition count, run count or numerical budget was
   selected. The eight candidates are candidates, not a core-study task set.
+
+### Suite classification — the confirmatory construct is NARROW
+
+An independently approved suite-level decision narrowed the confirmatory construct
+to **layered dependency-direction conformance**. **No task body, task content
+hash, manifest, endpoint or protocol was frozen or edited by that decision**, and
+`apps/`/`libs/` are unchanged.
+
+- **E1 is renamed** *"dependency-direction violation rate per applicable frozen
+  opportunity"*. Numerator
+  `opportunity_accounting.violated_opportunity_count`; denominator/offset
+  `opportunity_accounting.applicable_opportunity_count`. **`applicable_rule_count`
+  is not an admissible offset**, **stub rules do not enlarge the denominator**, and
+  `raw_violation_count` is a **separate descriptive diagnostic**
+  ([`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §2.1).
+- **E1 does NOT directly measure** contract ownership, port/interface placement,
+  observability completeness, duplicated logic, or general business-logic
+  placement. Those are **CON-ACB** — pre-registered **secondary / manual**
+  evidence whose confirmatory use requires blinded double rating with **Cohen's
+  κ ≥ 0.70** ([`MANUAL_RATING_PROTOCOL.md`](MANUAL_RATING_PROTOCOL.md)).
+  **The paper must not describe E1 as broad or general architectural
+  conformance** (gate **G8**).
+- **Analysis eligibility is explicit and machine-checked**
+  ([`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv),
+  `experiments/v2/tasks/public/TASK_INDEX.csv`, field
+  `e1_analysis_eligibility`): **`PT01`–`PT05` `scored`**, **`PT06`
+  `functional-only`** (valid primary functional candidate, structurally excluded
+  from E1, still contributing to hidden functional acceptance, cost and
+  exploratory analyses — **not** a failed run), **`PR01`/`PR02`
+  `inactive-reserve`**. Primary/reserve classification is unchanged. **No reserve
+  was activated**, and **`PR02` must not be promoted** because its terminal-state
+  guard is not externally reachable through the current public interface
+  (`TD-B26`).
+- A task whose `applicable_opportunity_count` is **0** is **structurally
+  ineligible** for E1 — never coded as zero violations.
+- **Reset is an experimental factor crossed with tasks, not a task-content
+  category** ([`RESET_PROTOCOL.md`](RESET_PROTOCOL.md) §6). No candidate uniquely
+  provides "reset-continuation coverage", multiple retained primary tasks already
+  admit condition-neutral checkpoints, and `PT06` must not stay in E1 to satisfy a
+  bookkeeping reset label. `RESET_CHECKPOINT_MATRIX.csv` now carries a **withheld**
+  row for each of the eight candidates.
+- **Eleven blockers were opened, none closed** — `TD-B23`–`TD-B33`
+  ([`OPEN_DECISIONS.md`](OPEN_DECISIONS.md)): architecture-revealing model-visible
+  source comments and their floor-effect risk; the leakage sweep not scanning
+  source comments; `PT03`'s contradictory repeat-request contract; `PR02`'s
+  unreachable terminal state; exact-path opportunity attribution missing
+  violations in new files; `AR-DEP-001` coverage across private manifests;
+  a private opportunity needing re-justification; pseudo-replication of shared
+  boundary decisions; suite-wide public-interface reachability validation;
+  `draft_unvalidated` hidden evaluator scaffolds; and broadening E1 as future work.
+  The registry now holds **33 blocking + 6 non-blocking** decisions, **all open**.
 
 ### Model-visible worktree isolation
 
@@ -164,8 +216,10 @@ decisions are tracked as explicit blockers in
 Scientific protocol:
 
 - [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) — RQ1–RQ4 and construct
-  definitions (incl. architectural integrity as a broader, not-directly-measured
-  construct).
+  definitions: **CON-AC** (layered dependency-direction conformance — the
+  directly measured confirmatory construct), **CON-ACB** (broader architectural
+  conformance, **not** directly measured by E1), and **CON-AI** (architectural
+  integrity — not directly measured at all).
 - [`CONDITIONS.md`](CONDITIONS.md) + [`CONDITION_MATRIX.csv`](CONDITION_MATRIX.csv)
   — the four conditions C1–C4.
 - [`RESET_PROTOCOL.md`](RESET_PROTOCOL.md) +
@@ -187,7 +241,8 @@ Evidence matrices:
   `stored_in_private_evaluator_repo`, never a real rule id, expected area, or
   hidden criterion.
 - [`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv) — public
-  per-candidate view (id, title, functional category, public task hash, visible
+  per-candidate view (id, title, functional category, primary/reserve,
+  **`e1_analysis_eligibility`** and its reason, public task hash, visible
   CI command, scope, leakage-validation status); carries no hidden answer.
 - [`MODEL_REGISTRY.yml`](MODEL_REGISTRY.yml) /
   [`MODEL_REGISTRY.csv`](MODEL_REGISTRY.csv) — verified model info; no primary
@@ -198,7 +253,7 @@ Evidence matrices:
 - [`RUN_ARTIFACT_MATRIX.csv`](RUN_ARTIFACT_MATRIX.csv) — per-run artifacts and
   their schemas (`experiments/v2/schemas/`).
 
-Direct **architectural-conformance** (v1's guard was non-functional; see
+Direct **dependency-direction-conformance** (v1's guard was non-functional; see
 `archive/v1/REFERENCE_MANIFEST.yml`) and **task-acceptance** measurement models
 are defined by the oracle/guard schemas in
 [`experiments/v2/schemas/`](../../experiments/v2/schemas/) and validated by the

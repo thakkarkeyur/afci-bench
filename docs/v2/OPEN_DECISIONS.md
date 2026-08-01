@@ -24,13 +24,16 @@ that none is yet marked resolved.
 
 ## Counts
 
-- **Blocking decisions: 22** (`TD-B01`–`TD-B22`) — must be resolved before the
+- **Blocking decisions: 33** (`TD-B01`–`TD-B33`) — must be resolved before the
   corresponding data collection; all are cited inline across the protocol files.
   `TD-B16`–`TD-B21` were added by the pre-execution design-review reconciliation;
-  `TD-B22` was added by the independent public review of the pilot task package.
+  `TD-B22` was added by the independent public review of the pilot task package;
+  **`TD-B23`–`TD-B33` were added by the suite-classification decision (decision
+  D)** that narrowed the confirmatory construct to dependency-direction
+  conformance.
 - **Non-blocking decisions: 6** (`TD-N01`–`TD-N06`) — refinements that do not
   block the confirmatory design.
-- **Total open decisions: 28.** None resolved (pre-freeze draft, not a
+- **Total open decisions: 39.** None resolved (pre-freeze draft, not a
   data-collection package).
 
 A **blocking** decision, if left unresolved, would invalidate or bias the
@@ -40,7 +43,7 @@ confirmatory analysis.
 
 ---
 
-## Blocking decisions (TD-B01 – TD-B22)
+## Blocking decisions (TD-B01 – TD-B33)
 
 | ID | Decision | Owner | Resolved during | Gate |
 |----|----------|-------|-----------------|------|
@@ -67,8 +70,30 @@ confirmatory analysis.
 | **TD-B21** | Runtime model-id dry runs (Q1 resolved-id readback; Q8 invalid-id rejection), blocking before the paid pilot | Harness Engineer | after dry-run validation (TD-B02) | — |
 | **TD-B22** | **Runner-time enforcement of the model-visible worktree policy**: every counted run's worktree built from the allowlist by `prepare_model_worktree.py`; **no** `ARCHITECTURE_CONTEXT.md`, `ARCHITECTURE_RULE_CATALOG.yml` or architecture-enforcing `.eslintrc.json` in any condition's workspace; C3 persistent payload / C4 prompt-only payload verified; snapshot `content_hash` recorded per run | Harness Engineer | after the runner exists (TD-B02) | G3/G4/G5 |
 
+### Added by the suite-classification decision (decision D) — `TD-B23` – `TD-B33`
+
+Narrowing the confirmatory construct to **layered dependency-direction
+conformance** exposed eleven separate blockers. Each is **open**; **none is
+closed by this work package**, and none may be closed by restating the
+classification.
+
+| ID | Decision | Owner | Resolved during | Gate |
+|----|----------|-------|-----------------|------|
+| **TD-B23** | **Model-visible TypeScript comments explicitly reveal some scored dependency rules to every condition, including the C1 baseline** — `apps/api/src/app.ts` documents that the application must not import core *and* shows a worked boundary-violation example; `libs/features` and `libs/infra` comments state the same direction. C1 may therefore not be an unguided arm, and E1 may show a **floor effect**. Decide and record the disposition (neutralise the comments and re-hash the substrate, **or** pre-register the leakage and its floor-effect consequence) before any counted run. **Not fixed in this work package.** | Task Designer + Study Lead | before the pilot (substrate decision) | G2/G3 |
+| **TD-B24** | **The worktree leakage sweep does not scan TypeScript source comments.** `prepare_model_worktree.scan_snapshot_violations` matches file basenames and directory names only and never reads source content, so it cannot detect the `TD-B23` disclosure. Extend it to scan source comments for architecture-rule disclosure, with a regression proof per demonstrated bypass. **Not fixed in this work package.** | Harness Engineer | before the pilot (with `TD-B22`) | G2/G3 |
+| **TD-B25** | **`PT03`'s public repeat-request contract is contradictory.** It permits a change to any of the five accepted values — including `delivered` and `cancelled` — while also requiring that repeating the same request returns the same stored status, *and* that a current status of `delivered` or `cancelled` answers HTTP 409 `ConflictError`. A target of `delivered` or `cancelled` cannot satisfy both. Requires a **separate public task amendment** and a **private relink** of `PT03`'s package to the amended hash. **Deliberately not fixed in this commit.** | Task Designer | separate public `PT03` amendment | G1/G2 |
+| **TD-B26** | **`PR02`'s terminal-state completion criterion is not externally reachable at the source substrate.** Cancelling a `shipped` or `delivered` order must answer HTTP 409 `ConflictError`, but no public endpoint can move an order out of its created status and `PR02` creates none. **`PR02` must not be activated or promoted until the criterion is repaired and the repair is independently re-approved.** | Task Designer | before any reserve activation | G1/G2 |
+| **TD-B27** | **The opportunity attribution mechanism uses exact importer paths and may miss violations introduced in new files.** `dependencyDirection.ts` links a finding to an opportunity by comparing `locator.importer_path` to `edge.importer_path`, so a forbidden edge in a **new** file links to no frozen opportunity: it counts in `raw_violation_count` but is **omitted from the E1 numerator**, while the original importer is scored `SATISFIED`. Decide the attribution rule and validate it with mutation cases that introduce violations in new files. | Guard Engineer | pilot (with `TD-B12`) | G6 |
+| **TD-B28** | **`AR-DEP-001` must be considered for all private manifests** so relevant dependency-family violations are not silently omitted. `AR-DEP-001` is the umbrella rule that puts the whole matrix in force; a manifest listing only some per-layer clauses scores only those clauses and drops the rest. | Oracle Designer | private manifest re-authoring (with `TD-B05`/`TD-B14`) | G1/G6 |
+| **TD-B29** | **The private opportunity identified as `PT04-OPP-01` must be independently re-justified or removed privately.** The identifier is recorded here **as an identifier only**; its content, justification and disposition stay in the private evaluator repository. | Oracle Designer | private manifest re-authoring (with `TD-B05`) | G1 |
+| **TD-B30** | **Repeated opportunities collapse onto a small number of shared boundary decisions**, so opportunity instances are **pseudo-replicates**, not independent observations. The mandatory interaction power simulation (`TD-B20`) must **model this pseudo-replication**, and the analysis must carry a matching sensitivity re-fit. | Statistician | pilot (with `TD-B20`) | G2/G3 |
+| **TD-B31** | **A suite-wide public-interface reachability validation is required, not a `PT06`-only guard.** Every completion criterion of every candidate must be provably reachable through the public interface of the unchanged substrate, with no failure-injection hook, test-only route, special header or environment flag. `test_pt06_feasibility.py` covers one task. | Task Designer | pilot task design (before freeze) | G1/G2 |
+| **TD-B32** | **Hidden evaluator scaffolds remain `draft_unvalidated`** and require independent review plus reference and mutation validation before any package may be approved or frozen. | Oracle Designer + Guard Engineer | private review and validation (with `TD-B05`/`TD-B12`) | G1/G6 |
+| **TD-B33** | **Implementing `AR-CONTRACT-001` or `AR-CODE-001` remains future work intended to BROADEN E1** to further architecture dimensions. It must **never** be used to readmit a structurally excluded task **post hoc**, and any broadening requires its own pre-registration before data collection. | Oracle Designer + Study Lead | future protocol version (not this package) | G1/G8 |
+
 Added by the pre-execution design-review reconciliation: `TD-B16`–`TD-B21`; added
-by the independent public review of the pilot task package: `TD-B22`. Each
+by the independent public review of the pilot task package: `TD-B22`; added by the
+suite-classification decision: `TD-B23`–`TD-B33`. Each
 is **open** (none resolved here — the CI/leakage **mechanisms** are delivered and
 tested, but the runner-time enforcement, authored suite, frozen hashes,
 container, pilot simulation, and dry runs all remain outstanding).
@@ -183,6 +208,35 @@ not settleable in public without publishing private material, and to be demonstr
 during that private re-authoring before the package may be approved or frozen. No model
 ran, no task count was fixed, gates **G1**–**G5** remain **not passed**, and the
 protocol remains **pre-freeze**.
+
+**Suite classification narrowed (decision D): eleven new blockers, nothing
+resolved.** An independently approved suite-level decision narrowed the
+confirmatory construct to **layered dependency-direction conformance**. `E1` is
+renamed **"dependency-direction violation rate per applicable frozen
+opportunity"**, its numerator pinned to
+`opportunity_accounting.violated_opportunity_count` and its denominator/offset to
+`opportunity_accounting.applicable_opportunity_count`; `applicable_rule_count` is
+**not** an admissible offset, stub rules do **not** enlarge the denominator,
+`raw_violation_count` is a separate descriptive diagnostic, and a task with
+`applicable_opportunity_count = 0` is **structurally ineligible** for E1 rather
+than coded as zero violations. Analysis eligibility is now recorded publicly per
+candidate ([`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv),
+`TASK_INDEX.csv`): **`PT01`–`PT05` `scored`**, **`PT06` `functional-only`** (a
+valid primary functional candidate, structurally excluded from E1 but still
+contributing to hidden functional acceptance, cost and exploratory analyses), and
+**`PR01`/`PR02` `inactive-reserve`** — **no reserve was activated**, and `PR02`
+must not be promoted (`TD-B26`). Contract ownership, port/interface placement,
+observability completeness, duplicated logic and general business-logic placement
+are split out as **CON-ACB**: pre-registered secondary/manual evidence, **not**
+directly measured by E1, whose confirmatory use requires blinded double rating
+with **Cohen's κ ≥ 0.70**. The **paper must not describe E1 as broad or general
+architectural conformance** (gate **G8**). **No task body, task content hash,
+manifest, endpoint or protocol was frozen**, no oracle change was made, `apps/`
+and `libs/` are byte-identical, the private evaluator repository was **not
+accessed**, and **no benchmark or model execution occurred**. Eleven blockers
+were **opened** (`TD-B23`–`TD-B33`) and **none of the 33 blocking decisions is
+closed**; gates **G1**–**G8** remain **not passed** and the protocol remains
+**pre-freeze**.
 
 ---
 

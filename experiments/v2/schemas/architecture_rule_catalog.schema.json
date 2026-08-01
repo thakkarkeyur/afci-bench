@@ -95,7 +95,8 @@
           "normative_statement": { "type": "string" },
           "construct": {
             "type": "string",
-            "enum": ["CON-AC", "CON-TC", "CON-RR", "CON-EC", "CON-IE", "CON-AI"]
+            "description": "CON-AC is narrowed to layered dependency-direction conformance (the directly measured confirmatory construct, endpoint E1). CON-ACB is broader architectural conformance that E1 does NOT directly measure (contract ownership, port/interface placement, observability completeness, duplicated logic, general business-logic placement); it is pre-registered secondary/manual evidence.",
+            "enum": ["CON-AC", "CON-ACB", "CON-TC", "CON-RR", "CON-EC", "CON-IE", "CON-AI"]
           },
           "rationale": { "type": "string" },
           "severity": { "type": "string", "enum": ["blocker", "major", "minor", "n/a"] },

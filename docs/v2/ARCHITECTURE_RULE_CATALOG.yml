@@ -13,6 +13,22 @@
 # dependency-direction reference checker exist, but labelled-corpus validation,
 # mutation testing, and manual inter-rater validation (TD-B12 / gates G1, G6)
 # remain open, so no rule is marked validated.
+#
+# CONSTRUCT SPLIT (suite-classification decision D). The confirmatory endpoint E1
+# ("dependency-direction violation rate per applicable frozen opportunity") is
+# narrow: it scores the AR-DEP-001..006 family only, and those rules alone carry
+# construct CON-AC. AR-CONTRACT-001, AR-OBSERV-001 and AR-CODE-001 carry
+# construct CON-ACB - broader architectural conformance that E1 does NOT directly
+# measure (contract ownership, port/interface placement, observability
+# completeness, duplicated logic, general business-logic placement). CON-ACB rules
+# are pre-registered secondary/manual evidence: they are unimplemented stubs that
+# report UNIMPLEMENTED and never PASS, they contribute NOTHING to E1's numerator
+# (opportunity_accounting.violated_opportunity_count) or denominator
+# (opportunity_accounting.applicable_opportunity_count), and confirmatory use of
+# their manual ratings requires blinded double rating with Cohen's kappa >= 0.70
+# (docs/v2/MANUAL_RATING_PROTOCOL.md). Implementing AR-CONTRACT-001 or
+# AR-CODE-001 as automated checkers is future work intended to BROADEN E1
+# (TD-B33), not a route to readmit an already-excluded task post hoc.
 
 schema_version: "1.0.0"
 catalog_id: "afci-v2-architecture-rule-catalog"
@@ -32,7 +48,10 @@ architecture_context:
 # Controlled vocabularies (kept aligned with oracle_result.schema.json and
 # CLAIMS_CONSTRUCTS_METRICS.csv).
 vocabularies:
-  construct: [CON-AC, CON-TC, CON-RR, CON-EC, CON-IE, CON-AI]
+  # CON-AC = layered dependency-direction conformance (directly measured; E1).
+  # CON-ACB = broader architectural conformance NOT directly measured by E1
+  # (secondary/manual evidence, kappa >= 0.70 gated for any confirmatory use).
+  construct: [CON-AC, CON-ACB, CON-TC, CON-RR, CON-EC, CON-IE, CON-AI]
   severity: [blocker, major, minor, "n/a"]
   evaluation: [automated, manual, hybrid]
   category:
@@ -104,10 +123,16 @@ rules:
     applicable_opportunity_definition: >-
       Frozen per task manifest as the enumerated set of dependency-direction
       opportunities (recorded as fixed opportunity ids) the task is expected to
-      preserve or repair. The denominator is the count of applicable frozen
-      opportunities and is NOT derived from how many files or layers the change
-      happened to touch. Raw violation count (all forbidden edges detected in the
-      snapshot) and fixed-opportunity status are recorded separately.
+      preserve or repair. This family is the SOLE contributor to endpoint E1: the
+      E1 numerator is opportunity_accounting.violated_opportunity_count and the
+      E1 denominator/offset is
+      opportunity_accounting.applicable_opportunity_count. applicable_rule_count
+      is NOT an admissible E1 offset. The denominator is NOT derived from how many
+      files or layers the change happened to touch. Raw violation count (all
+      forbidden edges detected in the snapshot) is a separate descriptive
+      diagnostic series, and fixed-opportunity status is recorded separately. A
+      task whose applicable_opportunity_count is 0 is structurally ineligible for
+      E1 and is NOT entered as zero violations.
     false_positive_risks: >-
       Third-party imports mistaken for internal; the sanctioned re-export pattern
       (api imports domain types from features, which re-exports core) mis-flagged
@@ -253,7 +278,7 @@ rules:
       contracts; ad-hoc externally visible shapes must not be defined inside
       features or the application. A change to an externally visible shape updates
       the contract, its consumers, and their tests together.
-    construct: CON-AC
+    construct: CON-ACB
     rationale: "A single home for external shapes prevents drift between the wire format and its consumers and keeps the contract authoritative."
     severity: major
     applicable_scope: "scope:features, scope:api, scope:contracts"
@@ -271,7 +296,15 @@ rules:
     agent_visible_enforcement_status: excluded-from-agent-ci-no-automated-enforcement
     oracle_implementation_status: stub
     validation_status: not-validated
-    notes: "No oracle checker implemented in this package; registered as an explicit unimplemented stub that must never report PASS. Distinguishing external from internal shapes requires manual judgement (see MANUAL_ORACLE_RUBRIC.md)."
+    notes: >-
+      No oracle checker implemented in this package; registered as an explicit
+      unimplemented stub that must never report PASS. Distinguishing external from
+      internal shapes requires manual judgement (see MANUAL_ORACLE_RUBRIC.md).
+      CON-ACB: contract ownership is NOT directly measured by E1, and this rule
+      contributes nothing to E1's numerator or denominator. Confirmatory use of its
+      manual ratings requires blinded double rating with Cohen's kappa >= 0.70
+      (MANUAL_RATING_PROTOCOL.md). Implementing it as an automated checker is future
+      work intended to BROADEN E1 (TD-B33), not to readmit an excluded task post hoc.
 
   - rule_id: AR-OBSERV-001
     title: Request and error logging completeness
@@ -281,7 +314,7 @@ rules:
       outcome status, and the latency; every error record includes the
       correlation identifier, an error type, and a message. Logging is performed
       through the observability layer.
-    construct: CON-AC
+    construct: CON-ACB
     rationale: "Uniform structured logging makes requests traceable and errors diagnosable, and keeps logging out of ad-hoc call sites."
     severity: major
     applicable_scope: "scope:api, scope:features, scope:observability"
@@ -298,7 +331,12 @@ rules:
     agent_visible_enforcement_status: excluded-from-agent-ci-no-automated-enforcement
     oracle_implementation_status: stub
     validation_status: not-validated
-    notes: "Registered as an explicit unimplemented stub that must never report PASS. Field-completeness is partly manual."
+    notes: >-
+      Registered as an explicit unimplemented stub that must never report PASS.
+      Field-completeness is partly manual. CON-ACB: observability completeness is
+      NOT directly measured by E1, and this rule contributes nothing to E1's
+      numerator or denominator. Confirmatory use of its manual ratings requires
+      blinded double rating with Cohen's kappa >= 0.70 (MANUAL_RATING_PROTOCOL.md).
 
   - rule_id: AR-CODE-001
     title: Coding and change discipline
@@ -307,7 +345,7 @@ rules:
       Functions stay small and single-purpose; business logic is not duplicated
       across layers; behavior changes are accompanied by added or adjusted tests;
       changes stay local and do not refactor unrelated modules.
-    construct: CON-AC
+    construct: CON-ACB
     rationale: "These disciplines keep the codebase reviewable and changes attributable, and prevent architectural erosion through incidental edits."
     severity: minor
     applicable_scope: all-internal-modules
@@ -324,7 +362,14 @@ rules:
     agent_visible_enforcement_status: excluded-from-agent-ci-no-automated-enforcement
     oracle_implementation_status: stub
     validation_status: not-validated
-    notes: "Manual rule; contributes to a confirmatory endpoint only after blinded double rating with kappa >= 0.70 (MANUAL_RATING_PROTOCOL.md). Registered as an unimplemented automated stub that must never report PASS."
+    notes: >-
+      Manual rule; contributes to a confirmatory endpoint only after blinded double
+      rating with kappa >= 0.70 (MANUAL_RATING_PROTOCOL.md). Registered as an
+      unimplemented automated stub that must never report PASS. CON-ACB: duplicated
+      logic and general business-logic placement are NOT directly measured by E1, and
+      this rule contributes nothing to E1's numerator or denominator. Implementing it
+      as an automated checker is future work intended to BROADEN E1 (TD-B33), not to
+      readmit an excluded task post hoc.
 
   - rule_id: AR-CHANGE-FOOTPRINT-001
     title: Change footprint (out-of-scope surface)

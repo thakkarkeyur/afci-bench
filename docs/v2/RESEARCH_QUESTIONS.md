@@ -19,18 +19,27 @@ Architecture Document** (rule set) for a task.
 
 ## 1. Research questions
 
-### RQ1 — Architectural conformance
+### RQ1 — Layered dependency-direction conformance
 
-How does AFCI affect **architectural conformance** compared with:
+How does AFCI affect **layered dependency-direction conformance** compared with:
 
 - **task-only prompting** (C1);
 - **token-matched generic guidance** (C2);
 - **persistent repository instruction files** (C3)?
 
-Confirmatory. The **single primary outcome is the architecture-violation rate per
-applicable rule/opportunity**; the comparison C4 vs {C1, C2, C3} on that rate is
-the primary contrast family (see
-[`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md)). The **C4-vs-C3**
+Confirmatory. The **single primary outcome is the dependency-direction violation
+rate per applicable frozen opportunity**; the comparison C4 vs {C1, C2, C3} on
+that rate is the primary contrast family (see
+[`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md)).
+
+> **Scope of RQ1 is narrowed (suite-classification decision D).** RQ1's
+> confirmatory endpoint measures **dependency direction only**. Contract
+> ownership, port/interface placement, observability completeness, duplicated
+> logic and general business-logic placement are **not** directly measured by it;
+> they are pre-registered **secondary / manual** evidence under **CON-ACB**
+> (§2). RQ1 must not be reported as broad or general architectural conformance.
+
+The **C4-vs-C3**
 comparison **allows superiority, equivalence, or inferiority** — the study
 measures the relationship rather than assuming C4 wins, and **C3 ≈ C4 is a valid,
 publishable outcome** ([`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md)
@@ -83,31 +92,77 @@ Each construct below states (a) what it means, (b) how it is **directly**
 operationalized in v2, and (c) what must **not** be used as a proxy for it. IDs
 (`CON-*`) are referenced by [`CLAIMS_CONSTRUCTS_METRICS.csv`](CLAIMS_CONSTRUCTS_METRICS.csv).
 
-### CON-AC — Architectural conformance
+### CON-AC — Layered dependency-direction conformance (directly measured)
 
-**Definition.** The degree to which a produced patch obeys the repository's
-declared, machine-checkable architecture rules for the task (the approved MAD
-rule set): permitted vs prohibited inter-module/inter-layer dependencies, the
-correct layer placement of new code, and use of the sanctioned interfaces and
-import boundaries.
+**Definition (narrowed by suite-classification decision D).** The degree to which
+a produced patch keeps every internal module import inside the layer boundaries
+permitted by the frozen dependency matrix: dependencies point inward, and a
+forbidden inter-layer edge is a violation however it is expressed (path alias,
+relative path, or barrel / re-export). This is **one facet** of architecture — the
+dependency-direction rule family **AR-DEP-001…006** in
+[`ARCHITECTURE_RULE_CATALOG.yml`](ARCHITECTURE_RULE_CATALOG.yml) — and nothing
+wider.
 
-**Direct operationalization.** The **single primary metric** is the **rate of
-architecture-rule violations per applicable rule/opportunity** in the patch (raw
-counts retained). The **proportion of applicable rules satisfied** is a
-**descriptive transformation** of the same measurement, reported for
-interpretability but **not** an independent confirmatory endpoint
+**Direct operationalization.** The **single primary metric** is the
+**dependency-direction violation rate per applicable frozen opportunity** (E1;
+raw violation counts retained separately as a descriptive diagnostic). The
+numerator is `opportunity_accounting.violated_opportunity_count` and the
+denominator/offset is `opportunity_accounting.applicable_opportunity_count`, both
+from the blind architecture finding
+([`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §2.1). The
+**proportion of applicable opportunities satisfied** is a **descriptive
+transformation** of the same measurement, reported for interpretability but
+**not** an independent confirmatory endpoint
 ([`CRITICAL_DESIGN_DECISIONS.md`](CRITICAL_DESIGN_DECISIONS.md) D8). Both are
-produced by a validated conformance oracle (e.g. nx `enforce-module-boundaries`
-plus per-rule checks, with manual adjudication for rules that cannot be
-automated; see [`ORACLE_VALIDATION_REQUIREMENTS.md`](ORACLE_VALIDATION_REQUIREMENTS.md)).
+produced by the alias/barrel/re-export-aware dependency-direction checker
+(`experiments/v2/oracle/`), which is valid for this purpose only after guard
+precision/recall validation (gate **G6**;
+[`ORACLE_VALIDATION_REQUIREMENTS.md`](ORACLE_VALIDATION_REQUIREMENTS.md)).
 Rule applicability, severity, and evaluator are recorded per task in
-[`TASK_RULE_MATRIX.csv`](TASK_RULE_MATRIX.csv).
+[`TASK_RULE_MATRIX.csv`](TASK_RULE_MATRIX.csv); which candidate tasks contribute
+to E1 at all is recorded publicly in
+[`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv)
+(`e1_analysis_eligibility`).
+
+**E1 does NOT directly measure** — each of these is CON-ACB evidence, not CON-AC:
+
+- **contract ownership** (where externally visible shapes are declared);
+- **port / interface placement** (dependency inversion seams);
+- **observability completeness** (required log fields on every handler/error path);
+- **duplicated logic** across layers;
+- **general business-logic placement**.
 
 **Must NOT be proxied by.** Code churn / `Delta-CodeLOC` (a change-footprint
 metric, not conformance), `layer_jaccard`-style self-comparisons, or `npm run
 ci` passing (a verification outcome, not conformance). The v1 guard was
-non-functional and blind; a v2 conformance metric is valid only after guard
-precision/recall validation (gate **G6**).
+non-functional and blind. `applicable_rule_count` must **not** be used as the E1
+offset, and a stub or unimplemented rule must **not** enlarge the E1 denominator.
+
+### CON-ACB — Broader architectural conformance (NOT directly measured by E1)
+
+**Definition.** Conformance to the declared architecture rules that E1 does not
+evaluate: contract ownership (`AR-CONTRACT-001`), observability completeness
+(`AR-OBSERV-001`), and coding/change discipline including duplicated logic and
+business-logic placement (`AR-CODE-001`), plus port/interface placement as a
+design-seam judgement.
+
+**Status in v2.** These dimensions remain **pre-registered secondary / manual
+evidence**. They are **not** part of the confirmatory family, they carry no
+endpoint id, and they are **excluded from E1's numerator and denominator** — each
+is an unimplemented oracle stub that reports `UNIMPLEMENTED` and can never report
+PASS. **Confirmatory use of manual evidence is permitted only** under the stated
+reliability gate: two blinded raters and **Cohen's κ ≥ 0.70** where applicable
+([`MANUAL_RATING_PROTOCOL.md`](MANUAL_RATING_PROTOCOL.md),
+[`ORACLE_VALIDATION_REQUIREMENTS.md`](ORACLE_VALIDATION_REQUIREMENTS.md)); below
+that bar the dimension is reported **descriptively only**.
+
+**Must NOT be proxied by.** E1. A result on the dependency-direction rate is
+evidence about dependency direction and nothing else. **The paper must not
+describe E1 as broad or general architectural conformance**, and no CON-ACB
+dimension may be reported as "directly measured" (final-claim audit, gate
+**G8**). Implementing `AR-CONTRACT-001` or `AR-CODE-001` as automated checkers is
+**future work intended to broaden E1** — not a route to readmit an
+already-excluded task post hoc (`TD-B33`).
 
 ### CON-TC — Task completeness
 
@@ -189,14 +244,22 @@ architects intend it: correct layering, absence of architectural erosion, and
 maintainability over time. This is a **broad latent construct**.
 
 **Status in v2.** CON-AI is **NOT** claimed to be directly measured by any single
-v2 metric. Rule conformance (CON-AC) is a *necessary, measurable proxy* for one
-facet of integrity, but conformance to a finite rule set is **not identical** to
-integrity, and neither CI pass nor `Delta-CodeLOC` is evidence of it. Any
-statement about "architectural integrity" must be phrased as **conformance to the
-declared architecture rules** unless *converging, pre-registered* evidence across
-constructs is shown to support the broader claim. Marking a broad-integrity claim
-"supported" is prohibited before data collection and, even after, requires
-explicit justification (final-claim audit, gate **G8**).
+v2 metric. Dependency-direction conformance (CON-AC) is a *necessary, measurable
+proxy* for **one facet** of integrity, but conformance to one rule family is **not
+identical** to integrity, and neither CI pass nor `Delta-CodeLOC` is evidence of
+it. The evidence ladder is deliberately three-tiered and must not be collapsed:
+
+| Tier | What it is | v2 status |
+|---|---|---|
+| **CON-AC** | layered dependency-direction conformance | **directly measured** (E1, confirmatory) |
+| **CON-ACB** | broader architectural conformance (contract ownership, port/interface placement, observability completeness, duplicated logic, business-logic placement) | **secondary / manual**, κ ≥ 0.70 gated |
+| **CON-AI** | architectural integrity (latent) | **not directly measured at all** |
+
+Any statement about "architectural integrity" must be phrased as **conformance to
+the declared dependency-direction rules** unless *converging, pre-registered*
+evidence across constructs is shown to support the broader claim. Marking a
+broad-integrity claim "supported" is prohibited before data collection and, even
+after, requires explicit justification (final-claim audit, gate **G8**).
 
 ---
 
@@ -206,8 +269,18 @@ explicit justification (final-claim audit, gate **G8**).
   × model × repetition), producing one patch and one set of records. **Task** is
   a blocking / random effect; **condition** and **reset** are fixed effects; see
   [`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md).
+- **Analysis eligibility is a per-task structural property, not a run outcome.** A
+  task whose frozen `applicable_opportunity_count` is **0** carries no
+  dependency-direction exposure and is therefore **structurally ineligible for
+  E1** — it is **not** coded as zero violations, and it is **not** a failed run.
+  Eligibility per candidate is recorded in
+  [`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv) and
+  `experiments/v2/tasks/public/TASK_INDEX.csv` as `scored`, `functional-only`, or
+  `inactive-reserve`. An E1-ineligible task still contributes to hidden functional
+  acceptance (E3), the cost measures, and pre-registered exploratory analyses.
 - **Direct over indirect:** RQ1–RQ3 endpoints are direct conformance/completeness
   outcomes; change-footprint, tokens, time, and iterations are **secondary**.
+  CON-ACB dimensions are secondary/manual and never substitute for E1.
 - **Confirmatory vs exploratory** is fixed **before** data collection: RQ1
   (C4 vs C1/C2/C3 on a direct conformance outcome) and RQ2 (condition × reset
   interaction) and RQ3-completeness are confirmatory; RQ3-cost and RQ4 are

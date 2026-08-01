@@ -8,7 +8,10 @@ specific checkpoint values are deliberately NOT finalized here** — they are
 open decision `TD-B01`, resolved during pilot task design (see §5 and
 [`OPEN_DECISIONS.md`](OPEN_DECISIONS.md)).
 
-Companion table: [`RESET_CHECKPOINT_MATRIX.csv`](RESET_CHECKPOINT_MATRIX.csv).
+Companion table: [`RESET_CHECKPOINT_MATRIX.csv`](RESET_CHECKPOINT_MATRIX.csv)
+(two template rows plus one **withheld** row per candidate — eight in total).
+**Reset governance is in §6: reset is an experimental factor crossed with tasks,
+not a task-content category requiring one special primary task.**
 Session-freshness is enforced by the frozen session guard in
 [`context_audit.py`](../../experiments/v2/harness/context_audit.py)
 (`check_session_flags`, `LaunchCommand`). Per-condition reset context is defined
@@ -155,7 +158,46 @@ placed in contracts", or any trigger that presupposes the correct architecture.
 Every task **intended for reset analysis must have a frozen checkpoint**. Each
 candidate task row in
 [`RESET_CHECKPOINT_MATRIX.csv`](RESET_CHECKPOINT_MATRIX.csv) carries these fields
-with `status = TODO` and no finalized value (`TD-B01`).
+with `status = TODO` and no finalized value (`TD-B01`). All eight candidates
+(`PT01`–`PT06`, `PR01`, `PR02`) now have a per-task row whose predicate contents
+are **withheld** (`withheld_pending_TD-B01`) so the matrix is complete without
+publishing a private checkpoint predicate.
+
+---
+
+## 6. Reset governance: reset is a FACTOR, not a task category
+
+This section exists to prevent a specific bookkeeping error: keeping a task in the
+confirmatory analysis because it is the task that "covers reset".
+
+- **Reset is an experimental factor crossed with tasks.** It is a fixed effect in
+  the design — every task in the analysed set is run in **both** reset and
+  non-reset states, and the RQ2 estimate is the **condition × reset interaction**
+  ([`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §4).
+- **Reset is NOT a task-content category** and does not require one special
+  primary task. There is no "reset task", no "reset-continuation coverage" slot to
+  fill, and no candidate uniquely supplies reset evidence. A task's subject matter
+  (read endpoint, list endpoint, write endpoint, logging, calculation, error
+  handling) is orthogonal to whether a reset is applied to it.
+- **Multiple retained primary tasks already have condition-neutral checkpoints.**
+  Both approved predicate shapes — task-specific functional/worktree progress
+  (preferred) and the first visible validation attempt after at least one edit
+  (fallback) — are available to every retained primary candidate, because neither
+  presupposes a canonical layer, file path, or correct architecture (D7). Reset
+  coverage therefore does not depend on any single task being retained.
+- **`PT06` must not remain in E1 merely to satisfy a bookkeeping reset label.**
+  `PT06` is classified `functional-only`
+  ([`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv)): it is a valid
+  primary functional candidate, structurally excluded from E1, and it still
+  contributes to hidden functional acceptance (E3), cost measures, and
+  pre-registered exploratory analyses — **including reset-state comparisons on
+  those outcomes**. Retaining it in E1 to preserve a reset label would put a
+  zero-exposure task into a rate model, which
+  [`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §2.1 forbids.
+- **No public artifact claims that any one candidate provides reset-continuation
+  coverage.** Per-candidate coverage mapping is withheld as a private design
+  detail; where reset is discussed publicly it is described as a factor, never as
+  a task-content category.
 
 Related gates: checkpoint validity feeds **G2** (benchmark discrimination) and
 **G1** (oracle validity). See [`PILOT_GATE_MATRIX.csv`](PILOT_GATE_MATRIX.csv).
