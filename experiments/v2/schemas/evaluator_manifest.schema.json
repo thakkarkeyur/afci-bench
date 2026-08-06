@@ -14,6 +14,7 @@
     "status",
     "invalidation",
     "applicable_rule_ids",
+    "e1_analysis_eligibility",
     "opportunities",
     "areas",
     "legitimate_alternatives",
@@ -49,6 +50,11 @@
       }
     },
     "applicable_rule_ids": { "type": "array", "items": { "type": "string" } },
+    "e1_analysis_eligibility": {
+      "type": "string",
+      "enum": ["scored", "functional-only", "inactive-reserve"],
+      "description": "REQUIRED. Analysis eligibility for the primary endpoint E1, binding this manifest to the approved public task index (experiments/v2/tasks/public/TASK_INDEX.csv and docs/v2/PILOT_PUBLIC_TASK_MATRIX.csv). The engine enforces five FAIL-CLOSED gates: (1) for a real task_id the value must equal the approved public value (ELIGIBILITY_TASK_INDEX_MISMATCH); (2) a 'functional-only' task must contribute NO E1 opportunity denominator (ELIGIBILITY_DENOMINATOR_CONFLICT); (3) an 'inactive-reserve' task enters no E1 run or aggregation unless a separately recorded pre-run activation decision changes its eligibility (ELIGIBILITY_RESERVE_INACTIVE) - it MAY retain draft opportunities, which stay ANALYTICALLY INACTIVE and are reported as a zero denominator rather than deleted; (4) a 'scored' task must have a valid non-zero frozen opportunity denominator before it can enter E1 (ELIGIBILITY_SCORED_WITHOUT_OPPORTUNITIES); (5) any mismatch is an explicit lifecycle/manifest-integrity failure, never a silent rescore or a silent zero. Private per-task manifests predate this field and MUST be migrated before they can be scored."
+    },
     "opportunities": {
       "type": "array",
       "uniqueItems": true,

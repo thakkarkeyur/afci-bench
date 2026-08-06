@@ -24,6 +24,7 @@ import { assertEvaluatorMountOutsideWorktree } from './mountPolicy';
 import { ImportGraphResolver, listSourceFiles, parseCompilerOptions } from './resolver';
 import { matchAnyGlob } from './glob';
 import {
+  ApprovedEligibilityIndex,
   ArchitectureFinding,
   CheckerContext,
   Finding,
@@ -32,7 +33,12 @@ import {
 } from './types';
 import { descriptorFor, isKnownRule } from './checkers/registry';
 import { DEP_FAMILY_RULE_IDS, runDependencyDirection } from './checkers/dependencyDirection';
-import { assertManifestScorable, assertOpportunityRulesValid } from './manifestIntegrity';
+import {
+  EligibilityOptions,
+  assertEligibilityConsistent,
+  assertManifestScorable,
+  assertOpportunityRulesValid,
+} from './manifestIntegrity';
 
 export const EVALUATOR_NAME = 'afci-arch-oracle';
 export const EVALUATOR_VERSION = '0.1.0-dev';
@@ -47,6 +53,18 @@ export interface EvaluateOptions {
   snapshotId?: string;
   /** Caller-supplied timestamp (kept out of the engine for determinism). */
   scoredAt?: string | null;
+  /**
+   * Approved public eligibility per task id, read from
+   * experiments/v2/tasks/public/TASK_INDEX.csv. REQUIRED whenever the manifest
+   * binds a real task id — the engine fails closed rather than trusting a
+   * manifest's self-declared classification.
+   */
+  approvedEligibility?: ApprovedEligibilityIndex;
+  /**
+   * A separately recorded pre-run decision activating an inactive reserve. Absent
+   * by default, so an `inactive-reserve` manifest is refused.
+   */
+  reserveActivation?: EligibilityOptions['reserveActivation'];
 }
 
 function sha256File(file: string): string | null {
@@ -85,6 +103,17 @@ export function evaluateSnapshot(opts: EvaluateOptions): ArchitectureFinding {
   //     and scored by the active checker (P1-2). This is what stops an
   //     opportunity from being silently dropped from accounting below.
   assertOpportunityRulesValid(manifest);
+
+  // 4c. Analysis-eligibility gates (suite-classification decision D). The
+  //     manifest's declared e1_analysis_eligibility must agree with the approved
+  //     public task index and with its own frozen opportunity set, so a
+  //     functional-only task can never acquire an E1 denominator, an inactive
+  //     reserve can never enter an E1 run without a recorded activation, and a
+  //     scored task can never be entered with zero exposure.
+  assertEligibilityConsistent(manifest, {
+    approvedEligibility: opts.approvedEligibility,
+    reserveActivation: opts.reserveActivation,
+  });
 
   // 5. Frozen layer map + snapshot alias config (fail closed if malformed/missing).
   const layerMap = new LayerMap(manifest.dependency_policy.layers);

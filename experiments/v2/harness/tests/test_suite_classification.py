@@ -54,7 +54,14 @@ RESET_MATRIX_PATH = DOCS_V2 / "RESET_CHECKPOINT_MATRIX.csv"
 DECISIONS_CSV = DOCS_V2 / "OPEN_DECISIONS.csv"
 DECISIONS_MD = DOCS_V2 / "OPEN_DECISIONS.md"
 DOCS_V2_README = DOCS_V2 / "README.md"
-FINDING_SCHEMA = REPO / "experiments" / "v2" / "schemas" / "architecture_finding.schema.json"
+SCHEMAS_DIR = REPO / "experiments" / "v2" / "schemas"
+FINDING_SCHEMA = SCHEMAS_DIR / "architecture_finding.schema.json"
+ORACLE_RESULT_SCHEMA = SCHEMAS_DIR / "oracle_result.schema.json"
+MANIFEST_SCHEMA = SCHEMAS_DIR / "evaluator_manifest.schema.json"
+MANIFEST_TEMPLATE = REPO / "experiments" / "v2" / "manifests" / "evaluator_manifest.template.json"
+ORACLE_TRACE_PATH = DOCS_V2 / "ORACLE_TRACEABILITY.csv"
+ORACLE_REQS_PATH = DOCS_V2 / "ORACLE_VALIDATION_REQUIREMENTS.md"
+ORACLE_SRC = REPO / "experiments" / "v2" / "oracle" / "src"
 
 SCORED = ["PT01", "PT02", "PT03", "PT04", "PT05"]
 FUNCTIONAL_ONLY = ["PT06"]
@@ -110,9 +117,12 @@ def _text(path: Path) -> str:
 def _flat(path: Path) -> str:
     """Lower-cased text with markdown emphasis and newlines collapsed.
 
-    Lets an assertion match a phrase that the source hard-wraps or emphasises.
+    Lets an assertion match a phrase that the source hard-wraps, emphasises, or
+    carries inside a markdown blockquote.
     """
-    return re.sub(r"\s+", " ", _text(path).replace("*", "").replace("`", "")).lower()
+    raw = _text(path).replace("*", "").replace("`", "")
+    raw = re.sub(r"(?m)^\s*>\s?", "", raw)  # markdown blockquote markers
+    return re.sub(r"\s+", " ", raw).lower()
 
 
 # --------------------------------------------------------------------------- #
@@ -751,3 +761,355 @@ def test_the_authoring_report_records_that_nothing_was_frozen():
     assert "no task body or task content hash changed" in report
     assert "manifest, endpoint or protocol was frozen" in report
     assert "the oracle was not implemented or changed" in report
+
+
+# --------------------------------------------------------------------------- #
+# 13. Repository-wide contradiction sweep
+#
+# The presence tests above prove the approved wording EXISTS. These prove no
+# equivalent CONTRADICTORY wording exists anywhere else, which is the failure mode
+# that let the superseded per-rule endpoint survive in the oracle specs. Each
+# sweep is deliberately *contextual*, not a blanket ban: a hit is tolerated only
+# when its surrounding window explicitly marks it as prohibited, superseded,
+# legacy, historical (v1), or as CON-ACB secondary/manual evidence. Legitimate
+# discussion of broader architecture stays legal; asserting it as E1 does not.
+# --------------------------------------------------------------------------- #
+
+#: Markers that make a superseded phrase legitimate in context - it is being
+#: forbidden, labelled legacy/descriptive, or narrated as the pre-decision state.
+EXCULPATING = (
+    "not ",
+    "never",
+    "no longer",
+    "cannot",
+    "n't",
+    "superseded",
+    "pre-narrowing",
+    "pre-decision",
+    "legacy",
+    "prohibit",
+    "inadmissible",
+    "forbid",
+    "instead of",
+    "rather than",
+    "descriptive",
+    "v1 ",
+    "had all retained",
+)
+
+#: Markers that make a broad-architecture statement legitimate: it is explicitly
+#: filed as the non-directly-measured construct or as secondary/manual evidence.
+ACB_LABELLED = (
+    "con-acb",
+    "con-ai",
+    "secondary",
+    "manual",
+    "exploratory",
+    "not directly measured",
+    "does not directly measure",
+    "kappa",
+    "broader",
+)
+
+
+def _swept_files():
+    """Public protocol, traceability and schema artifacts.
+
+    Deliberately broad: every docs/v2 protocol document and matrix, every public
+    schema, the public task artifacts, the manifest template and the root README.
+    Nothing is allowlisted out - a contradictory sentence in ANY of these fails.
+    """
+    return (
+        sorted(DOCS_V2.glob("*.md"))
+        + sorted(DOCS_V2.glob("*.csv"))
+        + sorted(SCHEMAS_DIR.glob("*.json"))
+        + [
+            REPORT_PATH,
+            INDEX_PATH,
+            MANIFEST_TEMPLATE,
+            REPO / "experiments" / "v2" / "manifests" / "README.md",
+            REPO / "README.md",
+        ]
+    )
+
+
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s")
+
+
+def _clause(flat: str, start: int, end: int, cap: int = 200) -> str:
+    """The sentence containing [start:end), clipped to +/- ``cap`` characters.
+
+    Scoping to the sentence matters: an early version used a wide symmetric
+    window, and an unrelated "not" elsewhere in the paragraph silently exculpated
+    a genuine violation (a mutation test caught it). A prohibition or legacy label
+    has to sit in the SAME statement as the phrase it disowns. The character cap
+    stops a long, period-free CSV cell from becoming one permissive "sentence".
+    """
+    left = 0
+    for m in _SENTENCE_END.finditer(flat, 0, start):
+        left = m.end()
+    m = _SENTENCE_END.search(flat, end)
+    right = m.start() if m else len(flat)
+    return flat[max(left, start - cap) : min(right, end + cap)]
+
+
+def _offences(pattern: str, allow=EXCULPATING):
+    """Every occurrence of ``pattern`` whose own sentence carries no exculpating marker."""
+    bad = []
+    for path in _swept_files():
+        flat = _flat(path)
+        for match in re.finditer(re.escape(pattern), flat):
+            clause = _clause(flat, match.start(), match.end())
+            if not any(marker in clause for marker in allow):
+                bad.append(f"{path.name}: {clause[:200]!r}")
+    return bad
+
+
+def test_no_artifact_defines_e1_with_a_per_rule_denominator():
+    for phrase in (
+        "architecture-violation rate per applicable rule",
+        "violation rate per applicable rule",
+        "per applicable rule/opportunity",
+        "rate per applicable rule",
+    ):
+        offences = _offences(phrase)
+        assert not offences, (
+            f"superseded per-rule E1 denominator {phrase!r} stated without a "
+            f"prohibition/legacy marker: {offences}"
+        )
+
+
+def test_no_artifact_names_e1_the_architecture_rule_violation_rate():
+    for phrase in (
+        "architecture-violation rate",
+        "architecture-rule violation rate",
+        "architecture-rule violation count/rate",
+    ):
+        offences = _offences(phrase)
+        assert not offences, (
+            f"superseded endpoint name {phrase!r} used as a current definition: {offences}"
+        )
+
+
+def test_applicable_rule_count_is_never_presented_as_the_e1_offset():
+    """`applicable_rule_count` may only appear alongside its prohibition."""
+    offences = _offences("applicable_rule_count")
+    assert not offences, f"applicable_rule_count presented without its prohibition: {offences}"
+
+
+def test_applicable_rule_satisfaction_is_not_offered_as_an_endpoint():
+    offences = _offences("applicable-rule satisfaction")
+    assert not offences, f"superseded E2 name used as a current definition: {offences}"
+
+
+def test_manual_adjudication_is_never_pooled_into_e1():
+    """No CON-AC traceability row may be produced by manual adjudication."""
+    for row in _rows(ORACLE_TRACE_PATH):
+        if row["construct"] != "CON-AC":
+            continue
+        assert "manual" not in row["evaluator_type"].lower(), (
+            f"{row['oracle_id']}: a CON-AC (E1/E2) quantity must be automated only, "
+            f"got evaluator_type={row['evaluator_type']!r}"
+        )
+        assert "manual adjudication" not in row["evaluator_ref"].lower(), (
+            f"{row['oracle_id']}: manual adjudication must not feed a CON-AC quantity"
+        )
+    # and the prose must say so somewhere authoritative
+    assert "manual assessments never enter e1" in _flat(ORACLE_REQS_PATH)
+
+
+def test_no_ineligible_task_is_mapped_into_e1():
+    """PT06 and the inactive reserves must not be traced to CON-AC or to CL01."""
+    ineligible = set(FUNCTIONAL_ONLY) | set(INACTIVE_RESERVE)
+    for row in _rows(ORACLE_TRACE_PATH):
+        listed = {t.strip() for t in re.split(r"[;,]", row["task_id"])}
+        overlap = listed & ineligible
+        if not overlap:
+            continue
+        assert row["construct"] != "CON-AC", (
+            f"{row['oracle_id']} traces E1-ineligible task(s) {sorted(overlap)} to CON-AC"
+        )
+        claims = {c.strip() for c in row["claim_ids"].split(";")}
+        assert "CL01" not in claims, (
+            f"{row['oracle_id']} maps E1-ineligible task(s) {sorted(overlap)} to the "
+            f"confirmatory E1 claim CL01"
+        )
+
+
+def test_no_traceability_row_maps_all_eight_tasks_to_the_e1_claim():
+    for row in _rows(ORACLE_TRACE_PATH):
+        listed = {t.strip() for t in re.split(r"[;,]", row["task_id"])}
+        if set(ALL_TASKS) <= listed:
+            claims = {c.strip() for c in row["claim_ids"].split(";")}
+            assert "CL01" not in claims, (
+                f"{row['oracle_id']} maps all eight candidates to CL01; E1 admits the "
+                f"scored subset only"
+            )
+
+
+def test_a_stub_or_manual_construct_is_never_traced_to_e1():
+    """CON-ACB rows exist and are kept out of the confirmatory E1 claim family."""
+    e1_claims = {"CL01", "CL02", "CL03", "CL04"}
+    acb_rows = [r for r in _rows(ORACLE_TRACE_PATH) if r["construct"] == "CON-ACB"]
+    assert acb_rows, "the broader dimensions must have their own CON-ACB traceability row"
+    for row in acb_rows:
+        claims = {c.strip() for c in row["claim_ids"].split(";")}
+        assert not (claims & e1_claims), (
+            f"{row['oracle_id']} (CON-ACB) is mapped into the E1 claim family {sorted(claims & e1_claims)}"
+        )
+        notes = row["notes"].lower()
+        assert "never pooled into the e1" in notes or "not directly measured by e1" in notes
+
+
+def test_oracle_result_is_not_sufficient_for_e1_without_opportunity_accounting():
+    schema = json.loads(_text(ORACLE_RESULT_SCHEMA))
+    assert "opportunity_accounting" in schema["required"], (
+        "oracle_result must REQUIRE the opportunity accounting E1 is computed from"
+    )
+    for field in ("applicable_rule_count", "satisfaction_proportion", "rules_satisfied_count"):
+        assert field not in schema["required"], (
+            f"{field} is a legacy descriptive diagnostic and must not be structurally privileged"
+        )
+    blob = (schema["title"] + " " + schema["description"]).lower()
+    assert "dependency-direction" in blob
+    # The phrase may appear only inside its own prohibition, never as a self-description.
+    for match in re.finditer(r"direct architectural-conformance measurement", blob):
+        window = blob[max(0, match.start() - 120) : match.end()]
+        assert any(m in window for m in EXCULPATING), (
+            f"oracle_result advertises itself as a broad architectural-conformance "
+            f"measurement: ...{window[-110:]!r}"
+        )
+
+
+def test_confirmatory_research_questions_name_dependency_direction():
+    """Neither RQ1 nor RQ2 may state its confirmatory scope as broad conformance."""
+    rq = _text(RQ_PATH)
+    for heading in ("### RQ1", "### RQ2"):
+        start = rq.index(heading)
+        end = rq.index("### RQ", start + len(heading))
+        body = re.sub(r"\s+", " ", rq[start:end].replace("*", "").replace("`", "")).lower()
+        assert "dependency-direction" in body or "dependency direction" in body, (
+            f"{heading} must state its confirmatory scope as dependency-direction conformance"
+        )
+        for match in re.finditer(r"architectural conformance", body):
+            window = body[max(0, match.start() - 260) : match.end() + 260]
+            assert any(m in window for m in ACB_LABELLED), (
+                f"{heading} uses broad 'architectural conformance' without a "
+                f"CON-ACB/secondary/exploratory label: ...{window[170:350]!r}"
+            )
+
+
+def test_the_endpoint_defining_artifacts_all_carry_the_narrowed_name():
+    """Every artifact that DEFINES the endpoint states the same narrowed name."""
+    expected = "dependency-direction violation rate per applicable frozen opportunity"
+    for path in (SAP_PATH, RQ_PATH, ORACLE_REQS_PATH, DOCS_V2_README, REPO / "README.md"):
+        assert expected in _flat(path), f"{path.name} must carry E1's narrowed name"
+    g3 = _gate("G3")
+    assert expected in g3, "gate G3 must state the narrowed primary endpoint"
+    assert "dependency-direction conformance only" in g3
+    assert "violated_opportunity_count" in g3 and "applicable_opportunity_count" in g3
+    assert "scored tasks only" in g3 or "scored tasks ONLY".lower() in g3
+    assert "pt06" in g3 and "must not enter" in g3
+    trace = {r["oracle_id"]: r for r in _rows(ORACLE_TRACE_PATH)}
+    assert expected in trace["OT-AC-VIOL"]["measured_quantity"].lower()
+
+
+def test_broad_architecture_discussion_stays_legal_when_properly_labelled():
+    """Positive control: the sweep must not be an indiscriminate keyword ban.
+
+    CON-ACB is *about* broader architectural conformance, so the protocol has to be
+    able to discuss it. This asserts that discussion is present and survives the
+    same contextual rule the sweeps above apply.
+    """
+    rq = _flat(RQ_PATH)
+    assert re.search(
+        r"con-acb\s*[-–—]\s*broader architectural conformance \(not directly measured by e1\)",
+        rq,
+    ), "the CON-ACB construct heading must survive as legitimate broad-architecture discussion"
+    for match in re.finditer(r"broader architectural conformance", rq):
+        window = rq[max(0, match.start() - 260) : match.end() + 260]
+        assert any(m in window for m in ACB_LABELLED), (
+            "the CON-ACB discussion must itself stay labelled"
+        )
+
+
+# --------------------------------------------------------------------------- #
+# 14. Manifest eligibility is schema-bound and fail-closed
+# --------------------------------------------------------------------------- #
+def test_evaluator_manifest_requires_analysis_eligibility():
+    schema = json.loads(_text(MANIFEST_SCHEMA))
+    assert "e1_analysis_eligibility" in schema["required"], (
+        "the manifest must be bound to the public classification, not merely annotated"
+    )
+    prop = schema["properties"]["e1_analysis_eligibility"]
+    assert set(prop["enum"]) == ELIGIBILITY_VOCABULARY, prop["enum"]
+
+
+def test_manifest_eligibility_vocabulary_matches_the_public_index():
+    """One vocabulary across the public index, the public matrix and the manifest."""
+    schema = json.loads(_text(MANIFEST_SCHEMA))
+    manifest_values = set(schema["properties"]["e1_analysis_eligibility"]["enum"])
+    oracle_values = set(
+        json.loads(_text(ORACLE_RESULT_SCHEMA))["properties"]["e1_analysis_eligibility"]["enum"]
+    )
+    index_values = {INDEX_BY_ID[t]["e1_analysis_eligibility"] for t in ALL_TASKS}
+    assert manifest_values == oracle_values == ELIGIBILITY_VOCABULARY
+    assert index_values <= manifest_values
+
+
+def test_the_five_eligibility_gates_are_documented_and_implemented():
+    """Each gate must exist in the spec AND as a fail-closed reason in the engine."""
+    reasons = _text(ORACLE_SRC / "errors.ts")
+    integrity = _text(ORACLE_SRC / "manifestIntegrity.ts")
+    spec = _flat(ORACLE_REQS_PATH)
+    for code in (
+        "ELIGIBILITY_MISSING",
+        "ELIGIBILITY_TASK_INDEX_MISMATCH",
+        "ELIGIBILITY_DENOMINATOR_CONFLICT",
+        "ELIGIBILITY_RESERVE_INACTIVE",
+        "ELIGIBILITY_SCORED_WITHOUT_OPPORTUNITIES",
+    ):
+        assert code in reasons, f"{code} must be a declared oracle fail reason"
+        assert code.lower() in spec, f"{code} must be documented in the oracle spec"
+    for code in (
+        "ELIGIBILITY_TASK_INDEX_MISMATCH",
+        "ELIGIBILITY_DENOMINATOR_CONFLICT",
+        "ELIGIBILITY_RESERVE_INACTIVE",
+        "ELIGIBILITY_SCORED_WITHOUT_OPPORTUNITIES",
+    ):
+        assert code in integrity, f"{code} must be thrown by the integrity gates"
+    # the loader is the gate for a pre-migration manifest
+    assert "ELIGIBILITY_MISSING" in _text(ORACLE_SRC / "manifest.ts")
+
+
+def test_the_committed_manifest_template_carries_a_consistent_eligibility():
+    tpl = json.loads(_text(MANIFEST_TEMPLATE))
+    assert tpl["e1_analysis_eligibility"] in ELIGIBILITY_VOCABULARY
+    # gate 4: a 'scored' manifest may not have an empty opportunity set
+    if tpl["e1_analysis_eligibility"] == "scored":
+        assert tpl["opportunities"], "a scored manifest needs a non-zero denominator"
+    else:
+        assert tpl["opportunities"] == [], "the template publishes no opportunities"
+
+
+def test_private_manifest_migration_is_recorded_and_no_private_repo_was_touched():
+    for flat in (_flat(ORACLE_REQS_PATH), _flat(DECISIONS_MD)):
+        assert "migrat" in flat, "the private-manifest migration must be recorded publicly"
+    reqs = _flat(ORACLE_REQS_PATH)
+    assert "private manifests require migration" in reqs
+    assert "were not touched here" in reqs or "were not accessed" in reqs
+    decisions = _flat(DECISIONS_MD)
+    assert "not accessed or modified" in decisions, (
+        "the decision log must record that the private evaluator repository was untouched"
+    )
+    assert "fail closed" in decisions
+
+
+def test_an_inactive_reserve_keeps_draft_opportunities_but_stays_inactive():
+    """Reserves are made analytically inactive, not stripped of draft content."""
+    integrity = _text(ORACLE_SRC / "manifestIntegrity.ts")
+    assert "analytically inactive" in integrity
+    assert "NOT required to be deleted" in integrity or "not required to be deleted" in integrity
+    reqs = _flat(ORACLE_REQS_PATH)
+    assert "may retain draft opportunities" in reqs
+    assert "analytically inactive" in reqs

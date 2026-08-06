@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://afci-bench/experiments/v2/schemas/oracle_result.schema.json",
-  "title": "AFCI-Bench v2 Architecture-Conformance Oracle Result",
-  "description": "Direct architectural-conformance measurement for one run: per-rule outcomes plus the violation count/rate and applicable-rule satisfaction proportion (CON-AC). Assembled from the raw, blind architecture_finding.json; the optional raw_violation_count and *_opportunity_count fields record raw violations and frozen-opportunity accounting SEPARATELY (the applicable-opportunity denominator is frozen per task manifest, not derived from touched files), and applicable-rule satisfaction is a descriptive transformation (D8), not an independent endpoint. condition/model are appended only after blind scoring. Development scaffolding for study v2; no paid run produced it. Conformance is NOT churn/Delta-CodeLOC and NOT visible-CI pass.",
+  "title": "AFCI-Bench v2 Dependency-Direction Conformance Oracle Result",
+  "description": "Dependency-direction conformance measurement for one run, assembled from the raw, blind architecture_finding.json. AUTHORITATIVE FOR E1: the opportunity_accounting object is REQUIRED and is the only admissible source of the primary endpoint - E1 is the dependency-direction violation rate per applicable frozen opportunity, numerator opportunity_accounting.violated_opportunity_count over offset opportunity_accounting.applicable_opportunity_count (frozen per task manifest, NOT derived from touched files). applicable_rule_count, rules_satisfied_count and satisfaction_proportion are LEGACY DESCRIPTIVE DIAGNOSTICS ONLY: applicable_rule_count is NOT an admissible E1 denominator or offset, and rule satisfaction is NOT a direct architectural-conformance measurement and is never E1 or E2. A result carrying only rule-based accounting is NOT sufficient for E1. Stub/unimplemented rules report UNIMPLEMENTED, never PASS, and contribute nothing to either side of the rate; manual adjudication is CON-ACB secondary evidence and is never pooled in. raw_violation_count is a separate descriptive series. condition/model are appended only after blind scoring. Development scaffolding for study v2; no paid run produced it. Conformance here is dependency direction only - NOT broad architectural conformance, NOT churn/Delta-CodeLOC, NOT visible-CI pass.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -12,10 +12,9 @@
     "condition",
     "evaluator",
     "evaluated_rules",
-    "applicable_rule_count",
-    "violation_count",
-    "rules_satisfied_count",
-    "satisfaction_proportion",
+    "opportunity_accounting",
+    "e1_analysis_eligibility",
+    "raw_violation_count",
     "verdict"
   ],
   "properties": {
@@ -61,10 +60,44 @@
         }
       }
     },
-    "applicable_rule_count": { "type": "integer" },
-    "violation_count": { "type": "integer" },
-    "rules_satisfied_count": { "type": "integer" },
-    "satisfaction_proportion": { "type": ["number", "null"] },
+    "opportunity_accounting": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "AUTHORITATIVE E1 ACCOUNTING (mirrors architecture_finding.schema.json). E1 numerator = violated_opportunity_count; E1 denominator/offset = applicable_opportunity_count, frozen per task manifest and NOT derived from how many files or layers the change touched. Only implemented dependency-direction opportunities (AR-DEP-001..006) enter these counts: stub/unimplemented rules and manual adjudication contribute nothing. applicable_opportunity_count = 0 means the task is STRUCTURALLY INELIGIBLE for E1 - it is excluded from the E1 model as out-of-exposure and must NOT be entered as zero violations, a zero numerator, or a failed run.",
+      "required": [
+        "applicable_opportunity_count",
+        "fixed_opportunity_count",
+        "violated_opportunity_count",
+        "absent_opportunity_count"
+      ],
+      "properties": {
+        "applicable_opportunity_count": { "type": "integer", "minimum": 0 },
+        "fixed_opportunity_count": { "type": "integer", "minimum": 0 },
+        "violated_opportunity_count": { "type": "integer", "minimum": 0 },
+        "absent_opportunity_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "e1_analysis_eligibility": {
+      "type": "string",
+      "enum": ["scored", "functional-only", "inactive-reserve"],
+      "description": "Analysis eligibility carried through from the frozen evaluator manifest, which must itself match the approved public task index. 'scored' may enter E1 (and requires a non-zero applicable_opportunity_count); 'functional-only' is structurally excluded from E1 but still contributes to E3, cost and exploratory analyses; 'inactive-reserve' enters no endpoint unless a separately recorded pre-run activation decision changes it."
+    },
+    "applicable_rule_count": {
+      "type": "integer",
+      "description": "LEGACY DESCRIPTIVE DIAGNOSTIC ONLY. Count of rules put in force for the task. This is NOT an admissible E1 denominator or offset (STATISTICAL_ANALYSIS_PLAN.md 2.1): it counts rules registered, not exposure. Never use it to compute a rate."
+    },
+    "violation_count": {
+      "type": "integer",
+      "description": "Descriptive. Violations attributed to evaluated rules. The E1 numerator is opportunity_accounting.violated_opportunity_count, not this field."
+    },
+    "rules_satisfied_count": {
+      "type": "integer",
+      "description": "LEGACY DESCRIPTIVE DIAGNOSTIC ONLY. Not an endpoint input."
+    },
+    "satisfaction_proportion": {
+      "type": ["number", "null"],
+      "description": "LEGACY DESCRIPTIVE DIAGNOSTIC ONLY - the per-rule satisfaction proportion. It is NOT a direct architectural-conformance measurement and is never E1 or E2. The descriptive transformation of E1 (E2) is the applicable-FROZEN-OPPORTUNITY satisfaction proportion, derived from opportunity_accounting."
+    },
     "verdict": {
       "type": "string",
       "enum": ["CONFORMANT", "VIOLATIONS", "PENDING", "FAIL_CLOSED"],
@@ -72,15 +105,9 @@
     },
     "raw_violation_count": {
       "type": "integer",
-      "description": "Optional. Count of all violations detected in the whole snapshot (recorded separately from frozen-opportunity accounting)."
+      "minimum": 0,
+      "description": "Required. Count of all forbidden edges detected in the whole snapshot, including edges that link to no frozen opportunity. A SEPARATE descriptive diagnostic series: reported alongside E1 and never substituted into it. raw_violation_count > violated_opportunity_count is the signature of a violation introduced outside a frozen importer path (TD-B27)."
     },
-    "applicable_opportunity_count": {
-      "type": "integer",
-      "description": "Optional. Frozen applicable-opportunity denominator from the evaluator manifest; NOT derived from files/layers touched."
-    },
-    "fixed_opportunity_count": { "type": "integer" },
-    "violated_opportunity_count": { "type": "integer" },
-    "absent_opportunity_count": { "type": "integer" },
     "manifest_id": { "type": "string" },
     "manifest_version": { "type": "string" },
     "evaluator_version": { "type": "string" },

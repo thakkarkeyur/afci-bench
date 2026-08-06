@@ -11,6 +11,8 @@ import * as fs from 'fs';
 import { OracleError } from './errors';
 import {
   DependencyPolicy,
+  E1_ANALYSIS_ELIGIBILITIES,
+  E1AnalysisEligibility,
   EvaluatorManifest,
   LayerDef,
   Opportunity,
@@ -163,6 +165,21 @@ export function loadManifest(manifestPath: string): EvaluatorManifest {
     throw new OracleError('MANIFEST_MALFORMED', 'applicable_rule_ids must be a string array');
   }
 
+  // Analysis eligibility is REQUIRED and must be one of the three approved values.
+  // A manifest authored before the suite-classification decision carries no such
+  // field; it fails closed here rather than being defaulted, so a pre-migration
+  // private manifest can never be scored under an assumed eligibility.
+  if (
+    typeof raw.e1_analysis_eligibility !== 'string' ||
+    !E1_ANALYSIS_ELIGIBILITIES.includes(raw.e1_analysis_eligibility as E1AnalysisEligibility)
+  ) {
+    throw new OracleError(
+      'ELIGIBILITY_MISSING',
+      `manifest 'e1_analysis_eligibility' is required and must be one of ${E1_ANALYSIS_ELIGIBILITIES.join('/')} (manifests authored before the suite-classification decision must be migrated)`,
+      String(raw.e1_analysis_eligibility),
+    );
+  }
+
   const dependency_policy = parseDependencyPolicy(raw.dependency_policy);
   const opportunities = parseOpportunities(raw.opportunities);
 
@@ -181,6 +198,7 @@ export function loadManifest(manifestPath: string): EvaluatorManifest {
         typeof raw.invalidation.superseded_by === 'string' ? raw.invalidation.superseded_by : null,
     },
     applicable_rule_ids: raw.applicable_rule_ids,
+    e1_analysis_eligibility: raw.e1_analysis_eligibility as E1AnalysisEligibility,
     opportunities,
     areas: isObject(raw.areas)
       ? {

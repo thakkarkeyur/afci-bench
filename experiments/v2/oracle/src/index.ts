@@ -12,7 +12,13 @@ export { OracleError } from './errors';
 export type { OracleFailReason } from './errors';
 export { assertEvaluatorMountOutsideWorktree, isInside } from './mountPolicy';
 export { loadManifest, VALID_MANIFEST_STATUSES } from './manifest';
-export { assertManifestScorable, assertOpportunityRulesValid } from './manifestIntegrity';
+export {
+  assertManifestScorable,
+  assertOpportunityRulesValid,
+  assertEligibilityConsistent,
+  e1DenominatorOpportunities,
+} from './manifestIntegrity';
+export type { EligibilityOptions } from './manifestIntegrity';
 export { LayerMap } from './layers';
 export { ImportGraphResolver, listSourceFiles, parseCompilerOptions, extractSpecifiers } from './resolver';
 export { RULE_REGISTRY, isKnownRule, descriptorFor } from './checkers/registry';

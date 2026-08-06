@@ -13,13 +13,19 @@
  *                                AR-DEP-001 umbrella), and actually scored by the
  *                                active checker — otherwise the opportunity would
  *                                be dropped from accounting instead of counted.
+ *  - assertEligibilityConsistent (suite-classification decision D): the manifest's
+ *                                declared `e1_analysis_eligibility` must agree with
+ *                                the approved public task index AND with its own
+ *                                frozen opportunity set, so the public
+ *                                classification cannot silently diverge from what
+ *                                the evaluator actually scores.
  *
  * The invalidation REASON is deliberately never placed in a thrown error: it is
  * evaluator-authored text that must not leak toward the coding model.
  */
 
 import { OracleError } from './errors';
-import { EvaluatorManifest } from './types';
+import { ApprovedEligibilityIndex, EvaluatorManifest } from './types';
 import { descriptorFor, isKnownRule } from './checkers/registry';
 import { DEP_FAMILY_RULE_IDS } from './checkers/dependencyDirection';
 
@@ -96,5 +102,126 @@ export function assertOpportunityRulesValid(manifest: EvaluatorManifest): void {
         `opportunity '${opp.opportunity_id}' references rule '${ruleId}', which is not in applicable_rule_ids and is not covered by the ${UMBRELLA} umbrella`,
       );
     }
+  }
+}
+
+/**
+ * Count the frozen opportunities that would actually enter the E1 denominator:
+ * dependency-direction family only, and in force for this manifest. Shared with
+ * the engine so the eligibility gates reason about the same number the accounting
+ * block reports.
+ */
+export function e1DenominatorOpportunities(manifest: EvaluatorManifest) {
+  const applicable = new Set(manifest.applicable_rule_ids);
+  return manifest.opportunities.filter(
+    (o) =>
+      DEP_FAMILY_RULE_IDS.includes(o.rule_id) &&
+      (applicable.has(o.rule_id) || applicable.has(UMBRELLA)),
+  );
+}
+
+export interface EligibilityOptions {
+  /**
+   * Approved public eligibility per task id, read from the public task index
+   * (experiments/v2/tasks/public/TASK_INDEX.csv). REQUIRED whenever the manifest
+   * binds a real task id: without it the manifest's self-declared eligibility
+   * could not be checked against the approved classification, so the engine fails
+   * closed rather than trusting the manifest.
+   */
+  approvedEligibility?: ApprovedEligibilityIndex;
+  /**
+   * A separately recorded pre-run decision that activates an inactive reserve.
+   * Absent by default: an `inactive-reserve` manifest is refused. Supplying it
+   * records that the activation was decided BEFORE the run, outside the manifest.
+   */
+  reserveActivation?: { task_id: string; activated_eligibility: 'scored' | 'functional-only'; decision_ref: string };
+}
+
+/**
+ * Suite-classification decision D — the five fail-closed eligibility gates.
+ *
+ * These stop the public classification and the private evaluator manifests from
+ * silently diverging. They are deliberately enforced in the ENGINE (not merely in
+ * JSON Schema) because the schema cannot express a cross-artifact agreement, nor
+ * the relationship between eligibility and the frozen opportunity set.
+ */
+export function assertEligibilityConsistent(
+  manifest: EvaluatorManifest,
+  opts: EligibilityOptions = {},
+): void {
+  const eligibility = manifest.e1_analysis_eligibility;
+  const taskId = manifest.task_id;
+  const denominator = e1DenominatorOpportunities(manifest).length;
+
+  // Gate 1 — the manifest value must match the approved public task index.
+  // Applies to any manifest that binds a REAL task id. Templates (task_id null)
+  // carry no task classification to agree with and are never scorable anyway
+  // (assertManifestScorable requires status === 'frozen').
+  if (taskId !== null) {
+    const approved = opts.approvedEligibility;
+    if (!approved) {
+      throw new OracleError(
+        'ELIGIBILITY_TASK_INDEX_MISMATCH',
+        `manifest binds task '${taskId}' but no approved public eligibility index was supplied; the declared eligibility cannot be verified and the manifest must not be scored`,
+        eligibility,
+      );
+    }
+    const expected = approved[taskId];
+    if (expected === undefined) {
+      throw new OracleError(
+        'ELIGIBILITY_TASK_INDEX_MISMATCH',
+        `task '${taskId}' does not appear in the approved public task index; an unapproved task must not be scored`,
+        eligibility,
+      );
+    }
+    if (expected !== eligibility) {
+      throw new OracleError(
+        'ELIGIBILITY_TASK_INDEX_MISMATCH',
+        `manifest declares e1_analysis_eligibility '${eligibility}' for task '${taskId}' but the approved public task index records '${expected}'`,
+        `${eligibility} != ${expected}`,
+      );
+    }
+  }
+
+  // Gate 3 — an inactive reserve enters no E1 run or aggregation unless a
+  // separately recorded pre-run activation decision changes its eligibility.
+  // Draft opportunities are NOT required to be deleted: while the reserve is
+  // inactive nothing about it is ever scored, so those opportunities are
+  // analytically inactive by construction.
+  let effective = eligibility;
+  if (eligibility === 'inactive-reserve') {
+    const act = opts.reserveActivation;
+    const activatesThisTask =
+      !!act && taskId !== null && act.task_id === taskId && !!act.decision_ref;
+    if (!activatesThisTask) {
+      throw new OracleError(
+        'ELIGIBILITY_RESERVE_INACTIVE',
+        `manifest is classified 'inactive-reserve' and must not enter an E1 run or aggregation; any draft opportunities it carries remain analytically inactive until a separately recorded pre-run activation decision changes its eligibility`,
+        taskId ?? 'no-task-id',
+      );
+    }
+    // Activated: the remaining gates apply to the eligibility the recorded
+    // decision confers, never to the stale 'inactive-reserve' label.
+    effective = act!.activated_eligibility;
+  }
+
+  // Gate 2 — a functional-only task contributes NO E1 opportunity denominator.
+  if (effective === 'functional-only' && denominator > 0) {
+    throw new OracleError(
+      'ELIGIBILITY_DENOMINATOR_CONFLICT',
+      `manifest is classified 'functional-only' (structurally excluded from E1) but carries ${denominator} dependency-direction opportunit${denominator === 1 ? 'y' : 'ies'}, which would enter the E1 denominator`,
+      `denominator=${denominator}`,
+    );
+  }
+
+  // Gate 4 — a scored task must have a valid NON-ZERO frozen denominator before
+  // it can enter E1. A zero-exposure 'scored' manifest is a classification error,
+  // not a zero-violation observation.
+  if (effective === 'scored' && denominator === 0) {
+    throw new OracleError(
+      'ELIGIBILITY_SCORED_WITHOUT_OPPORTUNITIES',
+      `manifest is classified 'scored' but has no applicable frozen dependency-direction opportunity, so it has no E1 exposure; a zero denominator must never be entered as zero violations`,
+      'denominator=0',
+    );
   }
 }

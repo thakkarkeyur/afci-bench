@@ -16,6 +16,11 @@ export type OracleFailReason =
   | 'MANIFEST_INVALIDATED' // manifest is marked invalidated and must not be scored for evidence
   | 'DUPLICATE_OPPORTUNITY_ID' // two frozen opportunities share an opportunity_id
   | 'INVALID_OPPORTUNITY_RULE' // an opportunity references an unknown / non-applicable / non-scoring rule id
+  | 'ELIGIBILITY_MISSING' // e1_analysis_eligibility is absent or not one of the three allowed values
+  | 'ELIGIBILITY_TASK_INDEX_MISMATCH' // manifest eligibility disagrees with the approved public task index
+  | 'ELIGIBILITY_DENOMINATOR_CONFLICT' // a functional-only task carries an E1 opportunity denominator
+  | 'ELIGIBILITY_RESERVE_INACTIVE' // an inactive reserve was submitted for an E1 run/aggregation without a recorded activation
+  | 'ELIGIBILITY_SCORED_WITHOUT_OPPORTUNITIES' // a scored task has no valid non-zero frozen opportunity denominator
   | 'UNKNOWN_RULE_ID' // an applicable rule id is not registered
   | 'MISSING_EVALUATOR_FILE' // a referenced evaluator/alias file does not exist
   | 'MALFORMED_ALIAS_CONFIG' // the snapshot tsconfig cannot be parsed

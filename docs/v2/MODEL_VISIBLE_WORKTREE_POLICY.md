@@ -38,9 +38,9 @@ state the dependency rules directly.
 [`CONDITIONS.md`](CONDITIONS.md) §3 lists a "MAD file" among C1's **prohibited
 files**, so a repository-resident copy of that same content contradicted the C1
 definition. A C1 model doing exactly the repository reconnaissance D3 invites
-could read the rule set, which would flatten the primary C4-vs-C1 contrast on
-architecture-violation rate. **No result collected on such a worktree would be
-interpretable.**
+could read the rule set, which would flatten the primary C4-vs-C1 contrast on the
+**dependency-direction violation rate per applicable frozen opportunity** (E1).
+**No result collected on such a worktree would be interpretable.**
 
 ## 2. Definitions
 

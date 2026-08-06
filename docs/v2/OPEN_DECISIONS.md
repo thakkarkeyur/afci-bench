@@ -238,6 +238,32 @@ were **opened** (`TD-B23`–`TD-B33`) and **none of the 33 blocking decisions is
 closed**; gates **G1**–**G8** remain **not passed** and the protocol remains
 **pre-freeze**.
 
+**Oracle specifications aligned with the narrowed endpoint; private manifests now
+require migration.** A follow-up public change propagated decision D into the
+measurement-specification layer that the first commit missed:
+[`ORACLE_VALIDATION_REQUIREMENTS.md`](ORACLE_VALIDATION_REQUIREMENTS.md) §6,
+[`ORACLE_TRACEABILITY.csv`](ORACLE_TRACEABILITY.csv), gate **G3** in
+[`PILOT_GATE_MATRIX.csv`](PILOT_GATE_MATRIX.csv), `oracle_result.schema.json` and
+RQ2 in [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) had all retained the
+pre-narrowing "architecture-violation rate per applicable rule" framing. They now
+state the narrowed endpoint and its pinned accounting; `oracle_result.json` makes
+`opportunity_accounting` **required** and demotes `applicable_rule_count` /
+`satisfaction_proportion` to explicitly descriptive diagnostics, so a result
+carrying only rule-based accounting is no longer sufficient for E1.
+`evaluator_manifest.schema.json` gains a **required** `e1_analysis_eligibility`
+field with five fail-closed engine gates binding each manifest to the approved
+public task index.
+
+> **The per-task manifests in the private evaluator repository were NOT accessed
+> or modified and do not carry the new field.** They **fail closed**
+> (`ELIGIBILITY_MISSING`) until migrated, so none can be scored under an assumed
+> eligibility. This migration — and the reconciliation of each manifest's declared
+> eligibility against the public index — is part of the private manifest
+> re-authoring already tracked by **`TD-B05`**/**`TD-B14`** and must complete
+> before any package is approved or frozen. **No blocker was closed**, no task body
+> or hash changed, nothing was frozen, and no benchmark or model execution
+> occurred.
+
 ---
 
 ## Non-blocking decisions (TD-N01 – TD-N06)

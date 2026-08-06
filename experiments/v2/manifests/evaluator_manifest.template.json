@@ -7,6 +7,7 @@
   "status": "template",
   "invalidation": { "invalidated": false, "reason": null, "superseded_by": null },
   "applicable_rule_ids": ["AR-DEP-001"],
+  "e1_analysis_eligibility": "functional-only",
   "opportunities": [],
   "areas": { "required": [], "optional": [], "prohibited": [] },
   "legitimate_alternatives": [],

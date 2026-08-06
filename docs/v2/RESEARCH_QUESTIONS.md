@@ -49,11 +49,23 @@ the governance/auditability process, and an honest equivalence finding.
 ### RQ2 — Reset robustness
 
 Does **controlled mid-task context interruption** (a *reset*, defined in
-[`RESET_PROTOCOL.md`](RESET_PROTOCOL.md)) degrade architectural conformance and
-task completeness, and does AFCI **attenuate** that degradation?
+[`RESET_PROTOCOL.md`](RESET_PROTOCOL.md)) degrade **layered dependency-direction
+conformance** and task completeness, and does AFCI **attenuate** that
+degradation?
 
 Confirmatory for the **condition × reset interaction** on a direct outcome;
 the reset main effect is reported alongside it.
+
+> **Scope of RQ2 is narrowed (suite-classification decision D).** RQ2's
+> confirmatory endpoint **E4** is the condition × reset interaction on the
+> **dependency-direction violation rate** (E1's response), fitted over the
+> E1-eligible task set only, and on the hidden acceptance-test pass proportion
+> (E3). Like RQ1 it must **not** be reported as broad or general architectural
+> conformance. Reset effects on the broader **CON-ACB** dimensions (contract
+> ownership, port/interface placement, observability completeness, duplicated
+> logic, general business-logic placement) may be observed, but only as clearly
+> labelled **secondary / exploratory** manual evidence (§2, `CL15`), never as part
+> of the confirmatory interaction.
 
 ### RQ3 — Completeness and engineering cost
 

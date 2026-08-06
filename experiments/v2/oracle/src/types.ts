@@ -113,6 +113,21 @@ export interface DependencyPolicy {
   allowed: Record<string, string[]>;
 }
 
+/**
+ * Analysis eligibility for the primary endpoint E1 (suite-classification decision D).
+ * Mirrors the `e1_analysis_eligibility` column of the approved public task index.
+ */
+export type E1AnalysisEligibility = 'scored' | 'functional-only' | 'inactive-reserve';
+
+export const E1_ANALYSIS_ELIGIBILITIES: readonly E1AnalysisEligibility[] = [
+  'scored',
+  'functional-only',
+  'inactive-reserve',
+];
+
+/** Approved public eligibility per task id, used to bind a manifest to the index. */
+export type ApprovedEligibilityIndex = Record<string, E1AnalysisEligibility>;
+
 export interface EvaluatorManifest {
   schema_version: string;
   manifest_id: string;
@@ -122,6 +137,12 @@ export interface EvaluatorManifest {
   status: 'template' | 'draft' | 'review' | 'frozen' | 'deprecated';
   invalidation: { invalidated: boolean; reason: string | null; superseded_by: string | null };
   applicable_rule_ids: string[];
+  /**
+   * REQUIRED. Binds the manifest to the approved public classification. The engine
+   * fails closed on any inconsistency between this value, the approved index, and
+   * the frozen opportunity set (see manifestIntegrity.assertEligibilityConsistent).
+   */
+  e1_analysis_eligibility: E1AnalysisEligibility;
   opportunities: Opportunity[];
   areas: { required: string[]; optional: string[]; prohibited: string[] };
   legitimate_alternatives: Array<{ id: string; ref: string; description?: string | null }>;

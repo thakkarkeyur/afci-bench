@@ -124,6 +124,13 @@ def _run_manifest_example():
 
 
 def _oracle_example():
+    """A well-formed oracle result.
+
+    E1's accounting is the ``opportunity_accounting`` object, so the example
+    carries it. The rule-based fields are retained only as legacy descriptive
+    diagnostics; ``test_rule_only_accounting_is_not_sufficient_for_e1`` proves a
+    result carrying *only* those cannot validate.
+    """
     return {
         "schema_version": "1.0.0",
         "run_id": "example-run-0001",
@@ -132,7 +139,7 @@ def _oracle_example():
         "evaluator": {"name": "nx+afci-guard", "version": "0.0.0-dev", "alias_aware": True},
         "evaluated_rules": [
             {
-                "rule_id": "AR-TODO-01",
+                "rule_id": "AR-DEP-003",
                 "applicability": "applicable",
                 "severity": "blocker",
                 "evaluator_type": "automated",
@@ -141,8 +148,16 @@ def _oracle_example():
                 "evidence_ref": "oracle_result.json",
             }
         ],
-        "applicable_rule_count": 1,
+        "opportunity_accounting": {
+            "applicable_opportunity_count": 2,
+            "fixed_opportunity_count": 2,
+            "violated_opportunity_count": 0,
+            "absent_opportunity_count": 0,
+        },
+        "e1_analysis_eligibility": "scored",
+        "raw_violation_count": 0,
         "violation_count": 0,
+        "applicable_rule_count": 1,
         "rules_satisfied_count": 1,
         "satisfaction_proportion": 1.0,
         "verdict": "CONFORMANT",
@@ -254,3 +269,83 @@ def test_bad_enum_and_extra_property_are_rejected():
         inst["totally_unexpected_key"] = 1  # additionalProperties: false
         errors = ca.validate_against_schema(inst, schema)
         assert errors, f"{name}: bad enum + extra property should fail validation"
+
+
+# --------------------------------------------------------------------------- #
+# E1 accounting is authoritative in oracle_result (suite-classification decision D)
+# --------------------------------------------------------------------------- #
+def test_oracle_result_requires_the_opportunity_accounting_block():
+    """The pinned E1 fields must be REQUIRED, not optional."""
+    schema = _load("oracle_result.schema.json")
+    assert "opportunity_accounting" in schema["required"], (
+        "opportunity_accounting carries E1's numerator and offset and must be required"
+    )
+    inner = schema["properties"]["opportunity_accounting"]
+    for field in ("applicable_opportunity_count", "violated_opportunity_count"):
+        assert field in inner["required"], f"{field} must be required inside opportunity_accounting"
+    assert inner.get("additionalProperties") is False
+
+
+def test_rule_only_accounting_is_not_sufficient_for_e1():
+    """A result carrying ONLY the legacy rule-based accounting must not validate.
+
+    This is the regression that keeps the superseded per-rule E1 accounting from
+    being certified as a complete oracle result.
+    """
+    schema = _load("oracle_result.schema.json")
+    inst = _oracle_example()
+    inst.pop("opportunity_accounting")
+    errors = ca.validate_against_schema(inst, schema)
+    assert errors, (
+        "an oracle result with applicable_rule_count/satisfaction_proportion but no "
+        "opportunity_accounting must be rejected: it cannot supply E1"
+    )
+
+
+def test_applicable_rule_count_is_not_required_and_is_labelled_descriptive():
+    """The inadmissible offset must never be structurally privileged."""
+    schema = _load("oracle_result.schema.json")
+    for field in ("applicable_rule_count", "satisfaction_proportion", "rules_satisfied_count"):
+        assert field not in schema["required"], (
+            f"{field} is a legacy descriptive diagnostic and must not be required"
+        )
+        desc = schema["properties"][field]["description"].lower()
+        assert "descriptive" in desc, f"{field} must be documented as descriptive"
+    rule_count_desc = schema["properties"]["applicable_rule_count"]["description"].lower()
+    assert "not an admissible e1 denominator or offset" in rule_count_desc
+    sat_desc = schema["properties"]["satisfaction_proportion"]["description"].lower()
+    assert "not a direct architectural-conformance measurement" in sat_desc
+    assert "never e1 or e2" in sat_desc
+
+
+def test_oracle_result_carries_fail_closed_eligibility():
+    schema = _load("oracle_result.schema.json")
+    assert "e1_analysis_eligibility" in schema["required"]
+    assert set(schema["properties"]["e1_analysis_eligibility"]["enum"]) == {
+        "scored",
+        "functional-only",
+        "inactive-reserve",
+    }
+    inst = _oracle_example()
+    inst["e1_analysis_eligibility"] = "eligible"  # not in the enum
+    assert ca.validate_against_schema(inst, schema), "an invalid eligibility must fail closed"
+
+
+def test_oracle_result_description_does_not_claim_broad_conformance():
+    schema = _load("oracle_result.schema.json")
+    blob = (schema["title"] + " " + schema["description"]).lower()
+    assert "dependency-direction" in blob
+    # The phrase is allowed only inside its own prohibition ("rule satisfaction is
+    # NOT a direct architectural-conformance measurement"), never as a self-description.
+    for idx in range(len(blob)):
+        idx = blob.find("direct architectural-conformance measurement", idx)
+        if idx == -1:
+            break
+        preceding = blob[max(0, idx - 120):idx]
+        assert "not " in preceding or "never" in preceding, (
+            f"the oracle result advertises itself as a broad architectural-conformance "
+            f"measurement: ...{preceding[-110:]!r}"
+        )
+    assert "not an admissible e1 denominator or offset" in blob
+    assert "not sufficient for e1" in blob
+    assert "dependency direction only" in blob

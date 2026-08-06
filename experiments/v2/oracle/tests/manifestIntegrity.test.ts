@@ -9,7 +9,7 @@
  * PENDING.
  */
 
-import { evaluateSnapshot, ArchitectureFinding, OracleError } from '../src';
+import { evaluateSnapshot, ArchitectureFinding, EvaluateOptions, OracleError } from '../src';
 import { baseManifest, cleanup, makeTmpRoot, materializeSnapshot, writeManifest } from './helpers';
 
 function score(caseName: string, manifest: Record<string, unknown>): ArchitectureFinding {
@@ -221,5 +221,226 @@ describe('P1-3 manifest lifecycle enforcement', () => {
   it('a lifecycle failure can never yield CONFORMANT (clean snapshot, non-frozen manifest)', () => {
     // clean_alias is CONFORMANT when frozen; as a draft it must fail closed.
     expectFailClosed('clean_alias', baseManifest({ status: 'draft' }), /MANIFEST_NOT_FROZEN/);
+  });
+});
+
+// --------------------------------------------------------------------------- //
+// Suite-classification decision D — analysis-eligibility gates
+// --------------------------------------------------------------------------- //
+function scoreWith(
+  caseName: string,
+  manifest: Record<string, unknown>,
+  extra: Partial<EvaluateOptions>,
+): ArchitectureFinding {
+  const tmp = makeTmpRoot();
+  try {
+    const snapshotDir = materializeSnapshot(tmp, caseName);
+    const manifestPath = writeManifest(tmp, manifest);
+    return evaluateSnapshot({ snapshotDir, manifestPath, snapshotId: caseName, ...extra });
+  } finally {
+    cleanup(tmp);
+  }
+}
+
+function expectFailClosedWith(
+  caseName: string,
+  manifest: Record<string, unknown>,
+  extra: Partial<EvaluateOptions>,
+  reason: RegExp,
+): OracleError {
+  const tmp = makeTmpRoot();
+  try {
+    const snapshotDir = materializeSnapshot(tmp, caseName);
+    const manifestPath = writeManifest(tmp, manifest);
+    let thrown: unknown;
+    try {
+      evaluateSnapshot({ snapshotDir, manifestPath, snapshotId: caseName, ...extra });
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).toBeInstanceOf(OracleError);
+    expect((thrown as OracleError).reason).toMatch(reason);
+    return thrown as OracleError;
+  } finally {
+    cleanup(tmp);
+  }
+}
+
+/** A frozen dep-family opportunity on the violating_alias fixture's importer. */
+const VIOLATING_OPP = depOpp(
+  'OPP-1',
+  'AR-DEP-003',
+  'libs/core/src/index.ts',
+  'scope:core',
+  ['infra'],
+);
+
+describe('decision D — e1_analysis_eligibility is required and fails closed', () => {
+  it('refuses a pre-migration manifest that carries no eligibility field', () => {
+    const err = expectFailClosed(
+      'clean_alias',
+      baseManifest({ e1_analysis_eligibility: null }),
+      /ELIGIBILITY_MISSING/,
+    );
+    expect(err.message).toMatch(/migrated/);
+  });
+
+  it('refuses an unrecognised eligibility value', () => {
+    expectFailClosed(
+      'clean_alias',
+      baseManifest({ e1_analysis_eligibility: 'eligible' }),
+      /ELIGIBILITY_MISSING/,
+    );
+  });
+
+  it('accepts the three approved values when they agree with the opportunity set', () => {
+    expect(scoreWith('clean_alias', baseManifest({ e1_analysis_eligibility: 'functional-only' }), {}).verdict)
+      .toBe('CONFORMANT');
+    expect(
+      scoreWith(
+        'violating_alias',
+        baseManifest({ opportunities: [VIOLATING_OPP], e1_analysis_eligibility: 'scored' }),
+        {},
+      ).opportunity_accounting.applicable_opportunity_count,
+    ).toBe(1);
+  });
+});
+
+describe('decision D gate 1 — the manifest must match the approved public task index', () => {
+  it('refuses a real task id when no approved index is supplied', () => {
+    expectFailClosed(
+      'clean_alias',
+      baseManifest({ task_id: 'PT06', e1_analysis_eligibility: 'functional-only' }),
+      /ELIGIBILITY_TASK_INDEX_MISMATCH/,
+    );
+  });
+
+  it('refuses a task that is absent from the approved index', () => {
+    expectFailClosedWith(
+      'clean_alias',
+      baseManifest({ task_id: 'PT99', e1_analysis_eligibility: 'functional-only' }),
+      { approvedEligibility: { PT06: 'functional-only' } },
+      /ELIGIBILITY_TASK_INDEX_MISMATCH/,
+    );
+  });
+
+  it('refuses a manifest whose eligibility disagrees with the approved index', () => {
+    // PT06 is functional-only publicly; a manifest claiming `scored` must fail.
+    const err = expectFailClosedWith(
+      'violating_alias',
+      baseManifest({
+        task_id: 'PT06',
+        opportunities: [VIOLATING_OPP],
+        e1_analysis_eligibility: 'scored',
+      }),
+      { approvedEligibility: { PT06: 'functional-only' } },
+      /ELIGIBILITY_TASK_INDEX_MISMATCH/,
+    );
+    expect(err.message).toMatch(/PT06/);
+  });
+
+  it('accepts a manifest that agrees with the approved index', () => {
+    const finding = scoreWith(
+      'violating_alias',
+      baseManifest({ task_id: 'PT01', opportunities: [VIOLATING_OPP], e1_analysis_eligibility: 'scored' }),
+      { approvedEligibility: { PT01: 'scored', PT06: 'functional-only' } },
+    );
+    expect(finding.opportunity_accounting.applicable_opportunity_count).toBe(1);
+    expect(finding.opportunity_accounting.violated_opportunity_count).toBe(1);
+  });
+});
+
+describe('decision D gate 2 — functional-only contributes no E1 denominator', () => {
+  it('refuses a functional-only manifest that carries a dependency-direction opportunity', () => {
+    const err = expectFailClosed(
+      'violating_alias',
+      baseManifest({ opportunities: [VIOLATING_OPP], e1_analysis_eligibility: 'functional-only' }),
+      /ELIGIBILITY_DENOMINATOR_CONFLICT/,
+    );
+    expect(err.message).toMatch(/structurally excluded from E1/);
+  });
+
+  it('accepts a functional-only manifest with an empty opportunity set', () => {
+    const finding = scoreWith('clean_alias', baseManifest({ e1_analysis_eligibility: 'functional-only' }), {});
+    expect(finding.opportunity_accounting.applicable_opportunity_count).toBe(0);
+  });
+});
+
+describe('decision D gate 3 — an inactive reserve enters no E1 run', () => {
+  it('refuses an inactive-reserve manifest even when its opportunity set is empty', () => {
+    expectFailClosed(
+      'clean_alias',
+      baseManifest({ task_id: null, e1_analysis_eligibility: 'inactive-reserve' }),
+      /ELIGIBILITY_RESERVE_INACTIVE/,
+    );
+  });
+
+  it('does NOT require a reserve to delete its draft opportunities — they are simply never scored', () => {
+    // The reserve keeps draft opportunities; the engine still refuses to score it,
+    // so those opportunities are analytically inactive rather than deleted.
+    const reserve = baseManifest({
+      opportunities: [VIOLATING_OPP],
+      e1_analysis_eligibility: 'inactive-reserve',
+    });
+    expect((reserve.opportunities as unknown[]).length).toBe(1);
+    expectFailClosed('violating_alias', reserve, /ELIGIBILITY_RESERVE_INACTIVE/);
+  });
+
+  it('scores a reserve only under a separately recorded pre-run activation decision', () => {
+    const reserve = baseManifest({
+      task_id: 'PR01',
+      opportunities: [VIOLATING_OPP],
+      e1_analysis_eligibility: 'inactive-reserve',
+    });
+    const finding = scoreWith('violating_alias', reserve, {
+      approvedEligibility: { PR01: 'inactive-reserve' },
+      reserveActivation: {
+        task_id: 'PR01',
+        activated_eligibility: 'scored',
+        decision_ref: 'ACTIVATION-2026-08-PR01',
+      },
+    });
+    expect(finding.opportunity_accounting.applicable_opportunity_count).toBe(1);
+  });
+
+  it('ignores an activation decision recorded for a different task', () => {
+    expectFailClosedWith(
+      'violating_alias',
+      baseManifest({
+        task_id: 'PR01',
+        opportunities: [VIOLATING_OPP],
+        e1_analysis_eligibility: 'inactive-reserve',
+      }),
+      {
+        approvedEligibility: { PR01: 'inactive-reserve' },
+        reserveActivation: {
+          task_id: 'PR02',
+          activated_eligibility: 'scored',
+          decision_ref: 'ACTIVATION-2026-08-PR02',
+        },
+      },
+      /ELIGIBILITY_RESERVE_INACTIVE/,
+    );
+  });
+});
+
+describe('decision D gate 4 — a scored task needs a non-zero frozen denominator', () => {
+  it('refuses a scored manifest with no applicable frozen opportunity', () => {
+    const err = expectFailClosed(
+      'clean_alias',
+      baseManifest({ opportunities: [], e1_analysis_eligibility: 'scored' }),
+      /ELIGIBILITY_SCORED_WITHOUT_OPPORTUNITIES/,
+    );
+    expect(err.message).toMatch(/never be entered as zero violations/);
+  });
+
+  it('a zero-exposure scored manifest can never yield CONFORMANT', () => {
+    // clean_alias would otherwise score CONFORMANT with a zero denominator, which
+    // is exactly the zero-violation coding the decision forbids.
+    expectFailClosed(
+      'clean_alias',
+      baseManifest({ opportunities: [], e1_analysis_eligibility: 'scored' }),
+      /ELIGIBILITY_SCORED_WITHOUT_OPPORTUNITIES/,
+    );
   });
 });

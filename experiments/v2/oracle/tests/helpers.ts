@@ -51,6 +51,15 @@ export interface ManifestOverrides {
   status?: string;
   invalidation?: { invalidated: boolean; reason: string | null; superseded_by: string | null };
   answers_populated?: boolean;
+  /**
+   * Analysis eligibility (suite-classification decision D). Defaults are chosen so
+   * the helper always builds a manifest that PASSES the eligibility gates: a
+   * manifest with frozen opportunities defaults to `scored` (it has E1 exposure),
+   * one without defaults to `functional-only` (zero exposure). Eligibility-failure
+   * tests override it explicitly. Pass `null` to omit the field entirely and prove
+   * the loader fails closed on a pre-migration manifest.
+   */
+  e1_analysis_eligibility?: string | null;
 }
 
 export function baseDependencyPolicy(): Record<string, unknown> {
@@ -77,7 +86,12 @@ export function baseDependencyPolicy(): Record<string, unknown> {
 }
 
 export function baseManifest(overrides: ManifestOverrides = {}): Record<string, unknown> {
-  return {
+  const opportunities = overrides.opportunities ?? [];
+  // Eligibility must be consistent with the frozen opportunity set or the engine
+  // fails closed (gates 2 and 4). Default accordingly so existing scoring tests
+  // stay valid without restating it.
+  const defaultEligibility = opportunities.length > 0 ? 'scored' : 'functional-only';
+  const manifest: Record<string, unknown> = {
     schema_version: '1.0.0',
     manifest_id: overrides.manifest_id ?? 'EM-FIXTURE',
     manifest_version: overrides.manifest_version ?? '0.1.0-dev',
@@ -89,7 +103,8 @@ export function baseManifest(overrides: ManifestOverrides = {}): Record<string, 
     status: overrides.status ?? 'frozen',
     invalidation: overrides.invalidation ?? { invalidated: false, reason: null, superseded_by: null },
     applicable_rule_ids: overrides.applicable_rule_ids ?? ['AR-DEP-001'],
-    opportunities: overrides.opportunities ?? [],
+    e1_analysis_eligibility: overrides.e1_analysis_eligibility ?? defaultEligibility,
+    opportunities,
     areas: { required: [], optional: [], prohibited: [] },
     legitimate_alternatives: [],
     manual_rubric_refs: [],
@@ -99,6 +114,12 @@ export function baseManifest(overrides: ManifestOverrides = {}): Record<string, 
     dependency_policy: baseDependencyPolicy(),
     answers_populated: overrides.answers_populated ?? false,
   };
+  // `null` means "omit the field": used to prove the loader fails closed on a
+  // manifest authored before the suite-classification decision.
+  if (overrides.e1_analysis_eligibility === null) {
+    delete manifest.e1_analysis_eligibility;
+  }
+  return manifest;
 }
 
 /** Write a manifest into `<tmpRoot>/<subdir>/manifest.json` and return its path. */
