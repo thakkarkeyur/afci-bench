@@ -123,16 +123,27 @@ rules:
     applicable_opportunity_definition: >-
       Frozen per task manifest as the enumerated set of dependency-direction
       opportunities (recorded as fixed opportunity ids) the task is expected to
-      preserve or repair. This family is the SOLE contributor to endpoint E1: the
-      E1 numerator is opportunity_accounting.violated_opportunity_count and the
-      E1 denominator/offset is
+      preserve or repair. Each opportunity is ONE architectural decision, located
+      by a frozen architectural SCOPE (a dependency-policy layer id) plus the
+      target layers that decision forbids, and evaluated over every source file
+      the frozen layer path globs assign to that scope - never by one exact
+      historical importer path, which is retained as provenance only. A forbidden
+      edge introduced ANYWHERE in the frozen scope (including in a new or moved
+      file) violates that opportunity, and several such edges are still ONE
+      violated opportunity. This family is the SOLE contributor to endpoint E1:
+      the E1 numerator is opportunity_accounting.violated_opportunity_count and
+      the E1 denominator/offset is
       opportunity_accounting.applicable_opportunity_count. applicable_rule_count
       is NOT an admissible E1 offset. The denominator is NOT derived from how many
-      files or layers the change happened to touch. Raw violation count (all
-      forbidden edges detected in the snapshot) is a separate descriptive
-      diagnostic series, and fixed-opportunity status is recorded separately. A
-      task whose applicable_opportunity_count is 0 is structurally ineligible for
-      E1 and is NOT entered as zero violations.
+      files or layers the change happened to touch. This umbrella rule may put the
+      whole matrix in force through applicable_rule_ids, but it may NEVER itself
+      back a scored opportunity: a fixed E1 opportunity must name the implemented
+      leaf clause (AR-DEP-002..006) for its scope/target relationship. Raw
+      violation count (all forbidden edges detected in the snapshot) is a separate
+      descriptive diagnostic series and may exceed the violated-opportunity count;
+      fixed-opportunity status is recorded separately. A task whose
+      applicable_opportunity_count is 0 is structurally ineligible for E1 and is
+      NOT entered as zero violations.
     false_positive_risks: >-
       Third-party imports mistaken for internal; the sanctioned re-export pattern
       (api imports domain types from features, which re-exports core) mis-flagged
@@ -152,8 +163,10 @@ rules:
       disabled in the agent-visible CI (.eslintrc.agent.json / npm run ci:agent),
       so the coding model never sees architecture enforcement. Reference checker:
       experiments/v2/oracle/src/checkers/dependencyDirection.ts. Synthetic unit
-      fixtures pass; labelled-corpus/mutation/inter-rater validation (G1/G6,
-      TD-B12) is not done, so validation_status is partial.
+      fixtures and the M0-M7 scope-attribution mutation corpus
+      (experiments/v2/oracle/tests/scopeAttribution.test.ts) pass;
+      labelled-corpus/mutation/inter-rater validation (G1/G6, TD-B12) is not done,
+      so validation_status is partial.
 
   - rule_id: AR-DEP-002
     title: Contracts import nothing internal

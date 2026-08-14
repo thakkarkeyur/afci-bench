@@ -106,7 +106,7 @@
     "raw_violation_count": {
       "type": "integer",
       "minimum": 0,
-      "description": "Required. Count of all forbidden edges detected in the whole snapshot, including edges that link to no frozen opportunity. A SEPARATE descriptive diagnostic series: reported alongside E1 and never substituted into it. raw_violation_count > violated_opportunity_count is the signature of a violation introduced outside a frozen importer path (TD-B27)."
+      "description": "Required. Count of all forbidden edges detected in the whole snapshot, including edges that link to no frozen opportunity. A SEPARATE descriptive diagnostic series: reported alongside E1 and never substituted into it. raw_violation_count > violated_opportunity_count is EXPECTED and not by itself a defect signal: opportunities are attributed by frozen architectural SCOPE, so several forbidden edges inside one frozen decision collapse to one violated opportunity, and a forbidden edge outside every frozen decision counts here only (TD-B27)."
     },
     "manifest_id": { "type": "string" },
     "manifest_version": { "type": "string" },

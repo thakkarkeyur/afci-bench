@@ -101,7 +101,8 @@
           "violation": { "type": "boolean" },
           "status": {
             "type": "string",
-            "enum": ["VIOLATION", "SATISFIED", "NOT_APPLICABLE", "UNIMPLEMENTED", "ERROR"]
+            "enum": ["VIOLATION", "SATISFIED", "NOT_APPLICABLE", "UNIMPLEMENTED", "ERROR"],
+            "description": "For a finding linked to a frozen dependency opportunity these are SCOPE-level, not file-level: VIOLATION - at least one forbidden edge matching the opportunity's frozen scope and target set exists anywhere in the snapshot (several such edges are still ONE violated opportunity); SATISFIED - the frozen scope exists in the snapshot and contains no such edge anywhere; NOT_APPLICABLE - the frozen architectural scope itself carries no source material, so the decision cannot be evaluated. Deleting or moving the opportunity's historical locator.importer_path is NEVER NOT_APPLICABLE - that field is provenance only. UNIMPLEMENTED is reserved for registered stub rules, which never report PASS."
           },
           "severity": { "type": "string", "enum": ["blocker", "major", "minor", "n/a"] },
           "evaluation_mode": { "type": "string", "enum": ["automated", "manual"] },
@@ -133,7 +134,7 @@
     "opportunity_accounting": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Frozen-opportunity accounting. applicable_opportunity_count is the frozen denominator from the evaluator manifest; it is NOT derived from how many files/layers the change touched. Raw violations (raw_violation_count) are recorded separately from fixed opportunities.",
+      "description": "Frozen-opportunity accounting. applicable_opportunity_count is the frozen denominator from the evaluator manifest; it is NOT derived from how many files/layers the change touched, how many files the model created or edited, or how many imports matched. Opportunities are attributed by FROZEN ARCHITECTURAL SCOPE (a dependency-policy layer), never by an exact historical importer path, so a forbidden edge introduced in a NEW file of that scope violates the same one opportunity; one frozen opportunity contributes at most one violation, so violated_opportunity_count <= applicable_opportunity_count and raw_violation_count may legitimately exceed it. absent_opportunity_count counts only opportunities whose frozen SCOPE carries no source material. applicable = fixed + violated + absent is an enforced invariant. Raw violations (raw_violation_count) are recorded separately from fixed opportunities.",
       "required": [
         "applicable_opportunity_count",
         "fixed_opportunity_count",

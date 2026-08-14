@@ -58,7 +58,7 @@
     "opportunities": {
       "type": "array",
       "uniqueItems": true,
-      "description": "The FROZEN fixed opportunity set. Its size is the applicable-opportunity denominator; it is frozen per task manifest and NOT derived from how many files/layers a model touched. Each opportunity locates where a rule applies; it carries no expected implementation answer. opportunity_id MUST be unique across this array — JSON Schema cannot express object-property uniqueness, so the oracle loader is the authoritative guard and fails closed (DUPLICATE_OPPORTUNITY_ID) on any repeat; uniqueItems here is a weaker backstop that only catches fully-identical entries.",
+      "description": "The FROZEN fixed opportunity set. Its size is the applicable-opportunity denominator; it is frozen per task manifest and NOT derived from how many files/layers a model touched, how many files it created or edited, or how many imports matched. Each opportunity is ONE architectural decision — a frozen `locator.scope` layer plus the target layers that decision forbids — and carries no expected implementation answer. One frozen opportunity contributes AT MOST ONE violation however many forbidden edges it covers. `rule_id` MUST be the implemented LEAF clause (AR-DEP-002..006) for the declared scope -> forbidden-target relationship; the AR-DEP-001 umbrella may put the whole matrix in force via applicable_rule_ids but may NEVER back a scored opportunity (UMBRELLA_OPPORTUNITY_RULE). opportunity_id MUST be unique across this array — JSON Schema cannot express object-property uniqueness, so the oracle loader is the authoritative guard and fails closed (DUPLICATE_OPPORTUNITY_ID) on any repeat; uniqueItems here is a weaker backstop that only catches fully-identical entries.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -69,12 +69,23 @@
           "locator": {
             "type": "object",
             "additionalProperties": false,
-            "description": "Where the rule applies. Structural only (importer path/scope and forbidden target layers); never an implementation answer.",
-            "required": ["importer_path", "scope"],
+            "description": "Where the rule applies. Structural only (architectural scope and forbidden target layers); never an implementation answer. SCORING IS ANCHORED ON THE FROZEN ARCHITECTURAL SCOPE, NOT ON A FILE: the oracle evaluates the opportunity over every source file the frozen dependency_policy.layers path globs assign to `scope`, so a task that legitimately places new implementation code in a different file of the same scope is still scored against the same one opportunity. The engine fails closed (INVALID_OPPORTUNITY_SCOPE / OPPORTUNITY_RULE_SCOPE_MISMATCH / DUPLICATE_OPPORTUNITY_SCOPE / UMBRELLA_OPPORTUNITY_RULE) on a locator it could not score as written.",
+            "required": ["importer_path", "scope", "forbidden_target_layers"],
             "properties": {
-              "importer_path": { "type": ["string", "null"] },
-              "scope": { "type": ["string", "null"] },
-              "forbidden_target_layers": { "type": "array", "items": { "type": "string" } }
+              "importer_path": {
+                "type": ["string", "null"],
+                "description": "PROVENANCE / AUTHORING EVIDENCE ONLY. The file the decision was authored against. It DOES NOT determine scoring: deleting, renaming, or moving it cannot change the opportunity's outcome, and a forbidden edge introduced in any other file of the same frozen scope still violates this opportunity. May be null."
+              },
+              "scope": {
+                "type": ["string", "null"],
+                "description": "SCORING ANCHOR. The `id` of a layer declared in dependency_policy.layers (the layer id, not the catalog `scope:*` tag). Required in practice for a dependency opportunity: the engine refuses (INVALID_OPPORTUNITY_SCOPE) a scope that is null or is not a frozen layer id."
+              },
+              "forbidden_target_layers": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string" },
+                "description": "SCORING ANCHOR. The target layers this ONE frozen architectural decision forbids. Every entry must be a known layer id that the frozen `allowed` matrix genuinely forbids for `scope` (a permitted target could never be violated and would pad the E1 denominator with zero exposure). No two opportunities may claim the same (scope, target) decision, so a single forbidden edge is never counted twice."
+              }
             }
           },
           "description": { "type": ["string", "null"] }

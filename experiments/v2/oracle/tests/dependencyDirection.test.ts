@@ -92,13 +92,20 @@ describe('dependency-direction reference checker', () => {
     expect(v?.target_layer).toBe('infra');
   });
 
-  it('records a deleted opportunity as absent, not as an invented violation', () => {
+  it('records an opportunity whose whole frozen SCOPE is absent as NOT_APPLICABLE', () => {
+    // The deleted_violation snapshot carries contracts/core/infra but no features
+    // layer at all, so the features decision cannot be evaluated. This is the ONLY
+    // route to NOT_APPLICABLE: an absent architectural scope, never an absent file.
     const r = run('deleted_violation', {
       opportunities: [
         {
           opportunity_id: 'OPP-DEL',
-          rule_id: 'AR-DEP-003',
-          locator: { importer_path: 'libs/core/src/removed.ts', scope: 'core', forbidden_target_layers: ['infra'] },
+          rule_id: 'AR-DEP-006',
+          locator: {
+            importer_path: 'libs/features/src/removed.ts',
+            scope: 'features',
+            forbidden_target_layers: ['infra'],
+          },
           description: null,
         },
       ],
@@ -110,6 +117,28 @@ describe('dependency-direction reference checker', () => {
     const opp = r.findings.find((f) => f.opportunity_id === 'OPP-DEL');
     expect(opp?.status).toBe('NOT_APPLICABLE');
     expect(r.verdict).toBe('CONFORMANT');
+  });
+
+  it('does NOT record a live scope as absent just because the historical anchor file is gone', () => {
+    // libs/core/src/removed.ts does not exist, but the core scope does and it
+    // contains no forbidden edge: the decision is SATISFIED, not NOT_APPLICABLE.
+    const r = run('deleted_violation', {
+      opportunities: [
+        {
+          opportunity_id: 'OPP-ANCHOR-GONE',
+          rule_id: 'AR-DEP-003',
+          locator: {
+            importer_path: 'libs/core/src/removed.ts',
+            scope: 'core',
+            forbidden_target_layers: ['infra'],
+          },
+          description: null,
+        },
+      ],
+    });
+    expect(r.opportunity_accounting.fixed_opportunity_count).toBe(1);
+    expect(r.opportunity_accounting.absent_opportunity_count).toBe(0);
+    expect(r.findings.find((f) => f.opportunity_id === 'OPP-ANCHOR-GONE')?.status).toBe('SATISFIED');
   });
 
   it('fails closed on a malformed alias configuration', () => {
@@ -127,8 +156,12 @@ describe('dependency-direction reference checker', () => {
       opportunities: [
         {
           opportunity_id: 'OPP-OK',
-          rule_id: 'AR-DEP-001',
-          locator: { importer_path: 'libs/features/src/index.ts', scope: 'features', forbidden_target_layers: [] },
+          rule_id: 'AR-DEP-006',
+          locator: {
+            importer_path: 'libs/features/src/index.ts',
+            scope: 'features',
+            forbidden_target_layers: ['infra'],
+          },
           description: null,
         },
       ],
@@ -145,7 +178,7 @@ describe('dependency-direction reference checker', () => {
       opportunities: [
         {
           opportunity_id: 'OPP-BAD',
-          rule_id: 'AR-DEP-001',
+          rule_id: 'AR-DEP-003',
           locator: { importer_path: 'libs/core/src/index.ts', scope: 'core', forbidden_target_layers: ['infra'] },
           description: null,
         },
@@ -168,14 +201,14 @@ describe('dependency-direction reference checker', () => {
   });
 
   it('keeps the opportunity-accounting invariant when a violation targets a layer the opportunity does not scope', () => {
-    // core->infra is the real violation; this opportunity scopes 'observability',
+    // core->infra is the real violation; this opportunity scopes core->observability,
     // so it is not linked to that violation. It must still be accounted (as fixed),
     // never dropped, so applicable == violated + fixed + absent.
     const r = run('violating_alias', {
       opportunities: [
         {
           opportunity_id: 'OPP-OBS',
-          rule_id: 'AR-DEP-001',
+          rule_id: 'AR-DEP-003',
           locator: { importer_path: 'libs/core/src/index.ts', scope: 'core', forbidden_target_layers: ['observability'] },
           description: null,
         },

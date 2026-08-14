@@ -22,5 +22,12 @@ export type { EligibilityOptions } from './manifestIntegrity';
 export { LayerMap } from './layers';
 export { ImportGraphResolver, listSourceFiles, parseCompilerOptions, extractSpecifiers } from './resolver';
 export { RULE_REGISTRY, isKnownRule, descriptorFor } from './checkers/registry';
-export { DEP_FAMILY_RULE_IDS, runDependencyDirection } from './checkers/dependencyDirection';
+export {
+  DEP_FAMILY_RULE_IDS,
+  DEP_UMBRELLA_RULE_ID,
+  edgeInOpportunityScope,
+  isForbiddenDirection,
+  leafRuleFor,
+  runDependencyDirection,
+} from './checkers/dependencyDirection';
 export * from './types';

@@ -230,8 +230,12 @@ Provisional; final link/family fixed after the pilot dispersion & ceiling checks
   `task`, since repeated opportunities collapse onto a small number of such
   decisions (`TD-B30`).
 - **Attribution sensitivity for E1:** re-fit with and without runs whose
-  `raw_violation_count` exceeds `violated_opportunity_count`, which is the
-  signature of a forbidden edge that linked to no frozen opportunity (`TD-B27`).
+  `raw_violation_count` exceeds `violated_opportunity_count`. Under scope-based
+  attribution that excess is **expected** — several forbidden edges inside one
+  frozen decision collapse to one violated opportunity — so it is no longer a
+  defect signature; the sensitivity re-fit is retained to check that runs carrying
+  forbidden edges **outside** every frozen decision (dependency-family exposure the
+  frozen opportunity set does not cover) do not drive the estimate (`TD-B27`).
 - With/without random slopes for `condition` over `task`.
 - Exclusion sensitivity: re-fit with and without any `EXCL_PREREGISTERED_RULE`
   drops.

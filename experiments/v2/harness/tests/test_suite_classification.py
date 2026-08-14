@@ -565,7 +565,12 @@ def test_the_leakage_sweep_still_does_not_read_source_content():
 def test_attribution_and_manifest_coverage_blockers_are_recorded():
     rows = _by_id(_rows(DECISIONS_CSV), key="decision_id")
     b27 = rows["TD-B27"]["decision"].lower()
-    assert "exact importer path" in b27 and "new file" in b27
+    # The attribution rule is decided (frozen architectural scope, not an exact
+    # importer path) and mutation-validated for NEW files; what remains blocking is
+    # re-authoring the private opportunity sets and the labelled-corpus validation.
+    assert "frozen architectural scope" in b27 and "new file" in b27
+    assert "locator.importer_path is provenance only" in b27
+    assert "remains blocking" in b27
     b28 = rows["TD-B28"]["decision"].lower()
     assert "ar-dep-001" in b28 and "silently omitted" in b28
 

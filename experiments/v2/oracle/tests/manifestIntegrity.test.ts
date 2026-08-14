@@ -46,7 +46,13 @@ function expectFailClosed(
   }
 }
 
-const depOpp = (id: string, rule: string, importer: string, scope: string, forbidden: string[] = []) => ({
+/**
+ * A frozen dependency opportunity. `scope` is the SCORING ANCHOR (a
+ * dependency-policy layer id) and `forbidden` the target layers the decision
+ * forbids; `importer` is provenance only. See scopeAttribution.test.ts for the
+ * end-to-end attribution corpus.
+ */
+const depOpp = (id: string, rule: string, importer: string, scope: string, forbidden: string[]) => ({
   opportunity_id: id,
   rule_id: rule,
   locator: { importer_path: importer, scope, forbidden_target_layers: forbidden },
@@ -60,7 +66,7 @@ describe('P1-1 duplicate opportunity_id rejection', () => {
   it('accepts a manifest whose opportunity IDs are all unique', () => {
     const r = score('clean_alias', baseManifest({
       opportunities: [
-        depOpp('OPP-1', 'AR-DEP-001', 'libs/features/src/index.ts', 'features'),
+        depOpp('OPP-1', 'AR-DEP-006', 'libs/features/src/index.ts', 'features', ['infra']),
         depOpp('OPP-2', 'AR-DEP-003', 'libs/core/src/index.ts', 'core', ['infra']),
       ],
     }));
@@ -74,8 +80,8 @@ describe('P1-1 duplicate opportunity_id rejection', () => {
   it('fails closed on two identical opportunity IDs (same rule)', () => {
     const err = expectFailClosed('clean_alias', baseManifest({
       opportunities: [
-        depOpp('OPP-DUP', 'AR-DEP-001', 'libs/core/src/index.ts', 'core'),
-        depOpp('OPP-DUP', 'AR-DEP-001', 'libs/features/src/index.ts', 'features'),
+        depOpp('OPP-DUP', 'AR-DEP-003', 'libs/core/src/index.ts', 'core', ['infra']),
+        depOpp('OPP-DUP', 'AR-DEP-006', 'libs/features/src/index.ts', 'features', ['infra']),
       ],
     }), /DUPLICATE_OPPORTUNITY_ID/);
     expect(err.message).toContain('OPP-DUP');
@@ -84,7 +90,7 @@ describe('P1-1 duplicate opportunity_id rejection', () => {
   it('fails closed on duplicate IDs across DIFFERENT rule IDs', () => {
     expectFailClosed('clean_alias', baseManifest({
       opportunities: [
-        depOpp('OPP-X', 'AR-DEP-001', 'libs/core/src/index.ts', 'core'),
+        depOpp('OPP-X', 'AR-DEP-006', 'libs/features/src/index.ts', 'features', ['infra']),
         depOpp('OPP-X', 'AR-DEP-003', 'libs/core/src/index.ts', 'core', ['infra']),
       ],
     }), /DUPLICATE_OPPORTUNITY_ID/);
@@ -96,8 +102,8 @@ describe('P1-1 duplicate opportunity_id rejection', () => {
     // engine refuses to produce any result at all.
     expectFailClosed('violating_alias', baseManifest({
       opportunities: [
-        depOpp('OPP-SAME', 'AR-DEP-001', 'libs/infra/src/index.ts', 'infra'),
-        depOpp('OPP-SAME', 'AR-DEP-001', 'libs/core/src/index.ts', 'core', ['infra']),
+        depOpp('OPP-SAME', 'AR-DEP-004', 'libs/infra/src/index.ts', 'infra', ['core']),
+        depOpp('OPP-SAME', 'AR-DEP-003', 'libs/core/src/index.ts', 'core', ['infra']),
       ],
     }), /DUPLICATE_OPPORTUNITY_ID/);
   });
@@ -106,16 +112,16 @@ describe('P1-1 duplicate opportunity_id rejection', () => {
     // clean snapshot (would be CONFORMANT) with a duplicate id:
     expectFailClosed('clean_alias', baseManifest({
       opportunities: [
-        depOpp('OPP-D', 'AR-DEP-001', 'libs/core/src/index.ts', 'core'),
-        depOpp('OPP-D', 'AR-DEP-001', 'libs/features/src/index.ts', 'features'),
+        depOpp('OPP-D', 'AR-DEP-003', 'libs/core/src/index.ts', 'core', ['infra']),
+        depOpp('OPP-D', 'AR-DEP-006', 'libs/features/src/index.ts', 'features', ['infra']),
       ],
     }), /DUPLICATE_OPPORTUNITY_ID/);
     // + an applicable unimplemented rule (would otherwise force PENDING):
     expectFailClosed('clean_alias', baseManifest({
       applicable_rule_ids: ['AR-DEP-001', 'AR-CONTRACT-001'],
       opportunities: [
-        depOpp('OPP-D', 'AR-DEP-001', 'libs/core/src/index.ts', 'core'),
-        depOpp('OPP-D', 'AR-DEP-001', 'libs/features/src/index.ts', 'features'),
+        depOpp('OPP-D', 'AR-DEP-003', 'libs/core/src/index.ts', 'core', ['infra']),
+        depOpp('OPP-D', 'AR-DEP-006', 'libs/features/src/index.ts', 'features', ['infra']),
       ],
     }), /DUPLICATE_OPPORTUNITY_ID/);
   });
@@ -136,7 +142,7 @@ describe('P1-2 opportunity rule-reference validation', () => {
 
   it('fails closed on an opportunity referencing an UNKNOWN rule id', () => {
     expectFailClosed('clean_alias', baseManifest({
-      opportunities: [depOpp('OPP-U', 'AR-BOGUS-999', 'libs/core/src/index.ts', 'core')],
+      opportunities: [depOpp('OPP-U', 'AR-BOGUS-999', 'libs/core/src/index.ts', 'core', ['infra'])],
     }), /INVALID_OPPORTUNITY_RULE/);
   });
 
@@ -150,7 +156,7 @@ describe('P1-2 opportunity rule-reference validation', () => {
   it('fails closed on a known but UNIMPLEMENTED (stub) rule used as a scored opportunity', () => {
     expectFailClosed('clean_alias', baseManifest({
       applicable_rule_ids: ['AR-DEP-001', 'AR-CONTRACT-001'],
-      opportunities: [depOpp('OPP-STUB', 'AR-CONTRACT-001', 'libs/core/src/index.ts', 'core')],
+      opportunities: [depOpp('OPP-STUB', 'AR-CONTRACT-001', 'libs/core/src/index.ts', 'core', ['infra'])],
     }), /INVALID_OPPORTUNITY_RULE/);
   });
 
@@ -158,7 +164,7 @@ describe('P1-2 opportunity rule-reference validation', () => {
     expectFailClosed('clean_alias', baseManifest({
       opportunities: [
         depOpp('OPP-GOOD', 'AR-DEP-003', 'libs/core/src/index.ts', 'core', ['infra']),
-        depOpp('OPP-BAD', 'AR-BOGUS-999', 'libs/features/src/index.ts', 'features'),
+        depOpp('OPP-BAD', 'AR-BOGUS-999', 'libs/features/src/index.ts', 'features', ['infra']),
       ],
     }), /INVALID_OPPORTUNITY_RULE/);
   });
@@ -169,8 +175,62 @@ describe('P1-2 opportunity rule-reference validation', () => {
     // clean snapshot. It must fail closed instead of silently reporting zero.
     expectFailClosed('clean_alias', baseManifest({
       applicable_rule_ids: ['AR-DEP-001', 'AR-CODE-001'],
-      opportunities: [depOpp('OPP-DROP', 'AR-CODE-001', 'libs/core/src/index.ts', 'core')],
+      opportunities: [depOpp('OPP-DROP', 'AR-CODE-001', 'libs/core/src/index.ts', 'core', ['infra'])],
     }), /INVALID_OPPORTUNITY_RULE/);
+  });
+});
+
+// --------------------------------------------------------------------------- //
+// Umbrella prohibition + locator integrity (scope-based attribution)
+// --------------------------------------------------------------------------- //
+describe('AR-DEP-001 may expand exposure but can never back a scored opportunity', () => {
+  it('fails closed with a DEDICATED reason when the umbrella is used as an opportunity rule', () => {
+    const err = expectFailClosed('clean_alias', baseManifest({
+      opportunities: [depOpp('OPP-UMB', 'AR-DEP-001', 'libs/core/src/index.ts', 'core', ['infra'])],
+    }), /UMBRELLA_OPPORTUNITY_RULE/);
+    expect(err.reason).toBe('UMBRELLA_OPPORTUNITY_RULE');
+    expect(err.message).toContain('AR-DEP-001');
+  });
+
+  it('rejects the umbrella opportunity even in a mixed set of otherwise valid leaves', () => {
+    expectFailClosed('clean_alias', baseManifest({
+      opportunities: [
+        depOpp('OPP-LEAF', 'AR-DEP-003', 'libs/core/src/index.ts', 'core', ['infra']),
+        depOpp('OPP-UMB', 'AR-DEP-001', 'libs/features/src/index.ts', 'features', ['infra']),
+      ],
+    }), /UMBRELLA_OPPORTUNITY_RULE/);
+  });
+
+  it('still accepts the umbrella in applicable_rule_ids alongside leaf opportunities', () => {
+    const r = score('clean_alias', baseManifest({
+      applicable_rule_ids: ['AR-DEP-001'],
+      opportunities: [depOpp('OPP-LEAF', 'AR-DEP-003', 'libs/core/src/index.ts', 'core', ['infra'])],
+    }));
+    expect(r.opportunity_accounting.applicable_opportunity_count).toBe(1);
+    expect(r.rules_evaluated.map((x) => x.rule_id)).toContain('AR-DEP-005');
+  });
+});
+
+describe('locator integrity — the frozen scope must be scoreable', () => {
+  it('fails closed on a scope that is not a frozen dependency-policy layer', () => {
+    expectFailClosed('clean_alias', baseManifest({
+      opportunities: [depOpp('OPP-S', 'AR-DEP-003', 'libs/core/src/index.ts', 'scope:core', ['infra'])],
+    }), /INVALID_OPPORTUNITY_SCOPE/);
+  });
+
+  it('fails closed on a rule that is not the leaf for the declared relationship', () => {
+    expectFailClosed('clean_alias', baseManifest({
+      opportunities: [depOpp('OPP-M', 'AR-DEP-006', 'libs/core/src/index.ts', 'core', ['infra'])],
+    }), /OPPORTUNITY_RULE_SCOPE_MISMATCH/);
+  });
+
+  it('fails closed when two opportunities claim the same frozen decision', () => {
+    expectFailClosed('clean_alias', baseManifest({
+      opportunities: [
+        depOpp('OPP-A', 'AR-DEP-003', 'libs/core/src/index.ts', 'core', ['infra']),
+        depOpp('OPP-B', 'AR-DEP-003', 'libs/core/src/other.ts', 'core', ['infra', 'api']),
+      ],
+    }), /DUPLICATE_OPPORTUNITY_SCOPE/);
   });
 });
 
@@ -266,12 +326,16 @@ function expectFailClosedWith(
   }
 }
 
-/** A frozen dep-family opportunity on the violating_alias fixture's importer. */
+/**
+ * A frozen dep-family opportunity covering the violating_alias fixture's decision
+ * (the core scope must not reach infra). `scope` is the dependency-policy LAYER
+ * ID, not the catalog scope tag.
+ */
 const VIOLATING_OPP = depOpp(
   'OPP-1',
   'AR-DEP-003',
   'libs/core/src/index.ts',
-  'scope:core',
+  'core',
   ['infra'],
 );
 

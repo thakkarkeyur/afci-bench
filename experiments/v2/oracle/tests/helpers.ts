@@ -42,6 +42,22 @@ export function cleanup(tmpRoot: string): void {
   fs.rmSync(tmpRoot, { recursive: true, force: true });
 }
 
+/**
+ * Materialize a snapshot from an in-memory file map (posix relative path ->
+ * contents) into `<tmpRoot>/snapshot`. Used by the mutation corpus, where each
+ * mutant differs from the base snapshot by a file or two and expressing it as
+ * data is clearer (and keeps deliberately-broken code out of the repo tree).
+ */
+export function writeSnapshot(tmpRoot: string, files: Record<string, string>): string {
+  const dest = path.join(tmpRoot, 'snapshot');
+  for (const [rel, contents] of Object.entries(files)) {
+    const abs = path.join(dest, ...rel.split('/'));
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.writeFileSync(abs, contents, 'utf-8');
+  }
+  return dest;
+}
+
 export interface ManifestOverrides {
   manifest_id?: string;
   manifest_version?: string;

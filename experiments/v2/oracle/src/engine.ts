@@ -8,9 +8,15 @@
  * a manifest that is not lifecycle-valid for evidentiary use (status not exactly
  * 'frozen', or invalidated, or missing lifecycle fields), a duplicate
  * opportunity_id, an opportunity referencing an unknown/non-applicable/non-scoring
- * rule, an unknown applicable rule id, a malformed/missing alias config, or an
- * incomplete scoring pass (an opportunity dropped from accounting). Unimplemented
- * rules report UNIMPLEMENTED and never PASS.
+ * rule, an opportunity backed by the AR-DEP-001 umbrella instead of an
+ * implemented leaf clause, an opportunity whose frozen scope is malformed or
+ * whose rule is not the leaf for its scope -> forbidden-target relationship, two
+ * opportunities claiming the same frozen decision, an unknown applicable rule id,
+ * a malformed/missing alias config, or an incomplete scoring pass (an opportunity
+ * dropped from accounting). Unimplemented rules report UNIMPLEMENTED and never PASS.
+ *
+ * Frozen opportunities are attributed by ARCHITECTURAL SCOPE, not by an exact
+ * historical importer path: see checkers/dependencyDirection.ts.
  */
 
 import * as crypto from 'crypto';

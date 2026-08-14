@@ -89,8 +89,24 @@ export interface ArchitectureFinding {
 // engine consumes).
 // ------------------------------------------------------------------------- //
 export interface OpportunityLocator {
+  /**
+   * PROVENANCE ONLY — the file the opportunity was authored against. It is
+   * recorded as authoring evidence and is NEVER the scoring anchor: deleting,
+   * renaming, or moving it cannot change how the opportunity scores.
+   */
   importer_path: string | null;
+  /**
+   * SCORING ANCHOR — the frozen architectural scope, given as the `id` of a layer
+   * in `dependency_policy.layers`. The opportunity is evaluated over every source
+   * file the frozen layer path globs assign to this layer, wherever the model put
+   * its implementation.
+   */
   scope: string | null;
+  /**
+   * SCORING ANCHOR — the target layers this one frozen decision forbids. Required
+   * and non-empty for a dependency opportunity; every entry must be a known layer
+   * that the frozen allowed-dependency matrix actually forbids for `scope`.
+   */
   forbidden_target_layers?: string[];
 }
 

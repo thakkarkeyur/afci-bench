@@ -43,6 +43,54 @@ string matching:
   diff. A change can introduce a violation elsewhere (e.g. by changing an export)
   or by editing an existing import; added-line-only analysis misses these.
 
+### 1a. Opportunity attribution is scope-based, not file-based
+
+A frozen opportunity is an architectural **decision**, not a filename. It is
+located by `locator.scope` — the `id` of a layer in the frozen
+`dependency_policy.layers` — together with the target layers that decision
+forbids, and it is evaluated over **every source file the frozen layer path globs
+assign to that scope**.
+
+- **A violation anywhere in the frozen scope violates the opportunity.** A task
+  may legitimately place its new implementation code in a different file of the
+  same scope, so matching one exact historical importer path would score such a
+  change `SATISFIED` while its forbidden edge sat in `raw_violation_count` only
+  (`TD-B27`). Attribution must not depend on which file the model chose.
+- **`locator.importer_path` is provenance/authoring evidence only.** It records
+  where the decision was authored and **must not** determine scoring; deleting,
+  renaming, or moving it cannot change the outcome.
+- **`NOT_APPLICABLE` requires an absent SCOPE.** It is reported only when the
+  frozen architectural scope itself carries no source material to evaluate — never
+  because the historical anchor file was deleted or moved.
+- **One frozen opportunity is one opportunity.** Several forbidden edges inside a
+  single frozen decision are **one** violated opportunity, so
+  `raw_violation_count` may legitimately exceed
+  `violated_opportunity_count`. The denominator is the frozen manifest
+  opportunity count and never depends on files the model created or edited, on
+  how many imports matched, or on the size of the final patch.
+- **Fail closed on a locator that cannot be scored as written.** The scope must
+  be a known frozen layer; every forbidden target must be a known layer that the
+  frozen matrix genuinely forbids for that scope; `rule_id` must be the
+  implemented **leaf** clause for that relationship; and no two opportunities may
+  claim the same `(scope, target)` decision
+  (`INVALID_OPPORTUNITY_SCOPE`, `OPPORTUNITY_RULE_SCOPE_MISMATCH`,
+  `DUPLICATE_OPPORTUNITY_SCOPE`).
+- **The `AR-DEP-001` umbrella can never back a scored opportunity.** It may
+  appear in `applicable_rule_ids` to put the whole matrix in force and so expand
+  **raw** dependency-family exposure (`TD-B28`), but a fixed E1 opportunity must
+  name the implemented leaf clause `AR-DEP-002…006`
+  (`UMBRELLA_OPPORTUNITY_RULE`). A scope/target relationship the family covers
+  only by the umbrella therefore cannot carry a scored opportunity at all.
+
+This is validated end-to-end by the committed mutation corpus
+(`experiments/v2/oracle/tests/scopeAttribution.test.ts`, cases **M0–M7**): the
+same forbidden edge is scored identically in the historical anchor, in a new
+file, and after the anchor is moved or deleted; a conforming new file stays
+`SATISFIED`; several edges in one decision raise
+`violated_opportunity_count` by exactly one; and the frozen denominator is
+identical across every mutant. It does **not** discharge `G6` — the labelled
+corpus, precision/recall bar, and inter-rater validation remain open.
+
 ## 2. Sensitivity and specificity (the oracle must be validated on labelled data)
 
 - **Seeded-violation sensitivity** — a labelled corpus of **seeded** boundary
@@ -145,17 +193,29 @@ Binding requirements on the oracle:
   stubs that report `UNIMPLEMENTED`, never PASS, and contribute **nothing** to
   either side of the rate. No manual adjudication may be pooled into the E1
   numerator or denominator.
-- **Only implemented dependency-direction opportunities may enter E1.** A frozen
-  opportunity enters `applicable_opportunity_count` only if its `rule_id` is an
-  implemented member of the dependency-direction family and is in force for the
-  manifest; the engine fails closed (`INVALID_OPPORTUNITY_RULE`) otherwise.
+- **Only implemented dependency-direction LEAF opportunities may enter E1.** A
+  frozen opportunity enters `applicable_opportunity_count` only if its `rule_id`
+  is an implemented member of the dependency-direction family and is in force for
+  the manifest; the engine fails closed (`INVALID_OPPORTUNITY_RULE`) otherwise.
+  The `AR-DEP-001` umbrella is additionally refused as a scored opportunity rule
+  (`UMBRELLA_OPPORTUNITY_RULE`): it may expand raw exposure through
+  `applicable_rule_ids`, but the denominator is built only from leaf clauses
+  (§1a).
+- **The denominator is scope-anchored and model-independent.** Opportunities are
+  attributed by frozen architectural scope, so `applicable_opportunity_count` does
+  not move when the model creates files, edits files, adds imports, or enlarges
+  the patch; and `violated_opportunity_count` counts each frozen decision at most
+  once (§1a).
 - **Broader architectural constructs belong to CON-ACB.** Contract ownership,
   port/interface placement, observability completeness, duplicated logic and
   general business-logic placement are **not** measured by this oracle; they are
   pre-registered **secondary / manual** evidence (§4), κ ≥ 0.70 gated, reported
   under `CL15` and never as an E1 result (gate **G8**).
 - **`raw_violation_count` is a separate descriptive diagnostic series**, reported
-  alongside E1 and never substituted into it.
+  alongside E1 and never substituted into it. Under scope attribution it exceeds
+  `violated_opportunity_count` whenever one frozen decision carries several
+  forbidden edges, or an edge falls outside every frozen decision; that is
+  expected, not a defect signal.
 - **A zero-exposure task is structurally ineligible, not zero-violation.** A task
   whose `applicable_opportunity_count` is `0` is excluded from the E1 model as
   out-of-exposure; it is **not** entered with a zero numerator and **not**
@@ -234,6 +294,14 @@ material. Gates **G1** and **G6** and blocking decisions **`TD-B04`**,
   alternative not flagged; comments/strings create no false import; moved/deleted
   handled; deterministic ordering; blindness to condition/model labels; unknown
   and unimplemented rules cannot report PASS; malformed alias config fails closed.
+- Scope-attribution mutation corpus (**M0–M7**) —
+  `experiments/v2/oracle/tests/scopeAttribution.test.ts`: end-to-end scoring
+  against synthetic frozen manifests built inside the test process (no repository
+  manifest is altered or frozen), proving §1a — new-file and moved-file
+  violations are attributed to the same frozen opportunity, anchor deletion
+  cannot hide a live violation, `NOT_APPLICABLE` needs an absent scope, one
+  decision contributes at most one violation, the denominator is invariant across
+  every mutant, and the umbrella/locator integrity gates fail closed.
 - Hidden-evaluator boundary and mount policy
   ([`HIDDEN_EVALUATOR_BOUNDARY.md`](HIDDEN_EVALUATOR_BOUNDARY.md),
   [`EVALUATOR_MOUNT_POLICY.md`](EVALUATOR_MOUNT_POLICY.md)) with a machine-checkable

@@ -16,6 +16,10 @@ export type OracleFailReason =
   | 'MANIFEST_INVALIDATED' // manifest is marked invalidated and must not be scored for evidence
   | 'DUPLICATE_OPPORTUNITY_ID' // two frozen opportunities share an opportunity_id
   | 'INVALID_OPPORTUNITY_RULE' // an opportunity references an unknown / non-applicable / non-scoring rule id
+  | 'UMBRELLA_OPPORTUNITY_RULE' // the AR-DEP-001 umbrella was used as a SCORED opportunity rule (only leaf clauses may be)
+  | 'INVALID_OPPORTUNITY_SCOPE' // locator.scope is not a frozen dependency-policy layer, or a forbidden target is unknown / not actually forbidden
+  | 'OPPORTUNITY_RULE_SCOPE_MISMATCH' // rule_id is not the implemented leaf rule for the declared scope -> forbidden-target relationship
+  | 'DUPLICATE_OPPORTUNITY_SCOPE' // two opportunities claim the same frozen (scope, forbidden target) decision
   | 'ELIGIBILITY_MISSING' // e1_analysis_eligibility is absent or not one of the three allowed values
   | 'ELIGIBILITY_TASK_INDEX_MISMATCH' // manifest eligibility disagrees with the approved public task index
   | 'ELIGIBILITY_DENOMINATOR_CONFLICT' // a functional-only task carries an E1 opportunity denominator

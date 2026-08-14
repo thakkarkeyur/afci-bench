@@ -5,9 +5,10 @@
  * mounted manifest and prints the raw architecture_finding JSON. It is an
  * EVALUATOR, run only after model generation ends; it invokes no model. Exit
  * codes: 0 CONFORMANT, 2 VIOLATIONS, 3 fail-closed (OracleError — includes a
- * non-frozen/invalidated manifest, a duplicate opportunity_id, or an opportunity
- * with an invalid rule; kept distinct from an ordinary VIOLATIONS result),
- * 4 PENDING (an applicable rule is unimplemented), 1 unexpected error.
+ * non-frozen/invalidated manifest, a duplicate opportunity_id, an opportunity
+ * with an invalid rule, the AR-DEP-001 umbrella used as a scored opportunity, or
+ * an unscoreable opportunity locator; kept distinct from an ordinary VIOLATIONS
+ * result), 4 PENDING (an applicable rule is unimplemented), 1 unexpected error.
  *
  * Usage:
  *   ts-node experiments/v2/oracle/src/cli.ts \
