@@ -83,6 +83,12 @@ def _finding_example():
             "violated_opportunity_count": 0,
             "absent_opportunity_count": 0,
         },
+        "production_source": {
+            "policy_id": "PSP-V1",
+            "production_file_count": 6,
+            "excluded_file_count": 2,
+            "excluded_paths": ["apps/api/jest.config.ts", "apps/api/src/app.spec.ts"],
+        },
         "deterministic_order": True,
         "verdict": "VIOLATIONS",
     }

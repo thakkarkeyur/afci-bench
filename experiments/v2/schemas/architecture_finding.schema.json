@@ -15,6 +15,7 @@
     "findings",
     "raw_violation_count",
     "opportunity_accounting",
+    "production_source",
     "deterministic_order",
     "verdict"
   ],
@@ -146,6 +147,21 @@
         "fixed_opportunity_count": { "type": "integer" },
         "violated_opportunity_count": { "type": "integer" },
         "absent_opportunity_count": { "type": "integer" }
+      }
+    },
+    "production_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Provenance of the production/test partition applied before the import graph was built. E1 measures PRODUCTION architectural dependencies: test specs, test support material and tooling/build configuration TypeScript are held out of the dependency graph, so an import that exists only in a test or a tool contributes no edge to any finding, to raw_violation_count, or to opportunity_accounting. This block is DESCRIPTIVE ONLY - it is never an E1 numerator or denominator. excluded_paths records exactly which files were held out, so the exclusion is auditable per result; those files may be examined descriptively but nothing derived from them enters E1. The frozen architectural layer scopes are unchanged by the partition, and the E1 denominator remains the frozen manifest opportunity count, so adding or deleting test/config files cannot change applicable_opportunity_count.",
+      "required": ["policy_id", "production_file_count", "excluded_file_count", "excluded_paths"],
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "description": "Identity of the effective production-source policy (baseline PSP-V1, or PSP-V1+<extension> when a manifest added further exclusions; the baseline can never be weakened)."
+        },
+        "production_file_count": { "type": "integer" },
+        "excluded_file_count": { "type": "integer" },
+        "excluded_paths": { "type": "array", "items": { "type": "string" } }
       }
     },
     "deterministic_order": { "type": "boolean" },

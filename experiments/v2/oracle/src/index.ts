@@ -20,6 +20,15 @@ export {
 } from './manifestIntegrity';
 export type { EligibilityOptions } from './manifestIntegrity';
 export { LayerMap } from './layers';
+export {
+  BASELINE_PRODUCTION_SOURCE_POLICY,
+  BASELINE_PRODUCTION_SOURCE_POLICY_ID,
+  classifySourceFile,
+  isProductionSource,
+  partitionProductionSources,
+  resolveProductionSourcePolicy,
+} from './productionSource';
+export type { ProductionSourcePolicy, SourceClass, SourcePartition } from './productionSource';
 export { ImportGraphResolver, listSourceFiles, parseCompilerOptions, extractSpecifiers } from './resolver';
 export { RULE_REGISTRY, isKnownRule, descriptorFor } from './checkers/registry';
 export {

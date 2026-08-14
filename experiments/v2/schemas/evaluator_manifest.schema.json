@@ -128,7 +128,7 @@
     "dependency_policy": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Frozen policy the dependency-direction reference checker applies. Repository-architecture-level (same across tasks on a base SHA); NOT a task answer. Layers are assigned by frozen path globs so a model cannot relabel a file by editing tsconfig.",
+      "description": "Frozen policy the dependency-direction reference checker applies. Repository-architecture-level (same across tasks on a base SHA); NOT a task answer. Layers are assigned by frozen path globs so a model cannot relabel a file by editing tsconfig. E1 is computed from the PRODUCTION dependency graph only: source_globs and the layer path globs both match test and tooling TypeScript that sits inside an architectural scope, so the oracle partitions those files out (production_source_policy) BEFORE building any import edge. The layer scopes themselves are untouched by that partition.",
       "required": ["alias_config_path", "source_globs", "layers", "allowed"],
       "properties": {
         "alias_config_path": {
@@ -136,6 +136,29 @@
           "description": "Path, relative to the snapshot root, of the tsconfig whose compilerOptions.paths/baseUrl drive alias resolution."
         },
         "source_globs": { "type": "array", "items": { "type": "string" } },
+        "production_source_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "OPTIONAL, ADDITIVE-ONLY extension of the baseline production-source policy (PSP-V1, defined in experiments/v2/oracle/src/productionSource.ts). The baseline ALWAYS applies: *.spec.ts / *.test.ts (and .tsx) specs, the __tests__ / __mocks__ / __fixtures__ / test-fixtures / test-helpers / test-utils subtrees, and an exhaustive list of tooling/build config basenames (jest.config.ts, jest.setup.ts, jest.preset.ts, vite/vitest/webpack/rollup/babel/eslint/karma/cypress/playwright configs) are classified test/config/support and contribute NO dependency edge to E1. A manifest may only ADD to those lists; it can never re-admit an excluded class, so the test/config contamination this policy removes cannot be reintroduced by editing a manifest. Classification is by exact basename, basename-only glob, and whole path-segment name - never by substring - so production source is not excluded merely because its name incidentally contains a word such as 'test' (latest.ts, contest.ts, testUtils.ts stay production), and `*.config.ts` is deliberately NOT a wildcard because app.config.ts is genuine production source. A malformed declaration fails closed (INVALID_PRODUCTION_SOURCE_POLICY); it is never silently defaulted. Excluded files may still be examined descriptively (the finding lists them), but nothing derived from them enters E1's numerator, and the denominator is the frozen opportunity count rather than any file count, so adding or removing test files cannot move either side.",
+          "properties": {
+            "policy_id": { "type": "string", "minLength": 1 },
+            "additional_excluded_config_basenames": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "description": "Further exact tooling-config basenames. No '/' and no glob wildcard."
+            },
+            "additional_excluded_spec_basename_globs": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "description": "Further basename-only globs marking test specs. No '/'."
+            },
+            "additional_excluded_directory_names": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "description": "Further exact path-segment names whose subtree is test-only support material. No '/' and no glob wildcard."
+            }
+          }
+        },
         "layers": {
           "type": "array",
           "items": {

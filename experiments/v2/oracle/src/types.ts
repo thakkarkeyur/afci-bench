@@ -4,6 +4,8 @@
  * condition or model identity: scoring is blind (docs/v2/HIDDEN_EVALUATOR_BOUNDARY.md).
  */
 
+import { ProductionSourcePolicy } from './productionSource';
+
 export type Severity = 'blocker' | 'major' | 'minor' | 'n/a';
 export type EvaluationMode = 'automated' | 'manual';
 export type OracleImplementationStatus = 'implemented' | 'partial' | 'stub' | 'not-implemented';
@@ -55,6 +57,20 @@ export interface OpportunityAccounting {
   absent_opportunity_count: number;
 }
 
+/**
+ * Provenance of the production/test partition for one scored snapshot. Purely
+ * descriptive: it records WHICH files were held out of the E1 dependency graph so
+ * the partition is auditable per result. Nothing here is an E1 numerator or
+ * denominator — the denominator remains the frozen manifest opportunity count.
+ */
+export interface ProductionSourceAccounting {
+  policy_id: string;
+  production_file_count: number;
+  excluded_file_count: number;
+  /** Sorted posix paths held out of the production graph (test/config/support). */
+  excluded_paths: string[];
+}
+
 export interface ArchitectureFinding {
   schema_version: string;
   evaluator: {
@@ -80,6 +96,7 @@ export interface ArchitectureFinding {
   findings: Finding[];
   raw_violation_count: number;
   opportunity_accounting: OpportunityAccounting;
+  production_source: ProductionSourceAccounting;
   deterministic_order: boolean;
   verdict: Verdict;
 }
@@ -127,6 +144,13 @@ export interface DependencyPolicy {
   source_globs: string[];
   layers: LayerDef[];
   allowed: Record<string, string[]>;
+  /**
+   * The EFFECTIVE production-source policy (baseline PSP-V1, plus any additive
+   * manifest extension). Files it classifies as test/config/support are removed
+   * before the import graph is built, so they contribute no edge to E1. See
+   * productionSource.ts; the frozen layer scopes are unaffected.
+   */
+  production_source_policy: ProductionSourcePolicy;
 }
 
 /**
@@ -200,8 +224,18 @@ export interface CheckerContext {
   snapshotDir: string;
   manifest: EvaluatorManifest;
   edges: ImportEdge[];
-  /** Posix relative paths of every source file scanned. */
+  /**
+   * Posix relative paths of every PRODUCTION source file. This is the scored
+   * set: the import graph is built from it, and a frozen scope is "live" only if
+   * it carries a file here. Test/config/support files are NOT in this list.
+   */
   sourceFiles: string[];
+  /**
+   * Posix relative paths held out of the production graph (test specs, test
+   * support material, tooling config). Descriptive only — a checker may examine
+   * them for diagnostics, but nothing derived from them may enter E1.
+   */
+  nonProductionSourceFiles: string[];
   /** Layer id lookup for an arbitrary posix relative path (or null). */
   layerOf: (relPath: string) => string | null;
   /** True when a posix relative path exists in the snapshot. */

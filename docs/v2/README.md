@@ -169,14 +169,21 @@ hash, manifest, endpoint or protocol was frozen or edited by that decision**, an
 - **Analysis eligibility is explicit and machine-checked**
   ([`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv),
   `experiments/v2/tasks/public/TASK_INDEX.csv`, field
-  `e1_analysis_eligibility`): **`PT01`–`PT05` `scored`**, **`PT06`
-  `functional-only`** (valid primary functional candidate, structurally excluded
-  from E1, still contributing to hidden functional acceptance, cost and
-  exploratory analyses — **not** a failed run), **`PR01`/`PR02`
-  `inactive-reserve`**. Primary/reserve classification is unchanged. **No reserve
-  was activated**, and **`PR02` must not be promoted** because its terminal-state
-  guard is not externally reachable through the current public interface
-  (`TD-B26`).
+  `e1_analysis_eligibility`): **`PT01`–`PT04` `scored`**, **`PT05` and `PT06`
+  `functional-only`** (valid primary functional candidates, structurally excluded
+  from E1, still contributing to hidden functional acceptance, cost,
+  reset-related functional outcomes and exploratory analyses — **not** failed
+  runs), **`PR01`/`PR02` `inactive-reserve`**. Primary/reserve classification is
+  unchanged. **No reserve was activated**, and **`PR02` must not be promoted**
+  because its terminal-state guard is not externally reachable through the current
+  public interface (`TD-B26`).
+- **`PT05` was reclassified `scored` → `functional-only` before any run.** An
+  independent pre-authoring opportunity reassessment found that its required
+  functional work creates **no currently scored dependency-direction
+  opportunity**. This is a **construct/feasibility** reclassification, decided
+  from the task body and the substrate; it is **not** a model outcome and `PT05`
+  is never reported as zero violations, failed, missing, invalid or a refusal. Its
+  body, hash and `primary` kind are unchanged.
 - A task whose `applicable_opportunity_count` is **0** is **structurally
   ineligible** for E1 — never coded as zero violations.
 - **Reset is an experimental factor crossed with tasks, not a task-content
@@ -194,7 +201,49 @@ hash, manifest, endpoint or protocol was frozen or edited by that decision**, an
   a private opportunity needing re-justification; pseudo-replication of shared
   boundary decisions; suite-wide public-interface reachability validation;
   `draft_unvalidated` hidden evaluator scaffolds; and broadening E1 as future work.
-  The registry now holds **33 blocking + 6 non-blocking** decisions, **all open**.
+
+### Opportunity reassessment — `PT05` reclassified, DECISION B recorded
+
+An independent **pre-authoring, pre-run** reassessment of the active architecture
+set. It changed **no** task body and **no** task hash, activated **no** reserve,
+authored **no** task, ran **no** benchmark, and froze **nothing**.
+
+- **`PT05` → `functional-only`** (see above). Functionally valid; structurally
+  ineligible for E1 because its required functional work creates no currently
+  scored dependency-direction opportunity.
+- **Aggregate construct coverage (suite level only; no private content
+  published).** `PT01`–`PT04` remain E1-scored candidates; `PT05`/`PT06` are
+  `functional-only`; `PR01`/`PR02` remain inactive. **The current active task set
+  does not provide enough distinct dependency-direction decisions for confirmatory
+  inference** — the active opportunities exercise too few **distinct dependency
+  boundaries**, and repeated tasks over one boundary are **not** independent
+  architecture constructs.
+- **DECISION B — additional public architecture tasks are required before
+  Stage 0** (`TD-B34`). New candidates must exercise genuinely different existing
+  dependency-direction **leaf rules and source/target boundaries**. The motivation
+  is **construct validity**; the deficiency is **task-set coverage, not an oracle
+  failure**; the repaired scope-based oracle **remains** the approved attribution
+  mechanism; and **no new rule family is required**, because unused implemented
+  dependency leaf relationships already exist. `TD-B34` stays **open and
+  blocking**; **G1**, **G2** and **G6** remain **not passed** and the suite is
+  **not** ready.
+- **Production-source scoring (P0 repair).** E1 is computed from the **production
+  dependency graph** only: `*.spec.ts` / `*.test.ts`, `__tests__/`, test support
+  material and tooling/config TypeScript such as `jest.config.ts` are partitioned
+  into a separate **excluded test/config/support graph** before any import edge is
+  built. Excluded edges never enter E1's numerator, and because the denominator is
+  the **frozen opportunity count**, adding or deleting test files cannot move
+  either side. The frozen architectural layer scopes are **unchanged**
+  ([`ORACLE_VALIDATION_REQUIREMENTS.md`](ORACLE_VALIDATION_REQUIREMENTS.md) §1b;
+  mutation cases **M8-A**–**M8-F**).
+- **Statistical governance.** The current four-task architecture set is **not**
+  confirmatory-ready. Repeated exposures to one boundary are **clustered**; task
+  count ≠ independent architecture-decision count; the final power simulation runs
+  **only after** additional distinct decisions are authored and approved; the
+  analysis artifact will need a **decision/boundary cluster identifier**; and **no
+  final power value is frozen now** (`TD-B37`; no power simulation was run here).
+- **Four further blockers opened, none closed** — `TD-B34`–`TD-B37`. The registry
+  now holds **37 blocking + 6 non-blocking** decisions, **all open**.
 
 ### Model-visible worktree isolation
 

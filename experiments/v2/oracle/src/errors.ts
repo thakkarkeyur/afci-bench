@@ -25,6 +25,7 @@ export type OracleFailReason =
   | 'ELIGIBILITY_DENOMINATOR_CONFLICT' // a functional-only task carries an E1 opportunity denominator
   | 'ELIGIBILITY_RESERVE_INACTIVE' // an inactive reserve was submitted for an E1 run/aggregation without a recorded activation
   | 'ELIGIBILITY_SCORED_WITHOUT_OPPORTUNITIES' // a scored task has no valid non-zero frozen opportunity denominator
+  | 'INVALID_PRODUCTION_SOURCE_POLICY' // dependency_policy.production_source_policy is malformed (never silently defaulted)
   | 'UNKNOWN_RULE_ID' // an applicable rule id is not registered
   | 'MISSING_EVALUATOR_FILE' // a referenced evaluator/alias file does not exist
   | 'MALFORMED_ALIAS_CONFIG' // the snapshot tsconfig cannot be parsed

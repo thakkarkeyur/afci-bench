@@ -2,12 +2,14 @@
 
 Every ``TD-*`` reference anywhere in the v2 protocol must resolve to a row in
 docs/v2/OPEN_DECISIONS.csv, every entry must have an owner and a valid blocking
-flag, none may be resolved yet, and the counts must be exactly 33 blocking +
+flag, none may be resolved yet, and the counts must be exactly 37 blocking +
 6 non-blocking (TD-B16..TD-B21 were added by the pre-execution design-review
 reconciliation; TD-B22 by the independent public review of the pilot task
 package; TD-B23..TD-B33 by the suite-classification decision that narrowed the
-confirmatory construct to dependency-direction conformance). Pure file
-inspection; no model is invoked.
+confirmatory construct to dependency-direction conformance; TD-B34..TD-B37 by the
+pre-authoring opportunity reassessment that recorded DECISION B, reclassified
+PT05 functional-only, isolated production-source scoring, and deferred the power
+simulation). Pure file inspection; no model is invoked.
 """
 import csv
 import re
@@ -48,13 +50,13 @@ def test_registry_columns_and_integrity():
         )
 
 
-def test_counts_are_33_blocking_6_nonblocking():
+def test_counts_are_37_blocking_6_nonblocking():
     rows = _registry_rows()
     blocking = [r["decision_id"] for r in rows if r["blocking"] == "yes"]
     nonblocking = [r["decision_id"] for r in rows if r["blocking"] == "no"]
-    assert sorted(blocking) == [f"TD-B{i:02d}" for i in range(1, 34)], blocking
+    assert sorted(blocking) == [f"TD-B{i:02d}" for i in range(1, 38)], blocking
     assert sorted(nonblocking) == [f"TD-N{i:02d}" for i in range(1, 7)], nonblocking
-    assert len(blocking) == 33 and len(nonblocking) == 6
+    assert len(blocking) == 37 and len(nonblocking) == 6
 
 
 def test_markdown_registry_counts_match_the_csv():

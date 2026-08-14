@@ -27,9 +27,10 @@ The six primary candidates were selected, before any model outcome existed, to c
 
 Correcting the record, since the earlier single-notion wording could be read as claiming that every category is directly measured by the primary endpoint:
 
-- **Five of the six primary candidates currently contribute to E1.** `PT01`-`PT05` are `scored`; `PT06` is `functional-only` - a valid primary functional candidate that is structurally excluded from E1 while still contributing to hidden functional acceptance, cost and pre-registered exploratory analyses. `PR01` and `PR02` are `inactive-reserve` and contribute to no endpoint.
+- **Four of the six primary candidates currently remain E1-scored candidates.** `PT01`-`PT04` are `scored`; `PT05` and `PT06` are `functional-only` - valid primary functional candidates that are structurally excluded from E1 while still contributing to hidden functional acceptance, cost, reset-related functional outcomes and pre-registered exploratory analyses. `PR01` and `PR02` are `inactive-reserve` and contribute to no endpoint. **No reserve was activated** to restore the scored count.
 - **All current scored E1 opportunities use dependency-direction rules** (the `AR-DEP-001..006` family). No contract-boundary, observability, coding-discipline or change-footprint rule is scored into E1: each is an unimplemented oracle stub that reports `UNIMPLEMENTED` and can never report PASS.
 - **The opportunity instances reduce to a small number of repeated boundary decisions.** They are not independent observations; the same few layer-boundary judgements recur across tasks, so the power simulation must model that pseudo-replication (`TD-B30`).
+- **The surviving active task set does not sample enough distinct dependency-direction decisions for confirmatory inference.** Repeated task exposures to the same source/target boundary are one architectural instrument observed several times, not several independent architecture constructs. Further public task authoring is required before Stage 0 (**DECISION B**, `TD-B34`); see *Opportunity reassessment* below.
 - **Task count and final opportunity count remain unfrozen** (`TD-B10`/`TD-B14`/`TD-B20`, and `TD-B05`/`TD-B14` for the per-task opportunity sets). The eight candidates are candidates.
 - **No statement here implies that categories 1-3 are directly measured by E1.** Subject-matter breadth, hidden functional coverage and manual-rubric coverage are separate evidence types with separate endpoints or no endpoint at all. **E1 must not be described as broad or general architectural conformance** (gate **G8**).
 
@@ -244,20 +245,184 @@ An independently approved suite-level decision narrowed the confirmatory constru
 
 | Value | Meaning | Tasks |
 | --- | --- | --- |
-| `scored` | carries applicable frozen dependency-direction opportunities; contributes to E1 | PT01, PT02, PT03, PT04, PT05 |
-| `functional-only` | valid primary functional candidate, **structurally excluded from E1**; still contributes to hidden functional acceptance, cost and pre-registered exploratory analyses | PT06 |
+| `scored` | carries applicable frozen dependency-direction opportunities; contributes to E1 | PT01, PT02, PT03, PT04 |
+| `functional-only` | valid primary functional candidate, **structurally excluded from E1**; still contributes to hidden functional acceptance, cost, reset-related functional outcomes and pre-registered exploratory analyses | PT05, PT06 |
 | `inactive-reserve` | pre-declared reserve, **not activated**; contributes to no endpoint | PR01, PR02 |
 
 Binding consequences:
 
-- **`PT06` is excluded from E1 without being a failed run.** Exclusion is a statement about architectural exposure, not about the task's validity or a run's success. `PT06` is not coded as zero violations, not entered with a zero numerator, and not coded `NO_PATCH`/`REFUSAL`/`INVALID_CODE`.
+- **`PT05` and `PT06` are excluded from E1 without being a failed run.** Exclusion is a statement about architectural exposure, not about the task's validity or a run's success. Neither is coded as zero violations, entered with a zero numerator, or coded `NO_PATCH`/`REFUSAL`/`INVALID_CODE`.
 - **A task with `applicable_opportunity_count = 0` is structurally ineligible for E1**, never entered as zero violations (`docs/v2/STATISTICAL_ANALYSIS_PLAN.md` §2.1).
 - **No reserve was activated.** `PR01` and `PR02` enter no endpoint.
 - **`PR02` must not be promoted.** Its terminal-state completion criterion (cancelling a `shipped` or `delivered` order answers HTTP 409 `ConflictError`) is **not externally reachable** through the current public interface: no public endpoint can move an order out of its created status and `PR02` creates none. `PR02` cannot be activated until the criterion is repaired **and** the repair is independently re-approved (**TD-B26**). Its public body is **not** modified by this work package.
 - **Broader architecture dimensions remain secondary/manual evidence** under `CON-ACB` and are never pooled into E1.
 - **`PT03`'s public repeat-request contract is contradictory and is recorded, not fixed.** It permits a change to any of the five accepted values - including `delivered` and `cancelled` - while also requiring that repeating the same request returns the same stored status *and* that a current status of `delivered` or `cancelled` answers HTTP 409 `ConflictError`. A target of `delivered` or `cancelled` cannot satisfy both. This needs a **separate public task amendment** and a **private relink**, tracked as **TD-B25**. `PT03`'s body and hash are unchanged here.
 - **Architecture-revealing source comments are recorded, not neutralised.** Model-visible TypeScript comments in the shared substrate explicitly state some scored dependency rules to every condition, including the C1 baseline, and one shows a worked boundary-violation example. That may make C1 partly guided and floor the primary contrast (**TD-B23**), and the worktree leakage sweep does not yet read source content to detect it (**TD-B24**). `apps/` and `libs/` are **unchanged** by this work package.
-- **No task body, task content hash, manifest, endpoint or protocol was frozen**, and no oracle change was made.
+- **No task body, task content hash, manifest, endpoint or protocol was frozen.**
+
+## Opportunity reassessment (pre-authoring, pre-run)
+
+An independent reassessment of the active architecture set was carried out **before any
+benchmark or model execution**, against the frozen public task bodies and the unchanged
+source substrate. It is a **construct and feasibility** judgement about what architectural
+decisions the tasks actually create; it is not, and cannot be, a judgement about any
+observed result, because **no experimental result exists**.
+
+### PT05 is reclassified `functional-only`
+
+**PT05 is functionally valid but structurally ineligible for E1 because its required
+functional work creates no currently scored dependency-direction opportunity.**
+
+This is a **pre-run construct/feasibility reclassification and is not based on a model
+outcome.** **No benchmark or model execution occurred** in this package and no result
+artifact exists, so no outcome could have informed it. PT05's public body, its SHA-256, and
+its `primary` kind are **unchanged**; only its `e1_analysis_eligibility` moves from `scored`
+to `functional-only`.
+
+`PT05` must **never** be represented as:
+
+- zero architecture violations;
+- a failed task or a failed run;
+- a missing task;
+- an invalid task;
+- a refusal.
+
+`PT05` continues to contribute to **hidden functional acceptance**, the **engineering-cost**
+measures, **reset-related functional outcomes**, and **pre-registered exploratory analysis**.
+It contributes nothing to E1's numerator or denominator.
+
+**No reserve was activated** to compensate. `PR01` and `PR02` remain `inactive-reserve`;
+restoring a scored task count is explicitly *not* a legitimate reason to activate a reserve.
+
+### Aggregate construct coverage (no private content disclosed)
+
+Reported at suite level only. Which specific opportunities exist per task, and their
+contents, remain private; nothing below discloses a private opportunity identifier, a
+hidden test, a hidden acceptance detail, or an implementation answer.
+
+- **`PT01`-`PT04` currently remain E1-scored candidates.**
+- **`PT05` and `PT06` are `functional-only`.**
+- **`PR01`/`PR02` remain inactive; no reserve was activated.**
+- **The current active task set does not provide enough distinct dependency-direction
+  decisions for confirmatory inference.** The active opportunities exercise **too few
+  distinct dependency boundaries** - too few distinct (source scope, forbidden target)
+  relationships - to support the named confirmatory construct.
+- **Repeated tasks over one boundary do not count as independent architecture
+  constructs.** Several tasks that each re-expose the same source/target boundary are one
+  architectural instrument measured repeatedly; they are clustered observations, not
+  independent architecture decisions (`TD-B30`, `TD-B37`).
+- **Additional task-created dependency decisions are required**, and therefore **further
+  public task authoring is required before Stage 0**.
+
+The deficiency is **task-set coverage**, not an oracle failure: the repaired scope-based
+attribution mechanism remains the approved attribution mechanism, and it is strengthened -
+not replaced - by the production-source scoring policy recorded below.
+
+## DECISION B - additional architecture tasks required before Stage 0
+
+**DECISION B: author additional public tasks exercising genuinely different existing
+dependency-direction leaf rules and source/target boundaries before Stage 0.** Registered as
+blocking decision **`TD-B34`**.
+
+The motivation is **construct validity**: the current task set does not sample enough
+distinct dependency-direction decisions to support the intended confirmatory endpoint.
+
+Stated explicitly, so the record cannot be misread later:
+
+- **This decision predates any benchmark or model outcome.** It was taken from the task
+  bodies and the substrate, before Stage 0.
+- **No experimental result exists.** `experiments/v2/results/` holds no result artifact.
+- **No reserve is being activated merely to restore task count.** `PR01`/`PR02` stay
+  inactive, and `PR02` additionally stays blocked (`TD-B26`).
+- **The deficiency is task-set coverage, not an oracle failure.**
+- **The repaired scope-based oracle remains the approved attribution mechanism**
+  (`TD-B27`, mutation corpus M0-M8).
+- **New rule families are not required for this immediate remedy**, because additional
+  **unused implemented dependency leaf relationships already exist** in the frozen matrix
+  (see the boundary space below). Implementing new rule families stays future work
+  (`TD-B33`) and must never be used to readmit an excluded task post hoc.
+
+`TD-B34` is **open and blocking**. Gates **G1**, **G2** and **G6** remain **not passed**, and
+the suite is **not** ready.
+
+## Authoring requirements for the NEXT work package (no task is authored here)
+
+**No new or replacement task is authored in this package.** These are the requirements the
+next candidates must satisfy; they are recorded now so authoring cannot drift.
+
+Every next candidate task must:
+
+1. **create a genuine dependency decision caused by required functional work** - the
+   functional requirement itself must force a source-to-target choice;
+2. **not merely preserve an already-satisfied boundary** - re-passing a boundary the base
+   already satisfies is a preservation-only opportunity and does not count;
+3. **exercise a dependency leaf/source-target decision not already represented** by the
+   surviving active set where the substrate permits it;
+4. **be feasible through the public interface** of the unchanged source substrate;
+5. **avoid implementation-dependent hidden setup** - no failure-injection hook, test-only
+   route, special header or environment flag;
+6. **have a fixed opportunity before model output** - the decision is frozen at authoring
+   time, never inferred from what a model produced;
+7. **remain compatible with legitimate implementation alternatives** - more than one
+   correct shape must be able to satisfy it;
+8. **not depend on which file the model creates** - scoring is anchored on the frozen
+   architectural scope, so a candidate whose decision only exists in one particular file is
+   not admissible;
+9. **avoid task overlap severe enough to duplicate an existing architectural instrument**;
+10. **remain functional-only in public wording, with no architecture hint** - the public
+    body still states functional requirements and observable behaviour only, and must pass
+    the leakage validator unchanged.
+
+Each candidate must pass the **same "task-created decision" test** that removed the
+preservation-only opportunities: if the required functional work would leave the boundary
+untouched, there is no opportunity.
+
+### Boundary space available under the already-implemented leaf rules
+
+Public information only - derived from the public rule catalog and the public dependency
+matrix, not from any private manifest. Priority is given to decisions that broaden currently
+absent scored exposure, **subject to actual substrate feasibility**.
+
+| Leaf rule | Source scope | Forbidden targets it can back |
+| --- | --- | --- |
+| `AR-DEP-002` | contracts | core, features, infra, observability, api |
+| `AR-DEP-003` | core | features, infra, observability, api |
+| `AR-DEP-004` | infra | core, features, api |
+| `AR-DEP-005` | api | core |
+| `AR-DEP-006` | features | infra, api |
+
+Candidate decisions to **investigate, not automatically adopt**:
+
+- a genuine **api -> core-only capability** decision backed by `AR-DEP-005`;
+- a genuine **infra -> core** decision backed by `AR-DEP-004`;
+- a genuine **core -> forbidden layer** decision backed by `AR-DEP-003`;
+- a **contracts-source** decision backed by `AR-DEP-002`, where a task can legitimately
+  create such a decision.
+
+**Do not create artificial tasks merely to hit rule ids.** A candidate that names a rule
+relationship but does not make the functional work create the decision fails requirement 1
+and must be rejected. The `observability` scope has **no implemented leaf clause** at all,
+so it cannot back a scored opportunity regardless of how a task is written.
+
+## Production-source scoring (E1 measures production dependencies only)
+
+A P0 finding was that test and configuration TypeScript entered the scored dependency
+scopes: the frozen `source_globs` (`apps/**/*.ts`, `libs/**/*.ts`) and the frozen layer path
+globs both match `*.spec.ts` files and `jest.config.ts`, so a dependency introduced purely
+to wire up a test could have produced an E1 violation in a production architectural scope.
+
+The oracle now partitions the scanned TypeScript into two graphs before any edge is built:
+
+- the **production dependency graph** - the only graph E1 is computed from;
+- the **excluded test/config/support graph** - recorded descriptively, never scored.
+
+The **frozen architectural layer scopes are unchanged**; the partition happens at source
+selection, so no layer glob and no frozen opportunity locator moved. The denominator remains
+the **frozen opportunity count**, never a file count, so adding or deleting test files cannot
+move either side of E1. The policy, its exclusion classes, and why excluded edges never enter
+E1 are specified in
+[`../../../../docs/v2/ORACLE_VALIDATION_REQUIREMENTS.md`](../../../../docs/v2/ORACLE_VALIDATION_REQUIREMENTS.md)
+§1b, and regression-locked by mutation cases **M8-A**-**M8-F**.
 
 ## Public task inventory
 
@@ -267,7 +432,7 @@ Binding consequences:
 | PT02 | primary | list-endpoint | medium | `ec4b60057708b20c...` | scored |
 | PT03 | primary | write-endpoint | medium | `cbfce1ca232cb9b6...` | scored |
 | PT04 | primary | logging | medium | `f349b150b1d8fe56...` | scored |
-| PT05 | primary | calculation | medium | `f6efc772e76d6c28...` | scored |
+| PT05 | primary | calculation | medium | `f6efc772e76d6c28...` | functional-only |
 | PT06 | primary | error-handling | medium | `3e0f84cfef1f9fbf...` | functional-only |
 | PR01 | reserve | calculation | small | `0e1527bce4149883...` | inactive-reserve |
 | PR02 | reserve | write-endpoint | medium | `e89a4aab236813c0...` | inactive-reserve |
@@ -339,10 +504,14 @@ The review also found that the coding model's worktree was the whole repository,
 - **No final task count**, repetition count, run count, model, or numerical budget was selected. The eight candidates are candidates, not a core-study task set.
 - No hidden evaluator package was frozen; the oracle continues to refuse to score a review-status package (`MANIFEST_NOT_FROZEN`).
 - Task-specific oracle validity, hidden-acceptance validation, reset checkpoint review, and benchmark discrimination remain open (G1/G2 not passed).
-- **No task body or task content hash changed for the suite classification.** All eight bodies are byte-identical to their state at public commit `fef5987`, and all eight recorded SHA-256 values are unchanged. Classification is metadata, never a task edit.
+- **No task body or task content hash changed for the suite classification, for `PT05`'s reclassification, or for `DECISION B`.** All eight bodies are byte-identical to their state at public commit `fef5987`, and all eight recorded SHA-256 values are unchanged. Classification is metadata, never a task edit.
+- **No replacement or additional task was authored.** `DECISION B` records the requirement and the authoring bar; the tasks themselves are the next work package.
+- **No reserve was activated to restore the scored task count**, and no reserve opportunity was promoted into E1.
+- **No architecture-rule family was implemented or added.** The remedy uses dependency leaf relationships that are **already implemented** (`AR-DEP-002`-`AR-DEP-006`).
+- **No power simulation was run and no power value was frozen** (`TD-B20`/`TD-B37`).
 - **`PT03`'s repeat-request contradiction was NOT fixed** - it is recorded as blocking decision **TD-B25** and requires a separate public amendment plus a private relink.
 - **Architecture-revealing source comments were NOT neutralised** - recorded as **TD-B23** (with the leakage-scanner gap as **TD-B24**); `apps/` and `libs/` are unchanged.
 - **No reserve task was activated**, and `PR02` was **not** promoted (**TD-B26**).
-- **The oracle was not implemented or changed**, and `AR-CONTRACT-001`/`AR-CODE-001` were **not** implemented: broadening E1 is future work (**TD-B33**) and must never readmit an excluded task post hoc.
-- **No blocker was closed.** Eleven were opened (`TD-B23`-`TD-B33`); the registry now holds 33 blocking and 6 non-blocking decisions, all `open`.
+- **No new architecture-rule family was implemented**, and `AR-CONTRACT-001`/`AR-CODE-001` were **not** implemented: broadening E1 is future work (**TD-B33**) and must never readmit an excluded task post hoc. The **only** oracle change in this package is the production-source scoring policy above, which **narrows** what E1 measures to production dependencies and adds no rule, no opportunity and no answer.
+- **No blocker was closed.** Eleven were opened by the suite classification (`TD-B23`-`TD-B33`) and four more here (`TD-B34`-`TD-B37`); the registry now holds 37 blocking and 6 non-blocking decisions, all `open`.
 - **No private opportunity answer or exact private evaluator content is disclosed here.** Where a private identifier is named at all it is named as an identifier only.

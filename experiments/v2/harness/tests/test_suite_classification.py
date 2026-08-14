@@ -6,9 +6,10 @@ worth anything if it is mechanically enforced, so this module asserts:
 
 * all eight public task bodies and their recorded hashes are **unchanged** by the
   classification (classification is metadata, never a task edit);
-* ``PT01``-``PT05`` are E1-``scored``, ``PT06`` is ``functional-only``, and
-  ``PR01``/``PR02`` are ``inactive-reserve``, consistently in both public CSVs;
-* ``PT06`` is excluded from E1 **without** being classified as a failed run;
+* ``PT01``-``PT04`` are E1-``scored``, ``PT05``/``PT06`` are ``functional-only``,
+  and ``PR01``/``PR02`` are ``inactive-reserve``, consistently in both public CSVs;
+* ``PT05`` and ``PT06`` are excluded from E1 **without** being classified as a
+  failed run;
 * a zero-opportunity task cannot be entered as zero violations;
 * inactive reserve tasks enter no endpoint, and ``PR02`` is barred from promotion;
 * E1 uses ``opportunity_accounting.violated_opportunity_count`` over
@@ -63,8 +64,8 @@ ORACLE_TRACE_PATH = DOCS_V2 / "ORACLE_TRACEABILITY.csv"
 ORACLE_REQS_PATH = DOCS_V2 / "ORACLE_VALIDATION_REQUIREMENTS.md"
 ORACLE_SRC = REPO / "experiments" / "v2" / "oracle" / "src"
 
-SCORED = ["PT01", "PT02", "PT03", "PT04", "PT05"]
-FUNCTIONAL_ONLY = ["PT06"]
+SCORED = ["PT01", "PT02", "PT03", "PT04"]
+FUNCTIONAL_ONLY = ["PT05", "PT06"]
 INACTIVE_RESERVE = ["PR01", "PR02"]
 ALL_TASKS = SCORED + FUNCTIONAL_ONLY + INACTIVE_RESERVE
 
@@ -178,13 +179,15 @@ def test_both_public_csvs_agree_on_eligibility(task_id):
     ), f"{task_id}: the two public CSVs disagree on eligibility"
 
 
-def test_pt01_to_pt05_are_e1_scored():
+def test_pt01_to_pt04_are_e1_scored():
     for task_id in SCORED:
         assert INDEX_BY_ID[task_id]["e1_analysis_eligibility"] == "scored", task_id
 
 
-def test_pt06_is_functional_only():
-    assert INDEX_BY_ID["PT06"]["e1_analysis_eligibility"] == "functional-only"
+@pytest.mark.parametrize("task_id", FUNCTIONAL_ONLY)
+def test_pt05_and_pt06_are_functional_only(task_id):
+    for row, label in ((INDEX_BY_ID[task_id], "TASK_INDEX.csv"), (MATRIX_BY_ID[task_id], "matrix")):
+        assert row["e1_analysis_eligibility"] == "functional-only", f"{task_id} in {label}"
 
 
 def test_pr01_and_pr02_are_inactive_reserves():
@@ -192,11 +195,11 @@ def test_pr01_and_pr02_are_inactive_reserves():
         assert INDEX_BY_ID[task_id]["e1_analysis_eligibility"] == "inactive-reserve", task_id
 
 
-def test_exactly_five_of_the_six_primary_candidates_are_scored():
+def test_exactly_four_of_the_six_primary_candidates_are_scored():
     primary = [t for t in ALL_TASKS if INDEX_BY_ID[t]["primary_or_reserve"] == "primary"]
     assert len(primary) == 6, primary
     scored = [t for t in primary if INDEX_BY_ID[t]["e1_analysis_eligibility"] == "scored"]
-    assert len(scored) == 5, f"five of six primary candidates must contribute to E1, got {scored}"
+    assert len(scored) == 4, f"four of six primary candidates may contribute to E1, got {scored}"
 
 
 def test_primary_reserve_classification_is_unchanged_by_the_decision():
@@ -215,9 +218,9 @@ def test_eligibility_and_primary_reserve_are_independent_fields():
 
 
 # --------------------------------------------------------------------------- #
-# 3. PT06 is excluded from E1 without being a failed run
+# 3. A functional-only task is excluded from E1 without being a failed run
 # --------------------------------------------------------------------------- #
-def test_pt06_exclusion_is_not_a_failed_run():
+def test_e1_exclusion_is_not_a_failed_run():
     sap = _flat(SAP_PATH)
     assert "structurally ineligible" in sap, "the SAP must name structural ineligibility"
     assert "not coded as zero violations" in sap or "never entered as zero violations" in sap
@@ -229,19 +232,55 @@ def test_pt06_exclusion_is_not_a_failed_run():
     )
 
 
-def test_pt06_still_contributes_to_functional_cost_and_exploratory_analyses():
+@pytest.mark.parametrize("task_id", FUNCTIONAL_ONLY)
+def test_functional_only_tasks_still_contribute_to_functional_cost_and_exploratory(task_id):
     for path in (SAP_PATH, MATRIX_PATH, REPORT_PATH):
         flat = _flat(path)
         assert "hidden functional acceptance" in flat or "hidden acceptance" in flat, path.name
-    matrix_reason = MATRIX_BY_ID["PT06"]["e1_eligibility_reason"].lower()
+    matrix_reason = MATRIX_BY_ID[task_id]["e1_eligibility_reason"].lower()
     for token in ("hidden functional acceptance", "cost", "exploratory"):
-        assert token in matrix_reason, f"PT06 reason must mention {token}"
+        assert token in matrix_reason, f"{task_id} reason must mention {token}"
 
 
-def test_pt06_is_still_a_valid_primary_functional_candidate():
-    reason = MATRIX_BY_ID["PT06"]["e1_eligibility_reason"].lower()
+@pytest.mark.parametrize("task_id", FUNCTIONAL_ONLY)
+def test_functional_only_tasks_are_still_valid_primary_functional_candidates(task_id):
+    reason = MATRIX_BY_ID[task_id]["e1_eligibility_reason"].lower()
     assert "valid primary functional candidate" in reason
     assert "structurally excluded from e1" in reason
+
+
+def test_pt05_reclassification_reason_is_structural_and_pre_run():
+    """PT05 is functionally valid; only its E1 exposure is missing (Part B)."""
+    reason = MATRIX_BY_ID["PT05"]["e1_eligibility_reason"].lower()
+    assert "creates no currently scored dependency-direction opportunity" in reason, (
+        "PT05's reason must name the structural cause: no task-created scored "
+        "dependency-direction opportunity"
+    )
+    assert "before any benchmark or model execution" in reason, (
+        "PT05's reason must state that the reclassification predates any run"
+    )
+    for forbidden_framing in (
+        "zero violations",
+        "failed",
+        "missing",
+        "invalid",
+        "refusal",
+    ):
+        # each may appear ONLY inside its explicit denial
+        for match in re.finditer(re.escape(forbidden_framing), reason):
+            window = reason[max(0, match.start() - 60) : match.start()]
+            assert "not " in window, (
+                f"PT05's reason presents {forbidden_framing!r} without a denial: {window!r}"
+            )
+
+
+def test_pt05_reclassification_is_not_attributed_to_a_model_outcome():
+    report = _flat(REPORT_PATH)
+    assert "pt05 is functionally valid but structurally ineligible for e1" in report, (
+        "the authoring report must state PT05's reclassification in the approved wording"
+    )
+    assert "not based on a model outcome" in report
+    assert "no benchmark or model execution" in report
 
 
 # --------------------------------------------------------------------------- #
@@ -471,9 +510,9 @@ def test_report_distinguishes_the_four_coverage_categories():
     ), "the report must state that only one category is directly scored by E1"
 
 
-def test_report_states_five_of_six_primary_candidates_contribute_to_e1():
+def test_report_states_four_of_six_primary_candidates_contribute_to_e1():
     report = _flat(REPORT_PATH)
-    assert "five of the six primary candidates currently contribute to e1" in report
+    assert "four of the six primary candidates currently remain e1-scored candidates" in report
 
 
 def test_report_records_repeated_boundary_decisions_and_unfrozen_counts():
@@ -765,7 +804,11 @@ def test_the_authoring_report_records_that_nothing_was_frozen():
     report = _flat(REPORT_PATH)
     assert "no task body or task content hash changed" in report
     assert "manifest, endpoint or protocol was frozen" in report
-    assert "the oracle was not implemented or changed" in report
+    # The oracle IS changed by the production-source policy, so the report must
+    # scope that change rather than deny it: no new rule family, no new answer.
+    assert "no new architecture-rule family was implemented" in report
+    assert "production-source scoring policy" in report
+    assert "adds no rule, no opportunity and no answer" in report
 
 
 # --------------------------------------------------------------------------- #
@@ -1108,6 +1151,251 @@ def test_private_manifest_migration_is_recorded_and_no_private_repo_was_touched(
         "the decision log must record that the private evaluator repository was untouched"
     )
     assert "fail closed" in decisions
+
+
+# --------------------------------------------------------------------------- #
+# 15. Production-source scoring (E1 measures production dependencies only)
+# --------------------------------------------------------------------------- #
+PRODUCTION_SOURCE_SRC = ORACLE_SRC / "productionSource.ts"
+SCOPE_ATTRIBUTION_TEST = (
+    REPO / "experiments" / "v2" / "oracle" / "tests" / "scopeAttribution.test.ts"
+)
+
+#: The test/config classes the approved policy must hold out of the E1 graph.
+EXCLUDED_SOURCE_CLASSES = ("*.spec.ts", "*.test.ts", "__tests__", "jest.config.ts")
+
+
+def test_the_production_source_policy_is_implemented_and_wired_into_scoring():
+    """The policy must exist as code AND actually gate the import graph."""
+    assert PRODUCTION_SOURCE_SRC.exists(), "the production-source policy module is missing"
+    policy = _text(PRODUCTION_SOURCE_SRC)
+    for token in EXCLUDED_SOURCE_CLASSES:
+        assert token in policy, f"the production-source policy must exclude {token}"
+    for directory in ("__mocks__", "__fixtures__", "test-fixtures", "test-helpers"):
+        assert directory in policy, f"the policy must exclude the {directory} subtree"
+    # It is a policy, not a substring check: production source keeping an
+    # incidental word must survive, so `*.config.ts` must NOT be a wildcard.
+    assert "'*.config.ts'" not in policy, (
+        "`*.config.ts` must not be a wildcard exclusion (app.config.ts is production)"
+    )
+    # ...and the engine must partition BEFORE building edges.
+    engine = _text(ORACLE_SRC / "engine.ts")
+    assert "partitionProductionSources" in engine, (
+        "the engine must partition the scanned source before resolving imports"
+    )
+    assert "INVALID_PRODUCTION_SOURCE_POLICY" in _text(ORACLE_SRC / "errors.ts"), (
+        "a malformed production-source policy must be a declared fail-closed reason"
+    )
+
+
+def test_the_production_source_policy_is_specified_in_the_oracle_requirements():
+    reqs = _flat(ORACLE_REQS_PATH)
+    assert "production dependency graph" in reqs
+    assert "excluded test/config/support graph" in reqs
+    assert "excluded files may still be examined descriptively" in reqs, (
+        "the spec must say whether excluded files remain descriptively visible"
+    )
+    # why excluded edges can never enter either side of E1
+    assert "why an excluded edge can never enter the e1 numerator" in reqs
+    assert "why an excluded file can never move the e1 denominator" in reqs
+    assert "the frozen architectural layer scopes are unchanged" in reqs
+
+
+def test_the_e1_denominator_stays_frozen_opportunity_based_not_file_based():
+    for path in (ORACLE_REQS_PATH, SAP_PATH):
+        flat = _flat(path)
+        assert "frozen" in flat and "opportunity count" in flat, path.name
+    reqs = _flat(ORACLE_REQS_PATH)
+    assert "it is not a file count" in reqs, (
+        "the spec must state explicitly that the denominator is not a file count"
+    )
+
+
+def test_the_finding_schema_records_the_production_partition():
+    schema = json.loads(_text(FINDING_SCHEMA))
+    assert "production_source" in schema["required"], (
+        "the partition must be recorded on every finding, not optionally"
+    )
+    block = schema["properties"]["production_source"]
+    for field in ("policy_id", "production_file_count", "excluded_file_count", "excluded_paths"):
+        assert field in block["properties"], field
+        assert field in block["required"], f"{field} must be required"
+    # and it must not be presented as an E1 quantity
+    assert "descriptive only" in block["description"].lower()
+
+
+def test_the_manifest_schema_allows_only_an_additive_policy_extension():
+    schema = json.loads(_text(MANIFEST_SCHEMA))
+    policy = schema["properties"]["dependency_policy"]["properties"]["production_source_policy"]
+    assert set(policy["properties"]) <= {
+        "policy_id",
+        "additional_excluded_config_basenames",
+        "additional_excluded_spec_basename_globs",
+        "additional_excluded_directory_names",
+    }, "a manifest may only ADD exclusions, never remove or replace them"
+    assert "production_source_policy" not in schema["properties"]["dependency_policy"]["required"], (
+        "omitting the field must be legal - the baseline always applies"
+    )
+    assert "additive-only" in policy["description"].lower()
+
+
+def test_the_m8_regression_cases_exist_and_m0_to_m7_are_retained():
+    corpus = _text(SCOPE_ATTRIBUTION_TEST)
+    for case in ("M8-A", "M8-B", "M8-C", "M8-D", "M8-E", "M8-F"):
+        assert case in corpus, f"{case} must exist in the scope-attribution corpus"
+    for case in ("M0", "M1", "M2", "M3", "M4", "M4A", "M5", "M6", "M7"):
+        assert f"id: '{case}'" in corpus, f"{case} must be retained unchanged"
+
+
+# --------------------------------------------------------------------------- #
+# 16. DECISION B stays open and blocking; nothing is declared confirmatory-ready
+# --------------------------------------------------------------------------- #
+def test_decision_b_is_registered_open_and_blocking():
+    rows = _by_id(_rows(DECISIONS_CSV), key="decision_id")
+    assert "TD-B34" in rows, "DECISION B must be registered"
+    row = rows["TD-B34"]
+    assert row["blocking"] == "yes"
+    assert row["status"].strip().lower() == "open"
+    text = row["decision"].lower()
+    assert "decision b" in text
+    assert "before stage 0" in text
+    # construct validity, not an oracle failure, and not a reserve activation
+    assert "construct validity" in text
+    assert "not an oracle failure" in text
+    assert "no reserve is being activated" in text
+    assert "predates any benchmark or model outcome" in text
+    assert "no experimental result exists" in text
+    assert "new rule families are not required" in text
+    assert "remains the approved attribution mechanism" in text
+
+
+def test_decision_b_keeps_its_gates_blocking_and_the_suite_not_ready():
+    for gate_id in ("G1", "G2", "G6"):
+        notes = _gate(gate_id)
+        assert "td-b34" in notes or "td-b36" in notes or "td-b37" in notes, (
+            f"gate {gate_id} must cite the reassessment blockers it now carries"
+        )
+        assert "blocking" in notes, f"gate {gate_id} must stay explicitly blocking"
+    assert "the suite is not ready" in _gate("G1")
+    # no gate anywhere may be marked passed (guarded again here on purpose)
+    for row in _rows(GATES_PATH):
+        assert "passed" not in row["status"].strip().lower(), row["gate_id"]
+
+
+def test_stage_0_is_gated_on_decision_b():
+    policy = _flat(DOCS_V2 / "PILOT_AND_POWER_POLICY.md")
+    assert "stage 0 is additionally gated on decision b" in policy
+    assert "td-b34" in policy
+
+
+def test_the_authoring_requirements_for_the_next_tasks_are_recorded():
+    policy = _flat(DOCS_V2 / "TASK_AUTHORING_POLICY.md")
+    assert "requirements for the next architecture tasks" in policy
+    for requirement in (
+        "creates a genuine dependency decision caused by the required functional",
+        "does not merely preserve an already-satisfied boundary",
+        "feasible through the public interface",
+        "avoids implementation-dependent hidden setup",
+        "fixed before model output",
+        "compatible with legitimate implementation alternatives",
+        "does not depend on which file the model creates",
+        "duplicate an existing architectural instrument",
+        "no architecture hint",
+    ):
+        assert requirement in policy, f"the authoring bar must state: {requirement!r}"
+    assert "do not create artificial tasks merely to hit rule ids" in policy
+    assert "task-created decision" in policy
+
+
+def test_no_task_was_authored_by_this_package():
+    """DECISION B records requirements only; the eight candidates are unchanged."""
+    bodies = sorted(p.stem for p in PUBLIC_TASKS_DIR.glob("*.md") if p.stem in set(ALL_TASKS))
+    assert bodies == sorted(ALL_TASKS), "no ninth task body may appear"
+    report = _flat(REPORT_PATH)
+    assert "no replacement or additional task was authored" in report
+
+
+# --------------------------------------------------------------------------- #
+# 17. Statistical governance: clustered exposures, deferred power
+# --------------------------------------------------------------------------- #
+def test_the_task_set_is_recorded_as_not_confirmatory_ready():
+    sap = _flat(SAP_PATH)
+    assert "is not confirmatory-ready" in sap
+    assert "repeated task exposures to the same boundary are clustered" in sap
+    assert "task count is not the independent architecture-decision count" in sap
+    assert "cluster identifier will be required" in sap
+    assert "no final power value is frozen" in sap
+    assert "no power simulation was run" in sap
+    report = _flat(REPORT_PATH)
+    assert "repeated tasks over one boundary do not count as independent architecture" in report
+    assert "further public task authoring is required before stage 0" in report
+
+
+def test_the_power_simulation_is_deferred_until_more_distinct_decisions_exist():
+    for path in (SAP_PATH, DOCS_V2 / "PILOT_AND_POWER_POLICY.md"):
+        flat = _flat(path)
+        assert "only after" in flat, path.name
+        assert "distinct dependency" in flat or "distinct decisions" in flat, path.name
+    rows = _by_id(_rows(DECISIONS_CSV), key="decision_id")
+    b37 = rows["TD-B37"]["decision"].lower()
+    assert "clustered" in b37
+    assert "not equal to the independent architecture-decision count" in b37
+    assert "cluster identifier" in b37
+    assert "no power simulation was run" in b37
+
+
+#: Phrases that would claim the suite is ready. Each may appear ONLY inside a
+#: denial - this is the guard against a later edit quietly declaring readiness.
+READINESS_CLAIMS = (
+    "confirmatory-ready",
+    "ready for stage 0",
+    "the suite is ready",
+    "enough distinct dependency",
+)
+
+
+@pytest.mark.parametrize("phrase", READINESS_CLAIMS)
+def test_no_documentation_claims_the_current_task_set_is_confirmatory_ready(phrase):
+    negations = ("no ", "not ", "never", "n't", "cannot", "must ", "insufficient", "too few")
+    for path in _swept_files() + [DOCS_V2 / "PILOT_AND_POWER_POLICY.md"]:
+        flat = _flat(path)
+        for match in re.finditer(re.escape(phrase), flat):
+            clause = _clause(flat, match.start(), match.end())
+            assert any(n in clause for n in negations), (
+                f"{path.name} appears to claim readiness ({phrase!r}) without a "
+                f"denial: ...{clause[:200]!r}"
+            )
+
+
+def test_the_readiness_sweep_would_actually_catch_an_affirmative_claim():
+    """Guard the guard: the sweep must not be vacuously satisfied.
+
+    Every real occurrence of a readiness phrase currently sits inside a denial, so
+    the parametrized sweep above passes. This asserts the same rule REJECTS an
+    affirmative claim, using the identical clause-scoping helper on synthetic text.
+    """
+    negations = ("no ", "not ", "never", "n't", "cannot", "must ", "insufficient", "too few")
+
+    def offends(sentence: str, phrase: str) -> bool:
+        flat = re.sub(r"\s+", " ", sentence).lower()
+        match = re.search(re.escape(phrase), flat)
+        assert match, "premise: the phrase must occur in the synthetic sentence"
+        clause = _clause(flat, match.start(), match.end())
+        return not any(n in clause for n in negations)
+
+    # An affirmative claim is caught ...
+    assert offends("The current task set is confirmatory-ready.", "confirmatory-ready")
+    assert offends("The suite is ready for the core grid.", "the suite is ready")
+    # ... while the approved denial is not.
+    assert not offends(
+        "The current four-task architecture set is not confirmatory-ready.",
+        "confirmatory-ready",
+    )
+    # and a denial in a DIFFERENT sentence does not launder the claim
+    assert offends(
+        "Nothing was frozen. The current task set is confirmatory-ready.",
+        "confirmatory-ready",
+    )
 
 
 def test_an_inactive_reserve_keeps_draft_opportunities_but_stays_inactive():

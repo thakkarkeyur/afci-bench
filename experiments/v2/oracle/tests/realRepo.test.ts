@@ -79,6 +79,29 @@ describe('real repository self-scan (dogfood)', () => {
         'AR-DEP-005',
         'AR-DEP-006',
       ]);
+
+      // The REAL substrate's test and tooling TypeScript sits inside the frozen
+      // architectural scopes (apps/api/jest.config.ts is layer `api`;
+      // libs/features/src/features.spec.ts is layer `features`), so the production
+      // partition has to hold it out or a test-only dependency could violate a
+      // production opportunity. Assert against the actual repository, not a
+      // synthetic snapshot.
+      expect(r.production_source.policy_id).toBe('PSP-V1');
+      const excluded = r.production_source.excluded_paths;
+      expect(excluded.length).toBeGreaterThan(0);
+      expect(excluded).toContain('apps/api/jest.config.ts');
+      expect(excluded).toContain('apps/api/src/app.spec.ts');
+      expect(excluded).toContain('libs/core/src/core.spec.ts');
+      expect(excluded).toContain('libs/features/src/features.spec.ts');
+      // Every excluded path really is a spec or a tooling config ...
+      for (const rel of excluded) {
+        expect(/\.spec\.tsx?$|\.test\.tsx?$|(^|\/)jest\.config\.ts$/.test(rel)).toBe(true);
+      }
+      // ... and no production module was swept up with them.
+      expect(excluded).not.toContain('apps/api/src/app.ts');
+      expect(excluded).not.toContain('libs/features/src/index.ts');
+      expect(r.production_source.production_file_count).toBeGreaterThan(0);
+      expect(r.production_source.excluded_file_count).toBe(excluded.length);
     } finally {
       cleanup(tmp);
     }

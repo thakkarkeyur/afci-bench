@@ -3,7 +3,7 @@ PT01,Retrieve a single order by its identifier,read-endpoint,primary,scored,cand
 PT02,List a customer's orders with a total count,list-endpoint,primary,scored,candidate,ec4b60057708b20cb95e51f000671aab40afc8c55c0bc75850922a5f65841a77,npm run ci:agent,medium,pass,EM-PT02
 PT03,Change the status of an existing order,write-endpoint,primary,scored,candidate,cbfce1ca232cb9b6b53e0b4d202d6acee7415b50af8386c1f3bd2147089b4c21,npm run ci:agent,medium,pass,EM-PT03
 PT04,Emit structured request and error logs for order creation,logging,primary,scored,candidate,f349b150b1d8fe5676fed8460b1840b988ee2bb0a78b1966ef82ae9ce9c8a9b5,npm run ci:agent,medium,pass,EM-PT04
-PT05,Apply an order-level volume discount to the total,calculation,primary,scored,candidate,f6efc772e76d6c287e0c71daaa93c7e1d9e62e72a1b37878df70113269ed27b3,npm run ci:agent,medium,pass,EM-PT05
+PT05,Apply an order-level volume discount to the total,calculation,primary,functional-only,candidate,f6efc772e76d6c287e0c71daaa93c7e1d9e62e72a1b37878df70113269ed27b3,npm run ci:agent,medium,pass,EM-PT05
 PT06,Return a consistent validation-error envelope for order creation,error-handling,primary,functional-only,candidate,3e0f84cfef1f9fbf97e3cd31b6704c3a0fb172b04b5e7bc33ea39927b1c8e0f2,npm run ci:agent,medium,pass,EM-PT06
 PR01,Guarantee cent-exact order totals for fractional unit prices,calculation,reserve,inactive-reserve,candidate,0e1527bce41498836bb57b802d4566251d6fcfed4cca13fe59e6a97330f02302,npm run ci:agent,small,pass,EM-PR01
 PR02,Cancel an order with terminal-state guards,write-endpoint,reserve,inactive-reserve,candidate,e89a4aab236813c082f9152db779b8bbfb298148a51a8435a1e2bf38330caa83,npm run ci:agent,medium,pass,EM-PR02

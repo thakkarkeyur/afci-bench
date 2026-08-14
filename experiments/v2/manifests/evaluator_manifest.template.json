@@ -18,6 +18,12 @@
   "dependency_policy": {
     "alias_config_path": "tsconfig.base.json",
     "source_globs": ["libs/**/*.ts", "apps/**/*.ts"],
+    "production_source_policy": {
+      "policy_id": "PSP-V1",
+      "additional_excluded_config_basenames": [],
+      "additional_excluded_spec_basename_globs": [],
+      "additional_excluded_directory_names": []
+    },
     "layers": [
       { "id": "contracts", "path_globs": ["libs/contracts/**"] },
       { "id": "core", "path_globs": ["libs/core/**"] },

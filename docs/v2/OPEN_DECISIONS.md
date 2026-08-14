@@ -24,16 +24,18 @@ that none is yet marked resolved.
 
 ## Counts
 
-- **Blocking decisions: 33** (`TD-B01`–`TD-B33`) — must be resolved before the
+- **Blocking decisions: 37** (`TD-B01`–`TD-B37`) — must be resolved before the
   corresponding data collection; all are cited inline across the protocol files.
   `TD-B16`–`TD-B21` were added by the pre-execution design-review reconciliation;
   `TD-B22` was added by the independent public review of the pilot task package;
   **`TD-B23`–`TD-B33` were added by the suite-classification decision (decision
   D)** that narrowed the confirmatory construct to dependency-direction
-  conformance.
+  conformance; **`TD-B34`–`TD-B37` were added by the independent pre-authoring
+  opportunity reassessment** (`DECISION B`, `PT05`'s reclassification, the
+  production-source scoring policy, and the statistical-governance consequences).
 - **Non-blocking decisions: 6** (`TD-N01`–`TD-N06`) — refinements that do not
   block the confirmatory design.
-- **Total open decisions: 39.** None resolved (pre-freeze draft, not a
+- **Total open decisions: 43.** None resolved (pre-freeze draft, not a
   data-collection package).
 
 A **blocking** decision, if left unresolved, would invalidate or bias the
@@ -43,7 +45,7 @@ confirmatory analysis.
 
 ---
 
-## Blocking decisions (TD-B01 – TD-B33)
+## Blocking decisions (TD-B01 – TD-B37)
 
 | ID | Decision | Owner | Resolved during | Gate |
 |----|----------|-------|-----------------|------|
@@ -91,9 +93,19 @@ classification.
 | **TD-B32** | **Hidden evaluator scaffolds remain `draft_unvalidated`** and require independent review plus reference and mutation validation before any package may be approved or frozen. | Oracle Designer + Guard Engineer | private review and validation (with `TD-B05`/`TD-B12`) | G1/G6 |
 | **TD-B33** | **Implementing `AR-CONTRACT-001` or `AR-CODE-001` remains future work intended to BROADEN E1** to further architecture dimensions. It must **never** be used to readmit a structurally excluded task **post hoc**, and any broadening requires its own pre-registration before data collection. | Oracle Designer + Study Lead | future protocol version (not this package) | G1/G8 |
 
+### Added by the pre-authoring opportunity reassessment — `TD-B34` – `TD-B37`
+
+| ID | Decision | Owner | Resolved during | Gate |
+|----|----------|-------|-----------------|------|
+| **TD-B34** | **DECISION B — author additional public tasks exercising genuinely different existing dependency-direction leaf rules and source/target boundaries before Stage 0.** The motivation is **construct validity**: the current active set (`PT01`–`PT04`) does not sample enough **distinct** dependency-direction decisions to support the intended confirmatory endpoint; repeated tasks over one boundary are one architectural instrument observed repeatedly, not independent architecture constructs. This decision **predates any benchmark or model outcome** and **no experimental result exists**. **No reserve is activated merely to restore task count.** The deficiency is **task-set coverage, not an oracle failure**; the repaired scope-based oracle **remains** the approved attribution mechanism; and **no new rule family is required**, because unused implemented dependency leaf relationships already exist (`AR-DEP-002`…`AR-DEP-006`). Gates **G1/G2/G6** stay **blocking** and the suite is **not** ready. | Task Designer + Study Lead | next public task-authoring work package (before Stage 0) | G1/G2/G6 |
+| **TD-B35** | **`PT05` is reclassified `scored` → `functional-only`** because its required functional work creates no currently scored dependency-direction opportunity; its **private** per-task manifest must be migrated to `e1_analysis_eligibility=functional-only` with **no** opportunity denominator, or the engine fails closed. A **construct/feasibility** reclassification made **before any run** — never zero violations, failed, missing, invalid or a refusal. The private evaluator repository was **not accessed**. | Oracle Designer | private manifest re-authoring (with `TD-B05`/`TD-B14`) | G1 |
+| **TD-B36** | **The labelled corpus and every private frozen opportunity set must be re-checked under the production-source policy** (§1b): no opportunity may depend on a test-only or config-only dependency, and no seeded violation may sit in an excluded file. The policy itself needs independent review before freeze. Regression-locked publicly by **M8-A**–**M8-F**; **not** discharged. | Guard Engineer | pilot (with `TD-B12`/`TD-B27`) | G6 |
+| **TD-B37** | **The current four-task architecture set is not confirmatory-ready and no final power value may be frozen from it.** Repeated exposures to one boundary are **clustered**; **task count ≠ independent architecture-decision count**; the final interaction power simulation (`TD-B20`) runs **only after** additional distinct decisions are authored and approved (`TD-B34`); and a **decision/boundary cluster identifier** must be carried in the eventual analysis artifact, with a matching sensitivity re-fit (`TD-B30`). **No power simulation was run here.** | Statistician | after `TD-B34` authoring is approved (with `TD-B20`/`TD-B30`) | G2/G3 |
+
 Added by the pre-execution design-review reconciliation: `TD-B16`–`TD-B21`; added
 by the independent public review of the pilot task package: `TD-B22`; added by the
-suite-classification decision: `TD-B23`–`TD-B33`. Each
+suite-classification decision: `TD-B23`–`TD-B33`; added by the pre-authoring
+opportunity reassessment: `TD-B34`–`TD-B37`. Each
 is **open** (none resolved here — the CI/leakage **mechanisms** are delivered and
 tested, but the runner-time enforcement, authored suite, frozen hashes,
 container, pilot simulation, and dry runs all remain outstanding).
@@ -221,9 +233,10 @@ opportunity"**, its numerator pinned to
 `applicable_opportunity_count = 0` is **structurally ineligible** for E1 rather
 than coded as zero violations. Analysis eligibility is now recorded publicly per
 candidate ([`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv),
-`TASK_INDEX.csv`): **`PT01`–`PT05` `scored`**, **`PT06` `functional-only`** (a
-valid primary functional candidate, structurally excluded from E1 but still
-contributing to hidden functional acceptance, cost and exploratory analyses), and
+`TASK_INDEX.csv`): at that decision **`PT01`–`PT05` `scored`**, **`PT06`
+`functional-only`** (a valid primary functional candidate, structurally excluded
+from E1 but still contributing to hidden functional acceptance, cost and
+exploratory analyses), and
 **`PR01`/`PR02` `inactive-reserve`** — **no reserve was activated**, and `PR02`
 must not be promoted (`TD-B26`). Contract ownership, port/interface placement,
 observability completeness, duplicated logic and general business-logic placement
@@ -234,7 +247,7 @@ architectural conformance** (gate **G8**). **No task body, task content hash,
 manifest, endpoint or protocol was frozen**, no oracle change was made, `apps/`
 and `libs/` are byte-identical, the private evaluator repository was **not
 accessed**, and **no benchmark or model execution occurred**. Eleven blockers
-were **opened** (`TD-B23`–`TD-B33`) and **none of the 33 blocking decisions is
+were **opened** (`TD-B23`–`TD-B33`) and **no blocking decision was
 closed**; gates **G1**–**G8** remain **not passed** and the protocol remains
 **pre-freeze**.
 
@@ -263,6 +276,47 @@ public task index.
 > before any package is approved or frozen. **No blocker was closed**, no task body
 > or hash changed, nothing was frozen, and no benchmark or model execution
 > occurred.
+
+**Pre-authoring opportunity reassessment: `PT05` reclassified, `DECISION B`
+recorded, production scoring isolated — four new blockers, nothing resolved.** An
+independent reassessment of the active architecture set, carried out **before any
+benchmark or model execution** and from the public task bodies and the unchanged
+substrate only:
+
+- **`PT05` → `functional-only`** (`TD-B35`). It is **functionally valid but
+  structurally ineligible for E1**, because its required functional work creates
+  **no currently scored dependency-direction opportunity**. A **construct and
+  feasibility** reclassification, **not** a model outcome: `PT05` is never
+  reported as zero violations, failed, missing, invalid, or a refusal, and it
+  still contributes to hidden functional acceptance, cost, reset-related
+  functional outcomes and pre-registered exploratory analyses. Its body, hash and
+  `primary` kind are **unchanged**. **No reserve was activated** to restore the
+  scored count — `PR01`/`PR02` stay inactive and `PR02` stays blocked (`TD-B26`).
+- **`DECISION B`** (`TD-B34`): the surviving active set exercises **too few
+  distinct dependency boundaries** for confirmatory inference, so **additional
+  public architecture tasks must be authored before Stage 0**. The deficiency is
+  **task-set coverage, not an oracle failure**, and **no new rule family** is
+  needed — unused implemented leaf relationships already exist. Only the authoring
+  **requirements** are recorded here; **no task was authored**.
+- **Production-source scoring** (`TD-B36`): the P0 that let test and configuration
+  TypeScript enter the scored dependency scopes is closed. E1 is computed from the
+  **production dependency graph** only; test specs, test support material and
+  tooling config are partitioned into a separate, never-scored graph before any
+  import edge is built. The **frozen layer scopes are unchanged**, and the
+  denominator remains the frozen opportunity count, so test files move neither
+  side of E1.
+- **Statistical governance** (`TD-B37`): the current four-task architecture set is
+  **not confirmatory-ready**; repeated exposures to one boundary are **clustered**;
+  **task count ≠ independent architecture-decision count**; the final power
+  simulation waits for `TD-B34`; a **cluster identifier** will be required in the
+  analysis artifact; and **no power value is frozen**.
+
+**No task body or hash changed, no reserve was activated, no task was authored,
+no manifest/endpoint/protocol was frozen, `apps/` and `libs/` are byte-identical,
+the private evaluator repository was not accessed or modified, and no benchmark or
+model execution occurred.** Four blockers were **opened** (`TD-B34`–`TD-B37`);
+**no blocking decision is closed**, gates **G1**–**G8** remain **not passed**, and
+the protocol remains **pre-freeze**.
 
 ---
 

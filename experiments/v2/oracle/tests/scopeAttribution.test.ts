@@ -25,10 +25,46 @@
  * The frozen denominator is identical across every mutant: it is the manifest's
  * opportunity count and never depends on what the model created, edited, or how
  * many imports matched.
+ *
+ * ---------------------------------------------------------------------------
+ * M8 — PRODUCTION-SOURCE SCORING (docs/v2/ORACLE_VALIDATION_REQUIREMENTS.md §1b)
+ *
+ * The second defect: the frozen source globs and the frozen LAYER globs both
+ * match test and tooling TypeScript sitting inside an architectural scope, so a
+ * dependency written only to wire up a test could violate a PRODUCTION
+ * opportunity. E1 measures production architectural dependencies, so the engine
+ * partitions the scanned source before building any edge:
+ *
+ *   M8-A  new PRODUCTION features file imports forbidden infra -> VIOLATION
+ *   M8-B  same import in a features-layer *.spec.ts            -> NOT a violation
+ *   M8-C  same import under __tests__/                         -> NOT a violation
+ *   M8-D  same import in jest.config.ts (tooling config)       -> NOT a violation
+ *   M8-E  conforming production file, forbidden dep only in a test -> SATISFIED
+ *   M8-F  forbidden production dep + harmless test deps        -> VIOLATION exactly once
+ *
+ * M0–M7 are unchanged by M8: the base snapshot carries no test or config file, so
+ * the partition holds out nothing there.
  */
 
-import { ArchitectureFinding, EvaluateOptions, OracleError, evaluateSnapshot } from '../src';
-import { baseManifest, cleanup, makeTmpRoot, writeManifest, writeSnapshot } from './helpers';
+import {
+  ArchitectureFinding,
+  BASELINE_PRODUCTION_SOURCE_POLICY_ID,
+  EvaluateOptions,
+  OracleError,
+  classifySourceFile,
+  evaluateSnapshot,
+  isProductionSource,
+  partitionProductionSources,
+  resolveProductionSourcePolicy,
+} from '../src';
+import {
+  baseDependencyPolicy,
+  baseManifest,
+  cleanup,
+  makeTmpRoot,
+  writeManifest,
+  writeSnapshot,
+} from './helpers';
 
 // --------------------------------------------------------------------------- //
 // Synthetic source substrate (a miniature of the real layered repository)
@@ -682,6 +718,54 @@ describe('gates that must survive the attribution change', () => {
     );
   });
 
+  it('a reclassified PT05 cannot be scored as E1-eligible against the approved index', () => {
+    // PT05 is functionally valid but structurally ineligible: its required work
+    // creates no scored dependency-direction opportunity. A private manifest that
+    // still declares it 'scored' must fail closed, not quietly enter E1.
+    expectFailClosed(
+      snapshotWith({ 'apps/api/src/lookup.ts': API_TO_CORE }),
+      baseManifest({
+        task_id: 'PT05',
+        opportunities: frozenOpportunities(),
+        e1_analysis_eligibility: 'scored',
+      }),
+      /ELIGIBILITY_TASK_INDEX_MISMATCH/,
+      { approvedEligibility: { PT05: 'functional-only' } },
+    );
+    // ...and it cannot smuggle a denominator in under the correct label either.
+    expectFailClosed(
+      snapshotWith(),
+      baseManifest({
+        task_id: 'PT05',
+        opportunities: frozenOpportunities(),
+        e1_analysis_eligibility: 'functional-only',
+      }),
+      /ELIGIBILITY_DENOMINATOR_CONFLICT/,
+      { approvedEligibility: { PT05: 'functional-only' } },
+    );
+  });
+
+  it('a zero-opportunity functional-only task scores with NO E1 exposure', () => {
+    // The correct shape: functional-only, zero frozen opportunities. It scores,
+    // it is not an error, and it contributes nothing to either side of E1 — so it
+    // can never be entered as "zero violations".
+    const r = score(
+      snapshotWith({ 'apps/api/src/lookup.ts': API_TO_CORE }),
+      baseManifest({
+        task_id: 'PT05',
+        opportunities: [],
+        e1_analysis_eligibility: 'functional-only',
+      }),
+      { approvedEligibility: { PT05: 'functional-only' } },
+    );
+    expect(r.opportunity_accounting.applicable_opportunity_count).toBe(0);
+    expect(r.opportunity_accounting.violated_opportunity_count).toBe(0);
+    expect(r.opportunity_accounting.fixed_opportunity_count).toBe(0);
+    expect(r.findings.some((f) => f.opportunity_id !== null)).toBe(false);
+    // The raw descriptive series still records the forbidden edge; E1 does not.
+    expect(r.raw_violation_count).toBe(1);
+  });
+
   it('an inactive reserve is still refused, opportunities and all', () => {
     expectFailClosed(
       snapshotWith({ 'apps/api/src/lookup.ts': API_TO_CORE }),
@@ -698,5 +782,422 @@ describe('gates that must survive the attribution change', () => {
   it('scoring stays deterministic (byte-identical) under scope attribution', () => {
     const files = snapshotWith({ 'apps/api/src/lookup.ts': API_TO_CORE });
     expect(JSON.stringify(score(files))).toEqual(JSON.stringify(score(files)));
+  });
+});
+
+// --------------------------------------------------------------------------- //
+// M8 — production-source scoring
+//
+// E1 measures PRODUCTION architectural dependencies. The frozen source globs and
+// the frozen LAYER globs both match test and tooling TypeScript that physically
+// sits inside an architectural scope (`libs/features/src/x.spec.ts` is layer
+// `features`; `libs/features/jest.config.ts` is layer `features`), so before this
+// policy a dependency written only to wire up a test could violate a production
+// opportunity. These cases prove it cannot, while a genuine production dependency
+// in a brand-new file still is.
+// --------------------------------------------------------------------------- //
+const OPP_M8_FEATURES_INFRA = 'OPP-M8-FEAT-INFRA';
+const OPP_M8_API_CORE = 'OPP-M8-API-CORE';
+
+/** features->infra (AR-DEP-006) and api->core (AR-DEP-005): denominator 2. */
+function m8Opportunities(): Record<string, unknown>[] {
+  return [
+    {
+      opportunity_id: OPP_M8_FEATURES_INFRA,
+      rule_id: 'AR-DEP-006',
+      locator: {
+        importer_path: FEATURES_ANCHOR,
+        scope: 'features',
+        forbidden_target_layers: ['infra'],
+      },
+      description: null,
+    },
+    {
+      opportunity_id: OPP_M8_API_CORE,
+      rule_id: 'AR-DEP-005',
+      locator: { importer_path: API_ANCHOR, scope: 'api', forbidden_target_layers: ['core'] },
+      description: null,
+    },
+  ];
+}
+
+const M8_DENOMINATOR = m8Opportunities().length;
+
+/** features -> infra: forbidden (AR-DEP-006). */
+const FEATURES_TO_INFRA = `import { load } from '@afci-bench/infra';
+export const price = (): string => load({ id: 'x' });
+`;
+
+/** features -> core: an ALLOWED dependency, so this file conforms. */
+const FEATURES_TO_CORE = `import { idOf } from '@afci-bench/core';
+export const discount = (): string => idOf({ id: 'x' });
+`;
+
+/** Tooling configuration that pulls in a forbidden target purely to set up tests. */
+const JEST_CONFIG_TO_INFRA = `import { load } from '@afci-bench/infra';
+export const config = { displayName: 'features', seed: load({ id: 'x' }) };
+`;
+
+function scoreM8(
+  files: Record<string, string>,
+  manifestOverrides: Record<string, unknown> = {},
+): ArchitectureFinding {
+  return score(files, baseManifest({ opportunities: m8Opportunities(), ...manifestOverrides }));
+}
+
+interface ProdMutant {
+  id: string;
+  what: string;
+  files: Record<string, string>;
+  featuresInfraOpp: OppStatus;
+  apiCoreOpp: OppStatus;
+  rawViolations: number;
+  /** Files held out of the production dependency graph. */
+  excluded: string[];
+}
+
+const M8_MUTANTS: ProdMutant[] = [
+  {
+    id: 'M8-A',
+    what: 'a NEW production libs/features/src file imports a forbidden infra target',
+    files: snapshotWith({ 'libs/features/src/pricing.ts': FEATURES_TO_INFRA }),
+    featuresInfraOpp: 'VIOLATION',
+    apiCoreOpp: 'SATISFIED',
+    rawViolations: 1,
+    excluded: [],
+  },
+  {
+    id: 'M8-B',
+    what: 'a new features-layer *.spec.ts imports the same infra target to build a test double',
+    files: snapshotWith({ 'libs/features/src/pricing.spec.ts': FEATURES_TO_INFRA }),
+    featuresInfraOpp: 'SATISFIED',
+    apiCoreOpp: 'SATISFIED',
+    rawViolations: 0,
+    excluded: ['libs/features/src/pricing.spec.ts'],
+  },
+  {
+    id: 'M8-C',
+    what: 'the same prohibited import under __tests__/ (not a *.spec.ts basename)',
+    files: snapshotWith({ 'libs/features/src/__tests__/harness.ts': FEATURES_TO_INFRA }),
+    featuresInfraOpp: 'SATISFIED',
+    apiCoreOpp: 'SATISFIED',
+    rawViolations: 0,
+    excluded: ['libs/features/src/__tests__/harness.ts'],
+  },
+  {
+    id: 'M8-D',
+    what: 'test/config TypeScript (jest.config.ts) imports the forbidden dependency',
+    files: snapshotWith({ 'libs/features/jest.config.ts': JEST_CONFIG_TO_INFRA }),
+    featuresInfraOpp: 'SATISFIED',
+    apiCoreOpp: 'SATISFIED',
+    rawViolations: 0,
+    excluded: ['libs/features/jest.config.ts'],
+  },
+  {
+    id: 'M8-E',
+    what: 'a conforming production file whose TEST carries the forbidden dependency',
+    files: snapshotWith({
+      'libs/features/src/discount.ts': FEATURES_TO_CORE,
+      'libs/features/src/discount.spec.ts': FEATURES_TO_INFRA,
+    }),
+    featuresInfraOpp: 'SATISFIED',
+    apiCoreOpp: 'SATISFIED',
+    rawViolations: 0,
+    excluded: ['libs/features/src/discount.spec.ts'],
+  },
+  {
+    id: 'M8-F',
+    what: 'a forbidden PRODUCTION dependency plus otherwise harmless test dependencies',
+    files: snapshotWith({
+      'libs/features/src/gateway.ts': FEATURES_TO_INFRA,
+      'libs/features/src/gateway.spec.ts': FEATURES_TO_INFRA,
+      'libs/features/src/__tests__/support.ts': FEATURES_TO_INFRA,
+      'libs/features/jest.config.ts': JEST_CONFIG_TO_INFRA,
+    }),
+    featuresInfraOpp: 'VIOLATION',
+    apiCoreOpp: 'SATISFIED',
+    rawViolations: 1,
+    excluded: [
+      'libs/features/jest.config.ts',
+      'libs/features/src/__tests__/support.ts',
+      'libs/features/src/gateway.spec.ts',
+    ],
+  },
+];
+
+describe('production-source scoring — mutation corpus M8-A..M8-F', () => {
+  it.each(M8_MUTANTS.map((m) => [m.id, m] as [string, ProdMutant]))(
+    '%s produces the intended per-opportunity outcome',
+    (_id, m) => {
+      const r = scoreM8(m.files);
+      expect(oppStatus(r, OPP_M8_FEATURES_INFRA)).toBe(m.featuresInfraOpp);
+      expect(oppStatus(r, OPP_M8_API_CORE)).toBe(m.apiCoreOpp);
+      expect(r.raw_violation_count).toBe(m.rawViolations);
+
+      // Raw production violations and the frozen accounting stay coherent.
+      const expectedViolated =
+        (m.featuresInfraOpp === 'VIOLATION' ? 1 : 0) + (m.apiCoreOpp === 'VIOLATION' ? 1 : 0);
+      const acc = r.opportunity_accounting;
+      expect(acc.violated_opportunity_count).toBe(expectedViolated);
+      expect(acc.absent_opportunity_count).toBe(0);
+      expect(acc.applicable_opportunity_count).toBe(M8_DENOMINATOR);
+      expect(
+        acc.fixed_opportunity_count + acc.violated_opportunity_count + acc.absent_opportunity_count,
+      ).toBe(acc.applicable_opportunity_count);
+      // Every reported violation is a production-file violation.
+      expect(r.findings.filter((f) => f.violation)).toHaveLength(m.rawViolations);
+    },
+  );
+
+  it.each(M8_MUTANTS.map((m) => [m.id, m] as [string, ProdMutant]))(
+    '%s partitions exactly the intended files out of the production graph',
+    (_id, m) => {
+      const r = scoreM8(m.files);
+      expect(r.production_source.policy_id).toBe(BASELINE_PRODUCTION_SOURCE_POLICY_ID);
+      expect(r.production_source.excluded_paths).toEqual(m.excluded);
+      expect(r.production_source.excluded_file_count).toBe(m.excluded.length);
+      expect(r.production_source.production_file_count).toBeGreaterThan(0);
+      // No excluded file may appear as evidence for any violation.
+      for (const finding of r.findings.filter((f) => f.violation)) {
+        for (const evidence of finding.evidence_paths) {
+          expect(m.excluded).not.toContain(evidence);
+        }
+      }
+    },
+  );
+
+  it('M8-A: a production edge in a brand-new file is still detected and attributed', () => {
+    const r = scoreM8(snapshotWith({ 'libs/features/src/pricing.ts': FEATURES_TO_INFRA }));
+    const violations = r.findings.filter((f) => f.violation);
+    expect(violations).toHaveLength(1);
+    expect(violations[0].rule_id).toBe('AR-DEP-006');
+    expect(violations[0].importer_layer).toBe('features');
+    expect(violations[0].target_layer).toBe('infra');
+    expect(violations[0].opportunity_id).toBe(OPP_M8_FEATURES_INFRA);
+    // Scope attribution (M2) and production-source scoring (M8) compose: the
+    // anchor file is untouched and the new file is what carries the decision.
+    expect(violations[0].evidence_paths).toEqual(['libs/features/src/pricing.ts']);
+  });
+
+  it.each([
+    ['M8-B', 'libs/features/src/pricing.spec.ts', FEATURES_TO_INFRA],
+    ['M8-C', 'libs/features/src/__tests__/harness.ts', FEATURES_TO_INFRA],
+    ['M8-D', 'libs/features/jest.config.ts', JEST_CONFIG_TO_INFRA],
+  ])('%s: the excluded file creates no finding of any kind', (_id, rel, contents) => {
+    const r = scoreM8(snapshotWith({ [rel]: contents }));
+    expect(r.raw_violation_count).toBe(0);
+    expect(r.verdict).toBe('CONFORMANT');
+    expect(r.findings.some((f) => f.evidence_paths.includes(rel))).toBe(false);
+    expect(r.production_source.excluded_paths).toContain(rel);
+  });
+
+  it('M8-E: the production opportunity stays SATISFIED when only the test violates', () => {
+    const clean = scoreM8(snapshotWith());
+    const withTestOnlyDependency = scoreM8(
+      snapshotWith({
+        'libs/features/src/discount.ts': FEATURES_TO_CORE,
+        'libs/features/src/discount.spec.ts': FEATURES_TO_INFRA,
+      }),
+    );
+    expect(oppStatus(withTestOnlyDependency, OPP_M8_FEATURES_INFRA)).toBe('SATISFIED');
+    // ...and it scores identically to the snapshot that has no test at all.
+    expect(withTestOnlyDependency.opportunity_accounting).toEqual(clean.opportunity_accounting);
+    expect(withTestOnlyDependency.raw_violation_count).toBe(clean.raw_violation_count);
+  });
+
+  it('M8-F: a forbidden production dependency violates EXACTLY once amid test noise', () => {
+    const m8f = M8_MUTANTS.find((m) => m.id === 'M8-F') as ProdMutant;
+    const r = scoreM8(m8f.files);
+    expect(oppStatus(r, OPP_M8_FEATURES_INFRA)).toBe('VIOLATION');
+    expect(r.opportunity_accounting.violated_opportunity_count).toBe(1);
+    // Four files carry the prohibited import; only the one production file counts.
+    expect(r.raw_violation_count).toBe(1);
+    expect(
+      r.findings.filter((f) => f.violation && f.opportunity_id === OPP_M8_FEATURES_INFRA),
+    ).toHaveLength(1);
+    expect(r.findings.find((f) => f.violation)?.evidence_paths).toEqual([
+      'libs/features/src/gateway.ts',
+    ]);
+  });
+
+  it('the frozen denominator is identical across every M8 mutant', () => {
+    for (const m of M8_MUTANTS) {
+      const r = scoreM8(m.files);
+      expect(r.opportunity_accounting.applicable_opportunity_count).toBe(M8_DENOMINATOR);
+    }
+  });
+
+  it('adding more test/config files cannot change applicable_opportunity_count', () => {
+    const many: Record<string, string> = {};
+    for (let i = 0; i < 20; i += 1) {
+      many[`libs/features/src/gen${i}.spec.ts`] = FEATURES_TO_INFRA;
+      many[`libs/features/src/__tests__/gen${i}.ts`] = FEATURES_TO_INFRA;
+    }
+    many['libs/features/jest.config.ts'] = JEST_CONFIG_TO_INFRA;
+    const noisy = scoreM8(snapshotWith(many));
+    const clean = scoreM8(snapshotWith());
+    expect(noisy.opportunity_accounting.applicable_opportunity_count).toBe(M8_DENOMINATOR);
+    // Neither side of E1 moved: same denominator, same numerator.
+    expect(noisy.opportunity_accounting).toEqual(clean.opportunity_accounting);
+    expect(noisy.raw_violation_count).toBe(0);
+    expect(noisy.production_source.excluded_file_count).toBe(41);
+    expect(noisy.production_source.production_file_count).toBe(
+      clean.production_source.production_file_count,
+    );
+  });
+
+  it('test/config-only files cannot increase the E1 numerator', () => {
+    const clean = scoreM8(snapshotWith());
+    const testOnly = scoreM8(
+      snapshotWith({
+        'libs/features/src/a.spec.ts': FEATURES_TO_INFRA,
+        'libs/features/src/__mocks__/infra.ts': FEATURES_TO_INFRA,
+        'libs/features/src/test-helpers/build.ts': FEATURES_TO_INFRA,
+        'apps/api/src/app.spec.ts': API_TO_CORE,
+        'apps/api/jest.config.ts': JEST_CONFIG_TO_INFRA,
+      }),
+    );
+    expect(testOnly.opportunity_accounting.violated_opportunity_count).toBe(0);
+    expect(testOnly.opportunity_accounting).toEqual(clean.opportunity_accounting);
+    expect(testOnly.raw_violation_count).toBe(0);
+  });
+
+  it('a frozen scope left with only test files is NOT_APPLICABLE, never SATISFIED', () => {
+    // The production features layer is gone; only a spec remains. The decision
+    // has no production material to evaluate, so it must not be scored as fixed.
+    const r = scoreM8(
+      snapshotWith({ [FEATURES_ANCHOR]: null, 'libs/features/src/left.spec.ts': FEATURES_TO_INFRA }),
+    );
+    expect(oppStatus(r, OPP_M8_FEATURES_INFRA)).toBe('NOT_APPLICABLE');
+    expect(r.opportunity_accounting.applicable_opportunity_count).toBe(M8_DENOMINATOR);
+    expect(r.opportunity_accounting.violated_opportunity_count).toBe(0);
+  });
+
+  it('scoring stays deterministic under the production-source partition', () => {
+    const m8f = M8_MUTANTS.find((m) => m.id === 'M8-F') as ProdMutant;
+    expect(JSON.stringify(scoreM8(m8f.files))).toEqual(JSON.stringify(scoreM8(m8f.files)));
+  });
+});
+
+// --------------------------------------------------------------------------- //
+// The production-source policy itself: explicit, auditable, additive-only
+// --------------------------------------------------------------------------- //
+describe('production-source policy classification', () => {
+  it.each([
+    ['libs/features/src/index.ts', 'production'],
+    ['apps/api/src/app.ts', 'production'],
+    ['libs/features/src/pricing.spec.ts', 'test-spec'],
+    ['libs/features/src/pricing.test.ts', 'test-spec'],
+    ['apps/api/src/app.spec.tsx', 'test-spec'],
+    ['libs/features/src/__tests__/harness.ts', 'test-support'],
+    ['libs/features/src/__mocks__/infra.ts', 'test-support'],
+    ['libs/core/src/test-helpers/build.ts', 'test-support'],
+    ['libs/features/jest.config.ts', 'tool-config'],
+    ['jest.config.ts', 'tool-config'],
+    ['webpack.config.ts', 'tool-config'],
+  ])('classifies %s as %s', (rel, expected) => {
+    expect(classifySourceFile(rel)).toBe(expected);
+  });
+
+  it.each([
+    'libs/core/src/latest.ts',
+    'libs/core/src/contest.ts',
+    'libs/core/src/testUtils.ts',
+    'libs/core/src/protest/index.ts',
+    'apps/api/src/app.config.ts',
+    'libs/features/src/manifest.ts',
+  ])('does not exclude production source with an incidental word: %s', (rel) => {
+    expect(isProductionSource(rel)).toBe(true);
+    expect(classifySourceFile(rel)).toBe('production');
+  });
+
+  it('partitions a file list without losing or duplicating a path', () => {
+    const files = [
+      'apps/api/src/app.ts',
+      'apps/api/src/app.spec.ts',
+      'apps/api/jest.config.ts',
+      'libs/core/src/latest.ts',
+    ];
+    const { production, excluded } = partitionProductionSources(files);
+    expect(production).toEqual(['apps/api/src/app.ts', 'libs/core/src/latest.ts']);
+    expect(excluded).toEqual(['apps/api/src/app.spec.ts', 'apps/api/jest.config.ts']);
+    expect([...production, ...excluded].sort()).toEqual([...files].sort());
+  });
+
+  it('applies the baseline when a manifest declares no policy at all', () => {
+    const policy = resolveProductionSourcePolicy(undefined);
+    expect(policy.policy_id).toBe(BASELINE_PRODUCTION_SOURCE_POLICY_ID);
+    expect(policy.excluded_spec_basename_globs).toContain('*.spec.ts');
+    expect(policy.excluded_config_basenames).toContain('jest.config.ts');
+    expect(policy.excluded_directory_names).toContain('__tests__');
+  });
+
+  it('a manifest extension only ADDS exclusions; it cannot re-admit a baseline class', () => {
+    const policy = resolveProductionSourcePolicy({
+      policy_id: 'repo-extras',
+      additional_excluded_directory_names: ['testing'],
+      additional_excluded_config_basenames: ['tools.config.ts'],
+      additional_excluded_spec_basename_globs: ['*.fixture.ts'],
+    });
+    // baseline retained ...
+    expect(policy.excluded_spec_basename_globs).toContain('*.spec.ts');
+    expect(policy.excluded_directory_names).toContain('__tests__');
+    // ... plus the additions, and the id still records the baseline it extends
+    expect(policy.excluded_directory_names).toContain('testing');
+    expect(policy.excluded_config_basenames).toContain('tools.config.ts');
+    expect(policy.policy_id.startsWith(BASELINE_PRODUCTION_SOURCE_POLICY_ID)).toBe(true);
+    expect(classifySourceFile('libs/core/src/testing/x.ts', policy)).toBe('test-support');
+    // and the baseline classes are untouched by the extension
+    expect(classifySourceFile('libs/core/src/x.spec.ts', policy)).toBe('test-spec');
+  });
+
+  it('an extended policy is reported on the finding and is applied end-to-end', () => {
+    const dependencyPolicy = {
+      ...baseDependencyPolicy(),
+      production_source_policy: {
+        policy_id: 'repo-extras',
+        additional_excluded_directory_names: ['testing'],
+      },
+    };
+    const r = scoreM8(snapshotWith({ 'libs/features/src/testing/double.ts': FEATURES_TO_INFRA }), {
+      dependency_policy: dependencyPolicy,
+    });
+    expect(r.production_source.policy_id).toBe(
+      `${BASELINE_PRODUCTION_SOURCE_POLICY_ID}+repo-extras`,
+    );
+    expect(r.production_source.excluded_paths).toEqual(['libs/features/src/testing/double.ts']);
+    expect(r.raw_violation_count).toBe(0);
+    expect(oppStatus(r, OPP_M8_FEATURES_INFRA)).toBe('SATISFIED');
+    // Without the extension the very same file IS production and DOES violate.
+    const baseline = scoreM8(
+      snapshotWith({ 'libs/features/src/testing/double.ts': FEATURES_TO_INFRA }),
+    );
+    expect(oppStatus(baseline, OPP_M8_FEATURES_INFRA)).toBe('VIOLATION');
+  });
+
+  it.each([
+    [{ additional_excluded_directory_names: 'nope' }, /must be an array of strings/],
+    [{ additional_excluded_config_basenames: ['libs/x.ts'] }, /must not contain/],
+    [{ additional_excluded_directory_names: ['__t*__'] }, /glob wildcard/],
+    [{ additional_excluded_spec_basename_globs: ['a/b.spec.ts'] }, /must not contain/],
+    [{ additional_excluded_spec_basename_globs: [''] }, /empty entry/],
+    [{ policy_id: '' }, /non-empty string/],
+  ])('fails closed on a malformed production-source policy (%#)', (declared, message) => {
+    expect(() => resolveProductionSourcePolicy(declared)).toThrow(OracleError);
+    expect(() => resolveProductionSourcePolicy(declared)).toThrow(message as RegExp);
+  });
+
+  it('a malformed policy refuses to score rather than reverting to the baseline', () => {
+    expectFailClosed(
+      snapshotWith({ 'libs/features/src/pricing.ts': FEATURES_TO_INFRA }),
+      baseManifest({
+        opportunities: m8Opportunities(),
+        dependency_policy: {
+          ...baseDependencyPolicy(),
+          production_source_policy: { additional_excluded_directory_names: ['a/b'] },
+        },
+      }),
+      /INVALID_PRODUCTION_SOURCE_POLICY/,
+    );
   });
 });

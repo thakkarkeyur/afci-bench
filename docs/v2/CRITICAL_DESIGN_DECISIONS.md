@@ -153,8 +153,22 @@ is narrowed is **which construct that endpoint measures**:
 - A task with `applicable_opportunity_count = 0` is **structurally ineligible**
   for E1, not coded as zero violations and not a failed run. Per-candidate
   eligibility is public
-  ([`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv)): `PT01`–`PT05`
-  `scored`, `PT06` `functional-only`, `PR01`/`PR02` `inactive-reserve`.
+  ([`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv)): `PT01`–`PT04`
+  `scored`, `PT05`/`PT06` `functional-only`, `PR01`/`PR02` `inactive-reserve`.
+- **`PT05` was reclassified `functional-only` before any run** (independent
+  pre-authoring opportunity reassessment): its required functional work creates no
+  currently scored dependency-direction opportunity. Construct/feasibility, never
+  a model outcome; **no reserve was activated** to restore the scored count.
+- **E1 is computed from the PRODUCTION dependency graph only.** Test specs, test
+  support material and tooling/config TypeScript are partitioned out before any
+  edge is built, so a dependency introduced solely for tests can never enter E1's
+  numerator, and adding or removing test files can never move its denominator
+  (`ORACLE_VALIDATION_REQUIREMENTS.md` §1b).
+- **DECISION B — additional public architecture tasks are required before
+  Stage 0** (`TD-B34`). The current task set does not sample enough **distinct**
+  dependency-direction decisions to support the confirmatory endpoint. This is a
+  task-set coverage deficiency, decided **before any experimental result exists**;
+  it is not an oracle failure, and it is not a reason to activate a reserve.
 
 This narrowing resolves no blocking decision, freezes nothing, and is itself
 pending independent classification review.

@@ -42,6 +42,15 @@ The **Q1/Q8 model-runtime dry runs remain blocking** and are **not performed in
 this work package** (no runner exists; no paid/dry run here) — `TD-B21`
 (cross-references `TD-B02`).
 
+**Stage 0 is additionally gated on `DECISION B` (`TD-B34`).** Additional public
+architecture tasks exercising genuinely different existing dependency-direction
+leaf rules and source/target boundaries must be authored and independently
+approved **before** Stage 0, because the current active set does not sample enough
+**distinct** dependency-direction decisions to support the confirmatory endpoint.
+That decision **predates any benchmark or model outcome**, is a **task-set
+coverage** deficiency rather than an oracle failure, and is **not** a reason to
+activate a reserve. `TD-B34` is **open and blocking**.
+
 ## Stage 1 — Screening pilot (paid; NOT part of this work package)
 
 - **Conditions:** includes **C1, C3, and C4** for **both** candidate models
@@ -94,9 +103,32 @@ task, oracle, condition, or protocol changed afterward (a changed
   pooled as an extra factor unless the SAP's provisional model-as-factor plan is
   confirmed at pilot (`TD-B06`).
 
+## Precondition on the power simulation (`TD-B37`)
+
+The mandatory interaction-focused power simulation **must not be run on the
+current architecture task set**, and **no final power value is frozen**:
+
+- **Repeated task exposures to the same source/target boundary are clustered.**
+  They are correlated observations of **one** architectural instrument.
+- **Task count is not the independent architecture-decision count.** The
+  confirmatory unit is the **distinct dependency decision**.
+- After `PT05`'s pre-run reclassification to `functional-only` (`TD-B35`), the
+  E1-scored candidates are `PT01`–`PT04`, and they sample **too few distinct
+  dependency boundaries** for confirmatory inference. **Additional public
+  architecture tasks must be authored and approved first** (**`DECISION B`**,
+  `TD-B34`).
+- The simulation runs **only after** those distinct decisions exist and are
+  independently approved, and it must carry a **decision/boundary cluster
+  identifier** so the clustering is modelled rather than assumed away (`TD-B30`;
+  [`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §4a).
+
+**No power simulation was run** in the package that recorded this section, and
+this section freezes no power value.
+
 ## What stays unfrozen
 
 **12 tasks, 14 tasks, 480 runs, and 560 runs are all unfrozen.** Final task and
 repetition counts require rule-class coverage, pilot ceiling/variance analysis,
 and the interaction-focused power simulation. Five repetitions per cell is
-**provisional**.
+**provisional**. **No final power value is frozen** (`TD-B37`), and Stage 0 is
+additionally gated on `DECISION B` (`TD-B34`).

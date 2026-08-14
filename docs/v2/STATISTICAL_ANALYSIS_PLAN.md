@@ -115,10 +115,18 @@ Per-candidate eligibility is recorded publicly in
 [`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv) and
 `experiments/v2/tasks/public/TASK_INDEX.csv` (`e1_analysis_eligibility` ∈
 {`scored`, `functional-only`, `inactive-reserve`}). Under the current
-classification **`PT01`–`PT05` are `scored`**, **`PT06` is `functional-only`**
-(primary functional candidate, structurally excluded from E1), and **`PR01`/`PR02`
-are `inactive-reserve`** (not activated; they enter no endpoint). Task counts and
-the final opportunity count remain **unfrozen** (`TD-B10`/`TD-B14`/`TD-B20`).
+classification **`PT01`–`PT04` are `scored`**, **`PT05` and `PT06` are
+`functional-only`** (primary functional candidates, structurally excluded from
+E1), and **`PR01`/`PR02` are `inactive-reserve`** (not activated; they enter no
+endpoint). Task counts and the final opportunity count remain **unfrozen**
+(`TD-B10`/`TD-B14`/`TD-B20`).
+
+`PT05`'s move from `scored` to `functional-only` is a **pre-run construct and
+feasibility reclassification**: its required functional work creates no currently
+scored dependency-direction opportunity. It was decided **before any benchmark or
+model execution**, from the task body and the substrate, and is **never** to be
+reported as zero violations, a failed run, a missing task, an invalid task or a
+refusal. **No reserve was activated** to restore the scored task count.
 
 ### Hypothesis hierarchy (pre-registered order; D9)
 
@@ -188,7 +196,36 @@ Provisional; final link/family fixed after the pilot dispersion & ceiling checks
   **model pseudo-replication**: the frozen opportunities repeat across tasks but
   collapse onto a **small number of shared boundary decisions**, so treating
   opportunities as independent would overstate the effective sample size
-  (`TD-B30`).
+  (`TD-B30`). It must **not** be run on the current task set — see §4a.
+
+### 4a. The current architecture task set is NOT confirmatory-ready (`TD-B37`)
+
+Binding on the analysis, recorded **before** any data exists:
+
+- **Repeated task exposures to the same boundary are clustered.** Two tasks that
+  each create a decision on the *same* `(source scope, forbidden target)`
+  relationship yield **correlated** observations of **one** architectural
+  instrument, not two independent architecture measurements.
+- **Task count is not the independent architecture-decision count.** The
+  confirmatory unit of architectural evidence is the **distinct dependency
+  decision**, not the task. Reporting *n tasks* as though it were *n independent
+  architecture constructs* is prohibited.
+- **The current active set is insufficient.** After `PT05`'s pre-run
+  reclassification the E1-scored candidates are `PT01`–`PT04`, and they exercise
+  **too few distinct dependency boundaries** to support the confirmatory endpoint.
+  Additional public architecture tasks must be authored first (**`DECISION B`**,
+  `TD-B34`).
+- **The final power simulation must occur only after** those additional distinct
+  decisions are authored **and independently approved**. Running it on the current
+  set would size the study from a clustered, under-dispersed set of exposures.
+- **A decision/boundary cluster identifier will be required** in the eventual
+  analysis artifact, so each opportunity can be attributed to the architectural
+  decision it instantiates and the clustering can be modelled explicitly, with the
+  matching sensitivity re-fit (`TD-B30`).
+- **No final power value is frozen now**, and **no power simulation was run** in
+  the package that recorded this section. Minimum detectable effect, power target,
+  task count and repetition count all remain unfrozen
+  (`TD-B07`/`TD-B10`/`TD-B14`/`TD-B20`).
 - **RQ3 completeness (E3):** contrasts as in RQ1; the engineering-cost endpoints
   (tokens/time/iterations/churn/files) are **exploratory** and only **qualify** a
   completeness/conformance result via the pre-registered tolerance (`TD-B15`),

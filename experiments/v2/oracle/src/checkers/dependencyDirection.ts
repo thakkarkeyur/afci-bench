@@ -22,6 +22,14 @@
  * snapshot contains inside a scope, that opportunity contributes AT MOST ONE
  * violation. The denominator is the frozen manifest opportunity count and never
  * depends on files the model created, edited, or matched.
+ *
+ * EVERY INPUT HERE IS PRODUCTION SOURCE. `ctx.edges` and `ctx.sourceFiles` carry
+ * only files the production-source policy admitted (productionSource.ts); test
+ * specs, test support material and tooling config were removed by the engine
+ * before the graph was built. A prohibited import that exists only in a test file
+ * therefore reaches neither the raw series nor the opportunity accounting, and a
+ * frozen scope that retains only test files is NOT_APPLICABLE rather than
+ * SATISFIED — the production decision genuinely has no material to evaluate.
  */
 
 import { OracleError } from '../errors';
@@ -126,9 +134,11 @@ export function edgeInOpportunityScope(edge: ImportEdge, opp: Opportunity): bool
 }
 
 /**
- * Does the frozen scope still exist as source material in the snapshot? Only a
- * scope with no source files at all is NOT_APPLICABLE; a scope whose historical
- * anchor file was deleted or moved is still live and still scored.
+ * Does the frozen scope still exist as PRODUCTION source material in the
+ * snapshot? Only a scope with no production files at all is NOT_APPLICABLE; a
+ * scope whose historical anchor file was deleted or moved is still live and still
+ * scored. Test/config files in the scope do not keep a decision alive, because
+ * they cannot carry a production dependency in the first place.
  */
 function scopeHasSourceMaterial(ctx: CheckerContext, scope: string | null): boolean {
   if (scope === null) {

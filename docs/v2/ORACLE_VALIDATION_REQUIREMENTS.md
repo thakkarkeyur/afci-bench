@@ -91,6 +91,88 @@ file, and after the anchor is moved or deleted; a conforming new file stays
 identical across every mutant. It does **not** discharge `G6` — the labelled
 corpus, precision/recall bar, and inter-rater validation remain open.
 
+### 1b. Production-source scoring (E1 measures production dependencies only)
+
+**The defect this closes.** The frozen `dependency_policy.source_globs`
+(`apps/**`, `libs/**` TypeScript) and the frozen **layer path globs**
+(`apps/api/**`, `libs/features/**`, …) both match test and tooling TypeScript that
+physically sits inside an architectural scope: `apps/api/src/app.spec.ts` is
+assigned layer `api`, and each library's `jest.config.ts` is assigned that
+library's layer. A dependency written **only** to construct a test double or to
+configure a tool could therefore violate a **production** architectural
+opportunity. That is not the construct E1 names.
+
+**The two graphs.** Before any import edge is resolved, the engine partitions the
+source-glob-selected TypeScript into two **disjoint** sets:
+
+| Graph | Contents | Role |
+|---|---|---|
+| **Production dependency graph** | everything the production-source policy classifies as `production` | **the only** graph edges are built over; the only graph that can reach a finding, `raw_violation_count`, or `opportunity_accounting` |
+| **Excluded test/config/support graph** | test specs, test support material, tooling/build configuration | **never scored**; recorded descriptively so the partition is auditable |
+
+**The policy (baseline `PSP-V1`).** Explicit and auditable, never ad-hoc substring
+matching. Three exclusion lists, evaluated in a fixed order:
+
+1. **Tooling/build configuration** — exact **basenames**: `jest.config.ts`,
+   `jest.setup.ts`, `jest.preset.ts`, `vitest.config.ts`, `vite.config.ts`,
+   `webpack.config.ts`, `rollup.config.ts`, `babel.config.ts`, `eslint.config.ts`,
+   `karma.conf.ts`, `cypress.config.ts`, `playwright.config.ts`.
+2. **Test specs** — **basename-only** globs: `*.spec.ts`, `*.spec.tsx`,
+   `*.test.ts`, `*.test.tsx`.
+3. **Test support material** — exact **path-segment** names, whole subtree:
+   `__tests__`, `__mocks__`, `__fixtures__`, `test-fixtures`, `test-helpers`,
+   `test-utils`.
+
+Anything else is **production**.
+
+**Genuine production source is never excluded for an incidental word.**
+Classification is by exact basename, basename-only glob, and whole path segment —
+never by substring — so `latest.ts`, `contest.ts`, `testUtils.ts` and
+`libs/core/src/protest/index.ts` all stay production (`*.test.ts` requires a
+literal `.` before `test`). `*.config.ts` is deliberately **not** a wildcard,
+because `app.config.ts` is genuine production source in common frameworks; tooling
+config is therefore enumerated exhaustively instead. `testing/` is deliberately
+**not** a blanket-excluded directory name, for the same reason.
+
+**The frozen architectural layer scopes are unchanged.** The partition happens at
+**source selection**, not at layer assignment: no layer path glob moved, no frozen
+opportunity locator moved, and no `(scope, forbidden target)` decision changed.
+
+**Manifest extension is additive only.** A manifest may declare
+`dependency_policy.production_source_policy` to **add** further test/config
+material for a particular repository. It can never re-admit an excluded class, so
+this defect cannot be reintroduced by editing a manifest. The field is optional —
+omitting it yields the baseline, so the partition is always in force — but a
+**malformed** declaration fails closed (`INVALID_PRODUCTION_SOURCE_POLICY`) rather
+than silently reverting to the baseline.
+
+**Excluded files may still be examined descriptively.** Every scored finding
+records `production_source.policy_id`, `production_file_count`,
+`excluded_file_count` and the exact sorted `excluded_paths`, so a reviewer can
+verify precisely what was held out. A checker may read that list for diagnostics.
+Nothing derived from it may enter E1.
+
+**Why an excluded edge can never enter the E1 numerator.** Excluded files are
+removed from the file list handed to the resolver, so no edge is ever built from
+them. An edge that does not exist cannot become a `VIOLATION` finding, cannot be
+linked to a frozen `opportunity_id`, and cannot be counted in
+`raw_violation_count`. There is no later filter to bypass — the exclusion is
+structural, not a post-hoc suppression.
+
+**Why an excluded file can never move the E1 denominator.**
+`applicable_opportunity_count` is the **frozen manifest opportunity count** (§1a).
+It is not a file count, not a count of matched imports, and not derived from the
+snapshot at all. Adding a thousand test files, or deleting every test file, leaves
+it identical. The only snapshot-dependent branch is `NOT_APPLICABLE`, which asks
+whether the frozen scope carries **production** source material; a scope left with
+test files only is correctly `NOT_APPLICABLE` (its production decision has no
+material to evaluate) rather than falsely `SATISFIED`.
+
+This is regression-locked end-to-end by mutation cases **M8-A**–**M8-F** in
+`experiments/v2/oracle/tests/scopeAttribution.test.ts`. Revalidating the labelled
+corpus and the private per-task opportunity sets under this policy is blocking
+decision **`TD-B36`**; it is **not** discharged here.
+
 ## 2. Sensitivity and specificity (the oracle must be validated on labelled data)
 
 - **Seeded-violation sensitivity** — a labelled corpus of **seeded** boundary
@@ -201,6 +283,14 @@ Binding requirements on the oracle:
   (`UMBRELLA_OPPORTUNITY_RULE`): it may expand raw exposure through
   `applicable_rule_ids`, but the denominator is built only from leaf clauses
   (§1a).
+- **E1 is computed from the PRODUCTION dependency graph only.** Test specs, test
+  support material and tooling/build configuration TypeScript are partitioned out
+  **before** any import edge is resolved (§1b), so a dependency introduced solely
+  for a test, a fixture, a test helper or a tool contributes **nothing** to the
+  numerator, and because the denominator is the frozen opportunity count, adding
+  or removing such files cannot change `applicable_opportunity_count` either.
+  Excluded files remain visible descriptively on
+  `production_source.excluded_paths`; nothing derived from them enters E1.
 - **The denominator is scope-anchored and model-independent.** Opportunities are
   attributed by frozen architectural scope, so `applicable_opportunity_count` does
   not move when the model creates files, edits files, adds imports, or enlarges
@@ -294,14 +384,25 @@ material. Gates **G1** and **G6** and blocking decisions **`TD-B04`**,
   alternative not flagged; comments/strings create no false import; moved/deleted
   handled; deterministic ordering; blindness to condition/model labels; unknown
   and unimplemented rules cannot report PASS; malformed alias config fails closed.
-- Scope-attribution mutation corpus (**M0–M7**) —
+- Scope-attribution and production-source mutation corpus (**M0–M8**) —
   `experiments/v2/oracle/tests/scopeAttribution.test.ts`: end-to-end scoring
   against synthetic frozen manifests built inside the test process (no repository
-  manifest is altered or frozen), proving §1a — new-file and moved-file
+  manifest is altered or frozen). **M0–M7** prove §1a — new-file and moved-file
   violations are attributed to the same frozen opportunity, anchor deletion
   cannot hide a live violation, `NOT_APPLICABLE` needs an absent scope, one
   decision contributes at most one violation, the denominator is invariant across
   every mutant, and the umbrella/locator integrity gates fail closed.
+  **M8-A–M8-F** prove §1b — a prohibited import in a new **production** file still
+  violates its frozen opportunity, while the same import in a `*.spec.ts`, under
+  `__tests__/`, or in `jest.config.ts` does not; a conforming production file whose
+  *test* carries the forbidden dependency stays `SATISFIED`; a forbidden production
+  dependency surrounded by harmless test dependencies violates **exactly once**;
+  and adding test/config files moves neither `applicable_opportunity_count` nor the
+  numerator.
+- Production-source policy (§1b) — `experiments/v2/oracle/src/productionSource.ts`:
+  baseline `PSP-V1`, additive-only manifest extension, fail-closed on a malformed
+  declaration (`INVALID_PRODUCTION_SOURCE_POLICY`), and per-result audit trail on
+  `production_source`.
 - Hidden-evaluator boundary and mount policy
   ([`HIDDEN_EVALUATOR_BOUNDARY.md`](HIDDEN_EVALUATOR_BOUNDARY.md),
   [`EVALUATOR_MOUNT_POLICY.md`](EVALUATOR_MOUNT_POLICY.md)) with a machine-checkable

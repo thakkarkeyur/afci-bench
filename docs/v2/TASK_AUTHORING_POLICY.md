@@ -212,3 +212,91 @@ See the staleness record in
    report, then run `test_public_task_integrity.py` so the recorded hashes match.
 8. Record that the affected private evaluator packages are now stale (§10).
 9. Never tune wording or difficulty toward a larger C4 effect (D3).
+
+## 12. Requirements for the NEXT architecture tasks (DECISION B, `TD-B34`)
+
+**No task is authored by the package that records these requirements.** They are
+the acceptance bar for the **next** authoring work package, recorded in advance so
+authoring cannot drift toward whatever is convenient later.
+
+**Why more tasks are needed.** After the pre-authoring opportunity reassessment
+(`PT05` reclassified `functional-only`, `TD-B35`), the active set is `PT01`–`PT04`.
+Those tasks exercise **too few distinct dependency boundaries** — too few distinct
+`(source scope, forbidden target)` relationships — to support the confirmatory
+endpoint. Several tasks that each re-expose the **same** boundary are **one**
+architectural instrument observed repeatedly, not several independent architecture
+constructs. The motivation is therefore **construct validity**. It is **not** an
+oracle failure: the scope-based attribution mechanism (§1a of
+[`ORACLE_VALIDATION_REQUIREMENTS.md`](ORACLE_VALIDATION_REQUIREMENTS.md)) remains
+the approved mechanism. This decision **predates any benchmark or model outcome**;
+**no experimental result exists**; and **no reserve may be activated merely to
+restore a task count**.
+
+### 12.1 Requirements every candidate must satisfy
+
+1. **It creates a genuine dependency decision caused by the required functional
+   work.** The functional requirement itself must force a source-to-target choice.
+2. **It does not merely preserve an already-satisfied boundary.** Re-passing a
+   boundary the base already satisfies is a *preservation-only* opportunity and
+   does not count — this is the same **task-created decision** test that removed
+   the preservation-only opportunities in the reassessment.
+3. **It exercises a dependency leaf / source-target decision not already
+   represented** by the surviving active set, wherever the substrate permits.
+4. **It is feasible through the public interface** of the unchanged source
+   substrate (§11.3, and the suite-wide reachability requirement `TD-B31`).
+5. **It avoids implementation-dependent hidden setup** — no failure-injection
+   hook, test-only route, special header, or environment flag.
+6. **Its opportunity is fixed before model output** — frozen at authoring time,
+   never inferred from what a model produced.
+7. **It remains compatible with legitimate implementation alternatives** — more
+   than one correct shape must be able to satisfy it.
+8. **It does not depend on which file the model creates.** Scoring is anchored on
+   the frozen architectural **scope**, so a candidate whose decision exists only in
+   one particular file is inadmissible.
+9. **It avoids task overlap severe enough to duplicate an existing architectural
+   instrument.**
+10. **Its public wording stays functional-only, with no architecture hint** — §4
+    and §5 apply unchanged, and the leakage validator must report `OK`.
+
+### 12.2 The boundary space available under already-implemented leaf rules
+
+Public information only, derived from
+[`ARCHITECTURE_RULE_CATALOG.yml`](ARCHITECTURE_RULE_CATALOG.yml) and the frozen
+dependency matrix — **not** from any private manifest. Priority goes to decisions
+that broaden currently absent scored exposure, **subject to actual substrate
+feasibility**.
+
+| Leaf rule | Source scope | Forbidden targets it can back |
+|---|---|---|
+| `AR-DEP-002` | contracts | core, features, infra, observability, api |
+| `AR-DEP-003` | core | features, infra, observability, api |
+| `AR-DEP-004` | infra | core, features, api |
+| `AR-DEP-005` | api | core |
+| `AR-DEP-006` | features | infra, api |
+
+Candidate decisions to **investigate, not automatically adopt**:
+
+- a genuine **api → core-only capability** decision backed by `AR-DEP-005`;
+- a genuine **infra → core** decision backed by `AR-DEP-004`;
+- a genuine **core → forbidden layer** decision backed by `AR-DEP-003`;
+- a **contracts-source** decision backed by `AR-DEP-002`, where a task can
+  legitimately create such a decision.
+
+**No new architecture-rule family is required for this remedy**, because these
+leaf relationships are **already implemented**. Implementing further rule families
+stays future work (`TD-B33`) and must never readmit an excluded task post hoc.
+
+### 12.3 What is forbidden
+
+- **Do not create artificial tasks merely to hit rule ids.** A candidate that
+  names a rule relationship without the functional work creating the decision
+  fails requirement 1 and must be rejected.
+- **Do not target the `observability` scope for a scored opportunity.** The
+  dependency family implements **no leaf clause** for it, so the oracle refuses
+  such an opportunity (`OPPORTUNITY_RULE_SCOPE_MISMATCH`) regardless of wording.
+- **Do not rely on a test-only or configuration-only dependency.** E1 is computed
+  from the **production** dependency graph, so a decision that exists only in a
+  `*.spec.ts`, under `__tests__/`, or in `jest.config.ts` carries **no** E1
+  exposure (§1b of `ORACLE_VALIDATION_REQUIREMENTS.md`).
+- **Do not activate a reserve in place of authoring.** `PR01`/`PR02` remain
+  inactive, and `PR02` remains blocked (`TD-B26`).

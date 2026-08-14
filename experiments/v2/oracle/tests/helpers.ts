@@ -76,6 +76,14 @@ export interface ManifestOverrides {
    * the loader fails closed on a pre-migration manifest.
    */
   e1_analysis_eligibility?: string | null;
+  /**
+   * Frozen dependency policy override. Defaults to `baseDependencyPolicy()`,
+   * which deliberately declares NO `production_source_policy`: the baseline
+   * (PSP-V1) applies without a declaration, so the default proves the
+   * production/test partition is always in force. Extension and malformed-policy
+   * tests pass their own object.
+   */
+  dependency_policy?: Record<string, unknown>;
 }
 
 export function baseDependencyPolicy(): Record<string, unknown> {
@@ -127,7 +135,7 @@ export function baseManifest(overrides: ManifestOverrides = {}): Record<string, 
     hidden_test_refs: [],
     checkpoint_ref: null,
     evaluator_hashes: {},
-    dependency_policy: baseDependencyPolicy(),
+    dependency_policy: overrides.dependency_policy ?? baseDependencyPolicy(),
     answers_populated: overrides.answers_populated ?? false,
   };
   // `null` means "omit the field": used to prove the loader fails closed on a

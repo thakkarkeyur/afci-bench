@@ -9,6 +9,7 @@
 import * as fs from 'fs';
 
 import { OracleError } from './errors';
+import { resolveProductionSourcePolicy } from './productionSource';
 import {
   DependencyPolicy,
   E1_ANALYSIS_ELIGIBILITIES,
@@ -46,7 +47,7 @@ function parseDependencyPolicy(raw: unknown): DependencyPolicy {
   if (!isObject(raw)) {
     throw new OracleError('MANIFEST_MALFORMED', 'dependency_policy must be an object');
   }
-  const { alias_config_path, source_globs, layers, allowed } = raw;
+  const { alias_config_path, source_globs, layers, allowed, production_source_policy } = raw;
   if (typeof alias_config_path !== 'string' || alias_config_path.length === 0) {
     throw new OracleError('MANIFEST_MALFORMED', 'dependency_policy.alias_config_path must be a non-empty string');
   }
@@ -72,7 +73,18 @@ function parseDependencyPolicy(raw: unknown): DependencyPolicy {
     }
     parsedAllowed[k] = v;
   }
-  return { alias_config_path, source_globs, layers: parsedLayers, allowed: parsedAllowed };
+  // The production-source policy is resolved here so every consumer of a loaded
+  // manifest sees the EFFECTIVE policy. Omitting the field is legal and yields the
+  // baseline (PSP-V1): the production/test partition is always in force, so a
+  // manifest can never opt back into scoring test or tooling dependencies. A
+  // malformed declaration fails closed rather than silently reverting.
+  return {
+    alias_config_path,
+    source_globs,
+    layers: parsedLayers,
+    allowed: parsedAllowed,
+    production_source_policy: resolveProductionSourcePolicy(production_source_policy),
+  };
 }
 
 function parseOpportunities(raw: unknown): Opportunity[] {

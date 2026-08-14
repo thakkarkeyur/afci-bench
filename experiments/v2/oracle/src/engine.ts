@@ -17,6 +17,14 @@
  *
  * Frozen opportunities are attributed by ARCHITECTURAL SCOPE, not by an exact
  * historical importer path: see checkers/dependencyDirection.ts.
+ *
+ * Scoring runs over the PRODUCTION dependency graph only. Test specs, test
+ * support material and tooling/build configuration TypeScript are partitioned out
+ * before any import edge is built (see productionSource.ts), so a dependency
+ * introduced solely for a test or a tool can never violate a production
+ * architectural opportunity. The frozen layer scopes are unchanged by that
+ * partition, and the E1 denominator remains the frozen manifest opportunity
+ * count, so the number of test files in the snapshot moves neither side of E1.
  */
 
 import * as crypto from 'crypto';
@@ -29,6 +37,7 @@ import { loadManifest } from './manifest';
 import { assertEvaluatorMountOutsideWorktree } from './mountPolicy';
 import { ImportGraphResolver, listSourceFiles, parseCompilerOptions } from './resolver';
 import { matchAnyGlob } from './glob';
+import { partitionProductionSources } from './productionSource';
 import {
   ApprovedEligibilityIndex,
   ArchitectureFinding,
@@ -125,11 +134,26 @@ export function evaluateSnapshot(opts: EvaluateOptions): ArchitectureFinding {
   const layerMap = new LayerMap(manifest.dependency_policy.layers);
   const options = parseCompilerOptions(opts.snapshotDir, manifest.dependency_policy.alias_config_path);
 
-  // 6. Source files (full repository), filtered by the frozen source globs.
+  // 6. Source files (full repository), filtered by the frozen source globs, then
+  //    partitioned into the PRODUCTION dependency graph and the excluded
+  //    test/config/support graph. E1 measures production architectural
+  //    dependencies, so a dependency written only to wire up a test or a tool
+  //    must not be able to violate a production opportunity. The partition
+  //    happens BEFORE any edge is built and leaves the frozen layer scopes
+  //    untouched; the denominator stays the frozen opportunity count, so adding
+  //    or deleting test files cannot move either side of the rate.
   const allFiles = listSourceFiles(opts.snapshotDir);
-  const sourceFiles = allFiles.filter((f) => matchAnyGlob(f, manifest.dependency_policy.source_globs));
+  const scannedFiles = allFiles.filter((f) => matchAnyGlob(f, manifest.dependency_policy.source_globs));
+  const partition = partitionProductionSources(
+    scannedFiles,
+    manifest.dependency_policy.production_source_policy,
+  );
+  const sourceFiles = partition.production;
+  const excludedSourceFiles = partition.excluded.slice().sort();
 
-  // 7. Resolve the import graph (AST + compiler resolution).
+  // 7. Resolve the import graph (AST + compiler resolution) over PRODUCTION
+  //    source only. Excluded files are never read for edges, so no excluded edge
+  //    can reach a finding, the raw series, or the opportunity accounting.
   const resolver = new ImportGraphResolver(opts.snapshotDir, options, layerMap);
   const edges = resolver.buildEdges(sourceFiles);
 
@@ -138,6 +162,7 @@ export function evaluateSnapshot(opts: EvaluateOptions): ArchitectureFinding {
     manifest,
     edges,
     sourceFiles,
+    nonProductionSourceFiles: excludedSourceFiles,
     layerOf: (rel) => layerMap.layerOf(rel),
     fileExists: (rel) => fs.existsSync(path.resolve(opts.snapshotDir, rel)),
   };
@@ -294,6 +319,15 @@ export function evaluateSnapshot(opts: EvaluateOptions): ArchitectureFinding {
     findings,
     raw_violation_count: rawViolationCount,
     opportunity_accounting: oppAccounting,
+    // Descriptive provenance of the production/test partition. Records which
+    // files were held out of the E1 dependency graph so the exclusion is
+    // auditable per result; it is NEVER an E1 numerator or denominator.
+    production_source: {
+      policy_id: manifest.dependency_policy.production_source_policy.policy_id,
+      production_file_count: sourceFiles.length,
+      excluded_file_count: excludedSourceFiles.length,
+      excluded_paths: excludedSourceFiles,
+    },
     deterministic_order: true,
     verdict,
   };
