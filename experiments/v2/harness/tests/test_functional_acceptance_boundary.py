@@ -1,0 +1,445 @@
+"""Governance tests for the functional acceptance observation boundary.
+
+The boundary answers a question the protocol previously left open: **what may a
+hidden acceptance test look at when it decides pass or fail?** It is normatively
+stated in ``docs/v2/HIDDEN_EVALUATOR_BOUNDARY.md`` sections 9-14, carried into
+``docs/v2/TASK_AUTHORING_POLICY.md`` section 8a as an authoring rule, and into
+``docs/v2/ORACLE_VALIDATION_REQUIREMENTS.md`` section 3a as a channel-separation
+requirement. Blocking decisions: ``TD-B39`` (migrate the private hidden acceptance
+packages onto it) and ``TD-B40`` (the analytically inactive opportunities still
+physically present in the stale private manifests).
+
+These tests assert the *governance*, not any hidden acceptance: nothing here
+implements, mounts, or reads a hidden test, and no model is invoked. They also
+pin the pre-authoring invariants the boundary package promised - that it changed
+no task body or hash, authored no task, and modified no private evaluator file.
+Pure file and ``git`` inspection.
+"""
+import re
+import subprocess
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[4]
+DOCS = REPO / "docs" / "v2"
+
+BOUNDARY = DOCS / "HIDDEN_EVALUATOR_BOUNDARY.md"
+POLICY = DOCS / "TASK_AUTHORING_POLICY.md"
+ORACLE_REQS = DOCS / "ORACLE_VALIDATION_REQUIREMENTS.md"
+AUTHORING_REPORT = REPO / "experiments" / "v2" / "tasks" / "public" / "TASK_AUTHORING_REPORT.md"
+TASK_INDEX = REPO / "experiments" / "v2" / "tasks" / "public" / "TASK_INDEX.csv"
+PUBLIC_TASK_DIR = REPO / "experiments" / "v2" / "tasks" / "public"
+
+#: The private evaluator repository is a *sibling* of the public repository and is
+#: never vendored into it. Its HEAD is recorded so "the private package was not
+#: modified" is a checked claim wherever the sibling is present, and an honest
+#: skip where it is not.
+PRIVATE_REPO = REPO.parent / "afci-bench-evaluator-private"
+PRIVATE_HEAD = "cffc095b74e2a1c04b92c34ead19871397427329"
+
+#: The eight candidate task bodies and their recorded SHA-256 values, pinned here
+#: literally. ``test_public_task_integrity.py`` checks each body against
+#: ``TASK_INDEX.csv``; this list additionally catches a body and its index row
+#: being edited *together*, which that check alone cannot see.
+FROZEN_TASK_HASHES = {
+    "PT01": "6c938822fe19cd6e87942a6ee24ec8f604c0883da1b7f80d45216be35d7c9c39",
+    "PT02": "ec4b60057708b20cb95e51f000671aab40afc8c55c0bc75850922a5f65841a77",
+    "PT03": "cbfce1ca232cb9b6b53e0b4d202d6acee7415b50af8386c1f3bd2147089b4c21",
+    "PT04": "f349b150b1d8fe5676fed8460b1840b988ee2bb0a78b1966ef82ae9ce9c8a9b5",
+    "PT05": "f6efc772e76d6c287e0c71daaa93c7e1d9e62e72a1b37878df70113269ed27b3",
+    "PT06": "3e0f84cfef1f9fbf97e3cd31b6704c3a0fb172b04b5e7bc33ea39927b1c8e0f2",
+    "PR01": "0e1527bce41498836bb57b802d4566251d6fcfed4cca13fe59e6a97330f02302",
+    "PR02": "e89a4aab236813c082f9152db779b8bbfb298148a51a8435a1e2bf38330caa83",
+}
+
+#: Persistence internals of the substrate's adapter. They are a legitimate part of
+#: the application and of its *visible* test suite; what they may never become is
+#: an acceptance oracle or an evaluator mechanism.
+PERSISTENCE_INTERNALS = ("getOrderRepository", "resetOrderRepository", "InMemoryOrderRepository")
+
+#: Where those symbols are allowed to appear as *code* in the public repository:
+#: the adapter that defines them, the composition root that wires them, and the
+#: substrate's own visible spec. Nothing under experiments/ may reference them.
+PERSISTENCE_INTERNAL_CODE_ALLOWLIST = {
+    "libs/infra/src/index.ts",
+    "apps/api/src/app.ts",
+    "apps/api/src/app.spec.ts",
+}
+
+CODE_SUFFIXES = {".ts", ".tsx", ".js", ".py", ".fixture"}
+SKIP_DIRS = {"node_modules", ".git", "__pycache__", ".nx", ".pytest_cache", "archive", "dist", "coverage"}
+
+
+def _read(path):
+    return path.read_text(encoding="utf-8")
+
+
+def _flat(text):
+    """Join hard-wrapped prose so a phrase split across lines is still matched."""
+    return re.sub(r"\s+", " ", text)
+
+
+def _iter_repo_files():
+    for path in REPO.rglob("*"):
+        if not path.is_file():
+            continue
+        if SKIP_DIRS & set(path.relative_to(REPO).parts):
+            continue
+        yield path
+
+
+def _git(*args, cwd):
+    return subprocess.run(
+        ["git", *args], cwd=str(cwd), capture_output=True, text=True, check=True
+    ).stdout.strip()
+
+
+# --------------------------------------------------------------------------- 1
+# Functional acceptance cannot rely on repository internal-state inspection.
+
+
+def test_boundary_prohibits_internal_persistence_as_an_acceptance_oracle():
+    flat = _flat(_read(BOUNDARY))
+    assert "Functional Acceptance Observation Boundary" in flat
+    for symbol in PERSISTENCE_INTERNALS[:2]:
+        assert symbol in flat, f"{symbol} must be named in the prohibition, not implied"
+    assert "internal persistence or module state as an acceptance oracle" in flat.lower(), (
+        "the prohibition on internal-state oracles must be stated in the boundary"
+    )
+    assert "Read implementation files to decide pass or fail" in flat
+    assert "Require a particular class, function, file, or module layout" in flat
+
+
+def test_test_isolation_is_not_an_acceptance_oracle_and_reset_helper_is_demoted():
+    flat = _flat(_read(BOUNDARY))
+    assert "Test isolation is not an acceptance oracle" in flat
+    assert "legacy baseline-test" in flat, (
+        "resetOrderRepository must be classified as legacy baseline-test infrastructure"
+    )
+    assert "freshly constructed application over a freshly evaluated module graph" in flat, (
+        "the normative, implementation-independent isolation method must be stated"
+    )
+    assert "never" in flat and "evidence for an acceptance assertion" in flat
+
+
+def test_no_evaluator_or_governance_code_reaches_into_persistence_internals():
+    """The prohibition is not only written down; nothing public actually does it."""
+    offenders = []
+    for path in _iter_repo_files():
+        if path.suffix not in CODE_SUFFIXES:
+            continue
+        rel = path.relative_to(REPO).as_posix()
+        if rel in PERSISTENCE_INTERNAL_CODE_ALLOWLIST:
+            continue
+        text = _read(path)
+        for symbol in PERSISTENCE_INTERNALS:
+            # this test file names the symbols in order to forbid them
+            if symbol in text and path != Path(__file__):
+                offenders.append((rel, symbol))
+    assert not offenders, f"persistence internals referenced in code outside the substrate: {offenders}"
+
+
+def test_no_hidden_acceptance_artifact_exists_in_the_public_repository():
+    """A hidden acceptance oracle in the public tree would defeat the boundary."""
+    forbidden_names = {
+        "evaluator_manifest.json",
+        "architecture_opportunities.csv",
+        "hidden_acceptance_plan.md",
+        "legitimate_alternatives.md",
+        "reset_checkpoint.json",
+    }
+    found = [
+        p.relative_to(REPO).as_posix()
+        for p in _iter_repo_files()
+        if p.name in forbidden_names or p.name.endswith(".acceptance.spec.ts")
+    ]
+    assert not found, f"private evaluator artifacts present in the public repository: {found}"
+
+
+# --------------------------------------------------------------------------- 2
+# Private state seeding is prohibited.
+
+
+def test_state_seeding_through_implementation_modules_is_prohibited():
+    boundary = _flat(_read(BOUNDARY))
+    policy = _flat(_read(POLICY))
+    reqs = _flat(_read(ORACLE_REQS))
+    assert "Seed state through implementation modules" in boundary
+    assert "Hidden state seeding through implementation modules is prohibited" in policy
+    assert "may not seed preconditions through implementation modules" in reqs
+    # and the consequence: an unreachable precondition is a blocker, not a loophole
+    for text in (boundary, policy):
+        assert "TD-B31" in text, (
+            "an unreachable precondition must be routed to the reachability blocker, "
+            "not to an internal-module workaround"
+        )
+
+
+def test_pr02_is_recorded_as_unreachable_setup_rather_than_seeded():
+    boundary = _flat(_read(BOUNDARY))
+    assert "PR02" in boundary and "TD-B26" in boundary
+    assert "unreachable setup" in boundary.lower()
+    assert "stricter" in boundary, (
+        "the boundary must record that it tightens TD-B26 rather than offering a way round it"
+    )
+
+
+# --------------------------------------------------------------------------- 3
+# The declared-seam exception must be task-grounded.
+
+
+def test_declared_seam_register_exists_and_is_grounded_in_a_public_task():
+    flat = _flat(_read(BOUNDARY))
+    assert "Declared seam register" in flat
+    assert "LogOutput" in flat and "createApp({ logOutput })" in flat
+    assert "PT04" in flat, "the only declared seam must name the public task that grounds it"
+    assert "A hidden test may not create a seam" in flat
+    assert "Internal persistence state is not a seam" in flat
+
+
+def test_the_seam_is_actually_required_by_the_public_task_that_grounds_it():
+    """Not merely asserted: PT04's own public text must require emitted log records."""
+    pt04 = _flat(_read(PUBLIC_TASK_DIR / "PT04.md"))
+    assert "structured request-log record" in pt04
+    assert "structured error-log record" in pt04
+    assert "No change to the request bodies, response bodies, status codes or headers" in pt04, (
+        "the seam is justified only because the required behaviour is invisible to HTTP"
+    )
+
+
+def test_the_boundary_is_not_described_as_http_only():
+    flat = _flat(_read(BOUNDARY))
+    assert (
+        "Externally observable functional acceptance through HTTP plus explicitly "
+        "declared task-relevant application seams" in flat
+    ), "the boundary must carry its precise name"
+    assert "HTTP is the default observation channel" in flat
+    assert 'Calling the evaluator "HTTP-only" would be false' in flat
+
+
+def test_seams_must_be_declared_before_hidden_test_implementation():
+    policy = _flat(_read(POLICY))
+    assert "must be declared before hidden-test implementation" in policy
+    assert "may not create a seam" in policy
+
+
+# --------------------------------------------------------------------------- 4
+# Functional acceptance stays separate from architecture scoring.
+
+
+def test_architecture_and_functional_channels_are_separated():
+    boundary = _flat(_read(BOUNDARY))
+    reqs = _flat(_read(ORACLE_REQS))
+    assert "channel-separated" in boundary
+    assert "Use architecture-oracle results to determine functional acceptance" in boundary
+    assert "Channel separation between architecture scoring and functional acceptance" in reqs
+    assert "never" in reqs and "input to an architecture finding" in reqs
+    assert "input to a functional pass/fail" in reqs
+
+
+def test_channel_separation_is_registered_as_a_blocking_decision():
+    reqs = _flat(_read(ORACLE_REQS))
+    boundary = _flat(_read(BOUNDARY))
+    assert "TD-B39" in reqs and "TD-B39" in boundary
+    assert "TD-B40" in boundary
+
+
+# --------------------------------------------------------------------------- 5
+# The public authoring policy carries the observation-boundary rule.
+
+
+def test_public_authoring_policy_states_the_observation_boundary():
+    policy = _flat(_read(POLICY))
+    assert "Functional acceptance observation boundary" in policy
+    required = [
+        "HTTP request/response is the default observation surface",
+        "explicitly declared application seam is permitted only",
+        "externally emitted behaviour that cannot be faithfully observed through HTTP",
+        "must be declared before hidden-test implementation",
+        "may not inspect implementation-specific persistence, module state, classes, files, "
+        "or architecture findings",
+        "Hidden state seeding through implementation modules is prohibited",
+        "different internal design must remain gradeable",
+        "Test isolation is not an acceptance oracle",
+        "channel-separated",
+    ]
+    missing = [phrase for phrase in required if phrase not in policy]
+    assert not missing, f"authoring policy is missing observation-boundary rules: {missing}"
+
+
+def test_authoring_requirements_bind_new_candidates_to_the_boundary():
+    policy = _flat(_read(POLICY))
+    assert "decidable within the observation boundary" in policy, (
+        "DECISION B candidates must be required to fit the boundary at authoring time"
+    )
+
+
+def test_authoring_report_records_the_boundary_and_the_aggregate_novelty_conclusion():
+    report = _flat(_read(AUTHORING_REPORT))
+    assert "functional acceptance observation boundary" in report.lower()
+    # aggregate, non-leaking record of the cleared candidate (PART I)
+    assert "pre-authoring feasibility review" in report
+    assert "No task body has been authored" in report
+    assert "decision_cluster_id" in report
+    assert "AR-DEP-005" in report and "currently unrepresented" in report
+    assert "TD-B34 remains" in report or "TD-B34` remains" in report
+
+
+#: The single private opportunity identifier the protocol deliberately publishes.
+#: ``TD-B29`` records it *as an identifier only* - the thing that must be
+#: re-justified or removed - while its content, justification and disposition stay
+#: in the private evaluator repository. Enumerating it keeps this check fail-closed:
+#: any *other* private slot appearing publicly is a leak.
+DELIBERATELY_PUBLIC_OPPORTUNITY_IDS = {"PT04-OPP-01"}
+
+
+def test_public_record_discloses_no_private_opportunity_identifier():
+    """PART I: the aggregate conclusion is published; the private slots are not."""
+    private_id = re.compile(r"\b(?:PT0[1-6]|PR0[1-2])-(?:OPP|EXP)-[A-Z0-9-]+\b")
+    offenders = []
+    for path in _iter_repo_files():
+        if path.suffix not in {".md", ".csv", ".yml", ".yaml", ".json", ".py"}:
+            continue
+        if path == Path(__file__):
+            continue
+        hits = set(private_id.findall(_read(path))) - DELIBERATELY_PUBLIC_OPPORTUNITY_IDS
+        if hits:
+            offenders.append((path.relative_to(REPO).as_posix(), sorted(hits)))
+    assert not offenders, f"private opportunity identifiers published: {offenders}"
+
+
+def test_the_one_published_opportunity_identifier_is_still_only_an_identifier():
+    """TD-B29 may name the slot; it may not describe its content or disposition."""
+    registry = _flat(_read(DOCS / "OPEN_DECISIONS.csv"))
+    assert "PT04-OPP-01" in registry
+    assert "identifier only" in registry, (
+        "TD-B29 must keep saying that only the identifier is public"
+    )
+    assert "stay in the private evaluator repository" in registry
+
+
+# --------------------------------------------------------------------------- 6
+# No existing task body or hash changed.
+
+
+def test_every_public_task_body_still_hashes_to_its_recorded_value():
+    import hashlib
+
+    for task_id, expected in sorted(FROZEN_TASK_HASHES.items()):
+        body = (PUBLIC_TASK_DIR / f"{task_id}.md").read_bytes()
+        actual = hashlib.sha256(body).hexdigest()
+        assert actual == expected, (
+            f"{task_id} body changed: recorded {expected}, computed {actual}. "
+            "This package must not modify a task body."
+        )
+
+
+def test_task_index_still_records_the_same_hashes():
+    import csv
+
+    with open(TASK_INDEX, newline="", encoding="utf-8") as fh:
+        rows = {r["task_id"]: r for r in csv.DictReader(fh)}
+    assert set(rows) == set(FROZEN_TASK_HASHES)
+    for task_id, expected in sorted(FROZEN_TASK_HASHES.items()):
+        assert rows[task_id]["public_task_sha256"] == expected, f"{task_id} index hash drifted"
+
+
+def test_analysis_eligibility_is_unchanged_by_this_package():
+    import csv
+
+    with open(TASK_INDEX, newline="", encoding="utf-8") as fh:
+        rows = {r["task_id"]: r["e1_analysis_eligibility"] for r in csv.DictReader(fh)}
+    assert rows == {
+        "PT01": "scored",
+        "PT02": "scored",
+        "PT03": "scored",
+        "PT04": "scored",
+        "PT05": "functional-only",
+        "PT06": "functional-only",
+        "PR01": "inactive-reserve",
+        "PR02": "inactive-reserve",
+    }, "the boundary package must not change any task's analysis eligibility"
+
+
+# --------------------------------------------------------------------------- 7
+# No new task was authored.
+
+
+def test_no_new_task_was_authored():
+    on_disk = {
+        p.stem
+        for p in PUBLIC_TASK_DIR.rglob("*.md")
+        if re.fullmatch(r"(?:PT|PR|T)\d+", p.stem)
+    }
+    assert on_disk == set(FROZEN_TASK_HASHES), (
+        f"the public task set changed: {sorted(on_disk)} vs {sorted(FROZEN_TASK_HASHES)}"
+    )
+    # and no task-like file slipped in under a different extension anywhere in the tree
+    strays = [
+        p.relative_to(REPO).as_posix()
+        for p in (REPO / "experiments" / "v2" / "tasks").rglob("*")
+        if p.is_file()
+        and re.fullmatch(r"(?:PT|PR|T)\d+", p.stem)
+        and p.suffix != ".md"
+    ]
+    assert not strays, f"task-like non-markdown files present: {strays}"
+
+
+def test_the_candidate_cleared_for_authoring_has_no_public_task_body():
+    """PART I: feasibility was recorded; the task itself was deliberately not written."""
+    report = _flat(_read(AUTHORING_REPORT))
+    assert "No task body has been authored" in report
+    assert "PT07" not in {p.stem for p in PUBLIC_TASK_DIR.rglob("*")}
+
+
+# --------------------------------------------------------------------------- 8
+# No private evaluator file changed.
+
+
+def test_private_evaluator_repository_is_not_vendored_into_the_public_repository():
+    assert not (REPO / "afci-bench-evaluator-private").exists()
+    assert not (REPO / "experiments" / "v2" / "tasks" / "private").exists()
+
+
+def test_private_evaluator_repository_is_unchanged():
+    """Checked where the sibling private repo is present; skipped honestly where not."""
+    import pytest
+
+    if not (PRIVATE_REPO / ".git").is_dir():
+        pytest.skip(f"private evaluator repository not present at {PRIVATE_REPO}")
+    head = _git("rev-parse", "HEAD", cwd=PRIVATE_REPO)
+    assert head == PRIVATE_HEAD, (
+        f"private evaluator HEAD moved: expected {PRIVATE_HEAD}, found {head}. "
+        "This package inspects the private repository read-only."
+    )
+    status = _git("status", "--porcelain", cwd=PRIVATE_REPO)
+    assert status == "", f"private evaluator working tree is dirty:\n{status}"
+
+
+# --------------------------------------------------------------------------- 9
+# The package's own pre-freeze promises.
+
+
+def test_the_canonical_substrate_is_untouched_by_this_package():
+    identity = _read(DOCS / "SOURCE_SUBSTRATE_IDENTITY.md")
+    assert "630d3180af0d02a86330dfb599f559e78df65e94" in identity
+    assert "0198d76c189f38589e872cab4305527c08e86ef736e1550e428e05f9178060f3" in identity
+    changed = _git(
+        "diff", "--name-only", "630d3180af0d02a86330dfb599f559e78df65e94", "HEAD", cwd=REPO
+    ).splitlines()
+    substrate_touched = [
+        p for p in changed if p.startswith("apps/") or p.startswith("libs/")
+    ]
+    assert not substrate_touched, (
+        f"a commit after the canonical substrate touched the substrate: {substrate_touched}"
+    )
+
+
+def test_no_benchmark_result_artifact_exists():
+    results = REPO / "experiments" / "v2" / "results"
+    present = [p.name for p in results.iterdir() if p.name != "README.md"]
+    assert not present, f"result artifacts present in a pre-freeze package: {present}"
+
+
+def test_protocol_is_still_pre_freeze():
+    assert "PRE-FREEZE DRAFT" in _read(DOCS / "README.md")
+    assert "PRE-FREEZE" in _flat(_read(AUTHORING_REPORT))

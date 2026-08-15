@@ -24,7 +24,7 @@ that none is yet marked resolved.
 
 ## Counts
 
-- **Blocking decisions: 38** (`TD-B01`–`TD-B38`) — must be resolved before the
+- **Blocking decisions: 40** (`TD-B01`–`TD-B40`) — must be resolved before the
   corresponding data collection; all are cited inline across the protocol files.
   `TD-B16`–`TD-B21` were added by the pre-execution design-review reconciliation;
   `TD-B22` was added by the independent public review of the pilot task package;
@@ -35,11 +35,14 @@ that none is yet marked resolved.
   production-source scoring policy, and the statistical-governance consequences);
   **`TD-B38` was added by the independent architecture-neutral-substrate review**
   that found the model-visible package/`.gitattributes` metadata still announcing
-  the experiment itself.
+  the experiment itself; **`TD-B39`–`TD-B40` were added by the pre-authoring
+  governance package that defined the functional acceptance observation boundary**
+  and recorded that the reassessment's preservation-only opportunities are still
+  physically present in the stale private manifests.
 - **Non-blocking decisions: 6** (`TD-N01`–`TD-N06`) — refinements that do not
   block the confirmatory design.
-- **Total decisions: 44**, of which **3 are resolved** (`TD-B23`, `TD-B24`,
-  `TD-B38`) and **41 remain open**. The three resolved entries are the
+- **Total decisions: 46**, of which **3 are resolved** (`TD-B23`, `TD-B24`,
+  `TD-B38`) and **43 remain open**. The three resolved entries are the
   model-visible architecture-comment remediation, the leakage audit that proves
   it, and the experiment-awareness remediation; all were completed **before** any
   task authoring and **before** any benchmark or model execution, and none
@@ -54,7 +57,7 @@ confirmatory analysis.
 
 ---
 
-## Blocking decisions (TD-B01 – TD-B38)
+## Blocking decisions (TD-B01 – TD-B40)
 
 | ID | Decision | Owner | Resolved during | Gate |
 |----|----------|-------|-----------------|------|
@@ -129,11 +132,28 @@ is the substrate *revealing the experiment*. Neither subsumes the other.
 |----|----------|-------|-----------------|------|
 | **TD-B38** | ✅ **RESOLVED — disposition: neutralise.** Model-visible metadata disclosed the **experiment** to every condition including the C1 baseline: `package.json` carried `description` = "Architecture-First Context Injection Benchmark" (expanding the AFCI construct in full and naming the study a benchmark) plus the `oracle:test` / `oracle:typecheck` scripts, whose names disclosed a hidden oracle and whose commands pointed at `experiments/v2/oracle`; `.gitattributes` carried prose naming "AFCI-Bench study v2", the canonical architecture context, its delivery "identically to the repository-instruction conditions", and the committed fixtures. A C1/C2 model reading these learns nothing about **which** dependency direction is legal — so `TD-B23` does not cover it — but does learn that architecture is the **scored construct** and that a treatment and an oracle exist. Remediated in `630d3180af0d02a86330dfb599f559e78df65e94`, which **replaces `15aa99f5` as the canonical source substrate**: neutral description, both oracle scripts removed with **no** replacement model-visible script pointing at the oracle or the experiment tree, and a neutral `.gitattributes` retaining **every** functional directive. All participant scripts byte-identical; no architecture rule, dependency graph, task body, task hash, task eligibility or application behaviour changed; `apps/` and `libs/` trees byte-identical to `15aa99f5`; `package-lock.json` unchanged. Detector: `scan_experiment_awareness`, refusal code `EXPERIMENT_AWARENESS_DISCLOSURE`, matching only **contextual combinations** (never bare `architecture`/`test`/`condition`/`context`/`benchmark`) and flattening wrapped prose. Regression proof: **PROOF 11**, with the verbatim pre-remediation bytes in `experiments/v2/leakage_fixtures/`. **Residual, accepted and recorded:** the `@afci-bench/*` workspace scope remains in `tsconfig.base.json` aliases and `apps/`/`libs/` imports; removing it means editing application source and re-identifying the substrate, so it needs its own work package. Found and fixed **before** task authoring and **before** any benchmark or model execution. | Harness Engineer + Study Lead | resolved before the pilot (substrate decision, pre-authoring) | G2/G3 |
 
+### Added by the pre-authoring functional-evaluator boundary package — `TD-B39` – `TD-B40`
+
+Two pre-authoring conditions had to close before the next architecture candidate
+could be authored: **what a hidden acceptance test may look at** when it decides
+pass or fail, and **which architecture decisions are actually active** once the
+reassessment's preservation-only opportunities are set aside. Both are decided
+here **before** any further hidden acceptance exists, so no grading surface and no
+novelty claim can be chosen after the fact. **No task was authored, no task body
+or hash changed, `apps/` and `libs/` are unchanged, no reserve was activated, the
+private evaluator repository was not modified, and no benchmark or model ran.**
+
+| ID | Decision | Owner | Resolved during | Gate |
+|----|----------|-------|-----------------|------|
+| **TD-B39** | **The functional acceptance observation boundary is defined suite-wide, and the existing hidden acceptance packages must be migrated onto it before any may be validated or frozen.** *Externally observable functional acceptance through HTTP plus explicitly declared task-relevant application seams* ([`HIDDEN_EVALUATOR_BOUNDARY.md`](HIDDEN_EVALUATOR_BOUNDARY.md) §9–§14): HTTP request/response is the **default** surface; a declared seam is permitted **only** where the public task requires an externally emitted behaviour HTTP cannot faithfully carry, and **exactly one** is declared suite-wide (the `LogOutput` sink through `createApp({ logOutput })`, grounded in `PT04`); a seam must be declared **before** hidden-test implementation and a hidden test may never create one; hidden acceptance may not inspect implementation-specific persistence, module state, classes, files or architecture findings; **hidden state seeding through implementation modules is prohibited**; a conforming implementation with a different internal design must remain gradeable; **test isolation is never an acceptance oracle**; and the two scoring channels stay separated. `resetOrderRepository()` was independently assessed and **rejected** as the normative isolation mechanism — the symbol need not survive a conforming change, and even where it does its effect is implementation-dependent because `createApp` resolves persistence once at construction — so it is reclassified as **legacy baseline-test infrastructure**, left in the substrate untouched, and the normative method is a **freshly constructed application over a freshly evaluated module graph**. **Still blocking:** the private scaffolds name "repository reset" in their intended wiring and must be migrated, and every planned assertion re-checked against the permitted channels. | Oracle Designer | private hidden acceptance re-authoring (with `TD-B05`/`TD-B32`) | G1/G6 |
+| **TD-B40** | **The reassessment's preservation-only dependency opportunities are still physically present in the stale private manifests and must be removed.** Those manifests predate both the repaired scope-based oracle and the reassessment. The rows are **analytically inactive** for the revised design and must not be counted as active architecture coverage by any later work package, coverage claim, power calculation or novelty assessment; they are removed during the private re-authoring already tracked by `TD-B27`/`TD-B35`/`TD-B36`. Suite-level consequence, disclosing **no** private opportunity identifier: after removal every retained active dependency decision sits in **one source scope** under **one leaf rule**, spanning only **two** distinct clusters (`source_scope + forbidden_target + leaf_rule`), so the **`api`** source scope and the **`AR-DEP-005`** (`api → core`) leaf rule are currently **unrepresented**. This is the same construct-validity deficiency `TD-B34` records — **not** an oracle failure. Until the rows are removed and the removal independently re-approved, any assessment reading the private manifests as-is **overstates** active boundary coverage. | Oracle Designer | private manifest re-authoring (with `TD-B27`/`TD-B35`/`TD-B36`) | G1/G6 |
+
 Added by the pre-execution design-review reconciliation: `TD-B16`–`TD-B21`; added
 by the independent public review of the pilot task package: `TD-B22`; added by the
 suite-classification decision: `TD-B23`–`TD-B33`; added by the pre-authoring
 opportunity reassessment: `TD-B34`–`TD-B37`; added by the
-architecture-neutral-substrate review: `TD-B38`. Apart from the three
+architecture-neutral-substrate review: `TD-B38`; added by the pre-authoring
+functional-evaluator boundary package: `TD-B39`–`TD-B40`. Apart from the three
 substrate/leakage entries recorded as resolved above (`TD-B23`, `TD-B24`,
 `TD-B38`), each is **open** — the CI/leakage **mechanisms** are delivered and
 tested, but the runner-time enforcement, authored suite, frozen hashes,

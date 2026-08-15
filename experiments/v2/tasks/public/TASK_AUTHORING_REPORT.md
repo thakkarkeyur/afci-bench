@@ -560,3 +560,128 @@ source content. All other blockers stay open, including every task-authoring
 blocker (`TD-B34`, `TD-B26`, `TD-B31`) and runner-time enforcement (`TD-B22`).
 No benchmark ran, no model was invoked, the private evaluator repository was not
 accessed, and nothing was frozen.
+
+## Addendum: functional acceptance observation boundary (`TD-B39`/`TD-B40`)
+
+A **pre-authoring, pre-run** governance package. It authored **no** task, created
+**no** task file, changed **no** task body or SHA-256, changed **no** task
+eligibility, touched **no** file under `apps/` or `libs/`, activated **no**
+reserve, migrated **no** private manifest, ran **no** benchmark or model, produced
+**no** result artifact, and froze **nothing**. The private evaluator repository was
+inspected read-only and **not modified**. The canonical source substrate remains
+`630d3180af0d02a86330dfb599f559e78df65e94`.
+
+It closed exactly two conditions that had to be settled *before* the next
+architecture candidate could be authored.
+
+### 1. What hidden functional acceptance may look at
+
+Previously unstated, and therefore previously decidable per task after its
+assertions were written. Now fixed suite-wide as **externally observable
+functional acceptance through HTTP plus explicitly declared task-relevant
+application seams** (`docs/v2/HIDDEN_EVALUATOR_BOUNDARY.md` sections 9-14,
+`docs/v2/TASK_AUTHORING_POLICY.md` section 8a,
+`docs/v2/ORACLE_VALIDATION_REQUIREMENTS.md` section 3a):
+
+1. **HTTP request/response is the default observation surface.**
+2. **A declared application seam is permitted only** where the public task requires
+   an externally emitted behaviour HTTP cannot faithfully carry.
+3. **Such a seam must be declared before hidden-test implementation**, and a hidden
+   test may never create one.
+4. **Hidden acceptance may not inspect implementation-specific persistence, module
+   state, classes, files or architecture findings** to decide pass or fail.
+5. **Hidden state seeding through implementation modules is prohibited.**
+6. **A conforming implementation using a different internal design must remain
+   gradeable.**
+7. **Test isolation is not an acceptance oracle.**
+8. **Architecture scoring and functional acceptance stay channel-separated.**
+
+**The evaluator is not "HTTP-only", and calling it that would be false.** `PT04`'s
+public text requires structured log records - an externally *emitted* behaviour no
+HTTP response carries - and states explicitly that no request body, response body,
+status code or header of any existing endpoint changes. Exactly **one** seam is
+therefore declared suite-wide: the `LogOutput` sink supplied through the
+application's publicly declared dependency surface, grounded in `PT04`. Internal
+persistence state is **not** a seam and may never be declared as one.
+
+**`resetOrderRepository()` was assessed and rejected as the normative isolation
+mechanism.** It couples the evaluator to one implementation twice over: the
+exported symbol need not survive a conforming change that injects or replaces the
+repository or drops the module-level singleton, and even where it survives its
+effect is implementation-dependent, because the application factory resolves
+persistence once at construction. It is reclassified as **legacy baseline-test
+infrastructure** belonging to the substrate's visible test suite - left in the
+substrate untouched - and the normative method is a **freshly constructed
+application over a freshly evaluated module graph**, which is
+implementation-independent. It is never evidence for an acceptance assertion.
+
+### 2. Which architecture decisions are actually active
+
+The private evaluator manifests predate both the repaired scope-based oracle and
+the pre-authoring opportunity reassessment. The preservation-only opportunities the
+reassessment ordered removed are **still physically present** in them. Those rows
+are **analytically inactive** for the revised design and must not be counted as
+active architecture coverage by any later work package, coverage claim, power
+calculation or novelty assessment; their physical removal is tracked as `TD-B40`
+and happens in the private re-authoring already required by
+`TD-B27`/`TD-B35`/`TD-B36`.
+
+Stated at suite level only, disclosing no private opportunity identifier: once the
+ordered removals are set aside, **every retained active dependency decision sits in
+one source scope under one leaf rule**, spanning only **two** distinct clusters
+where a cluster is `source_scope + forbidden_target + leaf_rule`. The **`api`**
+source scope and the **`AR-DEP-005`** (`api` to `core`) leaf rule are therefore
+**currently unrepresented** in the active set. This is the same construct-validity
+deficiency `TD-B34` already records; it is **not** an oracle failure, and the
+repaired scope-based oracle remains the approved attribution mechanism.
+
+### 3. Boundary audit of the eight existing candidates
+
+High-level; records what each task's acceptance **needs**, discloses no hidden
+assertion, and **fixes no task contract**. Violations and blockers are recorded
+only.
+
+| Task | Channel required | Finding |
+| --- | --- | --- |
+| `PT01` | HTTP only | admissible |
+| `PT02` | HTTP only | admissible |
+| `PT03` | HTTP only (the public task makes request repetition the way persistence is observed) | admissible; the separate `TD-B25` repeat-request contradiction is unaffected by this boundary and stays open |
+| `PT04` | HTTP + the declared `LogOutput` seam | admissible; the sole grounded seam exception, and the reason the boundary is not called HTTP-only |
+| `PT05` | HTTP only | admissible (`functional-only`) |
+| `PT06` | HTTP only, including a raw unparseable body sent with a JSON content type and the `Content-Type` response header | admissible; its out-of-scope classes are graded as *unchanged relative to a baseline capture*, itself an HTTP observation. Whether every named out-of-scope class is elicitable on the substrate remains open under `TD-B31` |
+| `PR01` | HTTP only | admissible (`inactive-reserve`) |
+| `PR02` | **unresolved / unreachable setup** | **blocked**. Its terminal-state precondition is not reachable through the public interface of the unchanged substrate (`TD-B26`), and the boundary forecloses the only workaround - seeding that state through implementation modules. The boundary makes `TD-B26` **stricter**, not softer |
+
+**Recorded consequence for the existing hidden acceptance packages (`TD-B39`).**
+The private scaffolds name "repository reset" as part of their intended runtime
+wiring. Under the boundary that is no longer the normative isolation mechanism, so
+every hidden acceptance package must be migrated to fresh-app isolation, and every
+planned assertion re-checked against the permitted observation channels, before any
+package may be validated or frozen. **Not fixed here**: the private repository was
+not modified.
+
+### 4. One candidate cleared for authoring (aggregate conclusion only)
+
+Recorded because `TD-B34` needs it, and at the coarsest level that carries the
+conclusion.
+
+- A candidate whose dependency decision would use an **implemented dependency leaf
+  rule and a source scope that the surviving active set does not currently
+  represent** has passed **pre-authoring feasibility review** against the eleven
+  authoring requirements and the observation boundary.
+- Its decision would introduce a **new** `decision_cluster_id`, a **new** source
+  scope and a **new** leaf rule relative to the surviving active set - it is a new
+  boundary-decision cluster, not another observation of an existing one.
+- Its functional work would **create** the decision rather than preserve an
+  already-satisfied boundary, so it passes the same task-created-decision test that
+  removed the preservation-only opportunities.
+- Its functional completion criteria are decidable through **HTTP alone**: no
+  declared seam, no internal-state inspection, no seeded state, and no
+  non-persistence assertion.
+
+**No task body has been authored.** Nothing was added to `TASK_INDEX.csv`, no hash
+changed, and no reserve was activated. The candidate's opportunity details, its
+identifiers and its hidden acceptance stay **private** until the normal evaluator
+package is created through the usual process. `TD-B34` remains **open and
+blocking**: one cleared candidate is not a suite, and gates `G1`, `G2` and `G6`
+remain **not passed**.

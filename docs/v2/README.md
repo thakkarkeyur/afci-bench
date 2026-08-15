@@ -289,6 +289,62 @@ reserve, ran **no** benchmark or model, and froze **nothing**.
   (DECISION B), `TD-B26`, `TD-B31` — and runner-time enforcement (`TD-B22`) stay
   **open**, and the suite is **not** ready.
 
+### Functional acceptance observation boundary — `TD-B39`/`TD-B40` opened
+
+A **pre-authoring, pre-run** governance package closing the two conditions that had
+to be settled before the next architecture candidate could be authored. It authored
+**no** task, changed **no** task body or hash, changed **no** eligibility, touched
+**no** file under `apps/`/`libs/`, activated **no** reserve, migrated **no** private
+manifest, ran **no** benchmark or model, and froze **nothing**. The private
+evaluator repository was inspected read-only and **not modified**; the canonical
+substrate is still `630d3180`.
+
+- **What a hidden acceptance test may look at is now fixed suite-wide**
+  ([`HIDDEN_EVALUATOR_BOUNDARY.md`](HIDDEN_EVALUATOR_BOUNDARY.md) §9–§14): *externally
+  observable functional acceptance through HTTP plus explicitly declared
+  task-relevant application seams*. HTTP is the **default** surface; a declared seam
+  is exceptional, must be **grounded in the public task** and **declared before**
+  hidden tests exist; hidden acceptance may **not** read implementation-specific
+  persistence, module state, classes, files or architecture findings, and may **not**
+  seed state through implementation modules; a conforming implementation with a
+  different internal design must remain **gradeable**; test isolation is **never** an
+  acceptance oracle; and the two scoring channels stay **separated**.
+- **It is deliberately not called "HTTP-only".** `PT04` requires structured log
+  records — an externally *emitted* behaviour no HTTP response carries — so exactly
+  **one** seam is declared suite-wide: the `LogOutput` sink on the application's
+  publicly declared dependency surface. Internal persistence state is **not** a seam
+  and may never be declared as one.
+- **`resetOrderRepository()` is reclassified as legacy baseline-test
+  infrastructure**, not an approved evaluator mechanism. It couples the evaluator to
+  one implementation twice over — the symbol need not survive a conforming change,
+  and even where it does its effect depends on when the application was constructed.
+  The normative isolation method is a **freshly constructed application over a
+  freshly evaluated module graph**. The substrate keeps the helper untouched.
+- **Boundary audit of the eight candidates.** `PT01`–`PT03`, `PT05`, `PT06` and
+  `PR01` are gradeable through **HTTP alone**; `PT04` needs HTTP **plus the one
+  declared seam**; **`PR02` is blocked** — its terminal-state precondition is
+  unreachable through the public interface (`TD-B26`) and the boundary forecloses the
+  only workaround, so it makes `TD-B26` **stricter**, not softer. No task contract was
+  amended.
+- **Active-coverage correction (`TD-B40`).** The preservation-only opportunities the
+  reassessment ordered removed are **still physically present** in the stale private
+  manifests and are **analytically inactive**; counting them overstates coverage.
+  Suite-level consequence, no private identifier disclosed: every retained active
+  dependency decision sits in **one source scope** under **one leaf rule**, spanning
+  only **two** distinct clusters (`source_scope + forbidden_target + leaf_rule`), so
+  the **`api`** source scope and the **`AR-DEP-005`** (`api → core`) leaf rule are
+  **currently unrepresented**. Same construct-validity deficiency as `TD-B34`; not an
+  oracle failure.
+- **One candidate cleared, none authored.** A candidate using a currently
+  unrepresented implemented dependency leaf **and** source scope passed pre-authoring
+  feasibility review, and is gradeable through HTTP alone. **No task body was
+  authored**; its opportunity details stay private until the normal evaluator package
+  is created. `TD-B34` stays **open and blocking** — one cleared candidate is not a
+  suite — and **G1/G2/G6** remain **not passed**.
+- **Two blockers opened, none closed** — `TD-B39` (migrate the hidden acceptance
+  packages onto the boundary) and `TD-B40`. The registry now holds **40 blocking +
+  6 non-blocking** decisions, **43 open**.
+
 ### Model-visible worktree isolation
 
 - [`MODEL_VISIBLE_WORKTREE_POLICY.md`](MODEL_VISIBLE_WORKTREE_POLICY.md) +

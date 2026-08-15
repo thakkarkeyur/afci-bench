@@ -198,6 +198,38 @@ decision **`TD-B36`**; it is **not** discharged here.
   [`EXPERIMENTAL_CI_POLICY.md`](EXPERIMENTAL_CI_POLICY.md)); the model can run only
   `ci:agent`, never the oracle.
 
+### 3a. Channel separation between architecture scoring and functional acceptance (`TD-B39`)
+
+Blindness (§3) keeps the evaluator from knowing *which condition* produced a
+patch. This keeps its **two scoring channels** from contaminating each other, and
+fixes what each channel is permitted to observe. Normative statement:
+[`HIDDEN_EVALUATOR_BOUNDARY.md`](HIDDEN_EVALUATOR_BOUNDARY.md) §9–§14.
+
+- **Architecture scoring** is computed from the **production dependency graph**
+  (§1a, §1b) and from nothing else. A functional acceptance result is **never** an
+  input to an architecture finding.
+- **Functional acceptance** is computed from **externally observable behaviour**:
+  HTTP request/response, plus an explicitly declared, task-grounded application
+  seam where the public task requires an externally emitted behaviour HTTP cannot
+  carry. An architecture finding is **never** an input to a functional pass/fail.
+- **Internal persistence and module state are not an acceptance oracle.** Hidden
+  acceptance may not read implementation-specific persistence, module state,
+  classes or source files to decide pass or fail, and may not seed preconditions
+  through implementation modules. A precondition unreachable through the public
+  interface is an unreachable-setup blocker (`TD-B31`).
+- **Test isolation is not an acceptance oracle.** Cases are isolated by a freshly
+  constructed application over a freshly evaluated module graph — never by an
+  implementation-specific reset helper, and never in a way an assertion depends on.
+- **Implementation independence is a validity requirement, not a courtesy.** A
+  conforming solution with a different internal design must remain gradeable;
+  otherwise the acceptance oracle measures conformity to one implementation rather
+  than the behaviour the public task states, and its specificity result is not
+  interpretable.
+
+Migrating the existing hidden acceptance packages onto this boundary is **open**
+(`TD-B39`) and is part of the same private re-authoring already tracked by
+`TD-B05`/`TD-B14`/`TD-B27`.
+
 ## 4. Subjective rules (manual rubric + blinded double rating)
 
 Some architecture rules cannot be automated. For these:

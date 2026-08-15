@@ -175,6 +175,43 @@ error value** to evaluator guesswork:
 A private hidden test may **never** enforce a string, key, or ordering the public
 task did not state.
 
+## 8a. Functional acceptance observation boundary (`TD-B39`)
+
+§8 constrains **what** a hidden test may assert. This constrains **what it may
+look at** to decide. The normative statement lives in
+[`HIDDEN_EVALUATOR_BOUNDARY.md`](HIDDEN_EVALUATOR_BOUNDARY.md) §9–§14; the rules
+an author must satisfy are:
+
+1. **HTTP request/response is the default observation surface.** A task should be
+   writable so that its completion criteria are decidable from status codes,
+   response headers and response bodies alone.
+2. **An explicitly declared application seam is permitted only** when the public
+   task requires an **externally emitted behaviour that cannot be faithfully
+   observed through HTTP**. Exactly one seam is declared suite-wide — the
+   `LogOutput` sink supplied through `createApp({ logOutput })`, grounded in
+   `PT04` — and it is registered in `HIDDEN_EVALUATOR_BOUNDARY.md` §12.
+3. **A seam must be declared before hidden-test implementation.** A hidden test
+   may not create a seam; discovering the need while writing hidden tests means
+   amending the public task (§10) or dropping the assertion.
+4. **Hidden acceptance may not inspect implementation-specific persistence, module
+   state, classes, files, or architecture findings** to decide pass or fail.
+5. **Hidden state seeding through implementation modules is prohibited.** A
+   precondition that is not reachable through the public interface is an
+   unreachable-setup blocker for the task (`TD-B31`), not a licence to reach
+   inside.
+6. **A conforming implementation with a different internal design must remain
+   gradeable.** An assertion that can only pass under one internal design is
+   inadmissible.
+7. **Test isolation is not an acceptance oracle.** Cases are isolated by a freshly
+   constructed application over a freshly evaluated module graph;
+   `resetOrderRepository()` is legacy baseline-test infrastructure, not an
+   approved evaluator mechanism and never evidence for an assertion.
+8. **Architecture scoring and functional acceptance stay channel-separated** —
+   neither result is an input to the other.
+
+This boundary is decided **before** any further hidden acceptance is written, so
+no task's grading surface can be chosen after its assertions exist.
+
 ## 9. v1 reuse boundary
 
 v1 task **concepts** may be reused; v1 task **wording is not reused** (D2). The
@@ -257,6 +294,11 @@ restore a task count**.
    instrument.**
 10. **Its public wording stays functional-only, with no architecture hint** — §4
     and §5 apply unchanged, and the leakage validator must report `OK`.
+11. **Its functional completion criteria are decidable within the observation
+    boundary** (§8a). A candidate that would need an undeclared seam, internal
+    persistence inspection, or state seeded through implementation modules is
+    inadmissible; if it needs a seam, that seam is declared and registered
+    **before** its hidden tests are written.
 
 ### 12.2 The boundary space available under already-implemented leaf rules
 
@@ -285,6 +327,46 @@ Candidate decisions to **investigate, not automatically adopt**:
 **No new architecture-rule family is required for this remedy**, because these
 leaf relationships are **already implemented**. Implementing further rule families
 stays future work (`TD-B33`) and must never readmit an excluded task post hoc.
+
+### 12.2a Coverage of the surviving active set, and one candidate cleared for authoring
+
+Aggregate suite-level statement only. No private opportunity identifier, hidden
+test, hidden acceptance detail or implementation answer appears here or anywhere
+else in the public repository.
+
+**What the surviving active set covers.** After the reassessment removed the
+preservation-only opportunities (requirement 2 above), every retained active
+dependency decision sits in **one source scope** and under **one leaf rule**. Using
+the conceptual cluster identifier
+`decision_cluster_id = source_scope + forbidden_target + leaf_rule`, the active set
+spans **two** clusters, both sourced from `features` and both backed by
+`AR-DEP-006`. That is precisely the construct-validity deficiency `TD-B34` records:
+too few *distinct* boundaries, not too few tasks.
+
+**Consequently `AR-DEP-005` (`api → core`) is currently unrepresented.** No
+retained active opportunity uses the `api` source scope, and none uses the
+`AR-DEP-005` leaf rule. Preservation-only rows naming that boundary are still
+physically present in the stale private manifests and are **pending removal**
+(`TD-B40`); they are **analytically inactive** and must not be counted as active
+coverage by any later work package.
+
+**One candidate has passed pre-authoring feasibility review.** A candidate whose
+dependency decision would use an implemented leaf rule and a source scope that the
+surviving active set does not currently represent has been reviewed against
+requirements 1–11 and §8a and found feasible:
+
+- its decision would introduce a **new** `decision_cluster_id`, a **new** source
+  scope and a **new** leaf rule relative to the surviving active set;
+- its functional work **creates** the decision rather than preserving an
+  already-satisfied boundary (requirement 2);
+- its completion criteria are decidable through **HTTP alone** — no declared seam,
+  no internal-state inspection, no seeded state (requirement 11 / §8a).
+
+**No task body has been authored**, no task was added to `TASK_INDEX.csv`, no hash
+changed, and no reserve was activated. The candidate's private opportunity details,
+its identifier and its hidden acceptance remain private until the normal evaluator
+package is created. `TD-B34` stays **open and blocking**: one cleared candidate is
+not a suite.
 
 ### 12.3 What is forbidden
 
