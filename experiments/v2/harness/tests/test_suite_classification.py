@@ -537,25 +537,39 @@ def test_public_matrix_still_carries_no_hidden_answer_after_the_new_columns():
 
 
 # --------------------------------------------------------------------------- #
-# 9. Blockers are recorded and nothing is fixed or closed
+# 9. Blockers are recorded; only the substrate-leakage pair has been fixed
 # --------------------------------------------------------------------------- #
 NEW_BLOCKERS = [f"TD-B{i}" for i in range(23, 34)]
 
+#: The two blockers the model-visible architecture-comment remediation closed by
+#: actually doing the work: removing the disclosure (TD-B23) and extending the
+#: leakage audit that proves it stays removed (TD-B24). Every other blocker in
+#: this family must still be open.
+RESOLVED_BLOCKERS = {"TD-B23", "TD-B24"}
+
 
 @pytest.mark.parametrize("decision_id", NEW_BLOCKERS)
-def test_each_new_blocker_is_registered_blocking_and_open(decision_id):
+def test_each_new_blocker_is_registered_blocking_and_correctly_statused(decision_id):
     rows = _by_id(_rows(DECISIONS_CSV), key="decision_id")
     assert decision_id in rows, f"{decision_id} is missing from OPEN_DECISIONS.csv"
     row = rows[decision_id]
     assert row["blocking"] == "yes", f"{decision_id} must be blocking"
-    assert row["status"].strip().lower() == "open", f"{decision_id} must not be closed"
+    expected = "resolved" if decision_id in RESOLVED_BLOCKERS else "open"
+    assert row["status"].strip().lower() == expected, (
+        f"{decision_id} must be {expected}"
+    )
     assert row["owner"].strip(), f"{decision_id} needs an owner"
     assert row["gate"].strip(), f"{decision_id} needs a gate mapping"
 
 
-def test_no_blocking_decision_is_closed_by_this_package():
-    for row in _rows(DECISIONS_CSV):
-        assert row["status"].strip().lower() == "open", row["decision_id"]
+def test_only_the_substrate_leakage_pair_is_closed():
+    """Nothing else may ride along on the TD-B23/TD-B24 remediation."""
+    closed = {
+        row["decision_id"]
+        for row in _rows(DECISIONS_CSV)
+        if row["status"].strip().lower() != "open"
+    }
+    assert closed == RESOLVED_BLOCKERS, f"unexpected closed decisions: {sorted(closed)}"
 
 
 def test_pt03_contradiction_is_recorded_but_pt03_is_not_modified():
@@ -572,33 +586,67 @@ def test_pt03_contradiction_is_recorded_but_pt03_is_not_modified():
     assert "recorded, not fixed" in report or "is recorded, not fixed" in report
 
 
-def test_source_comment_leakage_is_recorded_but_not_neutralised():
+def test_source_comment_leakage_is_neutralised_and_recorded():
+    """TD-B23 is resolved by removal, not by restatement.
+
+    The earlier form of this test asserted the *unfixed* premise and said to close
+    TD-B23 and update it if the comments were ever deliberately neutralised. They
+    have been, so it now asserts the opposite: the disclosure is gone from all
+    three files that carried it, and the registry records which disposition was
+    taken.
+    """
     rows = _by_id(_rows(DECISIONS_CSV), key="decision_id")
-    b23 = rows["TD-B23"]["decision"].lower()
-    assert "comment" in b23 and "c1" in b23
-    assert "floor effect" in b23, "TD-B23 must record the floor-effect risk"
-    b24 = rows["TD-B24"]["decision"].lower()
-    assert "never reads typescript source content" in b24 or "source comment" in b24, (
-        "TD-B24 must record that the leakage sweep does not scan source comments"
+    b23 = rows["TD-B23"]
+    assert b23["status"].strip().lower() == "resolved"
+    assert "NEUTRALISE" in b23["decision"].upper(), (
+        "TD-B23 offered neutralise-or-pre-register; the registry must say which"
     )
-    # the revealing comment is still present: this package records, it does not fix
+    assert rows["TD-B24"]["status"].strip().lower() == "resolved"
+
     app = _text(REPO / "apps" / "api" / "src" / "app.ts")
-    assert "BOUNDARY VIOLATION EXAMPLE" in app, (
-        "premise of TD-B23: the revealing comment is still in the substrate. If it "
-        "was deliberately neutralised, close TD-B23 and update this test."
+    assert "BOUNDARY VIOLATION EXAMPLE" not in app.upper(), (
+        "the worked boundary-violation example is back in the substrate"
+    )
+    for phrase in ("cannot import core", "should not depend on core"):
+        assert phrase not in app.lower(), f"app.ts states the rule again: {phrase!r}"
+
+    infra = _text(REPO / "libs" / "infra" / "src" / "index.ts").lower()
+    assert "avoid importing from core" not in infra
+    assert "deliberate architectural choice" not in infra
+
+    features = _text(REPO / "libs" / "features" / "src" / "index.ts").lower()
+    assert "without directly importing core" not in features
+
+    # ...but the files are still real source, not stripped to nothing
+    for rel in ("apps/api/src/app.ts", "libs/infra/src/index.ts", "libs/features/src/index.ts"):
+        text = _text(REPO / rel)
+        assert "@afci-bench/" in text and "export" in text, f"{rel} lost its content"
+
+
+def test_the_leakage_sweep_now_reads_source_content():
+    """TD-B24 is resolved: the sweep opens files instead of only matching names."""
+    from prepare_model_worktree import (  # noqa: WPS433
+        find_comment_disclosures,
+        scan_snapshot_violations,
+        scan_source_comment_disclosures,
     )
 
-
-def test_the_leakage_sweep_still_does_not_read_source_content():
-    """Premise of TD-B24 - asserted so the blocker cannot go stale silently."""
-    from prepare_model_worktree import scan_snapshot_violations  # noqa: WPS433
+    assert callable(scan_snapshot_violations)
+    assert callable(scan_source_comment_disclosures)
 
     src = _text(REPO / "experiments" / "v2" / "harness" / "prepare_model_worktree.py")
     fn = src.split("def scan_snapshot_violations")[1].split("\ndef ")[0]
-    assert "read_text" not in fn and "read_bytes" not in fn, (
-        "scan_snapshot_violations now reads file content; TD-B24 may be resolvable"
+    assert "scan_source_comment_disclosures" in fn, (
+        "scan_snapshot_violations must delegate to the source-comment sweep"
     )
-    assert callable(scan_snapshot_violations)
+    body = src.split("def scan_source_comment_disclosures")[1].split("\ndef ")[0]
+    assert "read_text" in body, "the source-comment sweep must actually read file content"
+
+    # it detects the historical disclosure and leaves ordinary prose alone
+    assert find_comment_disclosures(Path("x.ts"), "// api cannot import core directly\n")
+    assert not find_comment_disclosures(
+        Path("x.ts"), "// Adapter to convert infra's OrderEntity to core's Order\n"
+    )
 
 
 def test_attribution_and_manifest_coverage_blockers_are_recorded():

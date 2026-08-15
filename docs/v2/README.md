@@ -201,6 +201,8 @@ hash, manifest, endpoint or protocol was frozen or edited by that decision**, an
   a private opportunity needing re-justification; pseudo-replication of shared
   boundary decisions; suite-wide public-interface reachability validation;
   `draft_unvalidated` hidden evaluator scaffolds; and broadening E1 as future work.
+  *(Status superseded: the first two — `TD-B23` and `TD-B24` — were resolved by the
+  later remediation described below. The other nine remain open.)*
 
 ### Opportunity reassessment — `PT05` reclassified, DECISION B recorded
 
@@ -244,6 +246,48 @@ authored **no** task, ran **no** benchmark, and froze **nothing**.
   final power value is frozen now** (`TD-B37`; no power simulation was run here).
 - **Four further blockers opened, none closed** — `TD-B34`–`TD-B37`. The registry
   now holds **37 blocking + 6 non-blocking** decisions, **all open**.
+  *(Superseded on status only: `TD-B23` and `TD-B24` were subsequently resolved by
+  the baseline architecture-coaching remediation below. The other 41 remain open.)*
+
+### Baseline architecture coaching removed — `TD-B23`/`TD-B24` resolved
+
+A **pre-authoring, pre-run** substrate remediation, done because the next public
+architecture tasks would score exactly the boundaries the substrate was teaching.
+It authored **no** task, changed **no** task body or hash, activated **no**
+reserve, ran **no** benchmark or model, and froze **nothing**.
+
+- **The disclosure is gone.** Model-visible source comments stated scored
+  dependency rules to **every** condition, including the no-guidance C1 baseline:
+  `apps/api/src/app.ts` stated the `api → core` prohibition, named the
+  architecture-CI consequence and carried a worked commented-out forbidden import;
+  `libs/infra/src/index.ts` justified avoiding `core` as "a deliberate
+  architectural choice"; `libs/features/src/index.ts` restated the same
+  prohibition from the `features` side. Six comment lines in three files, removed
+  or rewritten in neutral implementation terms.
+- **Comment-only, and proven so.** Identical emitted JS with comments stripped,
+  identical AST fingerprint and an identical import/export edge list in all three
+  files. The substrate was **re-identified, not re-designed**:
+  [`SOURCE_SUBSTRATE_IDENTITY.md`](SOURCE_SUBSTRATE_IDENTITY.md) records the old
+  and new identities and the equivalence proof.
+- **Structural signals deliberately remain.** Folder names, `scope:*` tags,
+  `@afci-bench/*` aliases, the import edges and every behaviour-describing comment
+  stay visible — C1 may still *infer* the architecture from the code, which is the
+  D3 signal the design measures. What it may no longer do is **read the answer in
+  prose**. C3/C4 still receive the controlled treatment through their own channels.
+- **The audit can now see it.** The leakage sweep reads source **content**, not
+  just file names, and refuses a snapshot with `ARCHITECTURE_COMMENT_DISCLOSURE`
+  when a comment states a rule. It is deliberately narrow: a prohibition counts
+  only when paired with a named layer, so ordinary implementation prose passes.
+  Positive **and** negative regression cases exist, including the **verbatim**
+  pre-remediation bytes ([`../../experiments/v2/leakage_fixtures/`](../../experiments/v2/leakage_fixtures/)).
+- **No architecture mechanism was removed.** The root `.eslintrc.json`
+  `depConstraints` are untouched, and `api → core`, `infra → core` and
+  `features → infra` were each re-probed and are still reported by
+  `@nx/enforce-module-boundaries`.
+- **Two blockers resolved, 41 still open.** `TD-B23` (disposition: **neutralise**,
+  not pre-register) and `TD-B24`. Every task-authoring blocker — `TD-B34`
+  (DECISION B), `TD-B26`, `TD-B31` — and runner-time enforcement (`TD-B22`) stay
+  **open**, and the suite is **not** ready.
 
 ### Model-visible worktree isolation
 

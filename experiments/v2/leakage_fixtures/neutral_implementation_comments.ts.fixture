@@ -1,0 +1,32 @@
+// Comments the substrate KEEPS. None of these states a dependency rule, so the
+// scanner must report nothing for this file. They name layers, modules, ports
+// and imports - that is ordinary implementation prose, not architecture coaching.
+
+// Adapter to convert infra's OrderEntity to core's Order
+// Infra layer implements repository interfaces
+// OrderEntity is this adapter's own persistence-facing representation of an
+// order, expressed with the shared contract types.
+// Port interface - implemented by infra layer
+// Port interface (matching core's OrderRepository)
+// Re-export the domain types that callers of this use case work with
+// Domain entity (internal representation)
+// Pure domain functions
+// Validation result
+// Health endpoint
+// Create order endpoint
+// Persist via repository
+// Map to response DTO
+// Singleton instance for simple use cases
+// Test helper - not part of interface
+
+// Ordinary advice that mentions importing but prescribes no architecture:
+// Note: do not import this module at runtime; it is types-only
+// We avoid importing lodash here to keep the bundle small
+// Totals round to cents because the payment provider rejects sub-cent values
+// express() must be called before any route is registered
+
+/* A block comment describing behaviour, not structure: the repository is a
+   singleton so that two requests in the same process observe the same orders. */
+
+const notAComment = '// import { Order } from "@afci-bench/core"; // must not import core';
+export const neutralFixture: string = notAComment;

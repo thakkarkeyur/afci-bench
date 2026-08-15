@@ -20,6 +20,15 @@ excluded"; a new top-level file is invisible to the model until it is explicitly
 allowed. An exclusion sweep (:func:`assert_snapshot_clean`) then runs as a
 fail-closed backstop over the finished snapshot.
 
+**Content sweep, not just names.** The exclusion sweep also reads the prose the
+model can see (:func:`scan_source_comment_disclosures`) and refuses a snapshot
+whose *source comments* state a scored dependency rule. Excluding
+``ARCHITECTURE_CONTEXT.md`` is not enough if ``apps/api/src/app.ts`` simply says
+the rule in a comment: that reached the C1 baseline too, which is what ``TD-B23``
+recorded and what a basename-only sweep could never catch (``TD-B24``). Naming a
+layer is *not* a disclosure — folder names, scope tags and import edges are meant
+to stay visible (D3) — only rule-shaped prose is.
+
 **Condition payloads.** The functional task is always delivered through the
 approved out-of-band mechanism (the prompt), never written into the worktree.
 The architecture payload is supplied as the *same bytes* to C3 and C4 but through
@@ -43,6 +52,7 @@ import argparse
 import fnmatch
 import hashlib
 import json
+import re
 import shutil
 import sys
 from dataclasses import dataclass, field
@@ -147,6 +157,259 @@ PERSISTENT_CONTEXT_BASENAMES: Tuple[str, ...] = (
     ".windsurfrules",
     "copilot-instructions.md",
 )
+
+
+# --------------------------------------------------------------------------- #
+# Architecture-rule disclosure in model-visible source (TD-B23 / TD-B24)
+# --------------------------------------------------------------------------- #
+# The basename/directory sweep above cannot see *inside* a file, so a source
+# comment that simply states a scored dependency rule reached every condition,
+# including the C1 baseline. This section reads the prose the model actually
+# sees and refuses the substrate if it coaches the hidden rules.
+#
+# The detector is deliberately narrow. Naming a layer is not a disclosure —
+# folder names, scope tags and import edges are *meant* to stay visible (D3) —
+# so an ordinary comment may say what a module is or does. A comment is a
+# disclosure only when it states a **rule**: a worked violation example, a named
+# rule id, a commented-out cross-package import, or a prohibition/exclusivity
+# claim aimed at a named layer. Anything less specific would reject the ordinary
+# implementation comments the substrate needs to stay realistic.
+
+#: Model-visible text whose *comments* are scanned, by kind.
+_JS_LIKE_SUFFIXES: Tuple[str, ...] = (".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs")
+_JSON_SUFFIXES: Tuple[str, ...] = (".json",)
+_HASH_COMMENT_SUFFIXES: Tuple[str, ...] = (".yml", ".yaml", ".sh", ".toml", ".ini", ".cfg")
+_HASH_COMMENT_BASENAMES: Tuple[str, ...] = (
+    ".gitattributes", ".gitignore", ".nvmrc", ".npmrc", ".editorconfig",
+)
+_PROSE_SUFFIXES: Tuple[str, ...] = (".md", ".markdown", ".txt", ".rst")
+
+#: A comment body that is itself a workspace-package import. This is the
+#: signature of a worked forbidden-import example: real code is an import
+#: statement, but a *commented-out* one demonstrates a boundary rather than
+#: using it.
+_COMMENTED_OUT_IMPORT = re.compile(
+    r"""(?:^|\s)(?:import|export)\b[^\n]*?\bfrom\s*['"]@afci-bench/"""
+    r"""|(?:^|\s)require\s*\(\s*['"]@afci-bench/""",
+    re.IGNORECASE,
+)
+
+#: Phrases that disclose an architecture rule on their own, whatever layer they
+#: name. Each is rule-shaped language that no behaviour-describing comment needs.
+_SELF_SUFFICIENT_DISCLOSURE: Tuple[Tuple[str, str], ...] = (
+    (r"boundary\s+violation", "worked boundary-violation example"),
+    (r"violation\s+example", "worked violation example"),
+    (r"(?:module|import|layer|layering|architectur\w*)[\s-]+boundar(?:y|ies)\s+rules?",
+     "explains the module-boundary rules"),
+    (r"\blayering\s+rules?\b", "explains the layering rules"),
+    (r"\barchitecture\s+(?:rule|ci)\b", "names the architecture rule/CI"),
+    (r"enforce-module-boundaries", "names the boundary-enforcing lint rule"),
+    (r"depConstraints", "names the dependency-constraint configuration"),
+    (r"\bAR-DEP-\d", "names a dependency-direction rule id"),
+    (r"\bOPP-[A-Z0-9]", "names an opportunity id"),
+    (r"architectural\s+(?:choice|decision|constraint|rule|requirement)",
+     "justifies a dependency choice as an architecture rule"),
+    (r"deliberate(?:ly)?\s+architectur", "justifies a dependency choice as an architecture rule"),
+)
+
+#: Prohibition / exclusivity claims. On their own these can be ordinary advice
+#: ("do not import this at runtime"), so each must be paired with a named layer
+#: before it counts as a disclosure.
+_PROHIBITION = re.compile(
+    r"(?:must|should|shall|may|can|could|do|does|is|are|will)\s+not\s+(?:directly\s+)?"
+    r"(?:import|depend|reference)"
+    r"|(?:cannot|can\s?not|can't|mustn't|shouldn't|won't)\s+(?:directly\s+)?"
+    r"(?:import|depend|reference)"
+    r"|not\s+allowed\s+to\s+(?:import|depend)"
+    r"|never\s+(?:directly\s+)?(?:import|depend)"
+    r"|(?:avoid|prevent|forbid|prohibit|disallow)\w*\s+(?:directly\s+)?(?:import|depend)\w*"
+    r"|without\s+(?:directly\s+)?(?:import|depend)\w*"
+    r"|instead\s+of\s+(?:directly\s+)?(?:import|depend)\w*"
+    r"|(?:may|can|must|should)\s+only\s+(?:import|depend)"
+    r"|only\s+depends?\s+on"
+    r"|depends?\s+on\s+[\w@/-]+\s*,\s*not\b",
+    re.IGNORECASE,
+)
+
+#: A named architectural subject. Required to turn a prohibition into a finding.
+_LAYER_SUBJECT = re.compile(
+    r"@afci-bench/\w+"
+    r"|\b(?:core|infra|infrastructure|features?|contracts?|observability|domain|api)\b"
+    r"|\b(?:apps?|libs?)/"
+    r"|\blayer\b",
+    re.IGNORECASE,
+)
+
+#: Violation-message prefixes, used to pick the machine-readable refusal code.
+_ARCH_FILE_PREFIX = "explicit architecture artifact in model-visible worktree:"
+_ARCH_COMMENT_PREFIX = "architecture-rule disclosure in model-visible source:"
+
+
+def _js_comment_regions(text: str) -> List[Tuple[int, str]]:
+    """Return ``(line_number, comment_body)`` for every JS/TS comment in ``text``.
+
+    String and template literals are skipped so a quoted ``//`` is not mistaken
+    for a comment, and regex literals are consumed so an escaped slash inside one
+    cannot swallow the code that follows.
+    """
+    regions: List[Tuple[int, str]] = []
+    i, n, line = 0, len(text), 1
+    prev = ""  # last significant character, for the regex-literal heuristic
+    while i < n:
+        ch = text[i]
+        if ch == "\n":
+            line += 1
+            i += 1
+            continue
+        if ch in "'\"`":
+            quote = ch
+            i += 1
+            while i < n:
+                c = text[i]
+                if c == "\\":
+                    i += 2
+                    continue
+                if c == "\n":
+                    line += 1
+                if c == quote:
+                    i += 1
+                    break
+                i += 1
+            prev = quote
+            continue
+        if ch == "/" and i + 1 < n:
+            nxt = text[i + 1]
+            if nxt == "/":
+                end = text.find("\n", i)
+                end = n if end == -1 else end
+                regions.append((line, text[i + 2:end]))
+                i = end
+                continue
+            if nxt == "*":
+                end = text.find("*/", i + 2)
+                body = text[i + 2:(n if end == -1 else end)]
+                regions.append((line, body))
+                line += body.count("\n")
+                i = n if end == -1 else end + 2
+                continue
+            if prev == "" or prev in "=(,:[!&|?{};+-*%~^<>":
+                # regex literal, not division
+                i += 1
+                in_class = False
+                while i < n:
+                    c = text[i]
+                    if c == "\\":
+                        i += 2
+                        continue
+                    if c == "\n":
+                        break
+                    if c == "[":
+                        in_class = True
+                    elif c == "]":
+                        in_class = False
+                    elif c == "/" and not in_class:
+                        i += 1
+                        break
+                    i += 1
+                prev = "/"
+                continue
+        if not ch.isspace():
+            prev = ch
+        i += 1
+    return regions
+
+
+def _hash_comment_regions(text: str) -> List[Tuple[int, str]]:
+    """Return ``(line_number, comment_body)`` for ``#``-style comments."""
+    return [
+        (i, line.split("#", 1)[1])
+        for i, line in enumerate(text.splitlines(), 1)
+        if line.lstrip().startswith("#")
+    ]
+
+
+def _json_string_values(node, out: List[str]) -> None:
+    """Collect every JSON *string value*. Keys are structural, not prose.
+
+    Scanning keys would flag `.eslintrc.agent.json`, whose whole purpose is to
+    name `@nx/enforce-module-boundaries` in order to switch it **off** — the one
+    file the policy allows to name the rule.
+    """
+    if isinstance(node, str):
+        out.append(node)
+    elif isinstance(node, list):
+        for item in node:
+            _json_string_values(item, out)
+    elif isinstance(node, dict):
+        for value in node.values():
+            _json_string_values(value, out)
+
+
+def comment_regions_for(path: Path, text: str) -> List[Tuple[int, str]]:
+    """Return the prose regions of ``path`` that the model can read."""
+    suffix = path.suffix.lower()
+    name = path.name.lower()
+    if suffix in _JS_LIKE_SUFFIXES:
+        return _js_comment_regions(text)
+    if suffix in _JSON_SUFFIXES:
+        try:
+            values: List[str] = []
+            _json_string_values(json.loads(text), values)
+            return [(0, v) for v in values]
+        except (ValueError, RecursionError):
+            return [(0, text)]
+    if suffix in _HASH_COMMENT_SUFFIXES or name in _HASH_COMMENT_BASENAMES:
+        return _hash_comment_regions(text)
+    if suffix in _PROSE_SUFFIXES:
+        return [(0, text)]
+    return []
+
+
+def find_comment_disclosures(path: Path, text: str) -> List[Tuple[int, str]]:
+    """Return ``(line, reason)`` for every architecture-rule disclosure in ``text``."""
+    findings: List[Tuple[int, str]] = []
+    for line, body in comment_regions_for(Path(path), text):
+        if _COMMENTED_OUT_IMPORT.search(body):
+            findings.append((line, "commented-out workspace-package import (worked violation example)"))
+        for pattern, reason in _SELF_SUFFICIENT_DISCLOSURE:
+            if re.search(pattern, body, re.IGNORECASE):
+                findings.append((line, reason))
+        prohibition = _PROHIBITION.search(body)
+        if prohibition and _LAYER_SUBJECT.search(body):
+            findings.append(
+                (line, f"states a dependency prohibition about a named layer "
+                       f"({prohibition.group(0).strip()!r})")
+            )
+    return findings
+
+
+def scan_source_comment_disclosures(snapshot_root, skip: Sequence[str] = ()) -> List[str]:
+    """Return every architecture-rule disclosure found in a snapshot's prose.
+
+    ``skip`` names the approved architecture-delivery paths: C3's single approved
+    repository-instruction file *is* the architecture payload, so scanning it
+    would refuse the very condition it implements. Every other file in every
+    condition — C1's baseline substrate included — is scanned.
+    """
+    snapshot_root = Path(snapshot_root)
+    skipped = {PurePosixPath(p).as_posix() for p in skip}
+    violations: List[str] = []
+    for path in sorted(snapshot_root.rglob("*")):
+        if not path.is_file():
+            continue
+        if any(part in DENIED_DIR_NAMES_IN_TREES for part in path.relative_to(snapshot_root).parts[:-1]):
+            continue
+        if path.relative_to(snapshot_root).as_posix() in skipped:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        rel = path.relative_to(snapshot_root).as_posix()
+        for line, reason in find_comment_disclosures(path, text):
+            where = f"{rel}:{line}" if line else rel
+            violations.append(f"{_ARCH_COMMENT_PREFIX} {where} {reason}")
+    return violations
 
 
 class WorktreePreparationError(RuntimeError):
@@ -312,11 +575,15 @@ def scan_snapshot_violations(snapshot_root, allow_persistent: Sequence[str] = ()
             continue
 
         if name in FORBIDDEN_ARCHITECTURE_BASENAMES:
-            violations.append(f"explicit architecture artifact in model-visible worktree: {rel}")
+            violations.append(f"{_ARCH_FILE_PREFIX} {rel}")
         if any(fnmatch.fnmatch(name, pat) for pat in FORBIDDEN_EVALUATOR_GLOBS):
             violations.append(f"evaluator artifact in model-visible worktree: {rel}")
         if name in PERSISTENT_CONTEXT_BASENAMES and rel not in allowed:
             violations.append(f"unapproved persistent context in model-visible worktree: {rel}")
+
+    # TD-B24: the sweep above never opens a file, so it cannot see a source
+    # comment that simply states a scored dependency rule (TD-B23).
+    violations.extend(scan_source_comment_disclosures(snapshot_root, allowed))
 
     return violations
 
@@ -324,12 +591,15 @@ def scan_snapshot_violations(snapshot_root, allow_persistent: Sequence[str] = ()
 def assert_snapshot_clean(snapshot_root, allow_persistent: Sequence[str] = ()) -> None:
     """Fail closed if the prepared snapshot violates the policy."""
     violations = scan_snapshot_violations(snapshot_root, allow_persistent)
-    if violations:
-        raise WorktreePreparationError(
-            "UNEXPECTED_ARCHITECTURE_FILE" if any("architecture" in v for v in violations)
-            else "SETUP_CONTAMINATED",
-            "; ".join(violations),
-        )
+    if not violations:
+        return
+    if any(v.startswith(_ARCH_FILE_PREFIX) for v in violations):
+        code = "UNEXPECTED_ARCHITECTURE_FILE"
+    elif any(v.startswith(_ARCH_COMMENT_PREFIX) for v in violations):
+        code = "ARCHITECTURE_COMMENT_DISCLOSURE"
+    else:
+        code = "SETUP_CONTAMINATED"
+    raise WorktreePreparationError(code, "; ".join(violations))
 
 
 # --------------------------------------------------------------------------- #

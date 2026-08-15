@@ -1,8 +1,8 @@
 import { OrderStatus } from '@afci-bench/contracts';
 
 // Infra layer implements repository interfaces
-// Note: We define our own Order type here based on contracts to avoid importing from core
-// This is a deliberate architectural choice - infra depends on contracts, not core
+// OrderEntity is this adapter's own persistence-facing representation of an
+// order, expressed with the shared contract types.
 
 export interface OrderEntity {
   id: string;

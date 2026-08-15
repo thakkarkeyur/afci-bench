@@ -35,8 +35,13 @@ that none is yet marked resolved.
   production-source scoring policy, and the statistical-governance consequences).
 - **Non-blocking decisions: 6** (`TD-N01`–`TD-N06`) — refinements that do not
   block the confirmatory design.
-- **Total open decisions: 43.** None resolved (pre-freeze draft, not a
-  data-collection package).
+- **Total decisions: 43**, of which **2 are resolved** (`TD-B23`, `TD-B24`) and
+  **41 remain open**. The two resolved entries are the model-visible
+  architecture-comment remediation and the leakage audit that proves it; both were
+  completed **before** any benchmark or model execution and neither freezes
+  anything. Every other decision — including every task-authoring blocker
+  (`TD-B34`, `TD-B26`, `TD-B31`) and runner-time enforcement (`TD-B22`) — is
+  **still open**.
 
 A **blocking** decision, if left unresolved, would invalidate or bias the
 associated result; it maps to a pilot gate (`G1`–`G8`) where feasible. A
@@ -75,14 +80,17 @@ confirmatory analysis.
 ### Added by the suite-classification decision (decision D) — `TD-B23` – `TD-B33`
 
 Narrowing the confirmatory construct to **layered dependency-direction
-conformance** exposed eleven separate blockers. Each is **open**; **none is
-closed by this work package**, and none may be closed by restating the
-classification.
+conformance** exposed eleven separate blockers. Two of them — **`TD-B23`** (the
+baseline substrate stated the scored rules in source comments) and **`TD-B24`**
+(the leakage sweep could not see source comments) — are now **resolved**, by
+actually removing the disclosure and actually extending the audit, before any
+benchmark or model execution. **The remaining nine stay open**, and none of them
+may be closed by restating the classification.
 
 | ID | Decision | Owner | Resolved during | Gate |
 |----|----------|-------|-----------------|------|
-| **TD-B23** | **Model-visible TypeScript comments explicitly reveal some scored dependency rules to every condition, including the C1 baseline** — `apps/api/src/app.ts` documents that the application must not import core *and* shows a worked boundary-violation example; `libs/features` and `libs/infra` comments state the same direction. C1 may therefore not be an unguided arm, and E1 may show a **floor effect**. Decide and record the disposition (neutralise the comments and re-hash the substrate, **or** pre-register the leakage and its floor-effect consequence) before any counted run. **Not fixed in this work package.** | Task Designer + Study Lead | before the pilot (substrate decision) | G2/G3 |
-| **TD-B24** | **The worktree leakage sweep does not scan TypeScript source comments.** `prepare_model_worktree.scan_snapshot_violations` matches file basenames and directory names only and never reads source content, so it cannot detect the `TD-B23` disclosure. Extend it to scan source comments for architecture-rule disclosure, with a regression proof per demonstrated bypass. **Not fixed in this work package.** | Harness Engineer | before the pilot (with `TD-B22`) | G2/G3 |
+| **TD-B23** | ✅ **RESOLVED — disposition: neutralise.** Model-visible TypeScript comments explicitly stated scored dependency rules to every condition, including the C1 baseline: `apps/api/src/app.ts` stated the `api → core` prohibition, named the architecture-CI consequence and carried a worked commented-out forbidden import; `libs/infra/src/index.ts` justified avoiding `core` as "a deliberate architectural choice"; `libs/features/src/index.ts` restated the `api → core` prohibition from the `features` side. All six lines are removed. The edit is **comment-only** and proven non-behavioural (identical emitted JS with comments stripped, identical AST fingerprint, identical import/export edges), so the substrate was **re-identified, not re-designed**. Structural signals stay (folder names, `scope:*` tags, path aliases, import edges, behaviour-describing comments), and `api → core`, `infra → core` and `features → infra` all remain structurally detectable. Regression proof: **PROOF 10**, with the verbatim pre-remediation bytes preserved in [`../../experiments/v2/leakage_fixtures/`](../../experiments/v2/leakage_fixtures/). No benchmark or model execution; nothing frozen. | Task Designer + Study Lead | resolved before the pilot (substrate decision) | G2/G3 |
+| **TD-B24** | ✅ **RESOLVED.** The worktree leakage sweep now reads file **content**, not only names. `scan_source_comment_disclosures` parses JS/TS line and block comments (skipping string, template and regex literals), JSON string **values** (not keys, so `.eslintrc.agent.json` is not flagged for naming the rule it switches off), hash-comment config files and prose files; `scan_snapshot_violations` refuses with the new code `ARCHITECTURE_COMMENT_DISCLOSURE`. A comment counts only when it states a **rule** — a worked violation example, a commented-out workspace-package import, a named rule/opportunity id, or a prohibition/exclusivity claim **paired with a named layer** — so prose that merely names layers, modules or imports is not flagged. Positive **and** negative regression cases exist (**PROOF 10**), including the verbatim pre-remediation bytes and a negative fixture of the retained prose, and the real prepared **C1 and C2** snapshots pass. Runner-time enforcement of the surrounding policy remains open as **`TD-B22`**. | Harness Engineer | resolved before the pilot (`TD-B22` still open) | G2/G3 |
 | **TD-B25** | **`PT03`'s public repeat-request contract is contradictory.** It permits a change to any of the five accepted values — including `delivered` and `cancelled` — while also requiring that repeating the same request returns the same stored status, *and* that a current status of `delivered` or `cancelled` answers HTTP 409 `ConflictError`. A target of `delivered` or `cancelled` cannot satisfy both. Requires a **separate public task amendment** and a **private relink** of `PT03`'s package to the amended hash. **Deliberately not fixed in this commit.** | Task Designer | separate public `PT03` amendment | G1/G2 |
 | **TD-B26** | **`PR02`'s terminal-state completion criterion is not externally reachable at the source substrate.** Cancelling a `shipped` or `delivered` order must answer HTTP 409 `ConflictError`, but no public endpoint can move an order out of its created status and `PR02` creates none. **`PR02` must not be activated or promoted until the criterion is repaired and the repair is independently re-approved.** | Task Designer | before any reserve activation | G1/G2 |
 | **TD-B27** | **The attribution rule is now decided and implemented publicly; the private opportunity sets and the labelled-corpus validation are not.** `dependencyDirection.ts` no longer matches an exact importer path: an opportunity is scored over its **frozen architectural scope** (`locator.scope` resolved through the frozen `dependency_policy.layers` path globs), `locator.importer_path` is **provenance only**, `NOT_APPLICABLE` requires an **absent scope**, and one frozen decision contributes **at most one** violation — regression-locked by the **M0–M7** mutation corpus (`experiments/v2/oracle/tests/scopeAttribution.test.ts`) covering violations in **new** files, **moved** files, and after **anchor deletion**. **Still blocking:** every private per-task opportunity set must be re-authored and re-justified under scope attribution (scope + forbidden targets + implemented leaf rule; no `AR-DEP-001` umbrella opportunities; no duplicated decisions), and the attribution must still be validated on the labelled corpus against the pre-registered precision/recall bar. | Guard Engineer | pilot (with `TD-B12`) | G6 |

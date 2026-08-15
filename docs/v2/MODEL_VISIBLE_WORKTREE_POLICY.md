@@ -117,6 +117,33 @@ dependency rule. This is the agent-visible config the model has always been
 given; the tests assert both that it is present and that no file in `W` states a
 dependency constraint.
 
+### Structural signal vs. stated rule — the line the baseline must not cross
+
+`TD-B23` found the substrate on the wrong side of this line: `apps/api/src/app.ts`
+carried a worked forbidden-import example and the sentence *"apps/api can depend
+on features, but should not depend on core directly"*, and `libs/infra/` and
+`libs/features/` restated the same directions. Every condition read them,
+including C1. The baseline was therefore **partly guided**, which is a floor
+effect on the primary C4-vs-C1 contrast, not a design feature. Those comments have
+been neutralised; `scan_source_comment_disclosures()` now keeps them out.
+
+The distinction the baseline is held to:
+
+| Allowed in every condition (**structural signal**) | Forbidden outside C3/C4 (**stated rule**) |
+|---|---|
+| directory names (`apps/api`, `libs/core`, ...) | "api cannot import core" |
+| nx `scope:*` project tags | "this layer may only depend on ..." |
+| `@afci-bench/*` path aliases in `tsconfig.base.json` | a worked boundary-violation example |
+| the existing import edges and the code itself | a commented-out forbidden import |
+| comments describing behaviour, algorithms, data semantics, framework quirks or maintainability | a named rule id (`AR-DEP-00n`), or a dependency choice justified as "a deliberate architectural choice" |
+
+A C1 model may still **infer** the intended architecture by reading the code —
+that inference is exactly the D3 signal the design wants to measure. What it may
+no longer do is **read the answer** in prose. C3 and C4 continue to receive the
+controlled architecture treatment through their own channels, so the contrast
+between "infer it from structure" and "be told it" is restored rather than
+removed.
+
 ## 4. Condition behaviour
 
 The functional task is **always** delivered out of band (the prompt) and is never
@@ -144,6 +171,7 @@ Fail-closed refusals (each has a machine-readable code):
 | `DEST_NOT_EMPTY` | the destination worktree already has content |
 | `EMPTY_SUBSTRATE` | the allowlist matched nothing |
 | `UNEXPECTED_ARCHITECTURE_FILE` | the finished snapshot contains an explicit architecture artifact |
+| `ARCHITECTURE_COMMENT_DISCLOSURE` | a model-visible source comment states a dependency rule (`TD-B23`/`TD-B24`) |
 | `SETUP_CONTAMINATED` | the finished snapshot contains evaluator material or unapproved persistent context |
 
 A refusal is never downgraded to a pass, and a refusal leaves no partial
@@ -160,6 +188,36 @@ persistent-context file other than the single instruction file the condition
 approves. The allowlist makes these unreachable by construction; the sweep is the
 belt-and-braces check that fails closed if the allowlist is ever widened
 carelessly.
+
+### 5.1 Source-comment disclosure sweep (`TD-B24`)
+
+The sweep above matches **names**. A file called `app.ts` is innocuous by name and
+may still state the rule in its first comment, which is precisely how the `TD-B23`
+disclosure survived. `scan_source_comment_disclosures()` therefore reads the prose
+the model can see:
+
+| File kind | What is read |
+|---|---|
+| `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs` | line and block comments, with string, template and regex literals skipped so quoted text is not mistaken for prose |
+| `.json` | string **values** only — keys are structural, and scanning them would flag `.eslintrc.agent.json` for naming the rule it switches off |
+| `.gitattributes`, `.nvmrc`, `.npmrc`, `.editorconfig`, `.yml`, `.yaml`, `.sh`, `.toml`, `.ini`, `.cfg` | `#` comments |
+| `.md`, `.markdown`, `.txt`, `.rst` | full text |
+
+A comment is a violation only when it states a rule, in one of four forms: a
+**worked violation example**; a **commented-out workspace-package import**; a
+**named rule or opportunity id**; or a **prohibition/exclusivity claim**
+("must not import", "may only depend on", "avoid importing") **paired with a named
+layer**. The pairing requirement is what keeps the audit narrow: "do not import
+this module at runtime" and "we avoid importing lodash here" name no layer and
+pass, while "infra must not import core" does not.
+
+C3's single approved repository-instruction file is exempt, because that file **is**
+the architecture payload; scanning it would refuse the condition it implements.
+Every other file in every condition is scanned, C1's baseline included.
+
+Regression fixtures — including the verbatim bytes removed from the three leaking
+files, and a negative fixture of the comments the substrate keeps — live in
+[`../../experiments/v2/leakage_fixtures/`](../../experiments/v2/leakage_fixtures/).
 
 ## 6. Snapshot manifest
 
@@ -181,12 +239,15 @@ The manifest also carries `runner_enforcement: "not implemented (TD-B22)"`.
 
 **Delivered and tested here:** the allowlist-first preparation mechanism, the
 per-condition payload contract, the fail-closed refusals, the post-construction
-sweep, the deterministic manifest, and nine proofs — no architecture
+sweep, the deterministic manifest, and ten proofs — no architecture
 context/catalog/lint rules in C1 or C2; C3 carries only its approved persistent
 payload; C4 carries none; C3 and C4 payload bytes identical; source folders and
 implicit clues intact; `npm run ci:agent` verified to pass inside a prepared
 snapshot; private evaluator paths and hidden material refused; an unexpected
-explicit architecture file fails closed; deterministic hashed manifest.
+explicit architecture file fails closed; deterministic hashed manifest; and
+(**PROOF 10**, `TD-B23`/`TD-B24`) the model-visible source comments state no
+dependency rule — the verbatim historical leak is detected, ordinary
+implementation prose is not, and the real prepared C1 and C2 snapshots are clean.
 
 **Not done — explicitly open:**
 

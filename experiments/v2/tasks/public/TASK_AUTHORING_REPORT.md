@@ -257,7 +257,7 @@ Binding consequences:
 - **`PR02` must not be promoted.** Its terminal-state completion criterion (cancelling a `shipped` or `delivered` order answers HTTP 409 `ConflictError`) is **not externally reachable** through the current public interface: no public endpoint can move an order out of its created status and `PR02` creates none. `PR02` cannot be activated until the criterion is repaired **and** the repair is independently re-approved (**TD-B26**). Its public body is **not** modified by this work package.
 - **Broader architecture dimensions remain secondary/manual evidence** under `CON-ACB` and are never pooled into E1.
 - **`PT03`'s public repeat-request contract is contradictory and is recorded, not fixed.** It permits a change to any of the five accepted values - including `delivered` and `cancelled` - while also requiring that repeating the same request returns the same stored status *and* that a current status of `delivered` or `cancelled` answers HTTP 409 `ConflictError`. A target of `delivered` or `cancelled` cannot satisfy both. This needs a **separate public task amendment** and a **private relink**, tracked as **TD-B25**. `PT03`'s body and hash are unchanged here.
-- **Architecture-revealing source comments are recorded, not neutralised.** Model-visible TypeScript comments in the shared substrate explicitly state some scored dependency rules to every condition, including the C1 baseline, and one shows a worked boundary-violation example. That may make C1 partly guided and floor the primary contrast (**TD-B23**), and the worktree leakage sweep does not yet read source content to detect it (**TD-B24**). `apps/` and `libs/` are **unchanged** by this work package.
+- **Architecture-revealing source comments are recorded, not neutralised.** Model-visible TypeScript comments in the shared substrate explicitly state some scored dependency rules to every condition, including the C1 baseline, and one shows a worked boundary-violation example. That may make C1 partly guided and floor the primary contrast (**TD-B23**), and the worktree leakage sweep does not yet read source content to detect it (**TD-B24**). `apps/` and `libs/` are **unchanged** by this work package. *(**Superseded** by a later remediation - see "Addendum: source substrate re-identified" below. `TD-B23`/`TD-B24` are now resolved and the substrate has a new identity; this bullet remains an accurate record of what **this** package did.)*
 - **No task body, task content hash, manifest, endpoint or protocol was frozen.**
 
 ## Opportunity reassessment (pre-authoring, pre-run)
@@ -498,7 +498,7 @@ The review also found that the coding model's worktree was the whole repository,
 
 - No task was selected, rejected, or difficulty-tuned using any observed or expected AFCI advantage (CRITICAL_DESIGN_DECISIONS D3/D10).
 - No candidate task was implemented; no reference or expected solution exists in this repository. PT06 in particular was **not** implemented as part of its amendment or of its rejection-contract clarification.
-- **No validation seam was added to the source substrate.** No failure-injection hook, test-only route, special header, environment flag or other implementation-specific seam was introduced to make any requirement observable; `apps/` and `libs/` are byte-identical to their state at public commit `0e77d49`.
+- **No validation seam was added to the source substrate.** No failure-injection hook, test-only route, special header, environment flag or other implementation-specific seam was introduced to make any requirement observable; `apps/` and `libs/` are byte-identical to their state at public commit `0e77d49`. *(True of this package. A later remediation changed `apps/` and `libs/` - comments only, no seam and no executable change - so the current substrate identity is the one recorded in [`../../../../docs/v2/SOURCE_SUBSTRATE_IDENTITY.md`](../../../../docs/v2/SOURCE_SUBSTRATE_IDENTITY.md), not `0e77d49`.)*
 - **No architecture opportunity was added publicly.** The rejection-contract clarification adds no architecture wording, applicable rule, expected or prohibited area, or task-specific opportunity to PT06 or to any other public artifact; PT06 remains architecture-neutral, and the adequacy of its fixed opportunity set stays a private, deferred question (TD-B05/TD-B14, G1).
 - No hidden acceptance test or hidden evaluator answer was added publicly.
 - **No final task count**, repetition count, run count, model, or numerical budget was selected. The eight candidates are candidates, not a core-study task set.
@@ -510,8 +510,53 @@ The review also found that the coding model's worktree was the whole repository,
 - **No architecture-rule family was implemented or added.** The remedy uses dependency leaf relationships that are **already implemented** (`AR-DEP-002`-`AR-DEP-006`).
 - **No power simulation was run and no power value was frozen** (`TD-B20`/`TD-B37`).
 - **`PT03`'s repeat-request contradiction was NOT fixed** - it is recorded as blocking decision **TD-B25** and requires a separate public amendment plus a private relink.
-- **Architecture-revealing source comments were NOT neutralised** - recorded as **TD-B23** (with the leakage-scanner gap as **TD-B24**); `apps/` and `libs/` are unchanged.
+- **Architecture-revealing source comments were NOT neutralised** - recorded as **TD-B23** (with the leakage-scanner gap as **TD-B24**); `apps/` and `libs/` are unchanged. *(**Superseded**: a later remediation neutralised them and resolved both blockers - see the addendum below.)*
 - **No reserve task was activated**, and `PR02` was **not** promoted (**TD-B26**).
 - **No new architecture-rule family was implemented**, and `AR-CONTRACT-001`/`AR-CODE-001` were **not** implemented: broadening E1 is future work (**TD-B33**) and must never readmit an excluded task post hoc. The **only** oracle change in this package is the production-source scoring policy above, which **narrows** what E1 measures to production dependencies and adds no rule, no opportunity and no answer.
-- **No blocker was closed.** Eleven were opened by the suite classification (`TD-B23`-`TD-B33`) and four more here (`TD-B34`-`TD-B37`); the registry now holds 37 blocking and 6 non-blocking decisions, all `open`.
+- **No blocker was closed.** Eleven were opened by the suite classification (`TD-B23`-`TD-B33`) and four more here (`TD-B34`-`TD-B37`); the registry now holds 37 blocking and 6 non-blocking decisions, all `open`. *(**Superseded on status only**: a later remediation resolved `TD-B23` and `TD-B24`. The registry still holds 37 blocking and 6 non-blocking decisions; 41 of the 43 remain `open`, including every task-authoring blocker.)*
 - **No private opportunity answer or exact private evaluator content is disclosed here.** Where a private identifier is named at all it is named as an identifier only.
+
+---
+
+## Addendum: source substrate re-identified (`TD-B23`/`TD-B24` resolved)
+
+Recorded here because the section above states that `apps/` and `libs/` are
+byte-identical to public commit `0e77d49`, and that is no longer the current
+substrate. This addendum was written by a **later** work package; nothing above it
+was rewritten, and no task body, task hash or task classification changed.
+
+**What changed.** Six comment lines in three model-visible source files. They
+stated scored dependency rules to every condition, including the no-guidance C1
+baseline: the `api` to `core` prohibition together with a worked commented-out
+forbidden import and a "would fail CI" consequence; the `infra` avoidance of
+`core` justified as a deliberate architectural choice; and the same `api` to
+`core` prohibition restated from the `features` side. They are removed, or
+rewritten in neutral implementation terms.
+
+**Why it matters to task authoring.** `DECISION B` (`TD-B34`) requires new public
+tasks over genuinely different dependency boundaries, and the strongest candidates
+sit on exactly the `api` to `core` and `infra` to `core` boundaries the substrate
+was teaching. Authoring them against a substrate that states the answer would have
+compressed the intended contrast between the unguided baseline and the
+architecture-context conditions.
+
+**What did not change.** No executable change: the emitted JavaScript with
+comments stripped, the full AST fingerprint and the import/export edge list are
+identical in all three files. No alias, dependency rule, layer scope, allowed
+relationship, application API or runtime behaviour was touched, and the three
+forbidden relationships remain structurally detectable. The eight public task
+bodies and all eight recorded SHA-256 values are unchanged, because a task body is
+not a substrate file.
+
+**New substrate identity.** Recorded in `docs/v2/SOURCE_SUBSTRATE_IDENTITY.md`,
+which carries the superseded and current content hashes, the commit identifiers
+and the equivalence proof. Any private evaluator package that pins the substrate
+by commit should be re-pinned to the new identity; **no** public task hash changed,
+so no package needs re-authoring or re-hashing on account of this remediation.
+
+**Governance.** `TD-B23` is resolved with disposition **neutralise** (not
+pre-register), and `TD-B24` is resolved by extending the leakage sweep to read
+source content. All other blockers stay open, including every task-authoring
+blocker (`TD-B34`, `TD-B26`, `TD-B31`) and runner-time enforcement (`TD-B22`).
+No benchmark ran, no model was invoked, the private evaluator repository was not
+accessed, and nothing was frozen.

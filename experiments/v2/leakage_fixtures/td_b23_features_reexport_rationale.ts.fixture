@@ -1,0 +1,5 @@
+// Preserved verbatim from libs/features/src/index.ts lines 14-15 before the
+// TD-B23 remediation. The second line restates the api->core prohibition and
+// must be reported; the first line alone states no rule.
+// Re-export types from core that the API layer needs
+// This allows API to depend on features without directly importing core

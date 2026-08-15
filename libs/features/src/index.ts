@@ -11,8 +11,7 @@ import {
 } from '@afci-bench/core';
 import { Logger } from '@afci-bench/observability';
 
-// Re-export types from core that the API layer needs
-// This allows API to depend on features without directly importing core
+// Re-export the domain types that callers of this use case work with
 export type { Order, OrderItem, OrderRepository };
 
 export interface CreateOrderPorts {

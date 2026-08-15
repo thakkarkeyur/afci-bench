@@ -2,8 +2,10 @@
 
 Every ``TD-*`` reference anywhere in the v2 protocol must resolve to a row in
 docs/v2/OPEN_DECISIONS.csv, every entry must have an owner and a valid blocking
-flag, none may be resolved yet, and the counts must be exactly 37 blocking +
-6 non-blocking (TD-B16..TD-B21 were added by the pre-execution design-review
+flag, only the explicitly enumerated decisions in :data:`RESOLVED_IDS` may be
+resolved (every other row must still be ``open``, and the Stage 0 blockers in
+:data:`MUST_STAY_OPEN` are asserted open by name), and the counts must be exactly
+37 blocking + 6 non-blocking (TD-B16..TD-B21 were added by the pre-execution design-review
 reconciliation; TD-B22 by the independent public review of the pilot task
 package; TD-B23..TD-B33 by the suite-classification decision that narrowed the
 confirmatory construct to dependency-direction conformance; TD-B34..TD-B37 by the
@@ -20,6 +22,24 @@ REGISTRY = REPO / "docs" / "v2" / "OPEN_DECISIONS.csv"
 SCAN_DIRS = [REPO / "docs" / "v2", REPO / "experiments" / "v2"]
 TEXT_EXT = {".md", ".csv", ".json", ".yml", ".yaml", ".py"}
 TD_RE = re.compile(r"TD-[BN][0-9]+")
+
+#: The only decisions any package has resolved so far: the model-visible
+#: architecture-comment remediation (TD-B23) and the leakage audit that proves it
+#: (TD-B24). Enumerating them keeps the registry fail-closed — a blocker quietly
+#: flipped to ``resolved`` still fails this suite.
+RESOLVED_IDS = {"TD-B23", "TD-B24"}
+
+#: Blockers that must never be closed as a side effect of unrelated work. The
+#: task-authoring blockers in particular gate Stage 0 and are not this package's
+#: to resolve.
+MUST_STAY_OPEN = {
+    "TD-B34",  # DECISION B - more public architecture tasks before Stage 0
+    "TD-B26",  # PR02 terminal-state criterion unreachable
+    "TD-B31",  # suite-wide public-interface reachability validation
+    "TD-B22",  # runner-time enforcement of the worktree policy
+    "TD-B05",  # hidden acceptance criteria
+    "TD-B14",  # private opportunity-set adequacy
+}
 
 
 def _referenced_ids():
@@ -45,9 +65,46 @@ def test_registry_columns_and_integrity():
         assert r["blocking"] in {"yes", "no"}, r
         assert r["owner"].strip(), f"{r['decision_id']} has no owner"
         assert r["decision"].strip(), f"{r['decision_id']} has no decision text"
-        assert r["status"].strip().lower() == "open", (
-            f"{r['decision_id']} must be open in a protocol-freeze package"
+        status = r["status"].strip().lower()
+        assert status in {"open", "resolved"}, f"{r['decision_id']} has status {status!r}"
+        if r["decision_id"] in RESOLVED_IDS:
+            assert status == "resolved", (
+                f"{r['decision_id']} is recorded as resolved in RESOLVED_IDS but the "
+                "registry still calls it open"
+            )
+        else:
+            assert status == "open", (
+                f"{r['decision_id']} must be open: this is a pre-freeze draft and only "
+                f"{sorted(RESOLVED_IDS)} have been resolved"
+            )
+
+
+def test_task_authoring_and_runner_blockers_are_still_open():
+    """Guard the guard: unrelated work must not quietly close a Stage 0 blocker."""
+    by_id = {r["decision_id"]: r for r in _registry_rows()}
+    for decision_id in sorted(MUST_STAY_OPEN):
+        assert decision_id in by_id, f"{decision_id} vanished from the registry"
+        assert by_id[decision_id]["status"].strip().lower() == "open", (
+            f"{decision_id} must remain open"
         )
+    assert not (MUST_STAY_OPEN & RESOLVED_IDS)
+
+
+def test_resolved_decisions_record_what_was_done_and_how_it_is_proven():
+    """A resolved row must carry its disposition and its regression evidence."""
+    by_id = {r["decision_id"]: r for r in _registry_rows()}
+    for decision_id in sorted(RESOLVED_IDS):
+        text = by_id[decision_id]["decision"]
+        assert text.strip().upper().startswith("RESOLVED"), (
+            f"{decision_id} must state its resolution first"
+        )
+        assert "PROOF 10" in text or "leakage_fixtures" in text, (
+            f"{decision_id} must name the regression proof that closes it"
+        )
+    # TD-B23's disposition was a real choice between two options; record which.
+    assert "NEUTRALISE" in by_id["TD-B23"]["decision"].upper(), (
+        "TD-B23 offered neutralise-or-pre-register; the registry must say which was taken"
+    )
 
 
 def test_counts_are_37_blocking_6_nonblocking():
@@ -65,9 +122,12 @@ def test_markdown_registry_counts_match_the_csv():
     rows = _registry_rows()
     blocking = sum(1 for r in rows if r["blocking"] == "yes")
     nonblocking = len(rows) - blocking
+    resolved = [r["decision_id"] for r in rows if r["status"].strip().lower() == "resolved"]
     assert f"Blocking decisions: {blocking}**" in md, "OPEN_DECISIONS.md blocking count drifted"
     assert f"Non-blocking decisions: {nonblocking}**" in md
-    assert f"Total open decisions: {len(rows)}.**" in md
+    assert f"Total decisions: {len(rows)}**" in md
+    assert f"**{len(resolved)} are resolved**" in md, "resolved count drifted"
+    assert f"**{len(rows) - len(resolved)} remain open**" in md, "open count drifted"
     # every blocking id must appear in the prose table too
     for r in rows:
         assert r["decision_id"] in md, f"{r['decision_id']} missing from OPEN_DECISIONS.md"

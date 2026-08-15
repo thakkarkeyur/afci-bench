@@ -1,0 +1,4 @@
+// Preserved verbatim from libs/infra/src/index.ts lines 4-5 before the TD-B23
+// remediation. Both lines must be reported by the source-comment scanner.
+// Note: We define our own Order type here based on contracts to avoid importing from core
+// This is a deliberate architectural choice - infra depends on contracts, not core

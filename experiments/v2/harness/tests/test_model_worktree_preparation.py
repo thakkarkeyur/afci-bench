@@ -512,6 +512,203 @@ def test_allowlist_is_first_not_a_denylist(tmp_path):
 
 
 # --------------------------------------------------------------------------- #
+# PROOF 10 — model-visible source comments disclose no architecture rule
+# --------------------------------------------------------------------------- #
+# Closes TD-B24 (the sweep never read file content, so it could not detect the
+# TD-B23 disclosure) and regression-proves TD-B23 (the disclosure itself).
+LEAKAGE_FIXTURES = REPO / "experiments" / "v2" / "leakage_fixtures"
+
+#: The statements this audit must never again let through, per TD-B23.
+REQUIRED_DETECTIONS = {
+    "api-cannot-import-core": "// ERROR: api cannot import core directly\n",
+    "infra-must-not-import-core": "// infra must not import core\n",
+    "boundary-violation-example":
+        "// BOUNDARY VIOLATION EXAMPLE (commented out - would fail CI if uncommented):\n",
+    "commented-out-forbidden-import-with-architecture-text":
+        "// This respects the module boundary rules: api may not depend on core.\n"
+        "// import { Order } from '@afci-bench/core';\n",
+}
+
+#: Ordinary implementation prose. Rejecting any of these would strip the comments
+#: that keep the substrate realistic, which the remediation must not do.
+REQUIRED_NON_DETECTIONS = {
+    "adapter-conversion": "// Adapter to convert infra's OrderEntity to core's Order\n",
+    "port-implemented-by-infra": "// Port interface - implemented by infra layer\n",
+    "port-matching-core": "// Port interface (matching core's OrderRepository)\n",
+    "reexport-domain-types":
+        "// Re-export the domain types that callers of this use case work with\n",
+    "infra-implements-repositories": "// Infra layer implements repository interfaces\n",
+    "persistence-facing-shape":
+        "// OrderEntity is this adapter's own persistence-facing representation of an\n"
+        "// order, expressed with the shared contract types.\n",
+    "runtime-import-advice": "// Note: do not import this module at runtime; it is types-only\n",
+    "third-party-import-advice": "// We avoid importing lodash here to keep the bundle small\n",
+    "business-rule":
+        "// Totals round to cents because the payment provider rejects sub-cent values\n",
+    "framework-behaviour": "// express() must be called before any route is registered\n",
+    "real-import-statement": "import { Order } from '@afci-bench/core';\n",
+    "rule-text-inside-a-string-literal":
+        "const s = '// api cannot import core'; export const x = s;\n",
+    "todo": "// TODO: extract this helper once the second caller lands\n",
+}
+
+
+@pytest.mark.parametrize("label", sorted(REQUIRED_DETECTIONS))
+def test_proof10_required_architecture_statements_are_detected(label):
+    findings = pmw.find_comment_disclosures(Path("x.ts"), REQUIRED_DETECTIONS[label])
+    assert findings, f"{label!r} is architecture coaching and must be detected"
+
+
+@pytest.mark.parametrize("label", sorted(REQUIRED_NON_DETECTIONS))
+def test_proof10_ordinary_comments_are_not_flagged(label):
+    findings = pmw.find_comment_disclosures(Path("x.ts"), REQUIRED_NON_DETECTIONS[label])
+    assert not findings, (
+        f"{label!r} is ordinary implementation prose; flagging it makes the audit "
+        f"over-broad: {findings}"
+    )
+
+
+def test_proof10_the_scanner_reads_typescript_the_basename_sweep_could_not(tmp_path):
+    """TD-B24's actual gap: a .ts file whose *name* is innocuous but whose body leaks."""
+    snapshot = tmp_path / "snap"
+    (snapshot / "libs" / "infra" / "src").mkdir(parents=True)
+    leak = snapshot / "libs" / "infra" / "src" / "index.ts"
+    leak.write_text("// infra must not import core\nexport const x = 1;\n", encoding="utf-8")
+
+    # the basename/directory sweep alone sees nothing wrong with this file
+    names = [p.name.lower() for p in snapshot.rglob("*") if p.is_file()]
+    assert not any(n in pmw.FORBIDDEN_ARCHITECTURE_BASENAMES for n in names)
+
+    violations = pmw.scan_snapshot_violations(snapshot)
+    assert any("libs/infra/src/index.ts" in v for v in violations), violations
+
+
+@pytest.mark.parametrize(
+    "fixture_name",
+    [
+        "td_b23_api_core_boundary.ts.fixture",
+        "td_b23_infra_core_avoidance.ts.fixture",
+        "td_b23_features_reexport_rationale.ts.fixture",
+    ],
+)
+def test_proof10_the_verbatim_historical_leak_is_detected(fixture_name):
+    """The exact bytes removed from the substrate, not a paraphrase of them."""
+    path = LEAKAGE_FIXTURES / fixture_name
+    assert path.is_file(), f"missing regression fixture {fixture_name}"
+    findings = pmw.find_comment_disclosures(Path("x.ts"), path.read_text(encoding="utf-8"))
+    assert findings, f"{fixture_name} is the historical TD-B23 leak and must be detected"
+
+
+def test_proof10_the_neutral_fixture_is_not_flagged():
+    path = LEAKAGE_FIXTURES / "neutral_implementation_comments.ts.fixture"
+    assert path.is_file()
+    findings = pmw.find_comment_disclosures(Path("x.ts"), path.read_text(encoding="utf-8"))
+    assert not findings, f"the audit is over-broad; it flagged retained prose: {findings}"
+
+
+@pytest.mark.parametrize(
+    "condition,kwargs",
+    [("C1", {}), ("C2", {"generic_guidance_text": GENERIC_GUIDANCE})],
+)
+def test_proof10_the_real_prepared_snapshot_discloses_no_rule(tmp_path, condition, kwargs):
+    """The live C1/C2 substrate — the arms that must be unguided — carries no rule."""
+    result = _prepare(tmp_path, condition, name=condition.lower(), **kwargs)
+    disclosures = pmw.scan_source_comment_disclosures(result.snapshot_root)
+    assert disclosures == [], (
+        "the model-visible substrate still states the hidden dependency rules "
+        f"to {condition}: {disclosures}"
+    )
+
+
+def test_proof10_the_source_files_that_leaked_are_still_present_and_still_useful(tmp_path):
+    """Neutralising the comments must not have deleted the files or their code."""
+    result = _prepare(tmp_path, "C1")
+    for rel in ("apps/api/src/app.ts", "libs/infra/src/index.ts", "libs/features/src/index.ts"):
+        text = (result.snapshot_root / rel).read_text(encoding="utf-8")
+        assert "@afci-bench/" in text, f"{rel} lost its workspace imports"
+        assert "//" in text, f"{rel} lost every comment; only the rule text had to go"
+
+
+def test_proof10_an_injected_disclosure_fails_the_snapshot_closed(tmp_path):
+    result = _prepare(tmp_path, "C1")
+    target = result.snapshot_root / "libs" / "features" / "src" / "index.ts"
+    target.write_text(
+        "// api cannot import core directly\n" + target.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    with pytest.raises(pmw.WorktreePreparationError) as exc:
+        pmw.assert_snapshot_clean(result.snapshot_root)
+    assert exc.value.code == "ARCHITECTURE_COMMENT_DISCLOSURE"
+    assert "libs/features/src/index.ts" in exc.value.message
+
+
+def test_proof10_a_reintroduced_worked_violation_example_fails_closed(tmp_path):
+    result = _prepare(tmp_path, "C1")
+    target = result.snapshot_root / "apps" / "api" / "src" / "app.ts"
+    target.write_text(
+        "// BOUNDARY VIOLATION EXAMPLE (would fail CI if uncommented):\n"
+        "// import { Order } from '@afci-bench/core';\n" + target.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    with pytest.raises(pmw.WorktreePreparationError) as exc:
+        pmw.assert_snapshot_clean(result.snapshot_root)
+    assert exc.value.code == "ARCHITECTURE_COMMENT_DISCLOSURE"
+
+
+def test_proof10_c3_approved_instruction_file_is_exempt(tmp_path):
+    """C3's instruction file IS the architecture payload; scanning it would refuse C3."""
+    result = _prepare(tmp_path, "C3", architecture_text=_arch_text())
+    pmw.assert_snapshot_clean(result.snapshot_root, [pmw.C3_INSTRUCTION_PATH])
+    # ...but it is only exempt because it is the approved path
+    unapproved = pmw.scan_source_comment_disclosures(result.snapshot_root)
+    assert any(pmw.C3_INSTRUCTION_PATH in v for v in unapproved), (
+        "the payload must still be detectable when it is not the approved path"
+    )
+
+
+def test_proof10_non_typescript_model_visible_types_are_scanned(tmp_path):
+    """TD-B24 asks for `.ts` *and any other model-visible text type* — cover them."""
+    snapshot = tmp_path / "snap"
+    snapshot.mkdir()
+    cases = {
+        "jest.preset.js": "// api must not import core\nmodule.exports = {};\n",
+        ".gitattributes": "# infra cannot import core\n* text=auto eol=lf\n",
+        "project.json": '{"description": "api may not depend on core"}\n',
+    }
+    for name, body in cases.items():
+        (snapshot / name).write_text(body, encoding="utf-8")
+    violations = pmw.scan_source_comment_disclosures(snapshot)
+    for name in cases:
+        assert any(name in v for v in violations), f"{name} was not scanned: {violations}"
+
+
+def test_proof10_json_keys_do_not_make_the_agent_lint_config_a_violation(tmp_path):
+    """`.eslintrc.agent.json` names the boundary rule only to switch it off."""
+    result = _prepare(tmp_path, "C1")
+    agent_cfg = result.snapshot_root / ".eslintrc.agent.json"
+    assert "enforce-module-boundaries" in agent_cfg.read_text(encoding="utf-8")
+    assert not any(
+        ".eslintrc.agent.json" in v
+        for v in pmw.scan_source_comment_disclosures(result.snapshot_root)
+    ), "the one file allowed to name the rule must not be flagged for naming it"
+
+
+def test_proof10_string_literals_are_not_mistaken_for_comments():
+    """The tokenizer must not read quoted text as prose, or every import would leak."""
+    src = "const doc = 'see // api cannot import core';\nexport const d = doc;\n"
+    assert pmw.find_comment_disclosures(Path("x.ts"), src) == []
+    regions = pmw._js_comment_regions(src)
+    assert regions == [], regions
+
+
+def test_proof10_block_comments_and_line_numbers_are_reported():
+    src = "const a = 1;\n\n/* line three\n   api cannot import core */\n"
+    findings = pmw.find_comment_disclosures(Path("x.ts"), src)
+    assert findings, "a block comment must be scanned too"
+    assert findings[0][0] == 3, f"expected the block to be reported at line 3: {findings}"
+
+
+# --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
 def test_cli_prepares_and_writes_a_manifest(tmp_path):
