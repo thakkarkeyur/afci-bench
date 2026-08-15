@@ -30,15 +30,18 @@ not from git, so it is stable across clones, platforms and history rewrites.
 
 | | Old substrate | New substrate |
 |---|---|---|
-| **Commit** | `33dba7ff8917515efe56170cfd45cb7f9e16cde4` | `PENDING_SUBSTRATE_COMMIT` |
+| **Commit** | `33dba7ff8917515efe56170cfd45cb7f9e16cde4` | `15aa99f5f564b1d482843c638174c5c853dc8f1c` |
 | **Content hash** | `2ec1079efd468ebc46a688e21b342c514ca60930221874c5f3dd9831afcb6123` | `361d0fe5bd97ed9f273d52d5ca4cba2a6400e128038c3c3b6e7025ca6ff7bc04` |
-| **`apps/` tree** | `3efebe211db965e714d4979f80899b2ffe04b31b` | `PENDING_APPS_TREE` |
-| **`libs/` tree** | `70268ec6ceca6c1b4ff468dff73b23c5e02ffcec` | `PENDING_LIBS_TREE` |
+| **`apps/` tree** | `3efebe211db965e714d4979f80899b2ffe04b31b` | `ab458a58e0173a93385465864485ce9ef8710273` |
+| **`libs/` tree** | `70268ec6ceca6c1b4ff468dff73b23c5e02ffcec` | `1129614aaa7c293254cdfcd36f06e74245320e35` |
 | **File count** | 49 | 49 |
 
-The content hash above is final as of the remediation commit; the git identifiers
-marked `PENDING_*` are filled in by the immediately following pin commit (§6),
-which cannot alter the content hash because it touches no substrate file.
+The content hash is the authoritative identity; the git identifiers are recorded
+for provenance. The new content hash was fixed by the remediation commit
+`15aa99f5` and is **unchanged** by this pin commit, which touches no substrate
+file — that is what makes the two-commit sequence in §6 deterministic. Verified
+independently: a C1 worktree prepared by `prepare_model_worktree.py` from this
+substrate reports exactly this value as its snapshot `content_hash`.
 
 The old substrate content hash is identical at commit `33dba7ff` and at commit
 `0e77d49c7dd5b5858297d9f7eb954060704f67ac` (the commit earlier artifacts pin as
