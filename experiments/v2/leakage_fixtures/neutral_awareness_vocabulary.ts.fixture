@@ -1,0 +1,34 @@
+// Ordinary application source. Every line uses vocabulary the awareness audit
+// keys on, in its everyday engineering sense, and none of it says anything
+// about why this repository exists.
+
+// The architecture of this module favours composition over inheritance.
+// Run the test suite before pushing; the integration tests need a free port.
+// Guard the condition below to avoid a divide-by-zero on empty orders.
+// The request context object carries the correlation id through each layer.
+// A quick benchmark showed this loop is not hot enough to optimise.
+// Arms of the discriminated union are handled exhaustively below.
+// Treat the control flow in this handler as a small state machine.
+// Evaluate the discount rule for each order line, then sum the results.
+// This condition is checked once per request, not once per item.
+// The context propagates cancellation to downstream calls.
+// See the architecture decision log in the team wiki for background.
+
+export interface PricingContext {
+  /** Currency the order totals are evaluated in. */
+  currency: string;
+  /** When true, the caller supplied an explicit discount condition. */
+  hasDiscountCondition: boolean;
+}
+
+/**
+ * Ranks candidate results for the search endpoint.
+ *
+ * The name is historical: it scores search candidates and has nothing to do
+ * with testing. Kept because the metric is referenced in the API contract.
+ */
+export function scoreCandidates(values: readonly number[]): number[] {
+  // Control for outliers first so one extreme value cannot dominate the result.
+  const control = values.filter((v) => Number.isFinite(v));
+  return control.map((v) => v * 2);
+}

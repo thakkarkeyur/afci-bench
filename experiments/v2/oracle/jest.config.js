@@ -1,9 +1,15 @@
 // Standalone Jest config for the architecture-conformance oracle.
 //
 // The oracle lives outside the nx workspace (experiments/), so it is NOT part of
-// `npm run test`/`npm run ci`. It is run explicitly via `npm run oracle:test`
-// (jest -c experiments/v2/oracle/jest.config.js). Plain CommonJS so `tsc`
-// (root typecheck) ignores this file.
+// `npm run test`/`npm run ci`. Maintainers run it directly:
+//
+//   npx jest -c experiments/v2/oracle/jest.config.js
+//
+// There is deliberately no `oracle:*` npm script. A script in the root
+// package.json is model-visible, and its name and command would disclose the
+// hidden oracle and the experiment tree to every condition (TD-B38).
+//
+// Plain CommonJS so `tsc` (root typecheck) ignores this file.
 module.exports = {
   displayName: 'afci-oracle',
   rootDir: __dirname,

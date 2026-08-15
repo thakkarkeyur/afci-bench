@@ -5,13 +5,15 @@ docs/v2/OPEN_DECISIONS.csv, every entry must have an owner and a valid blocking
 flag, only the explicitly enumerated decisions in :data:`RESOLVED_IDS` may be
 resolved (every other row must still be ``open``, and the Stage 0 blockers in
 :data:`MUST_STAY_OPEN` are asserted open by name), and the counts must be exactly
-37 blocking + 6 non-blocking (TD-B16..TD-B21 were added by the pre-execution design-review
+38 blocking + 6 non-blocking (TD-B16..TD-B21 were added by the pre-execution design-review
 reconciliation; TD-B22 by the independent public review of the pilot task
 package; TD-B23..TD-B33 by the suite-classification decision that narrowed the
 confirmatory construct to dependency-direction conformance; TD-B34..TD-B37 by the
 pre-authoring opportunity reassessment that recorded DECISION B, reclassified
 PT05 functional-only, isolated production-source scoring, and deferred the power
-simulation). Pure file inspection; no model is invoked.
+simulation; TD-B38 by the architecture-neutral-substrate review that found the
+model-visible package metadata still announcing the experiment itself). Pure file
+inspection; no model is invoked.
 """
 import csv
 import re
@@ -24,10 +26,11 @@ TEXT_EXT = {".md", ".csv", ".json", ".yml", ".yaml", ".py"}
 TD_RE = re.compile(r"TD-[BN][0-9]+")
 
 #: The only decisions any package has resolved so far: the model-visible
-#: architecture-comment remediation (TD-B23) and the leakage audit that proves it
-#: (TD-B24). Enumerating them keeps the registry fail-closed — a blocker quietly
-#: flipped to ``resolved`` still fails this suite.
-RESOLVED_IDS = {"TD-B23", "TD-B24"}
+#: architecture-comment remediation (TD-B23), the leakage audit that proves it
+#: (TD-B24), and the experiment-awareness remediation (TD-B38). Enumerating them
+#: keeps the registry fail-closed — a blocker quietly flipped to ``resolved``
+#: still fails this suite.
+RESOLVED_IDS = {"TD-B23", "TD-B24", "TD-B38"}
 
 #: Blockers that must never be closed as a side effect of unrelated work. The
 #: task-authoring blockers in particular gate Stage 0 and are not this package's
@@ -107,13 +110,13 @@ def test_resolved_decisions_record_what_was_done_and_how_it_is_proven():
     )
 
 
-def test_counts_are_37_blocking_6_nonblocking():
+def test_counts_are_38_blocking_6_nonblocking():
     rows = _registry_rows()
     blocking = [r["decision_id"] for r in rows if r["blocking"] == "yes"]
     nonblocking = [r["decision_id"] for r in rows if r["blocking"] == "no"]
-    assert sorted(blocking) == [f"TD-B{i:02d}" for i in range(1, 38)], blocking
+    assert sorted(blocking) == [f"TD-B{i:02d}" for i in range(1, 39)], blocking
     assert sorted(nonblocking) == [f"TD-N{i:02d}" for i in range(1, 7)], nonblocking
-    assert len(blocking) == 37 and len(nonblocking) == 6
+    assert len(blocking) == 38 and len(nonblocking) == 6
 
 
 def test_markdown_registry_counts_match_the_csv():

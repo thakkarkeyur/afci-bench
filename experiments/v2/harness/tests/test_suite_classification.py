@@ -547,6 +547,14 @@ NEW_BLOCKERS = [f"TD-B{i}" for i in range(23, 34)]
 #: this family must still be open.
 RESOLVED_BLOCKERS = {"TD-B23", "TD-B24"}
 
+#: Closed by a later, separate work package: the experiment-awareness remediation
+#: (TD-B38). It is listed apart from RESOLVED_BLOCKERS because it belongs to a
+#: different threat class and a different family — TD-B23/TD-B24 are about the
+#: substrate stating the scored RULE, TD-B38 is about it revealing the EXPERIMENT.
+#: Keeping them separate preserves this guard's real job: proving that neither
+#: remediation let an unrelated blocker ride along.
+RESOLVED_ELSEWHERE = {"TD-B38"}
+
 
 @pytest.mark.parametrize("decision_id", NEW_BLOCKERS)
 def test_each_new_blocker_is_registered_blocking_and_correctly_statused(decision_id):
@@ -562,14 +570,27 @@ def test_each_new_blocker_is_registered_blocking_and_correctly_statused(decision
     assert row["gate"].strip(), f"{decision_id} needs a gate mapping"
 
 
-def test_only_the_substrate_leakage_pair_is_closed():
-    """Nothing else may ride along on the TD-B23/TD-B24 remediation."""
+def test_only_the_substrate_leakage_decisions_are_closed():
+    """Nothing else may ride along on the substrate remediations."""
     closed = {
         row["decision_id"]
         for row in _rows(DECISIONS_CSV)
         if row["status"].strip().lower() != "open"
     }
-    assert closed == RESOLVED_BLOCKERS, f"unexpected closed decisions: {sorted(closed)}"
+    assert closed == RESOLVED_BLOCKERS | RESOLVED_ELSEWHERE, (
+        f"unexpected closed decisions: {sorted(closed - RESOLVED_BLOCKERS - RESOLVED_ELSEWHERE)}"
+    )
+
+
+def test_no_blocker_in_this_family_was_closed_by_the_awareness_remediation():
+    """The awareness package closed TD-B38 only; TD-B25..TD-B33 stay open."""
+    rows = _by_id(_rows(DECISIONS_CSV), key="decision_id")
+    for decision_id in NEW_BLOCKERS:
+        if decision_id in RESOLVED_BLOCKERS:
+            continue
+        assert rows[decision_id]["status"].strip().lower() == "open", (
+            f"{decision_id} must remain open"
+        )
 
 
 def test_pt03_contradiction_is_recorded_but_pt03_is_not_modified():

@@ -199,6 +199,13 @@ _COMMENTED_OUT_IMPORT = re.compile(
 _SELF_SUFFICIENT_DISCLOSURE: Tuple[Tuple[str, str], ...] = (
     (r"boundary\s+violation", "worked boundary-violation example"),
     (r"violation\s+example", "worked violation example"),
+    # "this would violate the architecture boundary" / "violates the module
+    # boundary". The independent review named this recall gap: the noun-phrase
+    # pattern above only caught the "boundary violation" word order.
+    (r"\bviolat\w*\s+(?:\w+\s+){0,3}?boundar(?:y|ies)",
+     "describes an action as violating an architectural boundary"),
+    (r"\bbreak\w*\s+(?:\w+\s+){0,3}?(?:layering|architectur\w*\s+boundar(?:y|ies))",
+     "describes an action as breaking the layering"),
     (r"(?:module|import|layer|layering|architectur\w*)[\s-]+boundar(?:y|ies)\s+rules?",
      "explains the module-boundary rules"),
     (r"\blayering\s+rules?\b", "explains the layering rules"),
@@ -215,19 +222,56 @@ _SELF_SUFFICIENT_DISCLOSURE: Tuple[Tuple[str, str], ...] = (
 #: Prohibition / exclusivity claims. On their own these can be ordinary advice
 #: ("do not import this at runtime"), so each must be paired with a named layer
 #: before it counts as a disclosure.
+#:
+#: ``reference`` is accepted wherever ``import``/``depend`` is, because "never
+#: reference core from here" states exactly the same rule as "never import core
+#: from here" and the independent review found only the latter was caught.
+_DEP_VERB = r"(?:import|depend|reference|use)\w*"
 _PROHIBITION = re.compile(
     r"(?:must|should|shall|may|can|could|do|does|is|are|will)\s+not\s+(?:directly\s+)?"
-    r"(?:import|depend|reference)"
-    r"|(?:cannot|can\s?not|can't|mustn't|shouldn't|won't)\s+(?:directly\s+)?"
-    r"(?:import|depend|reference)"
-    r"|not\s+allowed\s+to\s+(?:import|depend)"
-    r"|never\s+(?:directly\s+)?(?:import|depend)"
-    r"|(?:avoid|prevent|forbid|prohibit|disallow)\w*\s+(?:directly\s+)?(?:import|depend)\w*"
-    r"|without\s+(?:directly\s+)?(?:import|depend)\w*"
-    r"|instead\s+of\s+(?:directly\s+)?(?:import|depend)\w*"
-    r"|(?:may|can|must|should)\s+only\s+(?:import|depend)"
-    r"|only\s+depends?\s+on"
-    r"|depends?\s+on\s+[\w@/-]+\s*,\s*not\b",
+    + _DEP_VERB
+    + r"|(?:cannot|can\s?not|can't|mustn't|shouldn't|won't)\s+(?:directly\s+)?"
+    + _DEP_VERB
+    + r"|not\s+(?:allowed|permitted)\s+to\s+(?:directly\s+)?" + _DEP_VERB
+    + r"|never\s+(?:directly\s+)?" + _DEP_VERB
+    + r"|(?:avoid|prevent|forbid|prohibit|disallow)\w*\s+(?:directly\s+)?" + _DEP_VERB
+    + r"|without\s+(?:directly\s+)?" + _DEP_VERB
+    + r"|instead\s+of\s+(?:directly\s+)?" + _DEP_VERB
+    + r"|(?:may|can|must|should)\s+only\s+(?:import|depend|reference)"
+    + r"|only\s+depends?\s+on"
+    + r"|depends?\s+on\s+[\w@/-]+\s*,\s*not\b"
+    # "core must never be reached from api" / "may not be referenced from api"
+    + r"|(?:must|should|may|can|shall)\s+(?:never|not)\s+be\s+"
+      r"(?:reached|imported|referenced|used|accessed)\b"
+    # "importing core here is not permitted" / "... is forbidden"
+    + r"|" + _DEP_VERB + r"[^.\n]{0,40}?\b(?:is|are)\s+"
+      r"(?:not\s+(?:allowed|permitted)|forbidden|prohibited|banned|disallowed|illegal)\b"
+    # "keep core out of api"
+    + r"|\bkeep\s+[\w@/-]+\s+out\s+of\b"
+    # "core is off-limits from the api layer" / "out of bounds for api"
+    + r"|\boff[-\s]?limits\b"
+    + r"|\bout\s+of\s+bounds\b",
+    re.IGNORECASE,
+)
+
+#: An ASCII/arrow dependency edge between two named layers, e.g. ``api -> core``
+#: or ``apps/api --> libs/core``. Prohibition-style layer diagrams state a rule
+#: without ever using a verb, which every pattern above would miss.
+_LAYER_TOKEN = (
+    r"(?:@afci-bench/\w+|\b(?:apps?|libs?)/[\w-]+"
+    r"|\b(?:core|infra|infrastructure|features?|contracts?|observability|domain|api)\b)"
+)
+_LAYER_EDGE = re.compile(
+    _LAYER_TOKEN + r"\s*(?:-{1,2}>|=>|→|➜|\|)\s*" + _LAYER_TOKEN,
+    re.IGNORECASE,
+)
+
+#: Words that turn a layer edge into a stated prohibition. Kept tight: an edge
+#: on its own is ordinary structural description and stays visible (D3).
+_EDGE_PROHIBITION_MARKER = re.compile(
+    r"\b(?:forbidden|prohibited|banned|disallowed|illegal|invalid|violation|violates?"
+    r"|not\s+allowed|not\s+permitted|never|must\s+not|cannot|can't|off[-\s]?limits"
+    r"|out\s+of\s+bounds)\b",
     re.IGNORECASE,
 )
 
@@ -380,6 +424,11 @@ def find_comment_disclosures(path: Path, text: str) -> List[Tuple[int, str]]:
                 (line, f"states a dependency prohibition about a named layer "
                        f"({prohibition.group(0).strip()!r})")
             )
+        edge = _LAYER_EDGE.search(body)
+        if edge and _EDGE_PROHIBITION_MARKER.search(body):
+            findings.append(
+                (line, f"prohibition-style layer diagram ({edge.group(0).strip()!r})")
+            )
     return findings
 
 
@@ -409,6 +458,186 @@ def scan_source_comment_disclosures(snapshot_root, skip: Sequence[str] = ()) -> 
         for line, reason in find_comment_disclosures(path, text):
             where = f"{rel}:{line}" if line else rel
             violations.append(f"{_ARCH_COMMENT_PREFIX} {where} {reason}")
+    return violations
+
+
+# --------------------------------------------------------------------------- #
+# Experiment / treatment awareness in model-visible content
+# --------------------------------------------------------------------------- #
+# A SEPARATE threat class from the architecture-rule disclosure above, and the
+# distinction matters. TD-B23 was about the substrate *coaching the answer*: a
+# comment that states a scored dependency rule hands C1 the finding it is
+# supposed to be measured on. This class is about the substrate *revealing the
+# experiment*: metadata telling the model it is inside AFCI-Bench, that a
+# canonical architecture context exists, that other conditions receive it, or
+# that a hidden oracle will score it.
+#
+# The second is not a weaker form of the first. A C1 model that reads "this is
+# the Architecture-First Context Injection Benchmark" learns nothing about which
+# dependency direction is legal, yet it now knows architecture is the scored
+# construct, which is enough to change its behaviour. Demand characteristics
+# make a no-guidance baseline stop being a no-guidance baseline.
+#
+# Precision requirement: `architecture`, `test`, `condition`, `context` and
+# `benchmark` are ordinary words in ordinary application source, and a scanner
+# that bans them is unusable. Every pattern below is therefore a *contextual
+# combination* - the study's own name, an expanded construct, a condition label
+# paired with another condition label, an oracle paired with scoring, or a path
+# into the experiment tree - never a bare topic word.
+
+#: The workspace package scope. Adjudicated as retained structural identity: it
+#: is baked into `tsconfig.base.json` path aliases and the import statements of
+#: `apps/` and `libs/`, so it is an opaque npm scope rather than prose, and it
+#: states no benchmark, condition, treatment or oracle. Import specifiers and
+#: alias keys are masked before scanning so the retained scope does not swamp
+#: the signal; prose that spells out "AFCI-Bench" is still caught below.
+_RETAINED_SCOPE_ALIAS = re.compile(r"@afci-bench/[A-Za-z0-9._-]+")
+
+_EXPERIMENT_AWARENESS: Tuple[Tuple[str, str], ...] = (
+    (r"\bAFCI\b", "names the AFCI study"),
+    (r"\bafci[\s_-]*bench\b", "names AFCI-Bench"),
+    (r"architecture[\s-]*first\s+context\s+injection",
+     "expands the Architecture-First Context Injection construct"),
+    (r"\bcanonical\s+architecture\s+(?:context|payload|injection)",
+     "names the canonical architecture context payload"),
+    (r"\barchitecture[\s-]*context\s+(?:injection|treatment|payload|benchmark|study|experiment)",
+     "names the architecture-context treatment"),
+    (r"\brepository[\s-]*instruction\s+(?:condition|delivery|treatment|file|mechanism)",
+     "names the repository-instruction delivery mechanism"),
+    (r"\b(?:hidden|private)\s+(?:oracle|evaluator)",
+     "reveals the hidden oracle/evaluator"),
+    (r"\boracle\b[^.\n]{0,40}?\b(?:scor\w+|grade\w*|evaluat\w+|hidden|conformance)\b",
+     "reveals a scoring oracle"),
+    (r"\b(?:scor\w+|grade\w*|evaluat\w+|hidden|conformance)\b[^.\n]{0,40}?\boracle\b",
+     "reveals a scoring oracle"),
+    (r"\bC[1-4]\s*(?:/|,|-|\bvs\.?\b|\band\b)\s*C[1-4]\b",
+     "names experimental condition labels"),
+    (r"\b(?:condition|arm)s?\s+C[1-4]\b", "names an experimental condition label"),
+    (r"\bC[1-4]\s+(?:baseline|condition|arm|treatment)\b",
+     "names an experimental condition label"),
+    (r"\b(?:treatment|control)\s+(?:condition|arm|group)\b",
+     "names a controlled experimental arm"),
+    (r"\bno[\s-]*guidance\s+baseline\b", "names the no-guidance baseline arm"),
+    (r"\btoken[\s-]*matched\s+(?:generic\s+)?guidance\b",
+     "names the token-matched guidance payload"),
+    (r"\b(?:benchmark|study|experiment)\b[^.\n]{0,60}?"
+     r"\b(?:participant|condition|arm|protocol|harness|oracle|treatment|scored)\b",
+     "frames the repository as a benchmark/study"),
+    (r"\b(?:participant|condition|arm|protocol|harness|oracle|treatment|scored)\b[^.\n]{0,60}?"
+     r"\b(?:benchmark|study|experiment)\b",
+     "frames the repository as a benchmark/study"),
+    (r"\bexperiments?/v\d", "points at the experiment tree"),
+    (r"\bstudy\s+v\d\b", "names the study version"),
+    (r"\bpre[\s-]?registration\b", "names the study's pre-registration"),
+)
+
+_AWARENESS_PREFIX = "experiment-awareness disclosure in model-visible content:"
+
+
+def _flatten_wrapped_prose(text: str) -> Tuple[str, List[int]]:
+    """Collapse wrapped prose to one line, keeping a flat-index -> line map.
+
+    Disclosures are written as prose and prose wraps. The historical
+    ``.gitattributes`` leak said "the canonical architecture / context delivered
+    identically to the repository-instruction conditions" across a line break,
+    so a line-by-line scan sees "canonical architecture" and "context" as
+    unrelated fragments and matches neither. Runs of whitespace — including a
+    newline plus the next line's indentation and comment leader — become a
+    single space, so the phrase is scanned as written.
+
+    A ``*`` is treated as a block-comment leader only when whitespace follows,
+    so ``*.png binary`` in ``.gitattributes`` keeps its glob intact.
+    """
+    flat: List[str] = []
+    line_of: List[int] = []
+    line, i, n = 1, 0, len(text)
+    pending_space = False
+
+    def _emit_space() -> None:
+        nonlocal pending_space
+        if flat and not pending_space:
+            flat.append(" ")
+            line_of.append(line)
+            pending_space = True
+
+    while i < n:
+        ch = text[i]
+        if ch == "\r":
+            i += 1
+            continue
+        if ch == "\n":
+            line += 1
+            i += 1
+            while i < n and text[i] in " \t":
+                i += 1
+            for leader in ("//", "#"):
+                if text.startswith(leader, i):
+                    i += len(leader)
+                    break
+            else:
+                if text.startswith("*", i) and i + 1 < n and text[i + 1] in " \t":
+                    i += 1
+            while i < n and text[i] in " \t":
+                i += 1
+            _emit_space()
+            continue
+        if ch in " \t":
+            _emit_space()
+            i += 1
+            continue
+        flat.append(ch)
+        line_of.append(line)
+        pending_space = False
+        i += 1
+    return "".join(flat), line_of
+
+
+def find_experiment_awareness(path, text: str) -> List[Tuple[int, str]]:
+    """Return ``(line, reason)`` for every experiment-awareness disclosure.
+
+    Unlike :func:`find_comment_disclosures`, this reads the **whole file**, not
+    only its comment regions. The historical leaks were a ``package.json``
+    ``description`` and two npm *script names* — JSON keys and values, not
+    comments — so a comment-only sweep would have missed all three.
+    """
+    masked = _RETAINED_SCOPE_ALIAS.sub("@scope/pkg", str(text))
+    flat, line_of = _flatten_wrapped_prose(masked)
+    seen = set()
+    findings: List[Tuple[int, str]] = []
+    for pattern, reason in _EXPERIMENT_AWARENESS:
+        for match in re.finditer(pattern, flat, re.IGNORECASE):
+            line = line_of[match.start()] if match.start() < len(line_of) else 0
+            if (line, reason) not in seen:
+                seen.add((line, reason))
+                findings.append((line, reason))
+    return sorted(findings)
+
+
+def scan_experiment_awareness(snapshot_root, skip: Sequence[str] = ()) -> List[str]:
+    """Return every experiment-awareness disclosure in a snapshot's content.
+
+    ``skip`` names the approved architecture-delivery paths, on the same basis
+    as :func:`scan_source_comment_disclosures`: C3's repository-instruction file
+    *is* the treatment, so it is exempt by construction. C1 and C2 have no
+    exempt path at all.
+    """
+    snapshot_root = Path(snapshot_root)
+    skipped = {PurePosixPath(p).as_posix() for p in skip}
+    violations: List[str] = []
+    for path in sorted(snapshot_root.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(snapshot_root)
+        if any(part in DENIED_DIR_NAMES_IN_TREES for part in rel.parts[:-1]):
+            continue
+        if rel.as_posix() in skipped:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        for line, reason in find_experiment_awareness(path, text):
+            violations.append(f"{_AWARENESS_PREFIX} {rel.as_posix()}:{line} {reason}")
     return violations
 
 
@@ -585,6 +814,10 @@ def scan_snapshot_violations(snapshot_root, allow_persistent: Sequence[str] = ()
     # comment that simply states a scored dependency rule (TD-B23).
     violations.extend(scan_source_comment_disclosures(snapshot_root, allowed))
 
+    # Distinct threat class: content that reveals the experiment itself rather
+    # than the scored rule. Kept separate so a failure names which one it is.
+    violations.extend(scan_experiment_awareness(snapshot_root, allowed))
+
     return violations
 
 
@@ -597,6 +830,8 @@ def assert_snapshot_clean(snapshot_root, allow_persistent: Sequence[str] = ()) -
         code = "UNEXPECTED_ARCHITECTURE_FILE"
     elif any(v.startswith(_ARCH_COMMENT_PREFIX) for v in violations):
         code = "ARCHITECTURE_COMMENT_DISCLOSURE"
+    elif any(v.startswith(_AWARENESS_PREFIX) for v in violations):
+        code = "EXPERIMENT_AWARENESS_DISCLOSURE"
     else:
         code = "SETUP_CONTAMINATED"
     raise WorktreePreparationError(code, "; ".join(violations))

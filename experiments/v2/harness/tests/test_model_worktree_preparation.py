@@ -10,9 +10,16 @@ no-guidance C1 baseline — a direct confound on the primary C4-vs-C1 contrast.
 Policy: ``docs/v2/MODEL_VISIBLE_WORKTREE_POLICY.md``.
 Mechanism: ``experiments/v2/harness/prepare_model_worktree.py``.
 
-The nine proofs required by the review are marked ``PROOF n``. Runner-time
-enforcement is ``TD-B22`` and remains open; nothing here builds the live runner,
-invokes a model, or executes a benchmark task.
+The nine proofs required by the review are marked ``PROOF 1``–``PROOF 9``.
+``PROOF 10`` was added by the suite-classification decision and covers
+architecture-**rule** disclosure in model-visible source comments
+(``TD-B23``/``TD-B24``). ``PROOF 11`` was added by the
+architecture-neutral-substrate review and covers the separate
+experiment-**awareness** class (``TD-B38``): content that reveals the benchmark,
+the conditions, the treatment or the oracle without stating any rule.
+
+Runner-time enforcement is ``TD-B22`` and remains open; nothing here builds the
+live runner, invokes a model, or executes a benchmark task.
 """
 from __future__ import annotations
 
@@ -741,3 +748,187 @@ def test_cli_refuses_an_architecture_payload_for_c1(tmp_path):
         ]
     )
     assert rc == 2
+
+
+# --------------------------------------------------------------------------- #
+# PROOF 11 — model-visible content reveals no experiment (TD-B38)
+# --------------------------------------------------------------------------- #
+# A threat class distinct from PROOF 10. PROOF 10 asks whether the substrate
+# states the scored RULE; this asks whether it reveals the EXPERIMENT. The
+# historical leaks passed PROOF 10 cleanly: "Architecture-First Context Injection
+# Benchmark" names no layer and prohibits no import, so the rule detector was
+# right not to flag it — and a C1 model that reads it still learns that
+# architecture is the scored construct and that a hidden oracle exists.
+
+#: Verbatim model-visible bytes from c514d697, the last commit before the
+#: awareness remediation. Paraphrases would prove nothing.
+AWARENESS_FIXTURES = {
+    "package.json": "td_b38_package_metadata.json.fixture",
+    ".gitattributes": "td_b38_gitattributes_prose.fixture",
+}
+
+#: The statements this audit must never again let through, per TD-B38.
+REQUIRED_AWARENESS_DETECTIONS = {
+    "expanded-construct": '"description": "Architecture-First Context Injection Benchmark",\n',
+    "study-named": "# AFCI-Bench study v2 - reproducibility hygiene.\n",
+    "oracle-script": '"oracle:test": "jest -c experiments/v2/oracle/jest.config.js",\n',
+    "oracle-typecheck-script":
+        '"oracle:typecheck": "tsc -p experiments/v2/oracle/tsconfig.json --noEmit"\n',
+    "canonical-architecture-context":
+        "# the canonical architecture context delivered identically to the\n"
+        "# repository-instruction conditions\n",
+    "condition-labels": "// byte-identical between C1 and C2\n",
+    "hidden-oracle": "// the hidden oracle scores this file\n",
+    "experiment-tree-path": "// see experiments/v2/oracle for details\n",
+    "no-guidance-baseline": "// C1 is the no-guidance baseline arm\n",
+}
+
+#: Ordinary application prose using the same vocabulary. Rejecting any of these
+#: would make the audit a blanket keyword ban, which it must never become.
+REQUIRED_AWARENESS_NON_DETECTIONS = {
+    "architecture-in-prose": "// The architecture of this module favours composition\n",
+    "test-in-prose": "// Run the test suite before pushing\n",
+    "condition-in-prose": "// Guard the condition to avoid a divide-by-zero\n",
+    "context-in-prose": "// The request context carries the correlation id\n",
+    "benchmark-in-prose": "// A quick benchmark showed this loop is not hot\n",
+    "oracle-in-prose": "// The oracle problem here is the unknown exchange rate\n",
+    "study-in-prose": "// Study the response shape before changing it\n",
+    "arm-in-prose": "// Arms of the discriminated union are handled exhaustively\n",
+    "control-in-prose": "// Treat the control flow here as a state machine\n",
+    "evaluate-in-prose": "// Evaluate the discount rule for each order line\n",
+    "neutral-description": '"description": "Order management service workspace",\n',
+    "retained-scope-alias": "import { Order } from '@afci-bench/core';\n",
+    "retained-scope-in-tsconfig": '"@afci-bench/contracts": ["libs/contracts/src/index.ts"],\n',
+    "participant-scripts": '"ci:agent": "npm run lint:agent && npm run typecheck && npm run test",\n',
+}
+
+
+@pytest.mark.parametrize("label", sorted(REQUIRED_AWARENESS_DETECTIONS))
+def test_proof11_required_awareness_statements_are_detected(label):
+    findings = pmw.find_experiment_awareness("x.ts", REQUIRED_AWARENESS_DETECTIONS[label])
+    assert findings, f"{label!r} reveals the experiment and must be detected"
+
+
+@pytest.mark.parametrize("label", sorted(REQUIRED_AWARENESS_NON_DETECTIONS))
+def test_proof11_ordinary_content_is_not_flagged_as_awareness(label):
+    findings = pmw.find_experiment_awareness("x.ts", REQUIRED_AWARENESS_NON_DETECTIONS[label])
+    assert not findings, (
+        f"{label!r} is ordinary application content; flagging it turns the awareness "
+        f"audit into a blanket keyword ban: {findings}"
+    )
+
+
+@pytest.mark.parametrize("original,fixture_name", sorted(AWARENESS_FIXTURES.items()))
+def test_proof11_the_verbatim_historical_disclosure_is_detected(original, fixture_name):
+    """The exact bytes removed from the substrate, not a paraphrase of them."""
+    path = LEAKAGE_FIXTURES / fixture_name
+    assert path.is_file(), f"missing regression fixture {fixture_name}"
+    findings = pmw.find_experiment_awareness(original, path.read_text(encoding="utf-8"))
+    assert findings, f"{fixture_name} is the historical TD-B38 leak and must be detected"
+
+
+@pytest.mark.parametrize(
+    "fixture_name",
+    [
+        "neutral_package_metadata.json.fixture",
+        "neutral_gitattributes.fixture",
+        "neutral_awareness_vocabulary.ts.fixture",
+        "neutral_implementation_comments.ts.fixture",
+    ],
+)
+def test_proof11_the_neutral_fixtures_are_not_flagged(fixture_name):
+    path = LEAKAGE_FIXTURES / fixture_name
+    assert path.is_file(), f"missing negative fixture {fixture_name}"
+    text = path.read_text(encoding="utf-8")
+    assert not pmw.find_experiment_awareness(fixture_name, text), (
+        f"the awareness audit is over-broad; it flagged {fixture_name}"
+    )
+    assert not pmw.find_comment_disclosures(Path("x.ts"), text), (
+        f"the rule audit is over-broad; it flagged {fixture_name}"
+    )
+
+
+def test_proof11_wrapped_prose_is_matched_across_the_line_break():
+    """The .gitattributes leak split 'canonical architecture / context' in two."""
+    wrapped = (
+        "# The v2 pipeline hashes byte-exact payloads (e.g. the canonical architecture\n"
+        "# context delivered identically to the repository-instruction conditions).\n"
+    )
+    assert pmw.find_experiment_awareness(".gitattributes", wrapped), (
+        "a disclosure split across a line break must still be detected"
+    )
+
+
+def test_proof11_a_glob_is_not_mistaken_for_a_comment_leader():
+    """Flattening must not eat the '*' in '*.png binary'."""
+    flat, _ = pmw._flatten_wrapped_prose("# note\n*.png binary\n")
+    assert "*.png binary" in flat, flat
+
+
+@pytest.mark.parametrize(
+    "condition,kwargs",
+    [("C1", {}), ("C2", {"generic_guidance_text": GENERIC_GUIDANCE})],
+)
+def test_proof11_the_real_prepared_snapshot_reveals_no_experiment(tmp_path, condition, kwargs):
+    """The live C1/C2 substrate — the arms that must not know — reveals nothing."""
+    result = _prepare(tmp_path, condition, name=condition.lower(), **kwargs)
+    disclosures = pmw.scan_experiment_awareness(result.snapshot_root)
+    assert disclosures == [], (
+        f"the model-visible substrate still tells {condition} it is in an experiment: "
+        f"{disclosures}"
+    )
+
+
+def test_proof11_an_awareness_disclosure_fails_the_snapshot_closed(tmp_path):
+    """The sweep must refuse, with its own code, not merely report."""
+    snapshot = tmp_path / "snap"
+    snapshot.mkdir()
+    (snapshot / "package.json").write_text(
+        '{"description": "Architecture-First Context Injection Benchmark"}\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(pmw.WorktreePreparationError) as exc:
+        pmw.assert_snapshot_clean(snapshot)
+    assert exc.value.code == "EXPERIMENT_AWARENESS_DISCLOSURE", exc.value.code
+
+
+def test_proof11_the_awareness_class_is_reported_separately_from_the_rule_class(tmp_path):
+    """A failure must say which threat class it is; the two must not be conflated."""
+    snapshot = tmp_path / "snap"
+    (snapshot / "libs" / "core" / "src").mkdir(parents=True)
+    (snapshot / "libs" / "core" / "src" / "index.ts").write_text(
+        "// infra must not import core\nexport const x = 1;\n", encoding="utf-8"
+    )
+    (snapshot / "package.json").write_text(
+        '{"description": "AFCI-Bench study v2"}\n', encoding="utf-8"
+    )
+    violations = pmw.scan_snapshot_violations(snapshot)
+    rule = [v for v in violations if v.startswith(pmw._ARCH_COMMENT_PREFIX)]
+    awareness = [v for v in violations if v.startswith(pmw._AWARENESS_PREFIX)]
+    assert rule, f"the rule disclosure must still be reported: {violations}"
+    assert awareness, f"the awareness disclosure must be reported: {violations}"
+
+
+def test_proof11_the_c3_payload_file_is_exempt_from_the_awareness_sweep(tmp_path):
+    """C3's instruction file IS the treatment; scanning it would refuse the arm."""
+    result = _prepare(tmp_path, "C3", name="c3", architecture_text=_arch_text())
+    disclosures = pmw.scan_experiment_awareness(
+        result.snapshot_root, skip=[pmw.C3_INSTRUCTION_PATH]
+    )
+    assert disclosures == [], disclosures
+
+
+def test_proof11_the_removed_oracle_scripts_are_gone_and_participant_scripts_remain():
+    """The remediation must not have taken a participant script with it."""
+    manifest = json.loads((REPO / "package.json").read_text(encoding="utf-8"))
+    scripts = manifest["scripts"]
+    for removed in ("oracle:test", "oracle:typecheck"):
+        assert removed not in scripts, f"{removed} must not be model-visible"
+    for kept in ("ci", "ci:agent", "lint", "lint:agent", "typecheck", "test", "build", "serve"):
+        assert kept in scripts, f"{kept} is needed by benchmark participants"
+    for name, command in scripts.items():
+        for forbidden in ("experiments/", "oracle", "evaluator", "hidden"):
+            assert forbidden not in name.lower(), f"script name {name!r} discloses {forbidden!r}"
+            assert forbidden not in command.lower(), (
+                f"script {name!r} command discloses {forbidden!r}: {command}"
+            )

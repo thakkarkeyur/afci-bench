@@ -75,8 +75,18 @@ run and invokes **no** model.
 - **Explicit unimplemented stubs**: the contract/observability/coding-discipline/
   change-footprint rules are registered but report `UNIMPLEMENTED` — they can never
   report PASS until built.
-- **CLI** (`src/cli.ts`): out-of-band runner; `npm run oracle:test` runs the Jest
-  suite; `npm run oracle:typecheck` type-checks the oracle in isolation.
+- **CLI** (`src/cli.ts`): out-of-band runner. Maintainers run the oracle's own
+  checks directly, outside the model-visible task workflow:
+
+  ```
+  npx jest -c experiments/v2/oracle/jest.config.js       # the Jest suite
+  npx tsc -p experiments/v2/oracle/tsconfig.json --noEmit  # typecheck in isolation
+  ```
+
+  There is deliberately **no** `oracle:*` npm script. The root `package.json` is
+  model-visible, so a script named `oracle:test` pointing at
+  `experiments/v2/oracle` would disclose the hidden oracle and the experiment
+  tree to every condition, including the C1 baseline (`TD-B38`).
 
 ## Fixtures and tests
 

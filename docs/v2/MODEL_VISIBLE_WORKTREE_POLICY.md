@@ -110,12 +110,34 @@ architectural tension must stay real and discoverable from the substrate itself 
 that is the whole point of the design. What is removed is only the **explicit
 statement of the rules** and the evaluation machinery.
 
-One residual, accepted, pre-existing disclosure: `.eslintrc.agent.json` names
-`@nx/enforce-module-boundaries` in order to set it to `"off"`. It carries no
-`depConstraints`, `sourceTag` or `onlyDependOnLibsWithTags`, so it states no
-dependency rule. This is the agent-visible config the model has always been
-given; the tests assert both that it is present and that no file in `W` states a
-dependency constraint.
+#### Adjudication — `.eslintrc.agent.json` naming the boundary rule
+
+`.eslintrc.agent.json` names `@nx/enforce-module-boundaries` in order to set it
+to `"off"`. The independent architecture-neutral-substrate review examined this
+explicitly and its disposition is **ACCEPTABLE STRUCTURAL/TOOLING INFORMATION** —
+**not** an unresolved leakage blocker. It is recorded here so the judgement is
+auditable rather than implicit:
+
+- **No source/target pair is disclosed.** The file carries no `depConstraints`,
+  no `sourceTag`, no `onlyDependOnLibsWithTags` and no layer names. A reader
+  learns that a module-boundary lint rule exists in the npm ecosystem — which is
+  true of any Nx workspace — and nothing about which direction is legal here.
+- **The `off` state is what keeps enforcement away from the model.** Setting the
+  rule to `"off"` is the mechanism that prevents live architecture enforcement
+  from reaching the model through `npm run ci:agent`. Removing the line would not
+  hide anything; it would either re-enable the rule (feeding the model the
+  answers it is being scored on) or leave the config depending on the excluded
+  root `.eslintrc.json`. Neutralising it would therefore *damage* the control.
+- **It is byte-identical across conditions.** The file is a single allowlisted
+  root file copied verbatim into C1–C4, so it cannot differentiate the arms.
+- **It is pre-existing and stable.** This is the agent-visible config the model
+  has always been given; it is unchanged by the `TD-B23` and `TD-B38`
+  remediations.
+
+The JSON scan reads string **values**, not keys, for exactly this reason: keys
+are structural, and scanning them would flag the one file the policy allows to
+name the rule it switches off. Tests assert both that the file is present in
+every prepared worktree and that no file in `W` states a dependency constraint.
 
 ### Structural signal vs. stated rule — the line the baseline must not cross
 
@@ -143,6 +165,49 @@ no longer do is **read the answer** in prose. C3 and C4 continue to receive the
 controlled architecture treatment through their own channels, so the contrast
 between "infer it from structure" and "be told it" is restored rather than
 removed.
+
+### Second threat class — knowing the experiment exists (`TD-B38`)
+
+Everything above is about the substrate **coaching the answer**. There is a
+second, independent way for model-visible bytes to spoil the baseline: telling
+the model that it is **inside an experiment at all**.
+
+The independent architecture-neutral-substrate review found the substrate had
+been made rule-neutral while remaining experiment-aware. `package.json`
+described the workspace as the "Architecture-First Context Injection Benchmark"
+and exposed `oracle:test` / `oracle:typecheck`; `.gitattributes` named
+"AFCI-Bench study v2", the canonical architecture context and its delivery to
+"the repository-instruction conditions". None of that states which dependency
+direction is legal, so the `TD-B23` detector was right not to flag it — and it is
+still disqualifying. A C1 model that reads it knows architecture is the scored
+construct, that a treatment exists, that other conditions get it, and that a
+hidden oracle will grade the result. Those are **demand characteristics**: the
+baseline stops behaving like a baseline for reasons that have nothing to do with
+the code in front of it.
+
+The two classes are kept separate — separate detector, separate refusal code,
+separate decision record — because neither subsumes the other and a failure
+should say which one it is.
+
+| Allowed in every condition | Forbidden in every condition (**experiment awareness**) |
+|---|---|
+| ordinary uses of `architecture`, `test`, `condition`, `context`, `benchmark` in application prose | "AFCI", "AFCI-Bench", "study v2" |
+| the `@afci-bench/*` npm scope as an opaque package identifier | "Architecture-First Context Injection" spelled out |
+| a `description` naming what the application does | a description naming the study or the benchmark |
+| `ci`, `ci:agent`, `lint`, `typecheck`, `test`, `build`, `serve` | a script named or pointing at an oracle, evaluator or `experiments/v2/**` |
+| a file explaining what it does | prose naming the canonical architecture context, the conditions, the treatment, or the repository-instruction delivery |
+
+The detector matches only **contextual combinations**, never bare topic words: a
+comment may say "the architecture of this module favours composition" or "a quick
+benchmark showed this loop is not hot" and must pass. A blanket keyword ban would
+be unusable against real source and is explicitly not the policy.
+
+**Residual, accepted and recorded:** the `@afci-bench/*` workspace scope remains
+in `tsconfig.base.json` and in the imports of `apps/` and `libs/`. Removing it
+means editing application source and re-identifying the substrate, so it is out
+of scope for the awareness remediation and is recorded in `TD-B38` rather than
+silently accepted. With the description gone it is an opaque npm scope that
+states no benchmark, condition, treatment or oracle.
 
 ## 4. Condition behaviour
 
@@ -172,6 +237,7 @@ Fail-closed refusals (each has a machine-readable code):
 | `EMPTY_SUBSTRATE` | the allowlist matched nothing |
 | `UNEXPECTED_ARCHITECTURE_FILE` | the finished snapshot contains an explicit architecture artifact |
 | `ARCHITECTURE_COMMENT_DISCLOSURE` | a model-visible source comment states a dependency rule (`TD-B23`/`TD-B24`) |
+| `EXPERIMENT_AWARENESS_DISCLOSURE` | model-visible content reveals the benchmark, a condition, the treatment or the oracle (`TD-B38`) |
 | `SETUP_CONTAMINATED` | the finished snapshot contains evaluator material or unapproved persistent context |
 
 A refusal is never downgraded to a pass, and a refusal leaves no partial
@@ -218,6 +284,42 @@ Every other file in every condition is scanned, C1's baseline included.
 Regression fixtures — including the verbatim bytes removed from the three leaking
 files, and a negative fixture of the comments the substrate keeps — live in
 [`../../experiments/v2/leakage_fixtures/`](../../experiments/v2/leakage_fixtures/).
+
+### 5.2 Experiment-awareness sweep (`TD-B38`)
+
+`scan_experiment_awareness()` runs alongside §5.1 and refuses with
+`EXPERIMENT_AWARENESS_DISCLOSURE`. Two things differ from the comment sweep, and
+both were forced by how the historical leaks were actually written:
+
+- **It reads the whole file, not only comment regions.** The `package.json`
+  disclosures were a `description` value and two npm *script names* — JSON keys
+  and values. A comment-only sweep would have missed all three.
+- **It flattens wrapped prose before matching.** The `.gitattributes` header
+  split "the canonical architecture / context" across two lines, so a
+  line-by-line scan sees two harmless fragments and matches neither. Runs of
+  whitespace, including a newline plus the next line's indentation and comment
+  leader, collapse to a single space; a `*` counts as a comment leader only when
+  whitespace follows, so `*.png binary` keeps its glob.
+
+Detected classes: the study's own name (`AFCI`, `AFCI-Bench`, `study v2`); the
+expanded construct ("Architecture-First Context Injection"); the canonical
+architecture context or architecture-context treatment; the
+repository-instruction delivery mechanism; a hidden oracle or evaluator, or an
+oracle paired with scoring; condition labels appearing together (`C1/C2`,
+`condition C3`); a named treatment/control arm; the token-matched guidance; a
+benchmark/study framed with a participant, condition, arm, protocol, harness,
+oracle or treatment; and any path into `experiments/v<n>`.
+
+The `@afci-bench/*` scope is masked before matching, because it is retained
+structural identity rather than prose — see the residual note in §3. Prose that
+spells out "AFCI-Bench" without the `@scope/` form is still caught.
+
+C3's approved instruction file is exempt on the same basis as §5.1: it **is** the
+treatment. C1 and C2 have no exempt path at all.
+
+Regression fixtures are the **verbatim** pre-remediation `package.json` and
+`.gitattributes`, alongside negative fixtures of innocent application vocabulary,
+in [`../../experiments/v2/leakage_fixtures/`](../../experiments/v2/leakage_fixtures/).
 
 ## 6. Snapshot manifest
 

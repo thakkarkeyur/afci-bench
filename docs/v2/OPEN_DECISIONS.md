@@ -24,7 +24,7 @@ that none is yet marked resolved.
 
 ## Counts
 
-- **Blocking decisions: 37** (`TD-B01`–`TD-B37`) — must be resolved before the
+- **Blocking decisions: 38** (`TD-B01`–`TD-B38`) — must be resolved before the
   corresponding data collection; all are cited inline across the protocol files.
   `TD-B16`–`TD-B21` were added by the pre-execution design-review reconciliation;
   `TD-B22` was added by the independent public review of the pilot task package;
@@ -32,14 +32,18 @@ that none is yet marked resolved.
   D)** that narrowed the confirmatory construct to dependency-direction
   conformance; **`TD-B34`–`TD-B37` were added by the independent pre-authoring
   opportunity reassessment** (`DECISION B`, `PT05`'s reclassification, the
-  production-source scoring policy, and the statistical-governance consequences).
+  production-source scoring policy, and the statistical-governance consequences);
+  **`TD-B38` was added by the independent architecture-neutral-substrate review**
+  that found the model-visible package/`.gitattributes` metadata still announcing
+  the experiment itself.
 - **Non-blocking decisions: 6** (`TD-N01`–`TD-N06`) — refinements that do not
   block the confirmatory design.
-- **Total decisions: 43**, of which **2 are resolved** (`TD-B23`, `TD-B24`) and
-  **41 remain open**. The two resolved entries are the model-visible
-  architecture-comment remediation and the leakage audit that proves it; both were
-  completed **before** any benchmark or model execution and neither freezes
-  anything. Every other decision — including every task-authoring blocker
+- **Total decisions: 44**, of which **3 are resolved** (`TD-B23`, `TD-B24`,
+  `TD-B38`) and **41 remain open**. The three resolved entries are the
+  model-visible architecture-comment remediation, the leakage audit that proves
+  it, and the experiment-awareness remediation; all were completed **before** any
+  task authoring and **before** any benchmark or model execution, and none
+  freezes anything. Every other decision — including every task-authoring blocker
   (`TD-B34`, `TD-B26`, `TD-B31`) and runner-time enforcement (`TD-B22`) — is
   **still open**.
 
@@ -50,7 +54,7 @@ confirmatory analysis.
 
 ---
 
-## Blocking decisions (TD-B01 – TD-B37)
+## Blocking decisions (TD-B01 – TD-B38)
 
 | ID | Decision | Owner | Resolved during | Gate |
 |----|----------|-------|-----------------|------|
@@ -110,13 +114,30 @@ may be closed by restating the classification.
 | **TD-B36** | **The labelled corpus and every private frozen opportunity set must be re-checked under the production-source policy** (§1b): no opportunity may depend on a test-only or config-only dependency, and no seeded violation may sit in an excluded file. The policy itself needs independent review before freeze. Regression-locked publicly by **M8-A**–**M8-F**; **not** discharged. | Guard Engineer | pilot (with `TD-B12`/`TD-B27`) | G6 |
 | **TD-B37** | **The current four-task architecture set is not confirmatory-ready and no final power value may be frozen from it.** Repeated exposures to one boundary are **clustered**; **task count ≠ independent architecture-decision count**; the final interaction power simulation (`TD-B20`) runs **only after** additional distinct decisions are authored and approved (`TD-B34`); and a **decision/boundary cluster identifier** must be carried in the eventual analysis artifact, with a matching sensitivity re-fit (`TD-B30`). **No power simulation was run here.** | Statistician | after `TD-B34` authoring is approved (with `TD-B20`/`TD-B30`) | G2/G3 |
 
+### Added by the independent architecture-neutral-substrate review — `TD-B38`
+
+The review that checked whether the `TD-B23` remediation had actually produced a
+neutral baseline found that it had produced an **architecture-rule**-neutral one
+which was still **experiment-aware**: the model-visible `package.json` and
+`.gitattributes` announced the benchmark, the canonical architecture context, the
+conditions and the hidden oracle. This is filed as its own decision rather than
+reopening `TD-B23`, because the two threat classes are different and the review
+treated them as such — `TD-B23` is the substrate *coaching the answer*, `TD-B38`
+is the substrate *revealing the experiment*. Neither subsumes the other.
+
+| ID | Decision | Owner | Resolved during | Gate |
+|----|----------|-------|-----------------|------|
+| **TD-B38** | ✅ **RESOLVED — disposition: neutralise.** Model-visible metadata disclosed the **experiment** to every condition including the C1 baseline: `package.json` carried `description` = "Architecture-First Context Injection Benchmark" (expanding the AFCI construct in full and naming the study a benchmark) plus the `oracle:test` / `oracle:typecheck` scripts, whose names disclosed a hidden oracle and whose commands pointed at `experiments/v2/oracle`; `.gitattributes` carried prose naming "AFCI-Bench study v2", the canonical architecture context, its delivery "identically to the repository-instruction conditions", and the committed fixtures. A C1/C2 model reading these learns nothing about **which** dependency direction is legal — so `TD-B23` does not cover it — but does learn that architecture is the **scored construct** and that a treatment and an oracle exist. Remediated in `630d3180af0d02a86330dfb599f559e78df65e94`, which **replaces `15aa99f5` as the canonical source substrate**: neutral description, both oracle scripts removed with **no** replacement model-visible script pointing at the oracle or the experiment tree, and a neutral `.gitattributes` retaining **every** functional directive. All participant scripts byte-identical; no architecture rule, dependency graph, task body, task hash, task eligibility or application behaviour changed; `apps/` and `libs/` trees byte-identical to `15aa99f5`; `package-lock.json` unchanged. Detector: `scan_experiment_awareness`, refusal code `EXPERIMENT_AWARENESS_DISCLOSURE`, matching only **contextual combinations** (never bare `architecture`/`test`/`condition`/`context`/`benchmark`) and flattening wrapped prose. Regression proof: **PROOF 11**, with the verbatim pre-remediation bytes in `experiments/v2/leakage_fixtures/`. **Residual, accepted and recorded:** the `@afci-bench/*` workspace scope remains in `tsconfig.base.json` aliases and `apps/`/`libs/` imports; removing it means editing application source and re-identifying the substrate, so it needs its own work package. Found and fixed **before** task authoring and **before** any benchmark or model execution. | Harness Engineer + Study Lead | resolved before the pilot (substrate decision, pre-authoring) | G2/G3 |
+
 Added by the pre-execution design-review reconciliation: `TD-B16`–`TD-B21`; added
 by the independent public review of the pilot task package: `TD-B22`; added by the
 suite-classification decision: `TD-B23`–`TD-B33`; added by the pre-authoring
-opportunity reassessment: `TD-B34`–`TD-B37`. Each
-is **open** (none resolved here — the CI/leakage **mechanisms** are delivered and
+opportunity reassessment: `TD-B34`–`TD-B37`; added by the
+architecture-neutral-substrate review: `TD-B38`. Apart from the three
+substrate/leakage entries recorded as resolved above (`TD-B23`, `TD-B24`,
+`TD-B38`), each is **open** — the CI/leakage **mechanisms** are delivered and
 tested, but the runner-time enforcement, authored suite, frozen hashes,
-container, pilot simulation, and dry runs all remain outstanding).
+container, pilot simulation, and dry runs all remain outstanding.
 
 **Oracle-foundation package: partial advances, none resolved.** `TD-B04` is
 partially advanced — the machine-checkable architecture-rule catalog
