@@ -368,6 +368,49 @@ its identifier and its hidden acceptance remain private until the normal evaluat
 package is created. `TD-B34` stays **open and blocking**: one cleared candidate is
 not a suite.
 
+### 12.2b The cleared candidate is now authored as `PT07` (`TD-B34` still open)
+
+The candidate cleared in §12.2a has since been authored as the public task body
+`PT07` — *Price a proposed order before it is placed* (`pricing-endpoint`,
+`primary`, `e1_analysis_eligibility` `scored`, `task_status` `candidate`). The
+authoring package added **one** task body and nothing else: no other task body or
+hash changed, no other eligibility changed, no reserve was activated, no file under
+`apps/` or `libs/` was touched, no private evaluator material was authored or
+modified, no benchmark or model ran, and nothing was frozen.
+
+- **It was authored before any benchmark or model execution**, and its design and
+  public-interface feasibility were **independently reviewed before** authoring
+  against requirements 1–11 above and §8a.
+- **In aggregate terms it adds a previously unrepresented implemented
+  leaf/source-scope candidate.** Which leaf rule, source scope and forbidden target
+  its decision uses stay **private**, as for every other candidate: no public
+  artifact maps `PT07` to a rule id, an opportunity, or an expected or prohibited
+  area.
+- **It is decidable through HTTP alone** (requirement 11 / §8a): no declared seam,
+  no internal-state inspection, no seeded state, and **no non-persistence
+  assertion**. A non-persistence criterion was considered and **rejected as
+  externally ungradeable** — the substrate exposes no public way to observe stored
+  state, and reaching for it internally is exactly what §8a forbids. What `PT07`
+  requires is the observable consequence: its answer carries none of the fields
+  that identify a created order.
+- **`PT07` cannot enter E1 until a private evaluator package is authored for it**,
+  independently validated and approved, and shown to carry a valid non-zero frozen
+  opportunity set (`TD-B05`/`TD-B14`, gate `G1`). Its public eligibility of
+  `scored` records intent, never a demonstrated denominator.
+
+**`TD-B34` is NOT resolved.** One authored task does not provide the breadth or the
+repetition the confirmatory construct needs; the active set plus `PT07` still does
+not sample enough distinct dependency-direction decisions for confirmatory
+inference. **Further candidate authoring is still required before Stage 0**, **no
+power simulation may be run yet** (`TD-B37`), and gates **G1**/**G2**/**G6** remain
+**not passed**.
+
+Overlap safeguards for `PT07` against `PT05`, `PR01`, `PT06`, `PT01`/`PT02` and
+`PT04` (requirement 9) are recorded in
+[`TASK_AUTHORING_REPORT.md`](../../experiments/v2/tasks/public/TASK_AUTHORING_REPORT.md).
+They are **governance rationale only** and deliberately appear nowhere in `PT07`'s
+public text.
+
 ### 12.3 What is forbidden
 
 - **Do not create artificial tasks merely to hit rule ids.** A candidate that

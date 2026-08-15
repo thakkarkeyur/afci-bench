@@ -27,6 +27,7 @@
         "error-handling",
         "list-endpoint",
         "logging",
+        "pricing-endpoint",
         "read-endpoint",
         "write-endpoint"
       ]

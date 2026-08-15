@@ -41,7 +41,10 @@ MATRIX_PATH = REPO / "docs" / "v2" / "PILOT_PUBLIC_TASK_MATRIX.csv"
 REPORT_PATH = PUBLIC_TASKS_DIR / "TASK_AUTHORING_REPORT.md"
 TASKS_ROOT = REPO / "experiments" / "v2" / "tasks"
 
-EXPECTED_PUBLIC_TASK_COUNT = 8
+#: The eight candidates this module's PT06 amendment was written against, plus
+#: PT07, authored later under DECISION B (TD-B34). The count is pinned so a stray
+#: or duplicated body is caught; changing it must be a deliberate authoring act.
+EXPECTED_PUBLIC_TASK_COUNT = 9
 
 
 @pytest.fixture(scope="module")
@@ -379,9 +382,9 @@ def test_the_other_seven_task_hashes_are_untouched_by_this_change():
 
 
 # --------------------------------------------------------------------------- #
-# 8. Exactly eight public tasks
+# 8. Exactly the recorded number of public tasks
 # --------------------------------------------------------------------------- #
-def test_exactly_eight_public_tasks_are_discovered():
+def test_exactly_the_recorded_public_tasks_are_discovered():
     import sys
 
     sys.path.insert(0, str(TASKS_ROOT))

@@ -434,13 +434,16 @@ E1 are specified in
 | PT04 | primary | logging | medium | `f349b150b1d8fe56...` | scored |
 | PT05 | primary | calculation | medium | `f6efc772e76d6c28...` | functional-only |
 | PT06 | primary | error-handling | medium | `3e0f84cfef1f9fbf...` | functional-only |
+| PT07 | primary | pricing-endpoint | medium | `557caed09420354e...` | scored |
 | PR01 | reserve | calculation | small | `0e1527bce4149883...` | inactive-reserve |
 | PR02 | reserve | write-endpoint | medium | `e89a4aab236813c0...` | inactive-reserve |
 
 Relative to the suite recorded before the repair package, only PT05 is byte-identical
 and the other seven changed. Relative to public commit `0e77d49`, **only PT06
 changed**: it carries the amended and clarified body above, and the other seven bodies
-are byte-identical to their `0e77d49` bytes.
+are byte-identical to their `0e77d49` bytes. `PT07` is **new** — it is authored by the
+DECISION B package recorded in the final addendum below, has no earlier bytes, and no
+other task body or hash changed when it was added.
 
 ## Private evaluator package staleness (mandatory)
 
@@ -684,4 +687,178 @@ changed, and no reserve was activated. The candidate's opportunity details, its
 identifiers and its hidden acceptance stay **private** until the normal evaluator
 package is created through the usual process. `TD-B34` remains **open and
 blocking**: one cleared candidate is not a suite, and gates `G1`, `G2` and `G6`
-remain **not passed**.
+remain **not passed**. *(Superseded on that last point only by the addendum below,
+which authors that candidate's public body as `PT07`. Everything else in this
+section stands as written.)*
+
+## Addendum: `PT07` authored under DECISION B (one task, pre-run)
+
+**One new primary task has now been authored under DECISION B** (`TD-B34`):
+`PT07` — *Price a proposed order before it is placed*, functional category
+`pricing-endpoint`, kind `primary`, `e1_analysis_eligibility` `scored`,
+`task_status` `candidate`, SHA-256 `557caed09420354e...`. It is the public body of
+the single candidate the boundary package had cleared for authoring in the
+section above.
+
+This package **authored exactly one task body**. It changed **no** other task
+body and **no** other recorded SHA-256, changed **no** other task's eligibility,
+touched **no** file under `apps/` or `libs/`, activated **no** reserve, authored
+or modified **no** private evaluator material, ran **no** benchmark or model,
+produced **no** result artifact, and froze **nothing**. The private evaluator
+repository was **not accessed** while producing it. The canonical source substrate
+remains `630d3180af0d02a86330dfb599f559e78df65e94` with content hash
+`0198d76c189f38589e872cab4305527c08e86ef736e1550e428e05f9178060f3`. The protocol
+remains **PRE-FREEZE**.
+
+### Order of work (recorded so the record cannot be misread later)
+
+- **The authoring occurred before benchmark or model execution.** No experimental
+  result exists; `experiments/v2/results/` still holds no result artifact. Nothing
+  about `PT07` was selected, tuned, or justified by an observed outcome, because
+  there is none.
+- **Its candidate design and public-interface feasibility were independently
+  reviewed before authoring**, against the eleven authoring requirements
+  (`TASK_AUTHORING_POLICY.md` §12.1) and the functional acceptance observation
+  boundary (§8a). That review is the "one candidate cleared for authoring"
+  conclusion recorded in the section above; this package writes the body it
+  cleared.
+- **In aggregate terms it adds a previously unrepresented implemented
+  leaf/source-scope candidate.** Which leaf rule, which source scope and which
+  forbidden target its decision would use stay **private**, exactly as for every
+  other candidate: nothing here names a rule id, an opportunity, an expected or
+  prohibited area, or an implementation for `PT07`.
+- **No reserve was activated.** `PR01` and `PR02` remain `inactive-reserve`, and
+  `PR02` remains blocked from promotion (`TD-B26`).
+
+### `DECISION B` / `TD-B34` remains OPEN
+
+**`TD-B34` is not resolved by this package and must not be recorded as resolved.**
+One task does not provide the breadth or the repetition the confirmatory construct
+needs: a single new boundary-decision cluster observed once is still a thin
+instrument, and the surviving active set plus `PT07` does **not** yet sample
+enough distinct dependency-direction decisions for confirmatory inference.
+
+Consequently:
+
+- **further candidate authoring is still required** before Stage 0;
+- **no power simulation should be run yet**, and no power value may be frozen
+  (`TD-B37`);
+- gates **G1**, **G2** and **G6** remain **not passed**, and the suite is **not**
+  ready;
+- `PT07` cannot enter E1 at all until a private evaluator package is authored for
+  it, independently validated and approved, and shown to carry a valid non-zero
+  frozen opportunity set (`TD-B05`/`TD-B14`, gate `G1`). Its public
+  `e1_analysis_eligibility` of `scored` records **intent**, never a demonstrated
+  denominator.
+
+### Functional acceptance observation boundary check (`TD-B39`)
+
+`PT07`'s public contract was checked against the frozen observation boundary
+(`HIDDEN_EVALUATOR_BOUNDARY.md` §9–§14) before it was accepted. It is intended to
+be gradeable through **HTTP request/response observations only**. It requires:
+
+- **no** `LogOutput` seam or any other declared seam — its text states explicitly
+  that log output is not part of its required behaviour;
+- **no** repository-state or internal-persistence observation;
+- **no** reset helper;
+- **no** hidden state seed — every case it states is reachable by sending a
+  request;
+- **no** implementation-specific import;
+- **no** architecture finding.
+
+Every required behaviour is a status code and a JSON body of a single request,
+plus a numeric agreement with what the existing order-creation operation already
+reports for the same line items — itself an HTTP observation. **No hidden
+acceptance is implemented in this package**, and the declared seam register is
+unchanged: `PT04`'s `LogOutput` sink is still the only seam declared suite-wide.
+
+**A non-persistence criterion was deliberately excluded.** An earlier form of this
+candidate would have required that previewing "does not persist", "creates no
+internal state", or "leaves the stored order count unchanged". That criterion was
+independently **rejected as externally ungradeable**: at the unchanged substrate no
+public endpoint reads or counts stored orders, so an external caller cannot observe
+it, and the only ways to check it — reading implementation state or a stored-order
+count through an internal module — are exactly what the observation boundary
+forbids. What `PT07` requires instead is what an HTTP caller *can* see: the answer
+carries **no** `id`, `status`, `createdAt` or `customerId`. **The absence of those
+fields in the response is required; an assertion about hidden persistence side
+effects is not, and no hidden test may add one.**
+
+### Overlap safeguards (governance rationale, deliberately not in the task body)
+
+Recorded here because `TD-B34` requirement 9 forbids duplicating an existing
+architectural instrument, and because a later package must be able to see why each
+boundary was drawn. **None of this belongs in `PT07`'s public text, and none of it
+is an implementation hint.**
+
+1. **`PT05`.** `PT07` introduces **no** new discount rule and no order-level
+   adjustment of any kind. Its prices are defined only as agreeing with what the
+   existing order-creation operation already reports. Fixtures built for `PT07`
+   must avoid relying on `PT05` semantics — in particular they must stay well below
+   `PT05`'s volume threshold, and the worked example totals `61.32` and `45.99` do.
+2. **`PR01`.** `PT07` introduces **no** cent-exactness requirement and must not
+   become an implicit rounding fix. Its text states explicitly that it adds no new
+   rounding rule and no new monetary-precision rule, and requires no change to the
+   prices an existing created order already reports. Its worked values are ones the
+   unchanged substrate already produces exactly, so nothing in it can be satisfied
+   only by repairing `PR01`'s defect. `PR01` stays `inactive-reserve`.
+3. **`PT06`.** Malformed or unparseable JSON, payload-too-large, unsupported media
+   type or charset, and every other transport-level or body-parsing rejection are
+   explicitly **outside** `PT07`. `PT07` states no required status code and no
+   required body for any of them, so no `PT07` acceptance test may assert one, and
+   `PT06`'s own bounded scope is untouched. `PT07`'s empty-`items` rule applies to
+   its own request only and changes nothing about how `POST /orders` treats an empty
+   `items` array today.
+4. **`PT01`/`PT02`.** `PT07` adds **no** order read, list or count surface. It
+   returns a price quotation for line items supplied in the request and exposes no
+   way to retrieve, enumerate or count stored orders.
+5. **`PT04`.** Logging is **outside** `PT07`. Its text states that log output is
+   not part of its required behaviour, and no `PT07` acceptance test may assert a
+   log record.
+
+### Reset checkpoint (`PT07`, functional only)
+
+`RESET_CHECKPOINT_MATRIX.csv` now carries a `PT07` row on the same
+`withheld_pending_TD-B01` convention as the other candidates: condition-neutral
+`yes`, status `TODO`, predicate **withheld and not yet drafted**. **No private
+reset implementation exists for `PT07`**, and none is claimed. When it is drafted
+it must be stated as externally observable functional/worktree progress, must
+require no canonical layer, file path or architecture, and **must not rely on a
+hidden persistence assertion** — the same criterion this addendum records as
+externally ungradeable.
+
+### Private evaluator consequences (nothing private was touched)
+
+- **`PT07` has no private evaluator package at all.** It is not a stale package to
+  re-link; it is an absent one. `TASK_ACCEPTANCE_MATRIX.csv`,
+  `TASK_LAYER_MATRIX.csv` and `TASK_RULE_MATRIX.csv` therefore record
+  `not_yet_authored` for it rather than `stored_in_private_evaluator_repo`, and
+  `PILOT_PUBLIC_TASK_MATRIX.csv` records `not_yet_authored` as its
+  `hidden_evaluator_manifest_hash`. `EM-PT07` is a **reserved identifier only**.
+- **The staleness of the existing private commit is unchanged by this package.**
+  Adding `PT07` changes no other public task's bytes, so no existing private
+  package needs re-linking on account of it; `PT06`'s package remains the one that
+  must be substantively re-authored.
+- Whichever package is eventually authored for `PT07` must pin the public hash
+  `557caed09420354e...`, must be authored only **after** this public package is
+  independently approved, and must demonstrate a non-empty fixed opportunity set
+  before it may be approved or frozen (`TD-B05`/`TD-B14`, gate `G1`). A private
+  manifest hash must never be silently accepted against a changed public task.
+
+### What this package deliberately did NOT do
+
+- It did **not** implement `PT07`. No reference or expected solution for it exists
+  in this repository, and no test for a future `PT07` implementation was added.
+- It did **not** author, mount or describe any hidden acceptance for `PT07`.
+- It did **not** publish `PT07`'s hidden opportunity, its forbidden target, any
+  private manifest detail, or any expected violating implementation.
+- It did **not** add a validation seam, a failure-injection hook, a test-only
+  route, a special header or an environment flag to the source substrate; `apps/`
+  and `libs/` are byte-identical to the canonical substrate.
+- It did **not** activate `PR01` or `PR02`, promote a reserve, or alter `PT01`–
+  `PT06`.
+- It did **not** close a blocker. `TD-B34` stays open and blocking, and so do
+  `TD-B39`, `TD-B40`, `TD-B26`, `TD-B31`, `TD-B22`, `TD-B05` and `TD-B14`. The
+  registry still holds 40 blocking and 6 non-blocking decisions.
+- It did **not** freeze a task count, an opportunity count, an endpoint, a
+  manifest or the protocol, and it did **not** run a power simulation.

@@ -49,8 +49,9 @@ decisions are tracked as explicit blockers in
 
 ### Pilot task candidates (repaired after independent public review)
 
-- [`experiments/v2/tasks/public/`](../../experiments/v2/tasks/public/) — six
-  primary (`PT01`–`PT06`) and two reserve (`PR01`–`PR02`) **public functional
+- [`experiments/v2/tasks/public/`](../../experiments/v2/tasks/public/) — seven
+  primary (`PT01`–`PT07`, of which `PT07` was authored later under `DECISION B`)
+  and two reserve (`PR01`–`PR02`) **public functional
   task bodies**, plus `TASK_INDEX.csv`, `TASK_SCHEMA.yml`,
   `TASK_AUTHORING_REPORT.md`, and the front-matter schema
   [`public_task.schema.json`](../../experiments/v2/schemas/public_task.schema.json).
@@ -169,7 +170,8 @@ hash, manifest, endpoint or protocol was frozen or edited by that decision**, an
 - **Analysis eligibility is explicit and machine-checked**
   ([`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv),
   `experiments/v2/tasks/public/TASK_INDEX.csv`, field
-  `e1_analysis_eligibility`): **`PT01`–`PT04` `scored`**, **`PT05` and `PT06`
+  `e1_analysis_eligibility`): **`PT01`–`PT04` `scored`** (joined later by
+  **`PT07`**, authored under `DECISION B` — see below), **`PT05` and `PT06`
   `functional-only`** (valid primary functional candidates, structurally excluded
   from E1, still contributing to hidden functional acceptance, cost,
   reset-related functional outcomes and exploratory analyses — **not** failed
@@ -191,7 +193,7 @@ hash, manifest, endpoint or protocol was frozen or edited by that decision**, an
   provides "reset-continuation coverage", multiple retained primary tasks already
   admit condition-neutral checkpoints, and `PT06` must not stay in E1 to satisfy a
   bookkeeping reset label. `RESET_CHECKPOINT_MATRIX.csv` now carries a **withheld**
-  row for each of the eight candidates.
+  row for each candidate (eight at the time, nine since `PT07` was authored).
 - **Eleven blockers were opened, none closed** — `TD-B23`–`TD-B33`
   ([`OPEN_DECISIONS.md`](OPEN_DECISIONS.md)): architecture-revealing model-visible
   source comments and their floor-effect risk; the leakage sweep not scanning
@@ -320,8 +322,9 @@ substrate is still `630d3180`.
   and even where it does its effect depends on when the application was constructed.
   The normative isolation method is a **freshly constructed application over a
   freshly evaluated module graph**. The substrate keeps the helper untouched.
-- **Boundary audit of the eight candidates.** `PT01`–`PT03`, `PT05`, `PT06` and
-  `PR01` are gradeable through **HTTP alone**; `PT04` needs HTTP **plus the one
+- **Boundary audit of the candidates.** `PT01`–`PT03`, `PT05`, `PT06` and
+  `PR01` are gradeable through **HTTP alone** (as is `PT07`, audited when it was
+  authored); `PT04` needs HTTP **plus the one
   declared seam**; **`PR02` is blocked** — its terminal-state precondition is
   unreachable through the public interface (`TD-B26`) and the boundary forecloses the
   only workaround, so it makes `TD-B26` **stricter**, not softer. No task contract was
@@ -344,6 +347,60 @@ substrate is still `630d3180`.
 - **Two blockers opened, none closed** — `TD-B39` (migrate the hidden acceptance
   packages onto the boundary) and `TD-B40`. The registry now holds **40 blocking +
   6 non-blocking** decisions, **43 open**.
+
+### `PT07` authored under `DECISION B` — one task, `TD-B34` still open
+
+The candidate cleared above is now a public task body. This package authored
+**exactly one** task and nothing else: **no** other task body or hash changed,
+**no** other eligibility changed, **no** file under `apps/`/`libs/` was touched,
+**no** reserve was activated, **no** private evaluator material was authored or
+modified, **no** benchmark or model ran, **no** result artifact was produced and
+**nothing** was frozen. The private evaluator repository was **not accessed**. The
+canonical substrate is still `630d3180` / `0198d76c…`, and the protocol remains
+**PRE-FREEZE**.
+
+- **`PT07` — *Price a proposed order before it is placed***
+  (`pricing-endpoint`, `primary`, `e1_analysis_eligibility` `scored`,
+  `task_status` `candidate`, SHA-256 `557caed09420354e…`). A caller can price a
+  proposed set of line items through a new request and get back each item's
+  subtotal and the total, agreeing numerically with what the existing
+  order-creation operation already reports for the same line items. The body is
+  functional-only and the leakage validator reports **OK** for it, unmodified.
+- **Authored before any run, from an independently reviewed candidate.** Its
+  design and public-interface feasibility were reviewed against the eleven
+  authoring requirements and the observation boundary **before** it was written;
+  no experimental result exists, so nothing about it could have been chosen from an
+  outcome.
+- **Aggregate coverage only.** In aggregate terms it adds a **previously
+  unrepresented implemented leaf/source-scope candidate**. Which leaf rule, source
+  scope and forbidden target its decision uses stay **private** — no public
+  artifact maps `PT07` to a rule id, an opportunity, or an expected or prohibited
+  area, and `EM-PT07` is a **reserved identifier only**.
+- **Gradeable through HTTP alone.** No declared seam (its text states log output is
+  not part of its required behaviour), no repository-state observation, no reset
+  helper, no seeded state, no implementation-specific import, no architecture
+  finding. A **non-persistence criterion was rejected as externally ungradeable**:
+  the substrate exposes no public way to observe stored state. `PT07` requires the
+  observable consequence instead — its answer carries no `id`, `status`,
+  `createdAt` or `customerId`. **The absent response fields are required; a hidden
+  persistence side-effect assertion is not.**
+- **Overlap safeguards recorded as governance, not as hints.** No new discount rule
+  (`PT05`); no cent-exactness requirement and no implicit rounding fix (`PR01`);
+  malformed JSON / 413 / 415 / body-parser behaviour explicitly outside it
+  (`PT06`); no order read, list or count surface (`PT01`/`PT02`); logging outside it
+  (`PT04`). Details in
+  [`TASK_AUTHORING_REPORT.md`](../../experiments/v2/tasks/public/TASK_AUTHORING_REPORT.md).
+- **`TD-B34` is NOT resolved.** One task is neither the breadth nor the repetition
+  the confirmatory construct needs; the active set plus `PT07` still does **not**
+  sample enough distinct dependency-direction decisions. **Further candidate
+  authoring is still required before Stage 0**, **no power simulation may run yet**
+  (`TD-B37`), gates **G1/G2/G6** remain **not passed**, and the suite is **not**
+  ready. `PT07` cannot enter E1 until a private evaluator package is authored,
+  validated, approved and shown to carry a valid non-zero frozen opportunity set
+  (`TD-B05`/`TD-B14`, `G1`); its `scored` eligibility records **intent**, never a
+  demonstrated denominator.
+- **No blocker was opened or closed.** The registry still holds **40 blocking + 6
+  non-blocking** decisions, **43 open**.
 
 ### Model-visible worktree isolation
 

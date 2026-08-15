@@ -36,11 +36,20 @@ PUBLIC_TASK_DIR = REPO / "experiments" / "v2" / "tasks" / "public"
 PRIVATE_REPO = REPO.parent / "afci-bench-evaluator-private"
 PRIVATE_HEAD = "cffc095b74e2a1c04b92c34ead19871397427329"
 
-#: The eight candidate task bodies and their recorded SHA-256 values, pinned here
+#: The candidate task bodies and their recorded SHA-256 values, pinned here
 #: literally. ``test_public_task_integrity.py`` checks each body against
 #: ``TASK_INDEX.csv``; this list additionally catches a body and its index row
 #: being edited *together*, which that check alone cannot see.
-FROZEN_TASK_HASHES = {
+#:
+#: The first eight existed when the observation boundary was defined and must stay
+#: byte-identical. ``PT07`` was authored afterwards, under DECISION B, and is
+#: listed separately in :data:`AUTHORED_AFTER_THE_BOUNDARY` so "the boundary
+#: package changed nothing" stays a checkable claim about those eight.
+AUTHORED_AFTER_THE_BOUNDARY = {
+    "PT07": "557caed09420354efbc823c8b72e54b0760ac72847aba0d9c07d99e37ff7d2d7",
+}
+
+BOUNDARY_ERA_TASK_HASHES = {
     "PT01": "6c938822fe19cd6e87942a6ee24ec8f604c0883da1b7f80d45216be35d7c9c39",
     "PT02": "ec4b60057708b20cb95e51f000671aab40afc8c55c0bc75850922a5f65841a77",
     "PT03": "cbfce1ca232cb9b6b53e0b4d202d6acee7415b50af8386c1f3bd2147089b4c21",
@@ -50,6 +59,9 @@ FROZEN_TASK_HASHES = {
     "PR01": "0e1527bce41498836bb57b802d4566251d6fcfed4cca13fe59e6a97330f02302",
     "PR02": "e89a4aab236813c082f9152db779b8bbfb298148a51a8435a1e2bf38330caa83",
 }
+
+#: Every public task body and its recorded hash.
+FROZEN_TASK_HASHES = {**BOUNDARY_ERA_TASK_HASHES, **AUTHORED_AFTER_THE_BOUNDARY}
 
 #: Persistence internals of the substrate's adapter. They are a legitimate part of
 #: the application and of its *visible* test suite; what they may never become is
@@ -294,7 +306,7 @@ DELIBERATELY_PUBLIC_OPPORTUNITY_IDS = {"PT04-OPP-01"}
 
 def test_public_record_discloses_no_private_opportunity_identifier():
     """PART I: the aggregate conclusion is published; the private slots are not."""
-    private_id = re.compile(r"\b(?:PT0[1-6]|PR0[1-2])-(?:OPP|EXP)-[A-Z0-9-]+\b")
+    private_id = re.compile(r"\b(?:PT0[1-7]|PR0[1-2])-(?:OPP|EXP)-[A-Z0-9-]+\b")
     offenders = []
     for path in _iter_repo_files():
         if path.suffix not in {".md", ".csv", ".yml", ".yaml", ".json", ".py"}:
@@ -343,12 +355,19 @@ def test_task_index_still_records_the_same_hashes():
         assert rows[task_id]["public_task_sha256"] == expected, f"{task_id} index hash drifted"
 
 
-def test_analysis_eligibility_is_unchanged_by_this_package():
+def test_analysis_eligibility_of_the_boundary_era_tasks_is_unchanged():
+    """The boundary package changed no eligibility, and no later package may either.
+
+    ``PT07`` carries its own eligibility (``scored``) because it was authored after
+    this boundary was defined; it is asserted separately so it cannot mask a
+    silent reclassification of one of the eight.
+    """
     import csv
 
     with open(TASK_INDEX, newline="", encoding="utf-8") as fh:
         rows = {r["task_id"]: r["e1_analysis_eligibility"] for r in csv.DictReader(fh)}
-    assert rows == {
+    boundary_era = {k: v for k, v in rows.items() if k in BOUNDARY_ERA_TASK_HASHES}
+    assert boundary_era == {
         "PT01": "scored",
         "PT02": "scored",
         "PT03": "scored",
@@ -357,14 +376,15 @@ def test_analysis_eligibility_is_unchanged_by_this_package():
         "PT06": "functional-only",
         "PR01": "inactive-reserve",
         "PR02": "inactive-reserve",
-    }, "the boundary package must not change any task's analysis eligibility"
+    }, "no package may change one of these tasks' analysis eligibility"
+    assert rows["PT07"] == "scored"
 
 
 # --------------------------------------------------------------------------- 7
-# No new task was authored.
+# The public task set is exactly the recorded one.
 
 
-def test_no_new_task_was_authored():
+def test_the_public_task_set_is_exactly_the_recorded_one():
     on_disk = {
         p.stem
         for p in PUBLIC_TASK_DIR.rglob("*.md")
@@ -384,11 +404,23 @@ def test_no_new_task_was_authored():
     assert not strays, f"task-like non-markdown files present: {strays}"
 
 
-def test_the_candidate_cleared_for_authoring_has_no_public_task_body():
-    """PART I: feasibility was recorded; the task itself was deliberately not written."""
-    report = _flat(_read(AUTHORING_REPORT))
-    assert "No task body has been authored" in report
-    assert "PT07" not in {p.stem for p in PUBLIC_TASK_DIR.rglob("*")}
+def test_the_cleared_candidate_was_recorded_first_and_authored_afterwards():
+    """PART I, then the authoring package: order of work stays legible.
+
+    The boundary package recorded a cleared candidate and deliberately wrote no
+    body; a later package wrote that body as ``PT07``. Both records must survive,
+    so a reader can still see that the feasibility review preceded the task rather
+    than being written around one that already existed.
+    """
+    report = _flat(_read(AUTHORING_REPORT)).replace("`", "")
+    assert "No task body has been authored" in report, (
+        "the boundary package's own no-authoring record must stay"
+    )
+    assert "PT07 authored under DECISION B" in report, (
+        "the later authoring of the cleared candidate must be recorded"
+    )
+    assert (PUBLIC_TASK_DIR / "PT07.md").is_file()
+    assert "independently reviewed before authoring" in report
 
 
 # --------------------------------------------------------------------------- 8

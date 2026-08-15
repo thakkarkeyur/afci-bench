@@ -64,7 +64,13 @@ ORACLE_TRACE_PATH = DOCS_V2 / "ORACLE_TRACEABILITY.csv"
 ORACLE_REQS_PATH = DOCS_V2 / "ORACLE_VALIDATION_REQUIREMENTS.md"
 ORACLE_SRC = REPO / "experiments" / "v2" / "oracle" / "src"
 
-SCORED = ["PT01", "PT02", "PT03", "PT04"]
+#: ``PT07`` was authored later, under DECISION B (``TD-B34``), and is ``scored``
+#: like ``PT01``-``PT04``. It is listed apart in :data:`AUTHORED_UNDER_DECISION_B`
+#: wherever a check is specifically about the classification package, which
+#: predates it.
+CLASSIFICATION_SCORED = ["PT01", "PT02", "PT03", "PT04"]
+AUTHORED_UNDER_DECISION_B = ["PT07"]
+SCORED = CLASSIFICATION_SCORED + AUTHORED_UNDER_DECISION_B
 FUNCTIONAL_ONLY = ["PT05", "PT06"]
 INACTIVE_RESERVE = ["PR01", "PR02"]
 ALL_TASKS = SCORED + FUNCTIONAL_ONLY + INACTIVE_RESERVE
@@ -84,6 +90,8 @@ FROZEN_HASHES = {
     "PT06": "3e0f84cfef1f9fbf97e3cd31b6704c3a0fb172b04b5e7bc33ea39927b1c8e0f2",
     "PR01": "0e1527bce41498836bb57b802d4566251d6fcfed4cca13fe59e6a97330f02302",
     "PR02": "e89a4aab236813c082f9152db779b8bbfb298148a51a8435a1e2bf38330caa83",
+    # authored later, under DECISION B; pinned the moment it was authored
+    "PT07": "557caed09420354efbc823c8b72e54b0760ac72847aba0d9c07d99e37ff7d2d7",
 }
 
 ELIGIBILITY_VOCABULARY = {"scored", "functional-only", "inactive-reserve"}
@@ -145,9 +153,13 @@ def test_both_public_csvs_still_record_the_unchanged_hash(task_id):
     assert MATRIX_BY_ID[task_id]["public_task_sha256"] == FROZEN_HASHES[task_id]
 
 
-def test_all_eight_tasks_are_present_and_no_ninth_appeared():
+def test_exactly_the_recorded_tasks_are_present_and_no_extra_appeared():
     assert sorted(INDEX_BY_ID) == sorted(ALL_TASKS)
     assert sorted(MATRIX_BY_ID) == sorted(ALL_TASKS)
+    assert len(ALL_TASKS) == 9, (
+        "the eight classified candidates plus PT07; a change here must be a "
+        "deliberate authoring decision, never drift"
+    )
 
 
 def test_hash_check_would_actually_catch_a_body_edit():
@@ -179,7 +191,7 @@ def test_both_public_csvs_agree_on_eligibility(task_id):
     ), f"{task_id}: the two public CSVs disagree on eligibility"
 
 
-def test_pt01_to_pt04_are_e1_scored():
+def test_the_scored_candidates_are_e1_scored():
     for task_id in SCORED:
         assert INDEX_BY_ID[task_id]["e1_analysis_eligibility"] == "scored", task_id
 
@@ -195,11 +207,19 @@ def test_pr01_and_pr02_are_inactive_reserves():
         assert INDEX_BY_ID[task_id]["e1_analysis_eligibility"] == "inactive-reserve", task_id
 
 
-def test_exactly_four_of_the_six_primary_candidates_are_scored():
+def test_exactly_five_of_the_seven_primary_candidates_are_scored():
+    """Four from the classification decision, plus PT07 authored under DECISION B.
+
+    ``PT05``/``PT06`` stay structurally excluded; nothing about authoring a new
+    candidate may readmit them.
+    """
     primary = [t for t in ALL_TASKS if INDEX_BY_ID[t]["primary_or_reserve"] == "primary"]
-    assert len(primary) == 6, primary
+    assert len(primary) == 7, primary
     scored = [t for t in primary if INDEX_BY_ID[t]["e1_analysis_eligibility"] == "scored"]
-    assert len(scored) == 4, f"four of six primary candidates may contribute to E1, got {scored}"
+    assert sorted(scored) == sorted(SCORED), (
+        f"five of seven primary candidates may contribute to E1, got {scored}"
+    )
+    assert set(FUNCTIONAL_ONLY).isdisjoint(scored)
 
 
 def test_primary_reserve_classification_is_unchanged_by_the_decision():
@@ -765,7 +785,7 @@ def test_no_public_artifact_claims_unique_reset_continuation_coverage():
     )
 
 
-def test_reset_matrix_has_a_withheld_row_for_each_of_the_eight_candidates():
+def test_reset_matrix_has_a_withheld_row_for_each_candidate():
     rows = _rows(RESET_MATRIX_PATH)
     by_task = {r["task_id"]: r for r in rows}
     for task_id in ALL_TASKS:
@@ -863,10 +883,15 @@ def test_task_statuses_stay_candidate_and_nothing_is_frozen():
     for task_id in ALL_TASKS:
         assert INDEX_BY_ID[task_id]["task_status"] == "candidate", task_id
         assert MATRIX_BY_ID[task_id]["task_status"] == "candidate", task_id
-        assert (
-            MATRIX_BY_ID[task_id]["hidden_evaluator_manifest_hash"]
-            == "stored_in_private_evaluator_repo"
-        ), f"{task_id}: no manifest hash may be pinned publicly"
+        # Two placeholders are legal and no third: the package is private
+        # (`stored_in_private_evaluator_repo`) or does not exist yet
+        # (`not_yet_authored`, PT07). A real hash here would pin private content
+        # publicly and would also imply a frozen package.
+        manifest_hash = MATRIX_BY_ID[task_id]["hidden_evaluator_manifest_hash"]
+        assert manifest_hash in {"stored_in_private_evaluator_repo", "not_yet_authored"}, (
+            f"{task_id}: no manifest hash may be pinned publicly"
+        )
+        assert not re.fullmatch(r"[0-9a-f]{16,}", manifest_hash), task_id
 
 
 def test_the_authoring_report_records_that_nothing_was_frozen():
@@ -1376,12 +1401,25 @@ def test_the_authoring_requirements_for_the_next_tasks_are_recorded():
     assert "task-created decision" in policy
 
 
-def test_no_task_was_authored_by_this_package():
-    """DECISION B records requirements only; the eight candidates are unchanged."""
+def test_decision_b_itself_authored_nothing_and_the_later_package_authored_one():
+    """Two separate facts, both of which must stay on the record.
+
+    The package that *recorded* DECISION B deliberately authored no task — it set
+    the acceptance bar instead. A later package authored exactly one candidate,
+    ``PT07``. Neither statement may quietly replace the other: losing the first
+    would let the requirements look retrofitted to a task that already existed,
+    and losing the second would understate what the public suite now contains.
+    """
     bodies = sorted(p.stem for p in PUBLIC_TASKS_DIR.glob("*.md") if p.stem in set(ALL_TASKS))
-    assert bodies == sorted(ALL_TASKS), "no ninth task body may appear"
+    assert bodies == sorted(ALL_TASKS), "the public task set drifted from the recorded one"
     report = _flat(REPORT_PATH)
-    assert "no replacement or additional task was authored" in report
+    assert "no replacement or additional task was authored" in report, (
+        "the DECISION B package's own no-authoring record must stay"
+    )
+    assert "one new primary task has now been authored under decision b" in report, (
+        "the later authoring of PT07 must be recorded"
+    )
+    assert "this package authored exactly one task body" in report
 
 
 # --------------------------------------------------------------------------- #

@@ -57,7 +57,9 @@ def test_public_task_schema_exists_and_is_closed():
 
 def test_at_least_the_pilot_suite_is_present():
     names = {p.name for p in _public_task_files()}
-    expected = {f"PT0{i}.md" for i in range(1, 7)} | {"PR01.md", "PR02.md"}
+    # PT01-PT06 + PR01/PR02 are the repaired pilot suite; PT07 was authored later
+    # under DECISION B (TD-B34) and is a primary candidate like the rest.
+    expected = {f"PT0{i}.md" for i in range(1, 8)} | {"PR01.md", "PR02.md"}
     assert expected <= names, f"missing authored public task bodies: {expected - names}"
 
 
