@@ -1,11 +1,8 @@
-# AFCI-Bench study v2 — reproducibility hygiene.
+# Line-ending and binary-file hygiene.
 #
-# The v2 pipeline hashes byte-exact payloads (e.g. the canonical architecture
-# context delivered identically to the repository-instruction conditions) and
-# parses committed TypeScript fixtures with the compiler API. Pinning LF in the
-# working tree makes those hashes and parses reproducible across platforms,
-# overriding any local core.autocrlf setting. Existing blobs are already LF, so
-# this introduces no content change.
+# Pinning LF in the working tree keeps checkouts byte-identical across
+# platforms, overriding any local core.autocrlf setting. Existing blobs are
+# already LF, so this introduces no content change.
 * text=auto eol=lf
 
 # Binary assets must never be line-ending normalized.

@@ -2,7 +2,7 @@
   "name": "@afci-bench/source",
   "version": "0.1.0",
   "private": true,
-  "description": "Architecture-First Context Injection Benchmark",
+  "description": "Order management service workspace",
   "packageManager": "npm@10.8.2",
   "scripts": {
     "lint": "nx run-many --target=lint --all",
@@ -12,9 +12,7 @@
     "build": "nx run-many --target=build --all",
     "ci": "npm run lint && npm run typecheck && npm run test",
     "ci:agent": "npm run lint:agent && npm run typecheck && npm run test",
-    "serve": "nx serve api",
-    "oracle:test": "jest -c experiments/v2/oracle/jest.config.js",
-    "oracle:typecheck": "tsc -p experiments/v2/oracle/tsconfig.json --noEmit"
+    "serve": "nx serve api"
   },
   "dependencies": {
     "express": "^4.18.2",
