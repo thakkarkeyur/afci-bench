@@ -249,7 +249,7 @@ rules:
     severity: blocker
     applicable_scope: "scope:api"
     source_context_section: "Section 4 (api must not import core directly); Section 5 (re-exports and shared types)"
-    source_repository_evidence: ".eslintrc.json depConstraints scope:api excludes scope:core; apps/api/src/app.ts imports Order/OrderRepository from @afci-bench/features (which re-exports them from core) and documents the boundary."
+    source_repository_evidence: ".eslintrc.json depConstraints scope:api excludes scope:core; apps/api/src/app.ts obtains Order/OrderRepository through @afci-bench/features, which re-exports those domain types from core, so the application demonstrates the sanctioned existing dependency shape."
     evaluation: automated
     candidate_detection_method: "Clause of AR-DEP-001; a resolved api->core specifier edge is a violation. The engine must NOT synthesize an api->core edge from the legitimate api->features->core re-export chain."
     applicable_opportunity_definition: "Frozen per task manifest for application files. Not derived from touched files."
