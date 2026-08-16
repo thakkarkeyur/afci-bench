@@ -280,6 +280,15 @@ applicable frozen opportunity** (CON-AC / endpoint **E1**). E1 measures **layere
 dependency-direction conformance only** — the `AR-DEP-001…006` rule family — and
 nothing wider.
 
+**It measures that family only where the suite represents it.** The oracle's
+*coverage* of the dependency matrix is a property of the checker; what E1 actually
+observes is the set of **task-creatable** decisions the canonical substrate admits
+— **3 decision clusters over 2 leaf rules and 2 source scopes**
+([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)). An E1 result
+therefore speaks to the **represented** decision families and **not automatically
+to all architecture rules or all layer pairs**; that a leaf clause is implemented
+and mechanically detectable is **not** evidence that the study measured it.
+
 E1 is computed **only** from the frozen-opportunity accounting block of the blind
 `architecture_finding.json`
 ([`architecture_finding.schema.json`](../../experiments/v2/schemas/architecture_finding.schema.json)),
@@ -315,6 +324,15 @@ Binding requirements on the oracle:
   (`UMBRELLA_OPPORTUNITY_RULE`): it may expand raw exposure through
   `applicable_rule_ids`, but the denominator is built only from leaf clauses
   (§1a).
+- **The `observability` source scope has no leaf rule and is umbrella-only.**
+  `leafRuleFor('observability', target)` returns `null` for **every** target
+  (`experiments/v2/oracle/src/checkers/dependencyDirection.ts`), so an
+  `observability`-sourced forbidden edge is covered **only** by the `AR-DEP-001`
+  umbrella: it can appear in raw exposure and in the descriptive raw-violation
+  series, and it can **never** back a scored opportunity — the engine refuses one
+  with `OPPORTUNITY_RULE_SCOPE_MISMATCH` regardless of how the task or manifest is
+  worded. This records existing, already-tested behaviour; **no oracle behaviour
+  changes with it**.
 - **E1 is computed from the PRODUCTION dependency graph only.** Test specs, test
   support material and tooling/build configuration TypeScript are partitioned out
   **before** any import edge is resolved (§1b), so a dependency introduced solely

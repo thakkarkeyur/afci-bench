@@ -46,9 +46,11 @@ package.
 - `README.md` and `TASK_AUTHORING_REPORT.md` are documented **non-task** files.
   The authoring report is a public handoff document, not a benchmark task, and is
   never counted as one.
-- Eight **draft candidates** currently exist: six primary (`PT01`–`PT06`) and two
-  reserve (`PR01`–`PR02`). They are **candidates**: authored, **not approved and
-  not frozen**.
+- Nine **draft candidates** currently exist: seven primary (`PT01`–`PT07`, of
+  which `PT07` was authored later under `DECISION B`) and two reserve
+  (`PR01`–`PR02`). They are **candidates**: authored, **not approved and not
+  frozen**. Current public eligibility: `PT01`–`PT04` and `PT07` `scored`,
+  `PT05`/`PT06` `functional-only`, `PR01`/`PR02` `inactive-reserve`.
 
 ## 3. What is scanned
 
@@ -256,14 +258,25 @@ See the staleness record in
 the acceptance bar for the **next** authoring work package, recorded in advance so
 authoring cannot drift toward whatever is convenient later.
 
-**Why more tasks are needed.** After the pre-authoring opportunity reassessment
-(`PT05` reclassified `functional-only`, `TD-B35`), the active set is `PT01`–`PT04`.
-Those tasks exercise **too few distinct dependency boundaries** — too few distinct
-`(source scope, forbidden target)` relationships — to support the confirmatory
-endpoint. Several tasks that each re-expose the **same** boundary are **one**
-architectural instrument observed repeatedly, not several independent architecture
-constructs. The motivation is therefore **construct validity**. It is **not** an
-oracle failure: the scope-based attribution mechanism (§1a of
+> **`TD-B34` has been re-scoped (§12.2c).** It no longer directs authoring toward
+> additional leaf rules or additional source scopes: an independent remaining-leaf
+> feasibility review established that the canonical substrate has a **hard
+> task-creatable ceiling of 3 decision clusters, 2 leaf rules, 2 source scopes and
+> 3 forbidden targets**, and that all three achievable clusters are **already
+> represented** ([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)).
+> `TD-B34` now governs **adequate coverage of the complete task-creatable decision
+> space** — that is, **replication depth and balance** across the three
+> demonstrated clusters. §12.1's requirements are unchanged and still bind;
+> requirement 3 is read as §12.2c states.
+
+**Why the decision stays open.** After the pre-authoring opportunity reassessment
+(`PT05` reclassified `functional-only`, `TD-B35`) and the authoring of `PT07`, the
+active set carries **5** E1 opportunities over **3** decision clusters, **two of
+which are singletons**. Several tasks that each re-expose the **same** boundary
+are **one** architectural instrument observed repeatedly, not several independent
+architecture constructs; and one observation of a boundary is a thin instrument
+whichever boundary it is. The motivation is therefore **construct validity**. It
+is **not** an oracle failure: the scope-based attribution mechanism (§1a of
 [`ORACLE_VALIDATION_REQUIREMENTS.md`](ORACLE_VALIDATION_REQUIREMENTS.md)) remains
 the approved mechanism. This decision **predates any benchmark or model outcome**;
 **no experimental result exists**; and **no reserve may be activated merely to
@@ -279,6 +292,13 @@ restore a task count**.
    the preservation-only opportunities in the reassessment.
 3. **It exercises a dependency leaf / source-target decision not already
    represented** by the surviving active set, wherever the substrate permits.
+   **On the canonical substrate the substrate no longer permits it**: all three
+   task-creatable clusters are represented and the remaining leaves are not
+   task-creatable (§12.2, §12.2c). Requirement 3 is therefore satisfied on this
+   substrate by an **independent instrument inside an under-replicated cluster**
+   — a decision that is functionally distinct from the tasks already occupying it
+   — and is **not** satisfied by an artificial task written to reach a
+   mechanically implemented leaf that no functional requirement can create.
 4. **It is feasible through the public interface** of the unchanged source
    substrate (§11.3, and the suite-wide reachability requirement `TD-B31`).
 5. **It avoids implementation-dependent hidden setup** — no failure-injection
@@ -304,29 +324,42 @@ restore a task count**.
 
 Public information only, derived from
 [`ARCHITECTURE_RULE_CATALOG.yml`](ARCHITECTURE_RULE_CATALOG.yml) and the frozen
-dependency matrix — **not** from any private manifest. Priority goes to decisions
-that broaden currently absent scored exposure, **subject to actual substrate
-feasibility**.
+dependency matrix — **not** from any private manifest.
 
-| Leaf rule | Source scope | Forbidden targets it can back |
-|---|---|---|
-| `AR-DEP-002` | contracts | core, features, infra, observability, api |
-| `AR-DEP-003` | core | features, infra, observability, api |
-| `AR-DEP-004` | infra | core, features, api |
-| `AR-DEP-005` | api | core |
-| `AR-DEP-006` | features | infra, api |
+**The 15 theoretical `(source scope, forbidden target)` pairs below are NOT 15
+feasible benchmark decisions.** Mechanical detectability is a property of the
+checker; task-creatability is a property of the substrate plus the observation
+boundary (§8a). The **feasibility status** column is normative and is derived from
+[`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §2.
 
-Candidate decisions to **investigate, not automatically adopt**:
+| Leaf rule | Source scope | Forbidden targets it can back | Feasibility status |
+|---|---|---|---|
+| `AR-DEP-002` | contracts | core, features, infra, observability, api | **NOT TASK-CREATABLE ON CURRENT SUBSTRATE** — mechanically detectable only |
+| `AR-DEP-003` | core | features, infra, observability, api | **NOT TASK-CREATABLE ON CURRENT SUBSTRATE** — mechanically detectable only |
+| `AR-DEP-004` | infra | core, features, api | **NOT TASK-CREATABLE ON CURRENT SUBSTRATE** — mechanically detectable only |
+| `AR-DEP-005` | api | core | **TASK-CREATABLE / REPRESENTED** (`api → core`) |
+| `AR-DEP-006` | features | infra, api | **TASK-CREATABLE / REPRESENTED** (`features → infra`, `features → api`) |
+| *(none)* | observability | — | **UMBRELLA-ONLY / NO SCORED LEAF** — see §12.3 |
 
-- a genuine **api → core-only capability** decision backed by `AR-DEP-005`;
-- a genuine **infra → core** decision backed by `AR-DEP-004`;
-- a genuine **core → forbidden layer** decision backed by `AR-DEP-003`;
-- a **contracts-source** decision backed by `AR-DEP-002`, where a task can
-  legitimately create such a decision.
+Source scopes, stated plainly: **`contracts` not task-creatable**; **`core` not
+task-creatable**; **`infra` not task-creatable**; **`api → core` task-creatable and
+represented**; **`features → infra` task-creatable and represented**;
+**`features → api` task-creatable and represented**; **`observability` source
+umbrella-only, with no scored leaf**.
+
+The earlier list of decisions to *investigate* — an `infra → core` decision backed
+by `AR-DEP-004`, a `core → forbidden layer` decision backed by `AR-DEP-003`, and a
+`contracts`-source decision backed by `AR-DEP-002` — has been **investigated and
+closed**: each was found **not task-creatable** on this substrate for the reasons
+recorded in [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §2.
+The remaining entry, a genuine **`api → core`-only capability** decision backed by
+`AR-DEP-005`, was adopted and is represented.
 
 **No new architecture-rule family is required for this remedy**, because these
-leaf relationships are **already implemented**. Implementing further rule families
-stays future work (`TD-B33`) and must never readmit an excluded task post hoc.
+leaf relationships are **already implemented** — and implementing one would not
+help either, since the constraint is substrate feasibility rather than checker
+coverage. Implementing further rule families stays future work (`TD-B33`) and must
+never readmit an excluded task post hoc.
 
 ### 12.2a Coverage of the surviving active set, and one candidate cleared for authoring
 
@@ -367,6 +400,16 @@ changed, and no reserve was activated. The candidate's private opportunity detai
 its identifier and its hidden acceptance remain private until the normal evaluator
 package is created. `TD-B34` stays **open and blocking**: one cleared candidate is
 not a suite.
+
+> **Superseded on the coverage counts only** (§12.2b, §12.2c). The candidate above
+> was authored as `PT07`, and the independently adjudicated active set now spans
+> **three** clusters over **two** source scopes and **two** leaf rules, so
+> `AR-DEP-005` and the `api` source scope are **no longer unrepresented**. The
+> paragraphs above remain an accurate record of the state they describe; the
+> current counts are in
+> [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §3. `TD-B40`
+> is **unaffected**: the preservation-only rows are still physically present in
+> the stale private manifests and still must be removed.
 
 ### 12.2b The cleared candidate is now authored as `PT07` (`TD-B34` still open)
 
@@ -411,14 +454,72 @@ Overlap safeguards for `PT07` against `PT05`, `PR01`, `PT06`, `PT01`/`PT02` and
 They are **governance rationale only** and deliberately appear nowhere in `PT07`'s
 public text.
 
+### 12.2c `TD-B34` re-scoped: replication depth over the complete feasible space
+
+An independent remaining-leaf feasibility review has now assessed every remaining
+implemented leaf against the canonical substrate and the observation boundary. Its
+result is recorded normatively in
+[`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md): `AR-DEP-002`
+(`contracts`), `AR-DEP-003` (`core`) and `AR-DEP-004` (`infra`) are **theoretically
+detectable but not task-creatable** on this substrate, so the demonstrated ceiling
+is **3 decision clusters / 2 leaf rules / 2 source scopes / 3 forbidden targets**,
+and **all three achievable clusters are already occupied**.
+
+**Consequently `TD-B34` now governs adequate coverage of the COMPLETE
+task-creatable dependency-decision space**, not an expansion of it. Its objective:
+
+1. **Retain all three demonstrated clusters.** None may be dropped, merged or
+   traded away.
+2. **Add independent functional instruments to the singleton clusters where
+   scientifically feasible.** An added instrument must be a genuinely distinct
+   functional decision, not a paraphrase of the task already in that cluster.
+3. **Do not author artificial tasks merely to hit mechanically implemented
+   leaves.** A leaf that no functional requirement can create is not a target
+   (§12.3).
+4. **Document the substrate breadth ceiling as a construct-validity limitation**
+   of the study, reported rather than engineered away
+   ([`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) CON-AC;
+   [`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §2.2).
+5. **Defer any broader leaf/source-scope generalisation to a declared substrate
+   redesign** ([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)
+   §7) rather than pretending the current substrate can support it.
+
+**Priority replication targets**, in order:
+
+| Priority | `decision_cluster_id` | Current observations |
+|---|---|---|
+| **A** | `DC-FEATURES-API-AR-DEP-006` | **1** |
+| **B** | `DC-API-CORE-AR-DEP-005` | **1** |
+| — | `DC-FEATURES-INFRA-AR-DEP-006` | **3** — already replicated; **not** the immediate priority |
+
+**No exact new task body is specified here, and it is not asserted that two
+suitable new tasks exist.** Whether a candidate for either priority cluster is
+functionally distinct from the tasks already occupying it, and whether its
+required work genuinely *creates* the decision rather than preserving it
+(requirement 2), remain **open questions for a separate pre-authoring review**
+under requirements 1–11. `TD-B34` stays **open and blocking** until that review
+has happened and its outcome is independently approved.
+
 ### 12.3 What is forbidden
 
 - **Do not create artificial tasks merely to hit rule ids.** A candidate that
   names a rule relationship without the functional work creating the decision
-  fails requirement 1 and must be rejected.
-- **Do not target the `observability` scope for a scored opportunity.** The
-  dependency family implements **no leaf clause** for it, so the oracle refuses
-  such an opportunity (`OPPORTUNITY_RULE_SCOPE_MISMATCH`) regardless of wording.
+  fails requirement 1 and must be rejected. This applies with full force to the
+  leaves the feasibility review classified **not task-creatable** (`AR-DEP-002`,
+  `AR-DEP-003`, `AR-DEP-004`): they are **mechanically detectable only**, and a
+  task written to reach one would either be preservation-only or would need
+  implementation-specific wording. Neither is admissible.
+- **Do not treat a mechanically detectable pair as an available benchmark
+  decision.** The 15 theoretical `(source scope, forbidden target)` pairs in §12.2
+  are not 15 feasible decisions; only the three annotated **TASK-CREATABLE /
+  REPRESENTED** clusters are, and all three are occupied.
+- **Do not target the `observability` scope for a scored opportunity, as source or
+  as target.** The dependency family implements **no leaf clause** for
+  `observability` as a **source**: `leafRuleFor('observability', target)` returns
+  `null` for every target, so such an edge is **umbrella-only under `AR-DEP-001`**
+  — visible in raw exposure, never eligible as a scored opportunity — and the
+  oracle refuses such an opportunity (`OPPORTUNITY_RULE_SCOPE_MISMATCH`)
+  regardless of wording.
 - **Do not rely on a test-only or configuration-only dependency.** E1 is computed
   from the **production** dependency graph, so a decision that exists only in a
   `*.spec.ts`, under `__tests__/`, or in `jest.config.ts` carries **no** E1

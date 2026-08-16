@@ -30,8 +30,15 @@ Claims and their constructs are in
   repetition), each yielding one patch and its records.
 - **Fixed effects:** `condition` (C1–C4) and `reset` (reset / non-reset), plus
   their interaction for RQ2.
+- **Decision cluster:** every scored E1 opportunity carries
+  `decision_cluster_id` = `source_scope + forbidden_target + leaf_rule`. There are
+  **three** such clusters on the canonical substrate and there can be no more
+  (§4b; [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)), so
+  the cluster factor is **fixed**, not random.
 - **Blocking / random effect:** `task` (random intercept, and random slopes where
-  estimable). Repetitions are nested within cell.
+  estimable). Repetitions are nested within cell. **Whether `task` enters as a
+  random intercept or as a fixed block is constrained by §4b** — a variance
+  component is estimated only where the realised number of levels identifies it.
 - **Model (LLM):** analysed either as an additional **factor** or via a
   **separate generalizability analysis** per model; the final choice is
   provisional (`TD-B06`) and depends on how many models are run (`TD-B03`).
@@ -115,11 +122,14 @@ Per-candidate eligibility is recorded publicly in
 [`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv) and
 `experiments/v2/tasks/public/TASK_INDEX.csv` (`e1_analysis_eligibility` ∈
 {`scored`, `functional-only`, `inactive-reserve`}). Under the current
-classification **`PT01`–`PT04` are `scored`**, **`PT05` and `PT06` are
+classification **`PT01`–`PT04` and `PT07` are `scored`**, **`PT05` and `PT06` are
 `functional-only`** (primary functional candidates, structurally excluded from
 E1), and **`PR01`/`PR02` are `inactive-reserve`** (not activated; they enter no
 endpoint). Task counts and the final opportunity count remain **unfrozen**
-(`TD-B10`/`TD-B14`/`TD-B20`).
+(`TD-B10`/`TD-B14`/`TD-B20`), and a `scored` eligibility records **intent**: a
+candidate enters E1 only once its private evaluator package is authored,
+validated, approved and shown to carry a valid non-zero frozen opportunity set
+(`TD-B05`/`TD-B14`, gate `G1`).
 
 `PT05`'s move from `scored` to `functional-only` is a **pre-run construct and
 feasibility reclassification**: its required functional work creates no currently
@@ -127,6 +137,32 @@ scored dependency-direction opportunity. It was decided **before any benchmark o
 model execution**, from the task body and the substrate, and is **never** to be
 reported as zero violations, a failed run, a missing task, an invalid task or a
 refusal. **No reserve was activated** to restore the scored task count.
+
+### 2.2 What an E1 result generalises to (represented decision space)
+
+E1's construct is **layered dependency-direction conformance**, and it is measured
+over the **pre-registered task-creatable dependency decisions represented by the
+canonical substrate and task suite** — not over the rule family in the abstract.
+That represented space is small and, on this substrate, **bounded**: **3 decision
+clusters, 2 leaf rules, 2 source scopes, 3 forbidden targets**, which is the
+demonstrated task-creatable ceiling, not a sampling choice
+([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)).
+
+Binding on reporting:
+
+- **Observed E1 effects generalise directly to the represented
+  dependency-decision families, not automatically to all architecture rules or all
+  layer pairs.** An effect measured over `features`- and `api`-sourced decisions is
+  evidence about those decision families; extending it to `contracts`-, `core`- or
+  `infra`-sourced conformance is an **inference beyond the represented space** and
+  must be labelled as such.
+- **The breadth ceiling is reported as a construct-validity limitation**, with the
+  reason (the substrate cannot *create* the remaining decisions under black-box
+  functional acceptance) rather than as an omission.
+- **This does not broaden E1.** Contract ownership, observability completeness,
+  duplicated logic, port/interface placement and general business-logic placement
+  remain **CON-ACB** secondary/manual evidence and are still not measured by E1
+  (gate **G8**).
 
 ### Hypothesis hierarchy (pre-registered order; D9)
 
@@ -165,9 +201,12 @@ Provisional; final link/family fixed after the pilot dispersion & ceiling checks
   model for execution time.
 - **Tokens / iterations:** **negative-binomial** (or another suitable
   count/over-dispersed) mixed model for tokens and verification iterations.
-- **Random/fixed structure (all):** `task` as a **blocking / random effect**;
-  `condition` and `reset` as **fixed effects**; `model` as a **factor** or a
-  **separate generalizability analysis**.
+- **Random/fixed structure (all):** `task` as a **blocking** effect (random
+  intercept only where the realised level count identifies the variance — §4b);
+  **`decision_cluster_id` as a FIXED factor** for E1 and E4, never as a
+  random-intercept variance estimated from three clusters (§4b); `condition` and
+  `reset` as **fixed effects**; `model` as a **factor** or a **separate
+  generalizability analysis**.
 - **Reporting (all):** **effect sizes with 95% confidence intervals** (e.g. rate
   ratios, odds ratios, ratios of geometric means), not p-values alone.
 - **Multiplicity:** a pre-registered **multiplicity correction** (e.g. Holm or an
@@ -211,13 +250,23 @@ Binding on the analysis, recorded **before** any data exists:
   decision**, not the task. Reporting *n tasks* as though it were *n independent
   architecture constructs* is prohibited.
 - **The current active set is insufficient.** After `PT05`'s pre-run
-  reclassification the E1-scored candidates are `PT01`–`PT04`, and they exercise
-  **too few distinct dependency boundaries** to support the confirmatory endpoint.
-  Additional public architecture tasks must be authored first (**`DECISION B`**,
-  `TD-B34`).
-- **The final power simulation must occur only after** those additional distinct
-  decisions are authored **and independently approved**. Running it on the current
-  set would size the study from a clustered, under-dispersed set of exposures.
+  reclassification and the authoring of `PT07`, the E1-scored candidates are
+  `PT01`–`PT04` and `PT07`; their adjudicated active opportunities number **5**
+  across **3** decision clusters, **two of which carry a single observation**.
+  That is not enough replicated dependency decisions to support the confirmatory
+  endpoint. **The remedy is replication depth, not further breadth**: the
+  substrate's task-creatable ceiling is 3 clusters / 2 leaf rules / 2 source
+  scopes / 3 forbidden targets and all three clusters are already represented, so
+  additional leaf rules and source scopes are **structurally unavailable here**
+  (re-scoped **`DECISION B`**, `TD-B34`;
+  [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)).
+- **The final power simulation must occur only after** the four `TD-B37`
+  preconditions hold: the `TD-B34` re-scope is complete and its authoring outcome
+  independently approved; the **replication design is known**; the **G = 3
+  analysis method is pre-registered** (§4b, subject to `TD-B41`); and the **final
+  E1 denominator structure is known** (`TD-B05`/`TD-B14`, `G1`). Running it on the
+  current set would size the study from a clustered, under-dispersed set of
+  exposures.
 - **A decision/boundary cluster identifier will be required** in the eventual
   analysis artifact, so each opportunity can be attributed to the architectural
   decision it instantiates and the clustering can be modelled explicitly, with the
@@ -233,6 +282,86 @@ Binding on the analysis, recorded **before** any data exists:
 - **Model:** both candidate models are screened including **C1, C3, and C4**
   (D10); the second model is analysed as a **separate generalizability study**
   unless the model-as-factor plan is confirmed at pilot (`TD-B06`).
+
+### 4b. Analysis with a fixed, very small number of decision clusters (G = 3)
+
+Pre-registered **before any data exists**, because the number of decision clusters
+is a property of the substrate rather than of the data: the canonical substrate's
+task-creatable ceiling is **three** clusters and all three are represented, so
+**G = 3 and cannot grow without a substrate redesign**
+([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)). This section
+replaces any reading of §3 or §6 under which the shared boundary decision is
+modelled as a **random intercept**: with three groups that variance is not
+identified in any useful sense, and inference resting on it would be a false
+precision.
+
+**Primary specification (pre-registered).**
+
+1. **`decision_cluster_id` enters as a FIXED factor** (3 levels → 2 contrasts).
+   **No cluster-level variance component is estimated.** The three clusters are an
+   **exhaustively enumerated, pre-registered set** — every task-creatable cluster
+   this substrate admits — not a sample from a population of clusters, so a fixed
+   representation is what the design actually supports, and the inferential target
+   is the effect **within these decision families** (§2.2).
+2. **The condition effect remains the inferential target.** `condition`, `reset`
+   and their interaction stay fixed effects, and they are **identified within
+   clusters**: every scored task is run under every condition and reset state, so
+   including the cluster (and the task block) removes between-cluster and
+   between-task variation from the contrast instead of relying on it. Blocking a
+   within-block treatment contrast on a fixed block is unbiased however small the
+   number of blocks.
+3. **Opportunities and runs remain nested observations inside the three known
+   clusters.** They are **never** entered as independent architecture decisions.
+   Several already-authored scored tasks are repeated observations of **one**
+   cluster; `decision_cluster_id` is carried on every scored opportunity in the
+   analysis artifact so that fact is represented in the model rather than assumed
+   away (`TD-B30`).
+4. **Repeated structure below the cluster** — `task` and repetitions within a
+   (task × condition × reset) cell — is modelled explicitly: `task` as a **block
+   nested within cluster**, and within-cell replication through the count family's
+   dispersion (negative-binomial where over-dispersed, §3). A `task` **random**
+   intercept is used **only** where the realised number of scored tasks identifies
+   the variance; otherwise `task` is fixed. That choice is `TD-B41`(1) and is made
+   by pre-registered criteria at pilot, **never** by which option gives the larger
+   effect.
+5. **Cluster heterogeneity is inspected, not assumed away.** A fixed
+   `cluster × condition` interaction is fitted as a **heterogeneity check** and
+   reported as three cluster-specific estimates alongside the pooled within-cluster
+   estimate; the pooled estimate is the confirmatory quantity. Whether the check is
+   reportable at the realised cell sizes is `TD-B41`(3).
+6. **G = 3 is stated wherever E1 inference is reported.** No E1 result may be
+   presented in a way that implies a large number of independent architectural
+   clusters, and **task count is never reported as independent
+   architecture-decision count**.
+
+**Sensitivity programme (pre-registered).** Each is a re-fit of the primary
+specification, reported alongside it and never substituted for it:
+
+- **S1 — small-cluster robust inference.** Cluster-robust variance with the
+  **CR2** (or **CR3**) small-sample correction and **Satterthwaite-style degrees of
+  freedom**, clustering on `decision_cluster_id`, **conditional on the
+  implementation supporting it reliably at G = 3**. Recorded honestly: at three
+  clusters the corrected degrees of freedom are themselves small and unstable, so
+  S1 is a **bounded sensitivity, never the primary basis of inference**. Exact
+  choice and tooling verification are `TD-B41`(2).
+- **S2 — within-block randomisation inference.** A permutation / randomisation
+  test of the condition contrast that permutes condition assignment **within** each
+  (task × reset) block. Its validity rests on the randomised within-task assignment
+  rather than on the number of clusters, so it is the sensitivity that stays valid
+  when G is small; it is reported whenever S1 is unreliable.
+- **S3 — leave-one-cluster-out.** Three refits, each dropping one decision cluster,
+  to show no single cluster drives the estimate. With G = 3 this is a complete
+  enumeration rather than a resampling approximation.
+- **S4 — pseudo-replication check.** The re-fit required by `TD-B30`, now expressed
+  as the fixed-cluster specification above versus a specification ignoring
+  `decision_cluster_id` entirely, to quantify what treating clustered exposures as
+  independent would have done.
+
+**What this section does not do.** It runs **no** model, uses **no** data, and
+produces **no** power value. The residual specification that genuinely needs the
+runner data shape is filed as **`TD-B41`** with its permitted options enumerated,
+and **must be resolved before the `TD-B37` power simulation**. Family and link
+selection stay with `TD-B06`; thresholds stay with `TD-B07`.
 
 ---
 
@@ -262,10 +391,13 @@ Binding on the analysis, recorded **before** any data exists:
 ## 6. Sensitivity analyses
 
 - Poisson vs negative-binomial (and with/without the rate offset) for E1.
-- **Pseudo-replication sensitivity for E1:** re-fit with a random effect for the
-  **shared boundary decision** an opportunity instance belongs to, not only for
-  `task`, since repeated opportunities collapse onto a small number of such
-  decisions (`TD-B30`).
+- **Pseudo-replication sensitivity for E1 (`TD-B30`):** repeated opportunities
+  collapse onto a small number of shared boundary decisions, so the shared decision
+  must be represented explicitly and not only through `task`. **It is represented
+  as `decision_cluster_id`, a FIXED factor, not as a random effect** — there are
+  three clusters and a variance component over three groups is not identified
+  (§4b). The sensitivity re-fits are **S1–S4 of §4b**; an earlier version of this
+  bullet proposed a cluster **random effect** and is **superseded**.
 - **Attribution sensitivity for E1:** re-fit with and without runs whose
   `raw_violation_count` exceeds `violated_opportunity_count`. Under scope-based
   attribution that excess is **expected** — several forbidden edges inside one
@@ -289,7 +421,8 @@ Binding on the analysis, recorded **before** any data exists:
 | Final distribution/family and endpoint specification | `TD-B06` | pilot dispersion & ceiling/floor checks |
 | "Unacceptable cost" tolerance (RQ3) | `TD-B15` | pilot-set, pre-registered |
 | Interaction-focused power simulation (condition × reset), mandatory before the core grid | `TD-B20` | Stage-1 pilot dispersion |
-| Pseudo-replication model for repeated opportunities collapsing onto shared boundary decisions | `TD-B30` | with the power simulation (`TD-B20`) |
+| Pseudo-replication model for repeated opportunities collapsing onto shared boundary decisions | `TD-B30` | with the power simulation (`TD-B20`); structure fixed by §4b |
+| Residual small-cluster (G = 3) specification: `task`/run repeated structure, CR2-vs-CR3 + Satterthwaite feasibility, cluster × condition reportability | `TD-B41` | pre-registered options in §4b; chosen at pilot, **before** `TD-B20` |
 | Final task count / repetitions / total run count (all UNFROZEN) | `TD-B10`/`TD-B14`/`TD-B20` | simulation-determined; never from v1 |
 | Final E1-eligible task set (which candidates carry a non-empty frozen opportunity set) | `TD-B05`/`TD-B14` | private re-authoring, gated by G1 |
 
@@ -312,5 +445,11 @@ See [`OPEN_DECISIONS.md`](OPEN_DECISIONS.md).
   conformance, or as evidence about contract ownership, port/interface placement,
   observability completeness, duplicated logic or business-logic placement, is
   prohibited and is checked at **G8**.
+- **No generalisation beyond the represented decision space.** An E1 result is
+  reported as evidence about the **represented** dependency-decision families
+  (§2.2); extending it to unrepresented source scopes or layer pairs is an
+  explicitly labelled inference, never a finding. The **G = 3** cluster count and
+  the substrate's breadth ceiling are stated wherever E1 inference is reported
+  (§4b).
 - Power and effect-size computations are **not** performed against v1 data and
   are **not** reported as if pre-registered until `TD-B07` is resolved.

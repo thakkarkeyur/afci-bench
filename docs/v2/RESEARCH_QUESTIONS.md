@@ -38,6 +38,13 @@ that rate is the primary contrast family (see
 > logic and general business-logic placement are **not** directly measured by it;
 > they are pre-registered **secondary / manual** evidence under **CON-ACB**
 > (§2). RQ1 must not be reported as broad or general architectural conformance.
+>
+> **And it is narrowed again by what the substrate can create.** The endpoint is
+> measured over the **represented** task-creatable dependency decisions (§2,
+> CON-AC), which on the canonical substrate are three decision clusters over two
+> leaf rules and two source scopes. An RQ1 answer is an answer **about those
+> decision families**; it is not automatically an answer about every architecture
+> rule or every layer pair.
 
 The **C4-vs-C3**
 comparison **allows superiority, equivalence, or inferiority** — the study
@@ -135,6 +142,24 @@ Rule applicability, severity, and evaluator are recorded per task in
 to E1 at all is recorded publicly in
 [`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv)
 (`e1_analysis_eligibility`).
+
+**The measured space is the represented one, and it is bounded.** CON-AC is
+measured over the **pre-registered task-creatable dependency decisions represented
+by the canonical substrate and task suite**, not over the rule family in the
+abstract. On this substrate that space has a demonstrated ceiling of **3 decision
+clusters, 2 leaf rules, 2 source scopes and 3 forbidden targets**: the remaining
+implemented leaves (`AR-DEP-002` `contracts`, `AR-DEP-003` `core`, `AR-DEP-004`
+`infra`) are **detectable but not task-creatable** under black-box functional
+acceptance
+([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)). Therefore:
+
+- **observed E1 effects generalise directly to the represented
+  dependency-decision families, not automatically to all architecture rules or all
+  layer pairs**;
+- the breadth ceiling is reported as a **construct-validity limitation** of the
+  study, with its cause, rather than left as an unexplained gap;
+- this narrows what may be claimed; it **does not** broaden CON-AC, and none of the
+  CON-ACB dimensions below becomes measurable by it.
 
 **E1 does NOT directly measure** — each of these is CON-ACB evidence, not CON-AC:
 

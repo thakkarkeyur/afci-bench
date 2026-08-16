@@ -40,6 +40,9 @@ decisions are tracked as explicit blockers in
   (`npm run ci:agent`) vs repository validation (`npm run ci`).
 - [`TASK_AUTHORING_POLICY.md`](TASK_AUTHORING_POLICY.md) +
   [`TASK_LEAKAGE_TERMS.yml`](TASK_LEAKAGE_TERMS.yml) — public-task leakage policy.
+- [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) — which
+  dependency decisions the canonical substrate can actually be made to **create**,
+  the demonstrated ceiling, and the declared substrate-expansion alternative.
 - [`CONDITION_PARITY_POLICY.md`](CONDITION_PARITY_POLICY.md) +
   [`CONDITION_CONTENT_MATRIX.csv`](CONDITION_CONTENT_MATRIX.csv) — condition parity.
 - [`ORACLE_VALIDATION_REQUIREMENTS.md`](ORACLE_VALIDATION_REQUIREMENTS.md) — oracle
@@ -144,7 +147,8 @@ decisions are tracked as explicit blockers in
   review, and benchmark discrimination remain open; gates **G1/G2 not passed**;
   the protocol remains **PRE-FREEZE**; **no pilot model execution occurred** and
   **no final task count**, repetition count, run count or numerical budget was
-  selected. The eight candidates are candidates, not a core-study task set.
+  selected. The **nine** candidates — seven primary `PT01`–`PT07`, two reserve
+  `PR01`/`PR02` — are candidates, not a core-study task set.
 
 ### Suite classification — the confirmatory construct is NARROW
 
@@ -240,7 +244,9 @@ authored **no** task, ran **no** benchmark, and froze **nothing**.
   either side. The frozen architectural layer scopes are **unchanged**
   ([`ORACLE_VALIDATION_REQUIREMENTS.md`](ORACLE_VALIDATION_REQUIREMENTS.md) §1b;
   mutation cases **M8-A**–**M8-F**).
-- **Statistical governance.** The current four-task architecture set is **not**
+- **Statistical governance.** The then-current four-task architecture set
+  (`PT01`–`PT04`; now five scored candidates over three decision clusters — see
+  the remaining-leaf feasibility section below) is **not**
   confirmatory-ready. Repeated exposures to one boundary are **clustered**; task
   count ≠ independent architecture-decision count; the final power simulation runs
   **only after** additional distinct decisions are authored and approved; the
@@ -401,6 +407,69 @@ canonical substrate is still `630d3180` / `0198d76c…`, and the protocol remain
   demonstrated denominator.
 - **No blocker was opened or closed.** The registry still holds **40 blocking + 6
   non-blocking** decisions, **43 open**.
+
+### Remaining-leaf feasibility — `TD-B34` re-scoped to replication depth
+
+A **pre-authoring, pre-run** governance package. It authored **no** task, changed
+**no** task body, hash or eligibility, touched **no** file under `apps/`/`libs/`,
+activated **no** reserve, accessed **no** private evaluator material, ran **no**
+benchmark, model or power simulation, and froze **nothing**. The canonical
+substrate is still `630d3180` / `0198d76c…` and the protocol remains
+**PRE-FREEZE**.
+
+- **The remaining implemented leaves were assessed and are not task-creatable
+  here.** `AR-DEP-002` (`contracts`), `AR-DEP-003` (`core`) and `AR-DEP-004`
+  (`infra`) are **theoretically detectable but NOT task-creatable on the current
+  substrate**: `contracts` is type-only and erased at runtime, `core` is pure and
+  self-sufficient so nothing architecture-neutral can force placement there, and
+  `infra`-shaped work can be satisfied at `api` level under the current
+  observation topology. Reasons are recorded normatively in
+  [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md).
+- **The substrate has a hard ceiling of 3 decision clusters / 2 leaf rules / 2
+  source scopes / 3 forbidden targets**, and **all three achievable clusters are
+  already represented** — `features → infra` (3 observations), `features → api`
+  (1) and `api → core` (1), from **5** adjudicated active E1 opportunities. The
+  remaining deficiency is **replication depth and balance**, not breadth.
+- **`TD-B34` is re-scoped, not resolved.** It now governs adequate coverage of the
+  **complete task-creatable decision space**: retain all three clusters, add
+  independent instruments to the two **singletons** where scientifically feasible
+  (priority **A** `features → api`, then **B** `api → core`), author **no**
+  artificial task merely to reach a mechanically implemented leaf, record the
+  ceiling as a **construct-validity limitation**, and defer broader generalisation
+  to a declared substrate redesign. **No new task body was specified** and it is
+  **not** asserted that two suitable candidates exist. It stays **open and
+  blocking**; **G1/G2/G6** remain **not passed**.
+- **Substrate redesign is a DECLARED ALTERNATIVE — NOT SELECTED**, with its full
+  cost recorded (new substrate identity, renewed leakage review, C1–C4 equivalence
+  re-validation, task-feasibility re-validation, public linkage review, private
+  relink/migration, renewed opportunity review). The choice stays with the Study
+  Lead.
+- **The 15 theoretical `(source scope, forbidden target)` pairs are now annotated**
+  with feasibility status wherever they are tabulated, so **mechanically detectable
+  is never read as task-creatable**; and the **`observability` source scope is
+  documented as umbrella-only** — `leafRuleFor('observability', …)` returns `null`,
+  so such an edge can never back a scored opportunity. **No oracle behaviour
+  changed.**
+- **E1's claim is tightened, not broadened.** Observed E1 effects generalise
+  directly to the **represented** dependency-decision families, **not**
+  automatically to all architecture rules or all layer pairs
+  ([`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) CON-AC;
+  [`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §2.2).
+- **The G = 3 analysis problem is settled before any power work.** Because the
+  cluster count is fixed at three, `decision_cluster_id` enters as a **FIXED
+  factor** and **no cluster random-intercept variance is estimated from three
+  clusters**; condition effects stay the inferential target and are identified
+  **within** clusters; opportunities and runs stay nested observations; and the
+  sensitivity programme is **CR2/CR3 with Satterthwaite df where the tooling
+  supports it reliably**, plus **within-block randomisation inference**,
+  **leave-one-cluster-out** refits and a pseudo-replication check (§4b). The
+  residual specification that needs the runner data shape is the new blocker
+  **`TD-B41`**, with its permitted options enumerated.
+- **`TD-B37` stays blocked** behind four explicit preconditions, and `TD-B30` now
+  names `decision_cluster_id` as the governing identifier. **No power value was
+  produced.**
+- **One blocker opened, none closed.** The registry now holds **41 blocking + 6
+  non-blocking** decisions, **44 open**.
 
 ### Model-visible worktree isolation
 

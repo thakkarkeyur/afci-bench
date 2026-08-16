@@ -38,8 +38,21 @@ export function materializeSnapshot(tmpRoot: string, caseName: string): string {
   return dest;
 }
 
+/**
+ * Retry budget for teardown. On Windows a just-closed handle (virus scanner,
+ * indexer, or the OS's own lazy release after the compiler read the fixture) can
+ * make `rmSync` fail with `ENOTEMPTY`/`EPERM`/`EBUSY` on a directory that is
+ * about to become removable. Node retries exactly those codes when
+ * `maxRetries` is set, with an exponential back-off seeded by `retryDelay`.
+ *
+ * This is teardown hygiene only: it changes no oracle scoring semantics, and it
+ * cannot mask a real failure, because `rmSync` still throws once the budget is
+ * exhausted.
+ */
+export const CLEANUP_RETRY_OPTIONS = { maxRetries: 10, retryDelay: 50 } as const;
+
 export function cleanup(tmpRoot: string): void {
-  fs.rmSync(tmpRoot, { recursive: true, force: true });
+  fs.rmSync(tmpRoot, { recursive: true, force: true, ...CLEANUP_RETRY_OPTIONS });
 }
 
 /**

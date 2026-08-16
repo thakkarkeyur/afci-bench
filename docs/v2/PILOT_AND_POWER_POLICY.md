@@ -112,15 +112,24 @@ current architecture task set**, and **no final power value is frozen**:
   They are correlated observations of **one** architectural instrument.
 - **Task count is not the independent architecture-decision count.** The
   confirmatory unit is the **distinct dependency decision**.
-- After `PT05`'s pre-run reclassification to `functional-only` (`TD-B35`), the
-  E1-scored candidates are `PT01`–`PT04`, and they sample **too few distinct
-  dependency boundaries** for confirmatory inference. **Additional public
-  architecture tasks must be authored and approved first** (**`DECISION B`**,
-  `TD-B34`).
-- The simulation runs **only after** those distinct decisions exist and are
-  independently approved, and it must carry a **decision/boundary cluster
+- After `PT05`'s pre-run reclassification to `functional-only` (`TD-B35`) and the
+  authoring of `PT07`, the E1-scored candidates are `PT01`–`PT04` and `PT07`, and
+  their adjudicated active opportunities number **5** across **3** decision
+  clusters, **two of them observed once each**. **The remedy is replication depth,
+  not further breadth**: the substrate's task-creatable ceiling is **3 clusters /
+  2 leaf rules / 2 source scopes / 3 forbidden targets**, and all three clusters
+  are already represented (re-scoped **`DECISION B`**, `TD-B34`;
+  [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)).
+- The simulation runs **only after all four preconditions hold**: (a) the `TD-B34`
+  re-scope is complete and its authoring outcome **independently approved**; (b)
+  the **replication design is known** — which clusters gain an independent
+  instrument and which remain singletons; (c) the **small-cluster (G = 3) analysis
+  method is pre-registered** ([`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md)
+  §4b, subject to `TD-B41`); (d) the **final E1 denominator structure is known**
+  (`TD-B05`/`TD-B14`, `G1`). It must carry the **decision/boundary cluster
   identifier** so the clustering is modelled rather than assumed away (`TD-B30`;
-  [`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §4a).
+  §4a), and it must model the cluster factor as **fixed at G = 3**, never as a
+  variance component estimated from three groups.
 
 **No power simulation was run** in the package that recorded this section, and
 this section freezes no power value.

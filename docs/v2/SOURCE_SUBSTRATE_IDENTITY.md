@@ -233,10 +233,12 @@ longer announces that the rules are being scored.
 
 Aliases, allowed dependency relationships, layer scopes, nx `scope:*` tags,
 public task bodies and their hashes, task classifications, task eligibility,
-runtime behaviour and application APIs are all unchanged. All eight public task
-hashes in
+runtime behaviour and application APIs are all unchanged. Every public task hash
+in
 [`../../experiments/v2/tasks/public/TASK_INDEX.csv`](../../experiments/v2/tasks/public/TASK_INDEX.csv)
-are unaffected, because a task body is not a substrate file.
+is unaffected, because a task body is not a substrate file — the eight that existed
+at this remediation, and `PT07`, which was authored later against this same
+substrate and likewise cannot be moved by it (the index now holds **nine**).
 
 ## 7. Why the commit is recorded one commit later
 

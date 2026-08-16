@@ -5,7 +5,7 @@ docs/v2/OPEN_DECISIONS.csv, every entry must have an owner and a valid blocking
 flag, only the explicitly enumerated decisions in :data:`RESOLVED_IDS` may be
 resolved (every other row must still be ``open``, and the Stage 0 blockers in
 :data:`MUST_STAY_OPEN` are asserted open by name), and the counts must be exactly
-40 blocking + 6 non-blocking (TD-B16..TD-B21 were added by the pre-execution design-review
+41 blocking + 6 non-blocking (TD-B16..TD-B21 were added by the pre-execution design-review
 reconciliation; TD-B22 by the independent public review of the pilot task
 package; TD-B23..TD-B33 by the suite-classification decision that narrowed the
 confirmatory construct to dependency-direction conformance; TD-B34..TD-B37 by the
@@ -16,7 +16,9 @@ model-visible package metadata still announcing the experiment itself;
 TD-B39..TD-B40 by the pre-authoring functional-evaluator boundary package that
 defined the functional acceptance observation boundary and recorded that the
 reassessment's preservation-only opportunities are still physically present in the
-stale private manifests). Pure file inspection; no model is invoked.
+stale private manifests; TD-B41 by the remaining-leaf feasibility package that
+re-scoped TD-B34 to replication depth and had to settle how a fixed three-cluster
+decision space is analysed). Pure file inspection; no model is invoked.
 """
 import csv
 import re
@@ -47,6 +49,7 @@ MUST_STAY_OPEN = {
     "TD-B14",  # private opportunity-set adequacy
     "TD-B39",  # hidden acceptance packages migrated onto the observation boundary
     "TD-B40",  # stale preservation-only opportunities removed from the private manifests
+    "TD-B41",  # residual small-cluster (G = 3) analysis specification
 }
 
 
@@ -115,13 +118,13 @@ def test_resolved_decisions_record_what_was_done_and_how_it_is_proven():
     )
 
 
-def test_counts_are_40_blocking_6_nonblocking():
+def test_counts_are_41_blocking_6_nonblocking():
     rows = _registry_rows()
     blocking = [r["decision_id"] for r in rows if r["blocking"] == "yes"]
     nonblocking = [r["decision_id"] for r in rows if r["blocking"] == "no"]
-    assert sorted(blocking) == [f"TD-B{i:02d}" for i in range(1, 41)], blocking
+    assert sorted(blocking) == [f"TD-B{i:02d}" for i in range(1, 42)], blocking
     assert sorted(nonblocking) == [f"TD-N{i:02d}" for i in range(1, 7)], nonblocking
-    assert len(blocking) == 40 and len(nonblocking) == 6
+    assert len(blocking) == 41 and len(nonblocking) == 6
 
 
 def test_markdown_registry_counts_match_the_csv():

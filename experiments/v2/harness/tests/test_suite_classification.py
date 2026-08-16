@@ -530,9 +530,16 @@ def test_report_distinguishes_the_four_coverage_categories():
     ), "the report must state that only one category is directly scored by E1"
 
 
-def test_report_states_four_of_six_primary_candidates_contribute_to_e1():
+def test_report_states_which_primary_candidates_contribute_to_e1():
+    """The scored subset must be stated for the CURRENT suite, not a stale one.
+
+    It read "four of the six primary candidates" while the suite held six; after
+    ``PT07`` was authored under DECISION B the current statement is five of seven,
+    and the assertion moves with it rather than pinning a superseded count.
+    """
     report = _flat(REPORT_PATH)
-    assert "four of the six primary candidates currently remain e1-scored candidates" in report
+    assert "five of the seven primary candidates currently remain e1-scored candidates" in report
+    assert "pt01-pt04 and pt07 are scored" in report
 
 
 def test_report_records_repeated_boundary_decisions_and_unfrozen_counts():

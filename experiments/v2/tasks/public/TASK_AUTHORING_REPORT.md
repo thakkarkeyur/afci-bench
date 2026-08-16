@@ -6,7 +6,7 @@ The confirmatory construct is **narrow**: endpoint E1 is the **dependency-direct
 
 ## What was authored
 
-- Six primary pilot task candidates (PT01-PT06) and two pre-declared reserve candidates (PR01-PR02).
+- Six primary pilot task candidates (PT01-PT06) and two pre-declared reserve candidates (PR01-PR02). *(`PT07` was authored later, under `DECISION B` - see the addendum below. The current suite is **nine**: seven primary `PT01`-`PT07` and two reserve `PR01`/`PR02`.)*
 - Each public task body states functional requirements and observable behaviour only; the single visible validation command is `npm run ci:agent`.
 - Every hidden evaluator package for these candidates is stored **only** in a separate local private evaluator repository and is absent from this public repository.
 
@@ -27,11 +27,11 @@ The six primary candidates were selected, before any model outcome existed, to c
 
 Correcting the record, since the earlier single-notion wording could be read as claiming that every category is directly measured by the primary endpoint:
 
-- **Four of the six primary candidates currently remain E1-scored candidates.** `PT01`-`PT04` are `scored`; `PT05` and `PT06` are `functional-only` - valid primary functional candidates that are structurally excluded from E1 while still contributing to hidden functional acceptance, cost, reset-related functional outcomes and pre-registered exploratory analyses. `PR01` and `PR02` are `inactive-reserve` and contribute to no endpoint. **No reserve was activated** to restore the scored count.
+- **Five of the seven primary candidates currently remain E1-scored candidates.** `PT01`-`PT04` and `PT07` are `scored`; `PT05` and `PT06` are `functional-only` - valid primary functional candidates that are structurally excluded from E1 while still contributing to hidden functional acceptance, cost, reset-related functional outcomes and pre-registered exploratory analyses. `PR01` and `PR02` are `inactive-reserve` and contribute to no endpoint. **No reserve was activated** to restore the scored count. A `scored` eligibility records **intent**: no candidate enters E1 until its private evaluator package is authored, validated, approved and shown to carry a valid non-zero frozen opportunity set (`TD-B05`/`TD-B14`, gate `G1`).
 - **All current scored E1 opportunities use dependency-direction rules** (the `AR-DEP-001..006` family). No contract-boundary, observability, coding-discipline or change-footprint rule is scored into E1: each is an unimplemented oracle stub that reports `UNIMPLEMENTED` and can never report PASS.
 - **The opportunity instances reduce to a small number of repeated boundary decisions.** They are not independent observations; the same few layer-boundary judgements recur across tasks, so the power simulation must model that pseudo-replication (`TD-B30`).
 - **The surviving active task set does not sample enough distinct dependency-direction decisions for confirmatory inference.** Repeated task exposures to the same source/target boundary are one architectural instrument observed several times, not several independent architecture constructs. Further public task authoring is required before Stage 0 (**DECISION B**, `TD-B34`); see *Opportunity reassessment* below.
-- **Task count and final opportunity count remain unfrozen** (`TD-B10`/`TD-B14`/`TD-B20`, and `TD-B05`/`TD-B14` for the per-task opportunity sets). The eight candidates are candidates.
+- **Task count and final opportunity count remain unfrozen** (`TD-B10`/`TD-B14`/`TD-B20`, and `TD-B05`/`TD-B14` for the per-task opportunity sets). The nine candidates are candidates. **Task count must never substitute for decision diversity or independence**, and the suite must not be optimised toward any particular total (`DEPENDENCY_TASK_FEASIBILITY.md`).
 - **No statement here implies that categories 1-3 are directly measured by E1.** Subject-matter breadth, hidden functional coverage and manual-rubric coverage are separate evidence types with separate endpoints or no endpoint at all. **E1 must not be described as broad or general architectural conformance** (gate **G8**).
 
 Per-candidate E1 eligibility is recorded publicly in `TASK_INDEX.csv` and `docs/v2/PILOT_PUBLIC_TASK_MATRIX.csv` (`e1_analysis_eligibility`). Which specific opportunities exist per task, and their contents, remain private: nothing in this section discloses a private opportunity answer or any exact private evaluator content.
@@ -380,29 +380,49 @@ untouched, there is no opportunity.
 ### Boundary space available under the already-implemented leaf rules
 
 Public information only - derived from the public rule catalog and the public dependency
-matrix, not from any private manifest. Priority is given to decisions that broaden currently
-absent scored exposure, **subject to actual substrate feasibility**.
+matrix, not from any private manifest.
 
-| Leaf rule | Source scope | Forbidden targets it can back |
-| --- | --- | --- |
-| `AR-DEP-002` | contracts | core, features, infra, observability, api |
-| `AR-DEP-003` | core | features, infra, observability, api |
-| `AR-DEP-004` | infra | core, features, api |
-| `AR-DEP-005` | api | core |
-| `AR-DEP-006` | features | infra, api |
+**The 15 theoretical `(source scope, forbidden target)` pairs below are NOT 15 feasible
+benchmark decisions.** Mechanical detectability is a property of the checker;
+task-creatability is a property of the substrate plus the observation boundary. The
+**feasibility status** column is normative and is derived from
+[`../../../../docs/v2/DEPENDENCY_TASK_FEASIBILITY.md`](../../../../docs/v2/DEPENDENCY_TASK_FEASIBILITY.md)
+section 2.
 
-Candidate decisions to **investigate, not automatically adopt**:
+| Leaf rule | Source scope | Forbidden targets it can back | Feasibility status |
+| --- | --- | --- | --- |
+| `AR-DEP-002` | contracts | core, features, infra, observability, api | **NOT TASK-CREATABLE ON CURRENT SUBSTRATE** - mechanically detectable only |
+| `AR-DEP-003` | core | features, infra, observability, api | **NOT TASK-CREATABLE ON CURRENT SUBSTRATE** - mechanically detectable only |
+| `AR-DEP-004` | infra | core, features, api | **NOT TASK-CREATABLE ON CURRENT SUBSTRATE** - mechanically detectable only |
+| `AR-DEP-005` | api | core | **TASK-CREATABLE / REPRESENTED** (`api -> core`) |
+| `AR-DEP-006` | features | infra, api | **TASK-CREATABLE / REPRESENTED** (`features -> infra`, `features -> api`) |
+| *(none)* | observability | - | **UMBRELLA-ONLY / NO SCORED LEAF** |
 
-- a genuine **api -> core-only capability** decision backed by `AR-DEP-005`;
-- a genuine **infra -> core** decision backed by `AR-DEP-004`;
-- a genuine **core -> forbidden layer** decision backed by `AR-DEP-003`;
-- a **contracts-source** decision backed by `AR-DEP-002`, where a task can legitimately
-  create such a decision.
+Source scopes, stated plainly: **`contracts` not task-creatable**; **`core` not
+task-creatable**; **`infra` not task-creatable**; **`api -> core` task-creatable and
+represented**; **`features -> infra` task-creatable and represented**; **`features -> api`
+task-creatable and represented**; **`observability` source umbrella-only, with no scored
+leaf**.
+
+The earlier list of decisions to *investigate, not automatically adopt* has been
+**investigated and closed**:
+
+- a genuine **api -> core-only capability** decision backed by `AR-DEP-005` - **adopted**,
+  and now represented;
+- a genuine **infra -> core** decision backed by `AR-DEP-004` - **closed: not
+  task-creatable** on this substrate;
+- a genuine **core -> forbidden layer** decision backed by `AR-DEP-003` - **closed: not
+  task-creatable** on this substrate;
+- a **contracts-source** decision backed by `AR-DEP-002` - **closed: not task-creatable**
+  on this substrate; any such opportunity would be preservation-only.
 
 **Do not create artificial tasks merely to hit rule ids.** A candidate that names a rule
 relationship but does not make the functional work create the decision fails requirement 1
-and must be rejected. The `observability` scope has **no implemented leaf clause** at all,
-so it cannot back a scored opportunity regardless of how a task is written.
+and must be rejected - and that applies with full force to the three leaves classified **not
+task-creatable**, which are **mechanically detectable only**. The `observability` scope has
+**no implemented leaf clause** at all as a **source**: `leafRuleFor('observability', target)`
+returns `null` for every target, so such an edge is **umbrella-only under `AR-DEP-001`** and
+cannot back a scored opportunity regardless of how a task is written.
 
 ## Production-source scoring (E1 measures production dependencies only)
 
@@ -504,7 +524,7 @@ The review also found that the coding model's worktree was the whole repository,
 - **No validation seam was added to the source substrate.** No failure-injection hook, test-only route, special header, environment flag or other implementation-specific seam was introduced to make any requirement observable; `apps/` and `libs/` are byte-identical to their state at public commit `0e77d49`. *(True of this package. A later remediation changed `apps/` and `libs/` - comments only, no seam and no executable change - so the current substrate identity is the one recorded in [`../../../../docs/v2/SOURCE_SUBSTRATE_IDENTITY.md`](../../../../docs/v2/SOURCE_SUBSTRATE_IDENTITY.md), not `0e77d49`.)*
 - **No architecture opportunity was added publicly.** The rejection-contract clarification adds no architecture wording, applicable rule, expected or prohibited area, or task-specific opportunity to PT06 or to any other public artifact; PT06 remains architecture-neutral, and the adequacy of its fixed opportunity set stays a private, deferred question (TD-B05/TD-B14, G1).
 - No hidden acceptance test or hidden evaluator answer was added publicly.
-- **No final task count**, repetition count, run count, model, or numerical budget was selected. The eight candidates are candidates, not a core-study task set.
+- **No final task count**, repetition count, run count, model, or numerical budget was selected. The candidates - eight at that package, **nine** today - are candidates, not a core-study task set.
 - No hidden evaluator package was frozen; the oracle continues to refuse to score a review-status package (`MANIFEST_NOT_FROZEN`).
 - Task-specific oracle validity, hidden-acceptance validation, reset checkpoint review, and benchmark discrimination remain open (G1/G2 not passed).
 - **No task body or task content hash changed for the suite classification, for `PT05`'s reclassification, or for `DECISION B`.** All eight bodies are byte-identical to their state at public commit `fef5987`, and all eight recorded SHA-256 values are unchanged. Classification is metadata, never a task edit.
@@ -637,6 +657,16 @@ source scope and the **`AR-DEP-005`** (`api` to `core`) leaf rule are therefore
 **currently unrepresented** in the active set. This is the same construct-validity
 deficiency `TD-B34` already records; it is **not** an oracle failure, and the
 repaired scope-based oracle remains the approved attribution mechanism.
+
+> **Superseded on the coverage counts only.** After `PT07` was authored and the
+> active set was independently re-adjudicated, the set spans **three** clusters
+> over **two** source scopes and **two** leaf rules, so the `api` source scope and
+> `AR-DEP-005` are **no longer unrepresented**; the paragraph above remains an
+> accurate record of the state it describes. Current counts, and the demonstrated
+> ceiling that makes three the maximum, are in the final addendum and in
+> [`../../../../docs/v2/DEPENDENCY_TASK_FEASIBILITY.md`](../../../../docs/v2/DEPENDENCY_TASK_FEASIBILITY.md).
+> **`TD-B40` is unaffected**: the preservation-only rows are still physically
+> present in the stale private manifests and still must be removed.
 
 ### 3. Boundary audit of the eight existing candidates
 
@@ -862,3 +892,90 @@ externally ungradeable.
   registry still holds 40 blocking and 6 non-blocking decisions.
 - It did **not** freeze a task count, an opportunity count, an endpoint, a
   manifest or the protocol, and it did **not** run a power simulation.
+
+## Addendum: remaining-leaf feasibility and the `TD-B34` re-scope (pre-authoring, pre-run)
+
+A **governance** package. It authored **no** task, created **no** task file,
+changed **no** task body or SHA-256, changed **no** task eligibility, touched
+**no** file under `apps/` or `libs/`, activated **no** reserve, accessed or
+modified **no** private evaluator material, ran **no** benchmark, model or power
+simulation, produced **no** result artifact and froze **nothing**. The canonical
+source substrate remains `630d3180af0d02a86330dfb599f559e78df65e94` with content
+hash `0198d76c189f38589e872cab4305527c08e86ef736e1550e428e05f9178060f3`, and the
+protocol remains **PRE-FREEZE**.
+
+### 1. The remaining implemented leaves were assessed - and closed
+
+An independent review assessed every remaining implemented dependency leaf against
+the canonical substrate and the functional acceptance observation boundary. Its
+result is recorded normatively in
+[`../../../../docs/v2/DEPENDENCY_TASK_FEASIBILITY.md`](../../../../docs/v2/DEPENDENCY_TASK_FEASIBILITY.md):
+
+| Leaf | Source scope | Classification |
+| --- | --- | --- |
+| `AR-DEP-002` | contracts | **theoretically detectable but NOT task-creatable on the current substrate** - type/interface-only and erased at runtime; black-box functional acceptance cannot force production work there; structural typing permits local declarations; any scored opportunity would be preservation-only |
+| `AR-DEP-003` | core | **theoretically detectable but NOT task-creatable on the current substrate** - architecture-neutral functionality cannot force placement in `core`; `core` is pure and self-sufficient over plain data and contracts; callers may legally implement or wrap the work in `features`/`api`; persistence and logging are already served through ports/injection; hidden acceptance cannot see where the computation lives |
+| `AR-DEP-004` | infra | **theoretically detectable but NOT task-creatable on the current substrate** - persistence-shaped requirements can be satisfied at `api` level under the current observation topology; `infra` entities mirror the `core` shapes; `infra` may legally use contracts/observability; no functional contract forces a forbidden edge without implementation-specific wording |
+| `AR-DEP-005` | api | **TASK-CREATABLE** - one cluster, `api -> core` |
+| `AR-DEP-006` | features | **TASK-CREATABLE** - two clusters, `features -> infra` and `features -> api` |
+
+**Mechanically detectable is not experimentally usable.** The oracle still detects
+and attributes every one of these relationships if it appears in a patch; what the
+classification records is that a public functional task cannot **create** the
+decision on this substrate.
+
+### 2. The demonstrated ceiling, and where the suite stands against it
+
+Suite-level statement only; **no task is mapped to a cluster, a leaf rule, a source
+scope or a forbidden target**, and no private opportunity identifier appears here.
+
+| Quantity | Value |
+| --- | --- |
+| Task-creatable decision clusters (ceiling) | **3** |
+| Leaf rules (ceiling) | **2** |
+| Source scopes (ceiling) | **2** |
+| Forbidden targets (ceiling) | **3** |
+| Clusters currently occupied | **3 of 3** |
+| Adjudicated active E1 opportunities | **5** |
+
+Observation depth per cluster: `DC-FEATURES-INFRA-AR-DEP-006` **3**;
+`DC-FEATURES-API-AR-DEP-006` **1**; `DC-API-CORE-AR-DEP-005` **1**.
+
+**The remaining deficiency is replication depth and balance, not breadth.** Two of
+the three achievable clusters are singletons, and breadth beyond this ceiling is
+**structurally impossible on this substrate** rather than merely unfinished.
+
+### 3. `TD-B34` is re-scoped and stays open
+
+`TD-B34` now governs adequate coverage of the **complete task-creatable
+dependency-decision space**: retain all three clusters; add independent functional
+instruments to the singletons where scientifically feasible (**priority A**
+`DC-FEATURES-API-AR-DEP-006`, then **priority B** `DC-API-CORE-AR-DEP-005`;
+`DC-FEATURES-INFRA-AR-DEP-006` is **not** the immediate priority); create **no**
+artificial task merely to hit a mechanically implemented leaf; record the ceiling
+as a **construct-validity limitation**; and defer broader leaf/source-scope
+generalisation to a **declared substrate redesign**.
+
+**No exact new task body is specified here and it is not asserted that two suitable
+new tasks exist.** The functional distinctness and the task-created validity of any
+replication candidate still require a separate pre-authoring review under the
+eleven authoring requirements and the observation boundary. `TD-B34` is **open and
+blocking**; gates **G1**, **G2** and **G6** remain **not passed**; and it must not
+be closed by authoring toward the superseded breadth objective, by activating a
+reserve, or by raising the task count.
+
+### 4. What else this package recorded
+
+- **Substrate redesign is a DECLARED ALTERNATIVE - NOT SELECTED**, with its full
+  re-validation cost recorded, leaving the decision with the Study Lead.
+- **The `observability` source scope is documented as umbrella-only** - it has no
+  leaf rule, so such an edge is covered only by `AR-DEP-001` and can never back a
+  scored opportunity. **No oracle behaviour changed.**
+- **E1's generalisation is tightened**: observed effects generalise to the
+  represented dependency-decision families, not automatically to all architecture
+  rules or all layer pairs.
+- **The G = 3 analysis method is pre-registered before any power work**
+  (`decision_cluster_id` as a **fixed** factor, no cluster variance component from
+  three clusters, condition effects identified within clusters, `TD-B41` for the
+  residual specification), and **`TD-B37` stays blocked** behind four explicit
+  preconditions.

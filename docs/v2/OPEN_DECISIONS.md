@@ -24,7 +24,7 @@ that none is yet marked resolved.
 
 ## Counts
 
-- **Blocking decisions: 40** (`TD-B01`–`TD-B40`) — must be resolved before the
+- **Blocking decisions: 41** (`TD-B01`–`TD-B41`) — must be resolved before the
   corresponding data collection; all are cited inline across the protocol files.
   `TD-B16`–`TD-B21` were added by the pre-execution design-review reconciliation;
   `TD-B22` was added by the independent public review of the pilot task package;
@@ -38,11 +38,14 @@ that none is yet marked resolved.
   the experiment itself; **`TD-B39`–`TD-B40` were added by the pre-authoring
   governance package that defined the functional acceptance observation boundary**
   and recorded that the reassessment's preservation-only opportunities are still
-  physically present in the stale private manifests.
+  physically present in the stale private manifests; **`TD-B41` was added by the
+  remaining-leaf feasibility governance package** that re-scoped `TD-B34` to
+  replication depth and had to settle how a fixed, three-cluster decision space is
+  analysed.
 - **Non-blocking decisions: 6** (`TD-N01`–`TD-N06`) — refinements that do not
   block the confirmatory design.
-- **Total decisions: 46**, of which **3 are resolved** (`TD-B23`, `TD-B24`,
-  `TD-B38`) and **43 remain open**. The three resolved entries are the
+- **Total decisions: 47**, of which **3 are resolved** (`TD-B23`, `TD-B24`,
+  `TD-B38`) and **44 remain open**. The three resolved entries are the
   model-visible architecture-comment remediation, the leakage audit that proves
   it, and the experiment-awareness remediation; all were completed **before** any
   task authoring and **before** any benchmark or model execution, and none
@@ -103,7 +106,7 @@ may be closed by restating the classification.
 | **TD-B27** | **The attribution rule is now decided and implemented publicly; the private opportunity sets and the labelled-corpus validation are not.** `dependencyDirection.ts` no longer matches an exact importer path: an opportunity is scored over its **frozen architectural scope** (`locator.scope` resolved through the frozen `dependency_policy.layers` path globs), `locator.importer_path` is **provenance only**, `NOT_APPLICABLE` requires an **absent scope**, and one frozen decision contributes **at most one** violation — regression-locked by the **M0–M7** mutation corpus (`experiments/v2/oracle/tests/scopeAttribution.test.ts`) covering violations in **new** files, **moved** files, and after **anchor deletion**. **Still blocking:** every private per-task opportunity set must be re-authored and re-justified under scope attribution (scope + forbidden targets + implemented leaf rule; no `AR-DEP-001` umbrella opportunities; no duplicated decisions), and the attribution must still be validated on the labelled corpus against the pre-registered precision/recall bar. | Guard Engineer | pilot (with `TD-B12`) | G6 |
 | **TD-B28** | **`AR-DEP-001` must be considered for all private manifests** so relevant dependency-family violations are not silently omitted. `AR-DEP-001` is the umbrella rule that puts the whole matrix in force; a manifest listing only some per-layer clauses scores only those clauses and drops the rest. | Oracle Designer | private manifest re-authoring (with `TD-B05`/`TD-B14`) | G1/G6 |
 | **TD-B29** | **The private opportunity identified as `PT04-OPP-01` must be independently re-justified or removed privately.** The identifier is recorded here **as an identifier only**; its content, justification and disposition stay in the private evaluator repository. | Oracle Designer | private manifest re-authoring (with `TD-B05`) | G1 |
-| **TD-B30** | **Repeated opportunities collapse onto a small number of shared boundary decisions**, so opportunity instances are **pseudo-replicates**, not independent observations. The mandatory interaction power simulation (`TD-B20`) must **model this pseudo-replication**, and the analysis must carry a matching sensitivity re-fit. | Statistician | pilot (with `TD-B20`) | G2/G3 |
+| **TD-B30** | **Repeated opportunities collapse onto a small number of shared boundary decisions**, so opportunity instances are **pseudo-replicates**, not independent observations. The mandatory interaction power simulation (`TD-B20`) must **model this pseudo-replication**, and the analysis must carry a matching sensitivity re-fit. **The pseudo-replication is governed explicitly by `decision_cluster_id`** (`source_scope + forbidden_target + leaf_rule`): every scored opportunity carries it into the analysis artifact, several already-authored scored tasks are repeated observations of **one** cluster and are never entered as independent architecture decisions, and the adjudicated active set holds **5** opportunities across only **3** clusters. Because that count is **fixed and small (G = 3)**, the clustering is represented by `decision_cluster_id` as a **fixed factor** rather than by a random-intercept variance estimated from three groups ([`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §4b; `TD-B41`), and the matching sensitivity is the small-cluster robust/randomisation programme recorded there. | Statistician | pilot (with `TD-B20`) | G2/G3 |
 | **TD-B31** | **A suite-wide public-interface reachability validation is required, not a `PT06`-only guard.** Every completion criterion of every candidate must be provably reachable through the public interface of the unchanged substrate, with no failure-injection hook, test-only route, special header or environment flag. `test_pt06_feasibility.py` covers one task. | Task Designer | pilot task design (before freeze) | G1/G2 |
 | **TD-B32** | **Hidden evaluator scaffolds remain `draft_unvalidated`** and require independent review plus reference and mutation validation before any package may be approved or frozen. | Oracle Designer + Guard Engineer | private review and validation (with `TD-B05`/`TD-B12`) | G1/G6 |
 | **TD-B33** | **Implementing `AR-CONTRACT-001` or `AR-CODE-001` remains future work intended to BROADEN E1** to further architecture dimensions. It must **never** be used to readmit a structurally excluded task **post hoc**, and any broadening requires its own pre-registration before data collection. | Oracle Designer + Study Lead | future protocol version (not this package) | G1/G8 |
@@ -112,10 +115,10 @@ may be closed by restating the classification.
 
 | ID | Decision | Owner | Resolved during | Gate |
 |----|----------|-------|-----------------|------|
-| **TD-B34** | **DECISION B — author additional public tasks exercising genuinely different existing dependency-direction leaf rules and source/target boundaries before Stage 0.** The motivation is **construct validity**: the current active set (`PT01`–`PT04`) does not sample enough **distinct** dependency-direction decisions to support the intended confirmatory endpoint; repeated tasks over one boundary are one architectural instrument observed repeatedly, not independent architecture constructs. This decision **predates any benchmark or model outcome** and **no experimental result exists**. **No reserve is activated merely to restore task count.** The deficiency is **task-set coverage, not an oracle failure**; the repaired scope-based oracle **remains** the approved attribution mechanism; and **no new rule family is required**, because unused implemented dependency leaf relationships already exist (`AR-DEP-002`…`AR-DEP-006`). Gates **G1/G2/G6** stay **blocking** and the suite is **not** ready. **Progress, not resolution:** one new primary task — **`PT07`** *Price a proposed order before it is placed* (`pricing-endpoint`, `primary`, `scored`, `candidate`, SHA-256 `557caed09420354e…`) — has now been authored under this decision, **before** any benchmark or model execution, from a candidate whose design and public-interface feasibility were **independently reviewed beforehand**; in aggregate terms it adds a **previously unrepresented implemented leaf/source-scope candidate** while its leaf rule, source scope and forbidden target stay **private**; it is decidable through **HTTP alone** with no declared seam, no internal-state inspection, no seeded state and **no non-persistence assertion** (that criterion was independently **rejected as externally ungradeable**); and **no reserve was activated**. **`TD-B34` remains open and blocking:** one task is neither the breadth nor the repetition the confirmatory construct needs, the active set plus `PT07` still does not sample enough distinct dependency-direction decisions, **further candidate authoring is still required**, **no power simulation may run yet** (`TD-B37`), and `PT07` itself cannot enter E1 until a private evaluator package is authored, validated, approved and shown to carry a valid non-zero frozen opportunity set (`TD-B05`/`TD-B14`, `G1`). | Task Designer + Study Lead | further public task-authoring work packages (before Stage 0) | G1/G2/G6 |
+| **TD-B34** | **DECISION B (re-scoped) — govern adequate coverage of the COMPLETE task-creatable dependency-decision space of the canonical substrate before Stage 0, through replication depth over the three demonstrated decision clusters.** **The original breadth objective** — author tasks exercising genuinely different leaf rules and source/target boundaries — **is superseded and structurally unattainable**: an independent remaining-leaf feasibility review classified `AR-DEP-002` (contracts), `AR-DEP-003` (core) and `AR-DEP-004` (infra) **theoretically detectable but not task-creatable** on this substrate, leaving a hard ceiling of **3 clusters / 2 leaf rules / 2 source scopes / 3 forbidden targets**, all three clusters already represented ([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)). The motivation is unchanged — **construct validity**: the adjudicated active set carries **5** E1 opportunities across **3** clusters, **two of them singletons**, and repeated tasks over one boundary are one architectural instrument observed repeatedly, not independent architecture constructs. **Re-scoped objective:** (1) retain all three clusters; (2) add independent functional instruments to the singletons where scientifically feasible — priority **A** `DC-FEATURES-API-AR-DEP-006` (n=1), then **B** `DC-API-CORE-AR-DEP-005` (n=1); `DC-FEATURES-INFRA-AR-DEP-006` (n=3) is **not** the immediate priority; (3) **no artificial tasks created only to hit mechanically implemented leaves**; (4) record the breadth ceiling as a **construct-validity limitation**; (5) defer broader generalisation to a **declared substrate redesign**, not to wishful authoring. **No exact new task body is specified and it is not asserted that two suitable tasks exist** — functional distinctness and task-created validity need a separate pre-authoring review. This decision **predates any benchmark or model outcome** and **no experimental result exists**. **No reserve is activated merely to restore task count.** The deficiency is **task-set coverage, not an oracle failure**; the repaired scope-based oracle **remains** the approved attribution mechanism; and **no new rule family is required**, because the binding constraint is substrate feasibility, not checker coverage. Gates **G1/G2/G6** stay **blocking** and the suite is **not** ready. **Progress, not resolution:** one new primary task — **`PT07`** *Price a proposed order before it is placed* (`pricing-endpoint`, `primary`, `scored`, `candidate`, SHA-256 `557caed09420354e…`) — was authored under this decision **before** any benchmark or model execution, from a candidate whose design and public-interface feasibility were **independently reviewed beforehand**; it is decidable through **HTTP alone** with no declared seam, no internal-state inspection, no seeded state and **no non-persistence assertion** (that criterion was independently **rejected as externally ungradeable**); and **no reserve was activated**. **`TD-B34` remains open and blocking:** the three achievable clusters are occupied but two carry a single observation each, the replication-candidate review has not happened, **no power simulation may run yet** (`TD-B37`), and `PT07` itself cannot enter E1 until a private evaluator package is authored, validated, approved and shown to carry a valid non-zero frozen opportunity set (`TD-B05`/`TD-B14`, `G1`). It must **not** be closed by authoring toward the superseded breadth objective, by activating a reserve, or by raising the task count. | Task Designer + Study Lead | further public task-authoring work packages (before Stage 0) | G1/G2/G6 |
 | **TD-B35** | **`PT05` is reclassified `scored` → `functional-only`** because its required functional work creates no currently scored dependency-direction opportunity; its **private** per-task manifest must be migrated to `e1_analysis_eligibility=functional-only` with **no** opportunity denominator, or the engine fails closed. A **construct/feasibility** reclassification made **before any run** — never zero violations, failed, missing, invalid or a refusal. The private evaluator repository was **not accessed**. | Oracle Designer | private manifest re-authoring (with `TD-B05`/`TD-B14`) | G1 |
 | **TD-B36** | **The labelled corpus and every private frozen opportunity set must be re-checked under the production-source policy** (§1b): no opportunity may depend on a test-only or config-only dependency, and no seeded violation may sit in an excluded file. The policy itself needs independent review before freeze. Regression-locked publicly by **M8-A**–**M8-F**; **not** discharged. | Guard Engineer | pilot (with `TD-B12`/`TD-B27`) | G6 |
-| **TD-B37** | **The current four-task architecture set is not confirmatory-ready and no final power value may be frozen from it.** Repeated exposures to one boundary are **clustered**; **task count ≠ independent architecture-decision count**; the final interaction power simulation (`TD-B20`) runs **only after** additional distinct decisions are authored and approved (`TD-B34`); and a **decision/boundary cluster identifier** must be carried in the eventual analysis artifact, with a matching sensitivity re-fit (`TD-B30`). **No power simulation was run here.** | Statistician | after `TD-B34` authoring is approved (with `TD-B20`/`TD-B30`) | G2/G3 |
+| **TD-B37** | **The current architecture task set is not confirmatory-ready and no final power value may be frozen from it.** Repeated exposures to one boundary are **clustered**; **task count ≠ independent architecture-decision count**; the final interaction power simulation (`TD-B20`) runs **only after** the `TD-B34` objective is met and approved; and a **decision/boundary cluster identifier** must be carried in the eventual analysis artifact, with a matching sensitivity re-fit (`TD-B30`). First recorded against the four-task set of the time (`PT01`–`PT04`); the set is now **five** scored candidates over **three** clusters, **two of them singletons**, which does not discharge it. **The simulation stays blocked until all four preconditions hold:** (a) the `TD-B34` re-scope to replication depth is complete and its authoring outcome independently approved; (b) the **replication design is known** — which clusters gain an independent instrument and which stay singletons; (c) the **small-cluster (G = 3) analysis method is pre-registered** ([`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §4b, subject to `TD-B41`); (d) the **final E1 denominator structure is known** — which candidates carry a valid non-zero frozen opportunity set (`TD-B05`/`TD-B14`, `G1`). **No power simulation was run here or by the re-scope package.** | Statistician | after the `TD-B34` objective is met and approved (with `TD-B20`/`TD-B30`/`TD-B41`) | G2/G3 |
 
 ### Added by the independent architecture-neutral-substrate review — `TD-B38`
 
@@ -148,12 +151,30 @@ private evaluator repository was not modified, and no benchmark or model ran.**
 | **TD-B39** | **The functional acceptance observation boundary is defined suite-wide, and the existing hidden acceptance packages must be migrated onto it before any may be validated or frozen.** *Externally observable functional acceptance through HTTP plus explicitly declared task-relevant application seams* ([`HIDDEN_EVALUATOR_BOUNDARY.md`](HIDDEN_EVALUATOR_BOUNDARY.md) §9–§14): HTTP request/response is the **default** surface; a declared seam is permitted **only** where the public task requires an externally emitted behaviour HTTP cannot faithfully carry, and **exactly one** is declared suite-wide (the `LogOutput` sink through `createApp({ logOutput })`, grounded in `PT04`); a seam must be declared **before** hidden-test implementation and a hidden test may never create one; hidden acceptance may not inspect implementation-specific persistence, module state, classes, files or architecture findings; **hidden state seeding through implementation modules is prohibited**; a conforming implementation with a different internal design must remain gradeable; **test isolation is never an acceptance oracle**; and the two scoring channels stay separated. `resetOrderRepository()` was independently assessed and **rejected** as the normative isolation mechanism — the symbol need not survive a conforming change, and even where it does its effect is implementation-dependent because `createApp` resolves persistence once at construction — so it is reclassified as **legacy baseline-test infrastructure**, left in the substrate untouched, and the normative method is a **freshly constructed application over a freshly evaluated module graph**. **Still blocking:** the private scaffolds name "repository reset" in their intended wiring and must be migrated, and every planned assertion re-checked against the permitted channels. | Oracle Designer | private hidden acceptance re-authoring (with `TD-B05`/`TD-B32`) | G1/G6 |
 | **TD-B40** | **The reassessment's preservation-only dependency opportunities are still physically present in the stale private manifests and must be removed.** Those manifests predate both the repaired scope-based oracle and the reassessment. The rows are **analytically inactive** for the revised design and must not be counted as active architecture coverage by any later work package, coverage claim, power calculation or novelty assessment; they are removed during the private re-authoring already tracked by `TD-B27`/`TD-B35`/`TD-B36`. Suite-level consequence, disclosing **no** private opportunity identifier: after removal every retained active dependency decision sits in **one source scope** under **one leaf rule**, spanning only **two** distinct clusters (`source_scope + forbidden_target + leaf_rule`), so the **`api`** source scope and the **`AR-DEP-005`** (`api → core`) leaf rule are currently **unrepresented**. This is the same construct-validity deficiency `TD-B34` records — **not** an oracle failure. Until the rows are removed and the removal independently re-approved, any assessment reading the private manifests as-is **overstates** active boundary coverage. | Oracle Designer | private manifest re-authoring (with `TD-B27`/`TD-B35`/`TD-B36`) | G1/G6 |
 
+### Added by the remaining-leaf feasibility governance package — `TD-B41`
+
+The independent remaining-leaf feasibility review established that the canonical
+substrate has a **hard task-creatable ceiling of three decision clusters**, and
+that all three are already represented. That turns the eventual E1 analysis into
+one with a **fixed, exhaustively enumerated, very small number of clusters
+(G = 3)** — a regime in which a random-intercept cluster variance is not a
+credible primary specification. The structural commitments that follow from it are
+pre-registered in [`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md)
+§4b **before** any data exists; what genuinely cannot be fixed without the runner
+data shape is filed here with its permitted options enumerated, rather than
+guessed.
+
+| ID | Decision | Owner | Resolved during | Gate |
+|----|----------|-------|-----------------|------|
+| **TD-B41** | **Residual specification of the small-cluster (G = 3) E1 analysis.** **Already pre-registered and not reopened** (§4b): `decision_cluster_id` is a **fixed** factor and **no cluster random-intercept variance is estimated from three clusters**; the three clusters are an **exhaustively enumerated fixed set**, not a sample from a population of clusters; `condition`, `reset` and their interaction remain the **inferential target** and are identified **within** clusters, because every scored task is run under every condition; opportunities and repeated runs stay **nested observations inside the three known clusters** and are never entered as independent architecture decisions; and inference is never reported as if G were large. **Still open, with the permitted options enumerated so the choice cannot drift:** (1) the repeated-measures structure for `task` and run at the realised counts — **(1a)** `task` as a fixed block nested within cluster, **(1b)** `task` as a random intercept **only if** identifiable at the realised count, or **(1c)** a cell-level dispersion / observation-level term — chosen by pre-registered criteria at pilot, **never** by which option yields the larger effect; (2) whether the cluster-robust sensitivity is **CR2 or CR3 with Satterthwaite-style degrees of freedom**, conditional on the implementation supporting it reliably at G = 3, with the honest fallback that at three clusters cluster-robust degrees of freedom are themselves unreliable, in which case the **within-block randomisation inference** and the **leave-one-cluster-out refits** carry the sensitivity instead; (3) whether the `cluster × condition` heterogeneity check is reportable at the realised cell sizes. **Nothing data-dependent may be run before this is resolved, and it must be resolved before the `TD-B37` power simulation.** No model was fitted, no data exist, no power value is frozen. | Statistician | before the `TD-B37` power simulation (with `TD-B06`/`TD-B20`/`TD-B30`) | G2/G3 |
+
 Added by the pre-execution design-review reconciliation: `TD-B16`–`TD-B21`; added
 by the independent public review of the pilot task package: `TD-B22`; added by the
 suite-classification decision: `TD-B23`–`TD-B33`; added by the pre-authoring
 opportunity reassessment: `TD-B34`–`TD-B37`; added by the
 architecture-neutral-substrate review: `TD-B38`; added by the pre-authoring
-functional-evaluator boundary package: `TD-B39`–`TD-B40`. Apart from the three
+functional-evaluator boundary package: `TD-B39`–`TD-B40`; added by the
+remaining-leaf feasibility governance package: `TD-B41`. Apart from the three
 substrate/leakage entries recorded as resolved above (`TD-B23`, `TD-B24`,
 `TD-B38`), each is **open** — the CI/leakage **mechanisms** are delivered and
 tested, but the runner-time enforcement, authored suite, frozen hashes,
@@ -174,7 +195,9 @@ enforcement (`TD-B16`) and authored per-task hidden material (`TD-B05`) remain
 **open**. Gates **G1** and **G6** are **not** passed.
 
 **Pilot task-authoring package: partial advances, none resolved.** The pilot
-task candidates (six primary `PT01`–`PT06`, two reserve `PR01`–`PR02`) have been
+task candidates of that package (six primary `PT01`–`PT06`, two reserve
+`PR01`–`PR02`; the suite now holds **seven** primary `PT01`–`PT07` after `PT07`
+was authored later under `TD-B34`) have been
 **authored** as public functional task bodies
 ([`experiments/v2/tasks/public/`](../../experiments/v2/tasks/public/)), and the
 public-task leakage validator reports **OK** for every one — a partial advance on
@@ -366,6 +389,46 @@ the private evaluator repository was not accessed or modified, and no benchmark 
 model execution occurred.** Four blockers were **opened** (`TD-B34`–`TD-B37`);
 **no blocking decision is closed**, gates **G1**–**G8** remain **not passed**, and
 the protocol remains **pre-freeze**.
+
+**Remaining-leaf feasibility: `TD-B34` re-scoped, one blocker opened, none
+closed.** An independent review of the *remaining* implemented dependency leaves —
+carried out against the canonical substrate and the functional acceptance
+observation boundary, **before any benchmark or model execution** — found that
+`AR-DEP-002` (`contracts`), `AR-DEP-003` (`core`) and `AR-DEP-004` (`infra`) are
+**theoretically detectable but not task-creatable** on this substrate. The
+demonstrated ceiling is therefore **3 decision clusters / 2 leaf rules / 2 source
+scopes / 3 forbidden targets**, and **all three achievable clusters are already
+represented**, so the breadth expansion `TD-B34` originally directed is
+**structurally impossible here**, not merely unfinished. Consequences, all
+recorded rather than acted on:
+
+- **`TD-B34` is re-scoped, not resolved** — from breadth expansion to **replication
+  depth** over the three demonstrated clusters, with the two singleton clusters as
+  the named priorities. It stays **open and blocking**, and **no task was authored
+  and no exact new task body was specified**; whether suitable replication
+  candidates exist is a separate pre-authoring review.
+- **The feasibility result is recorded normatively** in
+  [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md), which also
+  annotates the 15 theoretical `(source scope, forbidden target)` pairs with their
+  feasibility status, so **mechanically detectable is never read as task-creatable**,
+  and documents that the **`observability` source scope has no leaf rule** and is
+  **umbrella-only** under `AR-DEP-001`.
+- **Substrate redesign is recorded as a DECLARED ALTERNATIVE — NOT SELECTED**, with
+  its full re-validation cost, leaving the choice with the Study Lead.
+- **The breadth ceiling becomes a construct-validity limitation of the study**: E1
+  effects generalise directly to the **represented** dependency-decision families,
+  not automatically to all architecture rules or all layer pairs.
+- **`TD-B41` is opened** for the residual small-cluster (G = 3) analysis
+  specification; `TD-B30` now names `decision_cluster_id` explicitly; and `TD-B37`
+  now lists its four preconditions.
+
+**No task was authored, no task body or hash changed, no eligibility changed, no
+reserve was activated, `apps/` and `libs/` are byte-identical, the canonical
+substrate identity is unchanged, the private evaluator repository was not accessed,
+no benchmark or model ran, no power simulation was run and no power value was
+produced, and nothing was frozen.** One blocker was **opened** (`TD-B41`); **no
+blocking decision is closed**, gates **G1**–**G8** remain **not passed**, and the
+protocol remains **pre-freeze**.
 
 ---
 
