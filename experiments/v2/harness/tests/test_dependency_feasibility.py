@@ -126,11 +126,80 @@ def _text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def _flat(path: Path) -> str:
+def _norm(raw: str) -> str:
     """Lower-cased text with markdown emphasis, blockquote markers and wraps collapsed."""
-    raw = _text(path).replace("*", "").replace("`", "")
+    raw = raw.replace("*", "").replace("`", "")
     raw = re.sub(r"(?m)^\s*>\s?", "", raw)
-    return re.sub(r"\s+", " ", raw).lower()
+    return re.sub(r"\s+", " ", raw).strip().lower()
+
+
+def _flat(path: Path) -> str:
+    return _norm(_text(path))
+
+
+# --------------------------------------------------------------------------- #
+# Structural scoping helpers.
+#
+# Fixed-width character windows around the first occurrence of a rule id are not
+# load-bearing: an independent mutation review showed that flipping AR-DEP-002 or
+# AR-DEP-003 to task-creatable, or restoring the >= 3 leaf-rule and >= 3
+# source-scope targets as live, left every window assertion green because the
+# window swept up a neighbouring row's verdict. The helpers below bind each
+# assertion to *one* markdown section or *one* table row, so a claim about a rule
+# can only be satisfied by that rule's own text.
+# --------------------------------------------------------------------------- #
+
+_HEADING_RE = re.compile(r"(?m)^(#{1,6})[ \t]+(.+?)[ \t]*$")
+
+
+def _sections(path: Path) -> dict[str, str]:
+    """Map each markdown heading to its body, ending at the next same-or-higher heading."""
+    text = _text(path)
+    heads = list(_HEADING_RE.finditer(text))
+    out: dict[str, str] = {}
+    for i, head in enumerate(heads):
+        level = len(head.group(1))
+        end = len(text)
+        for nxt in heads[i + 1 :]:
+            if len(nxt.group(1)) <= level:
+                end = nxt.start()
+                break
+        out[_norm(head.group(2))] = text[head.end() : end]
+    return out
+
+
+def _section_starting_with(path: Path, prefix: str) -> str:
+    """The body of the single heading whose normalised text starts with ``prefix``."""
+    matches = {k: v for k, v in _sections(path).items() if k.startswith(prefix.lower())}
+    assert len(matches) == 1, (
+        f"{path.name} must carry exactly one section headed {prefix!r}, found "
+        f"{sorted(matches)}"
+    )
+    return next(iter(matches.values()))
+
+
+def _table_rows(body: str) -> list[list[str]]:
+    """Normalised cells of every markdown table row in ``body`` (separators dropped)."""
+    rows = []
+    for line in body.splitlines():
+        line = line.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if all(re.fullmatch(r":?-{3,}:?", c) for c in cells):
+            continue
+        rows.append([_norm(c) for c in cells])
+    return rows
+
+
+def _row(body: str, first_cell: str) -> list[str]:
+    """The single table row whose first cell equals ``first_cell`` (normalised)."""
+    want = _norm(first_cell)
+    hits = [cells for cells in _table_rows(body) if cells and cells[0] == want]
+    assert len(hits) == 1, (
+        f"expected exactly one table row keyed {first_cell!r}, found {len(hits)}"
+    )
+    return hits[0]
 
 
 def _rows(path: Path):
@@ -208,18 +277,35 @@ def test_detectability_is_never_equated_with_task_creatability():
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize("leaf,scope", sorted(NOT_TASK_CREATABLE_LEAVES.items()))
 def test_the_remaining_leaves_are_classified_not_task_creatable(leaf, scope):
-    flat = _flat(FEASIBILITY_PATH)
-    heading = f"{leaf.lower()} — source scope {scope}"
-    alt = f"{leaf.lower()} - source scope {scope}"
-    assert heading in flat or alt in flat, f"{leaf} must carry a classification section"
-    start = flat.index(leaf.lower())
-    window = flat[start : start + 1400]
-    assert "not task-creatable on current substrate" in window, (
-        f"{leaf} must be classified NOT TASK-CREATABLE ON CURRENT SUBSTRATE"
+    """Scoped to the leaf's own §2 section — a neighbour's verdict cannot satisfy it."""
+    section = _norm(_section_starting_with(FEASIBILITY_PATH, leaf))
+    assert f"source scope {scope}" in _norm(
+        [k for k in _sections(FEASIBILITY_PATH) if k.startswith(leaf.lower())][0]
+    ), f"{leaf}'s section heading must name source scope {scope}"
+    assert (
+        "classification: theoretically detectable but not task-creatable on current "
+        "substrate." in section
+    ), (
+        f"{leaf} must carry the verbatim classification THEORETICALLY DETECTABLE BUT "
+        f"NOT TASK-CREATABLE ON CURRENT SUBSTRATE in its own section"
     )
-    assert "theoretically detectable" in window, (
-        f"{leaf}'s classification must keep the detectable/creatable distinction"
+    assert "classification: task-creatable." not in section, (
+        f"{leaf} must not also be declared task-creatable"
     )
+
+
+@pytest.mark.parametrize("leaf", sorted(NOT_TASK_CREATABLE_LEAVES))
+def test_the_pair_space_row_agrees_that_the_leaf_is_not_task_creatable(leaf):
+    """The §4 inventory row for this exact leaf, not a nearby row."""
+    body = _section_starting_with(FEASIBILITY_PATH, "4. the theoretical pair space")
+    verdict = _row(body, leaf)[-1]
+    assert "not task-creatable on current substrate" in verdict, (
+        f"§4's {leaf} row must read NOT TASK-CREATABLE ON CURRENT SUBSTRATE, got {verdict!r}"
+    )
+    assert "mechanically detectable only" in verdict, (
+        f"§4's {leaf} row must keep the detectable/creatable distinction"
+    )
+    assert "task-creatable / represented" not in verdict
 
 
 def test_the_recorded_reasons_are_the_reviewed_ones():
@@ -245,12 +331,22 @@ def test_the_recorded_reasons_are_the_reviewed_ones():
 
 @pytest.mark.parametrize("leaf,scope", sorted(TASK_CREATABLE_LEAVES.items()))
 def test_the_two_working_leaves_remain_task_creatable(leaf, scope):
-    flat = _flat(FEASIBILITY_PATH)
-    start = flat.index(leaf.lower())
-    window = flat[start : start + 600]
-    assert "task-creatable" in window and "not task-creatable" not in window, (
-        f"{leaf} ({scope}) must remain classified TASK-CREATABLE"
+    """Scoped to the leaf's own §2 section and its own §4 row."""
+    section = _norm(_section_starting_with(FEASIBILITY_PATH, leaf))
+    assert "classification: task-creatable." in section, (
+        f"{leaf} ({scope}) must remain classified TASK-CREATABLE in its own section"
     )
+    assert "not task-creatable" not in section, f"{leaf} must not be downgraded"
+    assert "currently represented by" in section, (
+        f"{leaf} must record that it is represented in the active set"
+    )
+
+    body = _section_starting_with(FEASIBILITY_PATH, "4. the theoretical pair space")
+    verdict = _row(body, leaf)[-1]
+    assert "task-creatable / represented" in verdict, (
+        f"§4's {leaf} row must read TASK-CREATABLE / REPRESENTED, got {verdict!r}"
+    )
+    assert "not task-creatable" not in verdict
 
 
 # --------------------------------------------------------------------------- #
@@ -356,21 +452,61 @@ def test_the_ceiling_is_also_recorded_in_the_registry_and_the_policy():
 # --------------------------------------------------------------------------- #
 # 6. The old numeric targets are adjudicated, not deleted (PART E)
 # --------------------------------------------------------------------------- #
+#: Each superseded provisional target and the adjudication its own §6 row must
+#: carry. ``forbidden`` phrases must NOT appear in that same row — this is what
+#: stops "≥ 3 leaf rules" being quietly restored as a live target while a
+#: neighbouring row's "not achievable" keeps the assertion green.
+PROVISIONAL_TARGETS = {
+    "≥ 3 leaf rules": (["not achievable", "hard ceiling 2"], ["achieved —", "achieved -"]),
+    "≥ 3 source scopes": (["not achievable", "hard ceiling 2"], ["achieved —", "achieved -"]),
+    "≥ 3 forbidden targets": (["achieved", "currently 3"], ["not achievable"]),
+    "≥ 4 independent decision clusters": (
+        ["not achievable", "hard ceiling 3"],
+        ["achieved —", "achieved -"],
+    ),
+    "≥ 2 observations per cluster": (
+        ["replication-depth objective", "not currently achieved universally"],
+        ["not achievable"],
+    ),
+    "≥ 8 e1-scored tasks": (
+        ["not a scientifically meaningful standalone target"],
+        ["achieved", "not achievable"],
+    ),
+}
+
+
+@pytest.mark.parametrize("target", sorted(PROVISIONAL_TARGETS))
+def test_each_superseded_numeric_target_is_adjudicated_in_its_own_row(target):
+    """Row-scoped: the verdict must be in *this* target's row, not a neighbour's."""
+    body = _section_starting_with(
+        FEASIBILITY_PATH, "6. disposition of the earlier provisional coverage targets"
+    )
+    required, forbidden = PROVISIONAL_TARGETS[target]
+    verdict = _row(body, target)[-1]
+    for phrase in required:
+        assert phrase in verdict, (
+            f"{target!r} must be adjudicated {phrase!r} in its own row, got {verdict!r}"
+        )
+    for phrase in forbidden:
+        assert phrase not in verdict, (
+            f"{target!r}'s row must not read {phrase!r}: {verdict!r}"
+        )
+
+
 def test_the_superseded_numeric_targets_are_recorded_as_pre_freeze_provisional():
-    flat = _flat(FEASIBILITY_PATH)
-    assert "provisional design targets" in flat
-    assert "pre-freeze" in flat
-    for target, verdict in (
-        ("≥ 3 leaf rules", "not achievable"),
-        ("≥ 3 source scopes", "not achievable"),
-        ("≥ 3 forbidden targets", "achieved"),
-        ("≥ 4 independent decision clusters", "not achievable"),
-        ("≥ 2 observations per cluster", "potentially achievable"),
-        ("≥ 8 e1-scored tasks", "not a scientifically meaningful standalone target"),
-    ):
-        idx = flat.find(target)
-        assert idx != -1, f"the provisional target must stay on the record: {target!r}"
-        assert verdict in flat[idx : idx + 260], f"{target!r} must be adjudicated {verdict!r}"
+    body = _section_starting_with(
+        FEASIBILITY_PATH, "6. disposition of the earlier provisional coverage targets"
+    )
+    prose = _norm(body)
+    assert "provisional design targets" in prose
+    assert "pre-freeze" in prose
+    assert "never pinned in a public artifact" in prose, (
+        "the targets must stay recorded as provisional, never as an acceptance bar"
+    )
+    # every target still on the record, none silently dropped
+    keys = {cells[0] for cells in _table_rows(body)}
+    missing = {_norm(t) for t in PROVISIONAL_TARGETS} - keys
+    assert not missing, f"provisional targets dropped from the record: {sorted(missing)}"
 
 
 def test_task_count_is_never_offered_as_a_coverage_substitute():
@@ -489,6 +625,87 @@ def test_the_residual_specification_is_a_registered_blocking_decision():
     assert "never by which option gives the larger effect" in text
 
 
+#: §4c pre-registers what happens at each realised cluster count. Scoped to that
+#: section so a stray mention of "G = 2" elsewhere cannot satisfy the check.
+def _realised_g_section() -> str:
+    return _section_starting_with(SAP_PATH, "4c. the realised cluster count")
+
+
+def test_the_realised_cluster_count_is_defined_before_any_power_simulation():
+    flat = _norm(_realised_g_section())
+    assert (
+        "number of decision_cluster_id levels containing at least one final, frozen, "
+        "e1-eligible opportunity" in flat
+    ), "G must be defined as eligible-cluster count, not assumed"
+    assert "after the eligibility gates are resolved" in flat
+    assert "g is therefore not known" in flat
+    assert "no analysis, simulation or report may assume g = 3 beforehand" in flat
+
+
+def test_the_g_equals_three_branch_retains_the_existing_fixed_specification():
+    flat = _norm(_realised_g_section())
+    assert "current expectation" in flat
+    assert "existing §4b specification is retained unchanged" in flat
+    assert "fixed 3-level blocking factor" in flat
+
+
+def test_the_g_equals_two_contingency_is_pre_registered():
+    """The whole point of P1-4: G = 2 must be decided now, not after data."""
+    flat = _norm(_realised_g_section())
+    assert "pre-registered contingency" in flat
+    assert "fixed 2-level blocking factor" in flat
+    # the inferential contrasts stay identified within clusters
+    assert "identified within clusters" in flat
+    assert "conditions are crossed within every eligible task" in flat
+    # and each binding constraint the review required
+    for constraint in (
+        "no cluster random-intercept variance is estimated",
+        "not identified at two groups",
+        "never treated as independent architecture decisions",
+        "nesting and repetition are retained",
+        "randomisation inference remains a principal small-g sensitivity",
+        "cr2/cr3 is not promoted to primary evidence",
+        "omitted at g = 2, or reported and explicitly labelled unreliable",
+        "two deterministic exclusions",
+        "descriptive robustness only",
+        "exactly one between-cluster contrast",
+    ):
+        assert constraint in flat, f"the G = 2 contingency must state: {constraint!r}"
+
+
+def test_the_g_below_two_blocking_rule_is_pre_registered():
+    flat = _norm(_realised_g_section())
+    assert "pre-registered blocking rule" in flat
+    assert (
+        "confirmatory e1 condition model requiring architecture-decision blocking is not run"
+        in flat
+    ), "at G < 2 the confirmatory blocked model must not be run"
+    assert "stage-0 e1 eligibility remains blocked" in flat
+    assert "re-adjudicated" in flat
+    assert "no post-hoc fallback model may be invented once data exist" in flat
+
+
+def test_the_contingencies_are_not_a_post_hoc_fallback():
+    flat = _norm(_realised_g_section())
+    assert "nothing here is a fallback chosen after data" in flat
+    assert "before the td-b37 power simulation" in flat
+    assert "produces no power value" in flat
+
+
+def test_td_b41_no_longer_claims_the_cluster_count_can_only_be_three():
+    text = _decision("TD-B41")
+    assert "no longer claims that it can only ever be three" in text, (
+        "TD-B41 must stop asserting that G can only realise as three"
+    )
+    assert "g=2 contingency" in text and "g<2 blocking rule" in text, (
+        "TD-B41 must point at both pre-registered contingencies"
+    )
+    assert "not a guaranteed realisation" in text
+    assert "carrying at least one final, frozen, e1-eligible opportunity" in text, (
+        "TD-B41 must carry the eligibility-based definition of G"
+    )
+
+
 def test_pseudo_replication_is_governed_by_the_cluster_identifier():
     b30 = _decision("TD-B30")
     assert "decision_cluster_id" in b30
@@ -496,6 +713,56 @@ def test_pseudo_replication_is_governed_by_the_cluster_identifier():
     assert "fixed factor" in b30
     sap = _flat(SAP_PATH)
     assert "decision_cluster_id" in sap
+
+
+def test_the_stage_0_gate_no_longer_demands_impossible_breadth():
+    """The live Stage-0 directive must match the feasibility ceiling.
+
+    The gate previously required additional tasks exercising *genuinely different*
+    leaf rules and source/target boundaries before Stage 0. With a demonstrated
+    ceiling of 2 leaf rules and 2 source scopes, all of them already represented,
+    that is an instruction to author something the substrate cannot support. It is
+    scoped here to the Stage-0 section so a discussion elsewhere cannot satisfy it.
+    """
+    body = _section_starting_with(
+        POWER_POLICY_PATH, "stage 0 — non-evidentiary technical dry runs"
+    )
+    flat = _norm(body)
+
+    # the withdrawn directive may appear only as explicitly withdrawn history
+    for match in re.finditer(
+        r"genuinely different (?:existing )?dependency-direction\s*leaf rules", flat
+    ):
+        window = flat[max(0, match.start() - 400) : match.end() + 400]
+        assert any(
+            marker in window
+            for marker in ("withdrawn", "superseded", "previously required", "obsolete")
+        ), f"the impossible breadth directive is live in the Stage-0 gate: ...{window[:220]!r}"
+    assert "withdrawn directive" in flat, (
+        "the Stage-0 gate must record that the breadth directive was withdrawn"
+    )
+    assert "structurally unattainable" in flat or "obsolete" in flat
+
+    # and the re-scoped requirement must be what the gate now states
+    assert "replication depth" in flat, "Stage 0 must now be gated on replication depth"
+    assert "3 decision clusters / 2 leaf rules / 2 source scopes / 3 forbidden targets" in flat
+    assert "all three clusters are already represented" in flat
+    for cluster in sorted(SINGLETON_CLUSTERS):
+        assert cluster.lower() in flat, f"{cluster} must be named as a replication target"
+    assert "not the immediate priority" in flat
+
+
+def test_the_stage_0_gate_does_not_assume_replication_candidates_exist():
+    """Singleton replicates are not presumed available; each needs its own review."""
+    flat = _norm(
+        _section_starting_with(POWER_POLICY_PATH, "stage 0 — non-evidentiary technical dry runs")
+    )
+    assert "not asserted that a suitable replication task exists" in flat, (
+        "the gate must not assume a replicate exists for either singleton cluster"
+    )
+    assert "separate pre-authoring review" in flat
+    assert "that review has not happened" in flat
+    assert "td-b34" in flat and "open and blocking" in flat
 
 
 def test_td_b37_stays_open_and_lists_its_preconditions():
@@ -543,19 +810,41 @@ def test_the_documentation_matches_the_oracle_it_describes():
 # --------------------------------------------------------------------------- #
 # 11. Boundary-space inventories carry feasibility status (PART J)
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize("path", [POLICY_PATH, REPORT_PATH, FEASIBILITY_PATH], ids=lambda p: p.name)
+#: The boundary-space inventory table in each public artifact that publishes one.
+#: Keyed by leaf id, so the feasibility verdict is read from that leaf's own row.
+BOUNDARY_TABLE_SECTIONS = {
+    POLICY_PATH: "12.2 the boundary space available under already-implemented leaf rules",
+    REPORT_PATH: "boundary space available under the already-implemented leaf rules",
+    FEASIBILITY_PATH: "4. the theoretical pair space",
+}
+
+
+def _boundary_table_body(path: Path) -> str:
+    return _section_starting_with(path, BOUNDARY_TABLE_SECTIONS[path])
+
+
+@pytest.mark.parametrize("path", sorted(BOUNDARY_TABLE_SECTIONS), ids=lambda p: p.name)
 def test_every_boundary_table_annotates_feasibility(path):
-    flat = _flat(path)
-    assert flat.count("not task-creatable on current substrate") >= 3, (
-        f"{path.name} must mark all three unusable leaves"
-    )
-    assert flat.count("task-creatable / represented") >= 2, (
-        f"{path.name} must mark the two usable leaves as represented"
-    )
-    assert "umbrella-only" in flat
-    # nothing mechanically valid is deleted
-    for leaf in sorted(NOT_TASK_CREATABLE_LEAVES) + sorted(TASK_CREATABLE_LEAVES):
-        assert leaf.lower() in flat, f"{path.name} must retain the {leaf} row"
+    """Row-scoped in all three inventories, so no row can borrow another's verdict."""
+    body = _boundary_table_body(path)
+    for leaf in sorted(NOT_TASK_CREATABLE_LEAVES):
+        verdict = _row(body, leaf)[-1]
+        assert "not task-creatable on current substrate" in verdict, (
+            f"{path.name}: {leaf}'s own row must read NOT TASK-CREATABLE, got {verdict!r}"
+        )
+        assert "task-creatable / represented" not in verdict, (
+            f"{path.name}: {leaf} must not be marked represented"
+        )
+    for leaf in sorted(TASK_CREATABLE_LEAVES):
+        verdict = _row(body, leaf)[-1]
+        assert "task-creatable / represented" in verdict, (
+            f"{path.name}: {leaf}'s own row must read TASK-CREATABLE / REPRESENTED, "
+            f"got {verdict!r}"
+        )
+        assert "not task-creatable" not in verdict, (
+            f"{path.name}: {leaf} must not be downgraded"
+        )
+    assert "umbrella-only" in _norm(body), f"{path.name} must keep the observability row"
 
 
 def test_the_investigate_list_is_closed_rather_than_left_open():

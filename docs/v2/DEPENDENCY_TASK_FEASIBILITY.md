@@ -152,9 +152,13 @@ Active E1 opportunities: **5**. Decision clusters: **3**. Leaf rules: **2**.
 Source scopes: **2**. Forbidden targets: **3**.
 
 > These are the **independently adjudicated active** counts — the
-> preservation-only rows `TD-B40` orders removed are excluded, and their physical
-> removal from the private manifests is still outstanding. No task-to-cluster
-> mapping is published.
+> preservation-only rows `TD-B40` ordered removed are excluded, and that removal
+> has since been **performed** under separate authorised private work: no such row
+> appears in any manifest opportunity set or any E1 denominator, and each survives
+> only as a **superseded, detection-only historical record**. What `TD-B40` still
+> governs is the residual **inactive-reserve** rows and the outstanding
+> **independent re-approval** — the migration is performed but not yet re-approved,
+> and no manifest is frozen. No task-to-cluster mapping is published.
 
 **Therefore the remaining actionable deficiency is cluster replication depth and
 balance, not additional source-scope or leaf-rule breadth.** Two of the three
@@ -229,7 +233,7 @@ silently dropped.
 | ≥ 3 source scopes | **NOT ACHIEVABLE** — hard ceiling **2** |
 | ≥ 3 forbidden targets | **ACHIEVED** — currently **3** |
 | ≥ 4 independent decision clusters | **NOT ACHIEVABLE** — hard ceiling **3** |
-| ≥ 2 observations per cluster | **potentially achievable** through carefully reviewed replication (`TD-B34`) |
+| ≥ 2 observations per cluster | **REPLICATION-DEPTH OBJECTIVE — NOT CURRENTLY ACHIEVED UNIVERSALLY** (two of the three clusters are singletons); **potentially achievable** through carefully reviewed replication (`TD-B34`) |
 | ≥ 8 E1-scored tasks | **not a scientifically meaningful standalone target** |
 
 **Task count must not substitute for decision diversity or independence.** A task

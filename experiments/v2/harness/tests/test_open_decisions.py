@@ -15,10 +15,12 @@ simulation; TD-B38 by the architecture-neutral-substrate review that found the
 model-visible package metadata still announcing the experiment itself;
 TD-B39..TD-B40 by the pre-authoring functional-evaluator boundary package that
 defined the functional acceptance observation boundary and recorded that the
-reassessment's preservation-only opportunities are still physically present in the
-stale private manifests; TD-B41 by the remaining-leaf feasibility package that
-re-scoped TD-B34 to replication depth and had to settle how a fixed three-cluster
-decision space is analysed). Pure file inspection; no model is invoked.
+reassessment's preservation-only opportunities had not yet been migrated out of the
+private manifests (TD-B40 has since been re-scoped to the residual inactive-reserve
+and re-approval housekeeping that survives that migration); TD-B41 by the
+remaining-leaf feasibility package that re-scoped TD-B34 to replication depth and
+had to settle how a fixed, very small decision space is analysed at the realised
+cluster count). Pure file inspection; no model is invoked.
 """
 import csv
 import re
@@ -48,7 +50,7 @@ MUST_STAY_OPEN = {
     "TD-B05",  # hidden acceptance criteria
     "TD-B14",  # private opportunity-set adequacy
     "TD-B39",  # hidden acceptance packages migrated onto the observation boundary
-    "TD-B40",  # stale preservation-only opportunities removed from the private manifests
+    "TD-B40",  # residual inactive-reserve rows + independent re-approval of the migration
     "TD-B41",  # residual small-cluster (G = 3) analysis specification
 }
 

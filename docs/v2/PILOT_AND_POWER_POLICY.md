@@ -42,14 +42,44 @@ The **Q1/Q8 model-runtime dry runs remain blocking** and are **not performed in
 this work package** (no runner exists; no paid/dry run here) — `TD-B21`
 (cross-references `TD-B02`).
 
-**Stage 0 is additionally gated on `DECISION B` (`TD-B34`).** Additional public
-architecture tasks exercising genuinely different existing dependency-direction
-leaf rules and source/target boundaries must be authored and independently
-approved **before** Stage 0, because the current active set does not sample enough
-**distinct** dependency-direction decisions to support the confirmatory endpoint.
+**Stage 0 is additionally gated on `DECISION B` (`TD-B34`), now re-scoped to
+replication depth.** `TD-B34` remains **open and blocking** before Stage 0, but
+what it requires has changed and the earlier breadth directive is **withdrawn**.
+
+> **Withdrawn directive.** This gate previously required additional public
+> architecture tasks exercising *genuinely different* dependency-direction leaf
+> rules and source/target boundaries. That objective is **scientifically obsolete
+> and structurally unattainable**: the independent remaining-leaf feasibility
+> review established a demonstrated ceiling of **3 decision clusters / 2 leaf rules
+> / 2 source scopes / 3 forbidden targets** on the canonical substrate, and **all
+> three clusters are already represented**
+> ([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §2–§3). No
+> new leaf rule or source scope can be authored here, so Stage 0 must **not** be
+> gated on producing one.
+
+What `TD-B34` now requires before Stage 0 is **adequate replication depth and
+balance over the complete demonstrated task-creatable decision space**:
+
+- **all three demonstrated clusters stay represented**;
+- **the two singleton clusters** — `DC-FEATURES-API-AR-DEP-006` (n = 1) and
+  `DC-API-CORE-AR-DEP-005` (n = 1) — receive **independent functional instruments
+  where scientifically feasible**, priority **A** then **B**;
+  `DC-FEATURES-INFRA-AR-DEP-006` (n = 3) is **not** the immediate priority;
+- **no impossible breadth is demanded**: no additional leaf rule, source scope or
+  cluster beyond the ceiling is required, and no artificial task may be authored
+  merely to hit a mechanically implemented leaf;
+- **replicate candidates are not assumed to exist.** It is **not** asserted that a
+  suitable replication task exists for either singleton cluster. Each candidate
+  requires its **own separate pre-authoring review** against the eleven authoring
+  requirements and §8a of
+  [`TASK_AUTHORING_POLICY.md`](TASK_AUTHORING_POLICY.md) before it may be written;
+  that review has **not** happened;
+- the residual breadth ceiling is carried as a **construct-validity limitation** of
+  the study, not as a Stage-0 deliverable.
+
 That decision **predates any benchmark or model outcome**, is a **task-set
 coverage** deficiency rather than an oracle failure, and is **not** a reason to
-activate a reserve. `TD-B34` is **open and blocking**.
+activate a reserve.
 
 ## Stage 1 — Screening pilot (paid; NOT part of this work package)
 

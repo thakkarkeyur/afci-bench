@@ -335,18 +335,24 @@ substrate is still `630d3180`.
   unreachable through the public interface (`TD-B26`) and the boundary forecloses the
   only workaround, so it makes `TD-B26` **stricter**, not softer. No task contract was
   amended.
-- **Active-coverage correction (`TD-B40`).** The preservation-only opportunities the
-  reassessment ordered removed are **still physically present** in the stale private
-  manifests and are **analytically inactive**; counting them overstates coverage.
-  Suite-level consequence, no private identifier disclosed: every retained active
-  dependency decision sits in **one source scope** under **one leaf rule**, spanning
-  only **two** distinct clusters (`source_scope + forbidden_target + leaf_rule`), so
-  the **`api`** source scope and the **`AR-DEP-005`** (`api → core`) leaf rule are
-  **currently unrepresented**. Same construct-validity deficiency as `TD-B34`; not an
-  oracle failure.
-- **One candidate cleared, none authored.** A candidate using a currently
-  unrepresented implemented dependency leaf **and** source scope passed pre-authoring
-  feasibility review, and is gradeable through HTTP alone. **No task body was
+- **Active-coverage correction (`TD-B40`).** *As recorded then:* the
+  preservation-only opportunities the reassessment ordered removed were **still
+  physically present** in the private manifests and **analytically inactive**;
+  counting them overstates coverage. Suite-level consequence at that time, no
+  private identifier disclosed: every retained active dependency decision sat in
+  **one source scope** under **one leaf rule**, spanning only **two** distinct
+  clusters (`source_scope + forbidden_target + leaf_rule`), so the **`api`** source
+  scope and the **`AR-DEP-005`** (`api → core`) leaf rule were **unrepresented**.
+  Same construct-validity deficiency as `TD-B34`; not an oracle failure.
+  **Superseded — `TD-B40` is now re-scoped:** the removal has since been performed
+  under separate authorised private work (no such row enters any manifest
+  opportunity set or E1 denominator; each survives as a superseded, detection-only
+  record), the active set spans **three** clusters, and `api → core` /
+  `AR-DEP-005` are **represented**. `TD-B40` now governs only the residual
+  **inactive-reserve** rows and the outstanding **independent re-approval**.
+- **One candidate cleared, none authored.** A candidate using an implemented
+  dependency leaf **and** source scope that were **then unrepresented** passed
+  pre-authoring feasibility review, and is gradeable through HTTP alone. **No task body was
   authored**; its opportunity details stay private until the normal evaluator package
   is created. `TD-B34` stays **open and blocking** — one cleared candidate is not a
   suite — and **G1/G2/G6** remain **not passed**.
@@ -401,10 +407,13 @@ canonical substrate is still `630d3180` / `0198d76c…`, and the protocol remain
   sample enough distinct dependency-direction decisions. **Further candidate
   authoring is still required before Stage 0**, **no power simulation may run yet**
   (`TD-B37`), gates **G1/G2/G6** remain **not passed**, and the suite is **not**
-  ready. `PT07` cannot enter E1 until a private evaluator package is authored,
-  validated, approved and shown to carry a valid non-zero frozen opportunity set
-  (`TD-B05`/`TD-B14`, `G1`); its `scored` eligibility records **intent**, never a
-  demonstrated denominator.
+  ready. `PT07` still cannot enter E1. **Reconciled against private HEAD
+  `d7638210`:** its private evaluator package **has since been authored** and
+  linked to the approved public hash, so the earlier "no package exists" statement
+  is **withdrawn as stale**; that package is `status=review`, **not frozen** and
+  **not independently reviewed**, so validation, approval and freeze remain
+  outstanding (`TD-B05`/`TD-B14`/`TD-B32`, `G1`) and its `scored` eligibility still
+  records **intent**, never a demonstrated denominator.
 - **No blocker was opened or closed.** The registry still holds **40 blocking + 6
   non-blocking** decisions, **43 open**.
 

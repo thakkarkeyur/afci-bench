@@ -287,8 +287,15 @@ def test_pt07_eligibility_reason_records_intent_not_a_demonstrated_denominator()
     reason = _by_id(MATRIX_PATH)["PT07"]["e1_eligibility_reason"].lower()
     assert "intended for e1" in reason
     assert "pre-freeze" in reason
-    assert "not yet authored" in reason, (
-        "the reason must say the private evaluator package does not exist yet"
+    assert "not_yet_frozen" in reason, (
+        "the reason must say the private evaluator package is not frozen; it now "
+        "exists, so 'not yet authored' would be stale"
+    )
+    assert "not independently reviewed" in reason, (
+        "an authored package is not an approved one; the reason must say so"
+    )
+    assert "not yet authored" not in reason, (
+        "PT07's private package has been authored; that claim is stale"
     )
     assert "subject to private evaluator validation" in reason
     assert "before any benchmark or model execution" in reason, (
@@ -297,12 +304,29 @@ def test_pt07_eligibility_reason_records_intent_not_a_demonstrated_denominator()
 
 
 def test_pt07_is_not_presented_as_frozen_or_as_carrying_an_opportunity():
+    """The package now exists; what must stay false is that it is *frozen*.
+
+    The registries previously said ``not_yet_authored``, which reconciliation
+    against the private repository made stale. The invariant that still has to hold
+    is the one that matters: no public row may present PT07 as frozen, and no
+    public row may pin a rule, opportunity or expected area for it.
+    """
     matrix = _by_id(MATRIX_PATH)["PT07"]
-    assert matrix["hidden_evaluator_manifest_hash"] == "not_yet_authored"
+    assert matrix["hidden_evaluator_manifest_hash"] == "stored_in_private_evaluator_repo", (
+        "the manifest hash stays withheld; publishing one would leak the frozen set"
+    )
+    assert matrix["task_status"] == "candidate"
     for path in (ACCEPTANCE_MATRIX, LAYER_MATRIX, RULE_MATRIX):
         row = _by_id(path)["PT07"]
-        assert "not_yet_authored" in ",".join(row.values()), path.name
+        values = ",".join(row.values())
+        assert "stored_in_private_evaluator_repo" in values, path.name
+        assert "not_yet_authored" not in values, (
+            f"{path.name}: PT07's private package exists; 'not_yet_authored' is stale"
+        )
         assert row["status"] == "candidate-not-frozen", path.name
+        assert "not_yet_frozen" in values.lower(), (
+            f"{path.name}: the row must record that the package is not frozen"
+        )
 
 
 # --------------------------------------------------------------------------- 5
@@ -346,7 +370,12 @@ def test_pt07_is_traceable_to_e1_as_an_intended_scored_candidate():
     private = trace["OT-TASKS-PRIVATE-SCORED"]
     assert "PT07" in private["task_id"]
     notes = private["notes"].lower()
-    assert "no private evaluator package at all yet" in notes
+    assert "no private evaluator package at all" not in notes, (
+        "PT07's private package has been authored; that claim is stale"
+    )
+    assert "not_yet_frozen" in notes and "not independently reviewed" in notes, (
+        "the row must record that the authored package is neither frozen nor approved"
+    )
     assert "records intent only" in notes
 
 

@@ -640,33 +640,45 @@ implementation-independent. It is never evidence for an acceptance assertion.
 
 ### 2. Which architecture decisions are actually active
 
-The private evaluator manifests predate both the repaired scope-based oracle and
+*This subsection records the state as it stood when the boundary package was
+written. It is kept verbatim in substance as a historical record; the note that
+closes the subsection carries the current position, and the two must not be read
+as competing claims.*
+
+The private evaluator manifests predated both the repaired scope-based oracle and
 the pre-authoring opportunity reassessment. The preservation-only opportunities the
-reassessment ordered removed are **still physically present** in them. Those rows
-are **analytically inactive** for the revised design and must not be counted as
-active architecture coverage by any later work package, coverage claim, power
-calculation or novelty assessment; their physical removal is tracked as `TD-B40`
-and happens in the private re-authoring already required by
+reassessment ordered removed were **still physically present** in them at that
+time. Those rows are **analytically inactive** for the revised design and must not
+be counted as active architecture coverage by any later work package, coverage
+claim, power calculation or novelty assessment; their removal was tracked as
+`TD-B40` and belonged to the private re-authoring already required by
 `TD-B27`/`TD-B35`/`TD-B36`.
 
 Stated at suite level only, disclosing no private opportunity identifier: once the
-ordered removals are set aside, **every retained active dependency decision sits in
+ordered removals were set aside, **every retained active dependency decision sat in
 one source scope under one leaf rule**, spanning only **two** distinct clusters
 where a cluster is `source_scope + forbidden_target + leaf_rule`. The **`api`**
-source scope and the **`AR-DEP-005`** (`api` to `core`) leaf rule are therefore
-**currently unrepresented** in the active set. This is the same construct-validity
-deficiency `TD-B34` already records; it is **not** an oracle failure, and the
-repaired scope-based oracle remains the approved attribution mechanism.
+source scope and the **`AR-DEP-005`** (`api` to `core`) leaf rule were therefore
+**unrepresented at that time** in the active set. This is the same
+construct-validity deficiency `TD-B34` already records; it is **not** an oracle
+failure, and the repaired scope-based oracle remains the approved attribution
+mechanism.
 
-> **Superseded on the coverage counts only.** After `PT07` was authored and the
-> active set was independently re-adjudicated, the set spans **three** clusters
-> over **two** source scopes and **two** leaf rules, so the `api` source scope and
-> `AR-DEP-005` are **no longer unrepresented**; the paragraph above remains an
-> accurate record of the state it describes. Current counts, and the demonstrated
-> ceiling that makes three the maximum, are in the final addendum and in
+> **Superseded on the coverage counts, and `TD-B40` is now re-scoped.** After
+> `PT07` was authored and the active set was independently re-adjudicated, the set
+> spans **three** clusters over **two** source scopes and **two** leaf rules, so
+> the `api` source scope and `AR-DEP-005` are **no longer unrepresented**; the
+> paragraphs above remain an accurate record of the state they describe. Current
+> counts, and the demonstrated ceiling that makes three the maximum, are in the
+> final addendum and in
 > [`../../../../docs/v2/DEPENDENCY_TASK_FEASIBILITY.md`](../../../../docs/v2/DEPENDENCY_TASK_FEASIBILITY.md).
-> **`TD-B40` is unaffected**: the preservation-only rows are still physically
-> present in the stale private manifests and still must be removed.
+> **`TD-B40` is re-scoped, not unaffected**: the ordered removal has since been
+> performed under separate authorised private work — no preservation-only row
+> enters any manifest opportunity set or any E1 denominator, and each survives only
+> as a superseded, detection-only historical record. `TD-B40` now governs only the
+> residual **inactive-reserve** rows (`PR01`/`PR02`, which must be re-authored
+> before any activation) and the outstanding **independent re-approval** of the
+> migration; no manifest is frozen.
 
 ### 3. Boundary audit of the eight existing candidates
 
@@ -775,11 +787,14 @@ Consequently:
   (`TD-B37`);
 - gates **G1**, **G2** and **G6** remain **not passed**, and the suite is **not**
   ready;
-- `PT07` cannot enter E1 at all until a private evaluator package is authored for
-  it, independently validated and approved, and shown to carry a valid non-zero
-  frozen opportunity set (`TD-B05`/`TD-B14`, gate `G1`). Its public
-  `e1_analysis_eligibility` of `scored` records **intent**, never a demonstrated
-  denominator.
+- `PT07` still cannot enter E1. **Reconciled against private HEAD `d7638210`:** a
+  private evaluator package for `PT07` **has now been authored** and linked to the
+  approved public hash, so the earlier statement that none exists is **withdrawn as
+  stale**. That package is `status=review`, **not frozen** and **not independently
+  reviewed**, so `PT07` cannot enter E1 until it is independently validated,
+  approved and frozen and shown to carry a valid non-zero frozen opportunity set
+  (`TD-B05`/`TD-B14`/`TD-B32`, gate `G1`). Its public `e1_analysis_eligibility` of
+  `scored` records **intent**, never a demonstrated denominator.
 
 ### Functional acceptance observation boundary check (`TD-B39`)
 
@@ -859,21 +874,34 @@ externally ungradeable.
 
 ### Private evaluator consequences (nothing private was touched)
 
-- **`PT07` has no private evaluator package at all.** It is not a stale package to
-  re-link; it is an absent one. `TASK_ACCEPTANCE_MATRIX.csv`,
-  `TASK_LAYER_MATRIX.csv` and `TASK_RULE_MATRIX.csv` therefore record
-  `not_yet_authored` for it rather than `stored_in_private_evaluator_repo`, and
-  `PILOT_PUBLIC_TASK_MATRIX.csv` records `not_yet_authored` as its
-  `hidden_evaluator_manifest_hash`. `EM-PT07` is a **reserved identifier only**.
+- **`PT07` had no private evaluator package when this addendum was written**, and
+  the public registries recorded a not-yet-authored placeholder for it rather than
+  `stored_in_private_evaluator_repo`. **That is no longer the current state** — see
+  the reconciliation note below.
+
+> **Reconciled against private HEAD `d7638210`.** A private evaluator package for
+> `PT07` **has since been authored** under separate authorised private work and
+> linked to the approved public hash `557caed09420354e...`, so the bullet above —
+> which recorded that no such package existed — is **withdrawn as stale**. It is
+> `status=review`, **not frozen** and **not independently reviewed**, so it is an
+> authored candidate package and **not** a demonstrated frozen opportunity set:
+> gate `G1` is not passed and `PT07` cannot enter E1. `TASK_ACCEPTANCE_MATRIX.csv`,
+> `TASK_LAYER_MATRIX.csv`, `TASK_RULE_MATRIX.csv` and
+> `PILOT_PUBLIC_TASK_MATRIX.csv` now record `stored_in_private_evaluator_repo` for
+> `PT07`, matching the other candidates, while every public row keeps its
+> `candidate-not-frozen` status. `EM-PT07` is no longer merely a reserved
+> identifier. The private repository was inspected **read-only** for this
+> reconciliation; **no private file was modified**.
 - **The staleness of the existing private commit is unchanged by this package.**
   Adding `PT07` changes no other public task's bytes, so no existing private
   package needs re-linking on account of it; `PT06`'s package remains the one that
   must be substantively re-authored.
-- Whichever package is eventually authored for `PT07` must pin the public hash
-  `557caed09420354e...`, must be authored only **after** this public package is
-  independently approved, and must demonstrate a non-empty fixed opportunity set
-  before it may be approved or frozen (`TD-B05`/`TD-B14`, gate `G1`). A private
-  manifest hash must never be silently accepted against a changed public task.
+- The package authored for `PT07` must pin the public hash `557caed09420354e...`,
+  and must demonstrate a non-empty fixed opportunity set before it may be approved
+  or frozen (`TD-B05`/`TD-B14`, gate `G1`). Those requirements are **not**
+  discharged by the package now existing: it remains `status=review` and
+  unreviewed. A private manifest hash must never be silently accepted against a
+  changed public task.
 
 ### What this package deliberately did NOT do
 

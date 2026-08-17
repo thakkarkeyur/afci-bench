@@ -890,12 +890,13 @@ def test_task_statuses_stay_candidate_and_nothing_is_frozen():
     for task_id in ALL_TASKS:
         assert INDEX_BY_ID[task_id]["task_status"] == "candidate", task_id
         assert MATRIX_BY_ID[task_id]["task_status"] == "candidate", task_id
-        # Two placeholders are legal and no third: the package is private
-        # (`stored_in_private_evaluator_repo`) or does not exist yet
-        # (`not_yet_authored`, PT07). A real hash here would pin private content
-        # publicly and would also imply a frozen package.
+        # Exactly one placeholder is legal now that every candidate has a private
+        # package: `stored_in_private_evaluator_repo`. (`not_yet_authored` was
+        # PT07's value until its package was authored; it is no longer accurate for
+        # any task.) A real hash here would pin private content publicly and would
+        # also imply a frozen package.
         manifest_hash = MATRIX_BY_ID[task_id]["hidden_evaluator_manifest_hash"]
-        assert manifest_hash in {"stored_in_private_evaluator_repo", "not_yet_authored"}, (
+        assert manifest_hash == "stored_in_private_evaluator_repo", (
             f"{task_id}: no manifest hash may be pinned publicly"
         )
         assert not re.fullmatch(r"[0-9a-f]{16,}", manifest_hash), task_id

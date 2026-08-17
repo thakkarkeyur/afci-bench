@@ -376,12 +376,13 @@ spans **two** clusters, both sourced from `features` and both backed by
 `AR-DEP-006`. That is precisely the construct-validity deficiency `TD-B34` records:
 too few *distinct* boundaries, not too few tasks.
 
-**Consequently `AR-DEP-005` (`api → core`) is currently unrepresented.** No
-retained active opportunity uses the `api` source scope, and none uses the
-`AR-DEP-005` leaf rule. Preservation-only rows naming that boundary are still
-physically present in the stale private manifests and are **pending removal**
-(`TD-B40`); they are **analytically inactive** and must not be counted as active
-coverage by any later work package.
+**Consequently `AR-DEP-005` (`api → core`) was unrepresented at that time.** No
+retained active opportunity then used the `api` source scope, and none used the
+`AR-DEP-005` leaf rule. Preservation-only rows naming that boundary were still
+present in the private manifests and **pending removal** (`TD-B40`); they were
+**analytically inactive** and must not be counted as active coverage by any later
+work package. *(Both statements describe the pre-`PT07` state; §12.2b–§12.2c
+record what has changed since — see the note below.)*
 
 **One candidate has passed pre-authoring feasibility review.** A candidate whose
 dependency decision would use an implemented leaf rule and a source scope that the
@@ -408,8 +409,14 @@ not a suite.
 > paragraphs above remain an accurate record of the state they describe; the
 > current counts are in
 > [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §3. `TD-B40`
-> is **unaffected**: the preservation-only rows are still physically present in
-> the stale private manifests and still must be removed.
+> is **re-scoped, not unaffected**: the preservation-only rows have since been
+> removed from the active E1 set under separate authorised private work — none
+> enters any manifest opportunity set or any denominator, each surviving as a
+> superseded, detection-only record — so `TD-B40` no longer claims that
+> `api → core` is unrepresented. It now governs only the residual
+> **inactive-reserve** rows (`PR01`/`PR02`, which must be re-authored before any
+> activation) and the outstanding **independent re-approval** of the migration; no
+> manifest is frozen.
 
 ### 12.2b The cleared candidate is now authored as `PT07` (`TD-B34` still open)
 
@@ -436,10 +443,14 @@ modified, no benchmark or model ran, and nothing was frozen.
   state, and reaching for it internally is exactly what §8a forbids. What `PT07`
   requires is the observable consequence: its answer carries none of the fields
   that identify a created order.
-- **`PT07` cannot enter E1 until a private evaluator package is authored for it**,
-  independently validated and approved, and shown to carry a valid non-zero frozen
-  opportunity set (`TD-B05`/`TD-B14`, gate `G1`). Its public eligibility of
-  `scored` records intent, never a demonstrated denominator.
+- **`PT07` still cannot enter E1.** Reconciled against private HEAD `d7638210`: a
+  private evaluator package for `PT07` **has now been authored** and linked to the
+  approved public hash, so the earlier statement that none exists is withdrawn as
+  stale. That package is `status=review`, **not frozen** and **not independently
+  reviewed**, so it must still be independently validated, approved and frozen, and
+  shown to carry a valid non-zero frozen opportunity set, before `PT07` enters E1
+  (`TD-B05`/`TD-B14`/`TD-B32`, gate `G1`). Its public eligibility of `scored`
+  records intent, never a demonstrated denominator.
 
 **`TD-B34` is NOT resolved.** One authored task does not provide the breadth or the
 repetition the confirmatory construct needs; the active set plus `PT07` still does

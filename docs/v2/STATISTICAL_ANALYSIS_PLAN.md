@@ -262,11 +262,14 @@ Binding on the analysis, recorded **before** any data exists:
   [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)).
 - **The final power simulation must occur only after** the four `TD-B37`
   preconditions hold: the `TD-B34` re-scope is complete and its authoring outcome
-  independently approved; the **replication design is known**; the **G = 3
-  analysis method is pre-registered** (§4b, subject to `TD-B41`); and the **final
-  E1 denominator structure is known** (`TD-B05`/`TD-B14`, `G1`). Running it on the
-  current set would size the study from a clustered, under-dispersed set of
-  exposures.
+  independently approved; the **replication design is known**; the **small-cluster
+  analysis method is pre-registered at the realised cluster count** (§4b for
+  `G = 3`, §4c for the realised-`G` rule with its `G = 2` contingency and `G < 2`
+  blocking rule, subject to `TD-B41`); and the **final E1 denominator structure is
+  known** (`TD-B05`/`TD-B14`, `G1`) — which is also what fixes the realised `G`, so
+  the last two preconditions resolve together and `G` is never assumed beforehand.
+  Running it on the current set would size the study from a clustered,
+  under-dispersed set of exposures.
 - **A decision/boundary cluster identifier will be required** in the eventual
   analysis artifact, so each opportunity can be attributed to the architectural
   decision it instantiates and the clustering can be modelled explicitly, with the
@@ -286,14 +289,20 @@ Binding on the analysis, recorded **before** any data exists:
 ### 4b. Analysis with a fixed, very small number of decision clusters (G = 3)
 
 Pre-registered **before any data exists**, because the number of decision clusters
-is a property of the substrate rather than of the data: the canonical substrate's
-task-creatable ceiling is **three** clusters and all three are represented, so
-**G = 3 and cannot grow without a substrate redesign**
+is bounded by the substrate rather than by the data: the canonical substrate's
+task-creatable ceiling is **three** clusters and all three are currently
+represented, so **G cannot exceed 3 without a substrate redesign**
 ([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)). This section
 replaces any reading of §3 or §6 under which the shared boundary decision is
 modelled as a **random intercept**: with three groups that variance is not
 identified in any useful sense, and inference resting on it would be a false
 precision.
+
+> **This section specifies the analysis at `G = 3`, the current expectation.** The
+> **realised** `G` is fixed only when the E1 eligibility gates resolve, so §4c
+> pre-registers the definition of `G`, the **`G = 2` contingency** and the
+> **`G < 2` blocking rule**. Nothing here may be read as asserting that the count
+> can only ever realise as three.
 
 **Primary specification (pre-registered).**
 
@@ -362,6 +371,90 @@ produces **no** power value. The residual specification that genuinely needs the
 runner data shape is filed as **`TD-B41`** with its permitted options enumerated,
 and **must be resolved before the `TD-B37` power simulation**. Family and link
 selection stay with `TD-B06`; thresholds stay with `TD-B07`.
+
+### 4c. The realised cluster count `G`, and the pre-registered contingencies
+
+§4b specifies the analysis **at G = 3**, which is the current expectation. This
+section pre-registers what happens if the realised count is smaller, **before any
+power simulation and before any data exists**, so that no fallback can be chosen
+after the fact.
+
+**Definition of `G` (pre-registered).** `G` is the number of `decision_cluster_id`
+levels containing **at least one final, frozen, E1-eligible opportunity** after the
+eligibility gates are resolved. The gates are the manifest validation, approval and
+freeze requirements of `TD-B05`/`TD-B14`/`TD-B32`/`TD-B40` under gate **`G1`**. A
+cluster whose only opportunities are unfrozen, withdrawn, reclassified
+`functional-only`, or carried solely by an inactive reserve **does not count toward
+`G`**.
+
+**Three is a ceiling and an expectation, never an assumption.** The substrate's
+**task-creatable ceiling** is 3 clusters and all three are currently occupied
+([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)), so `G` can
+never exceed 3 without a substrate redesign. But occupancy is not eligibility: two
+of the three clusters are **singletons**, no per-task manifest is frozen, and
+`PT07`'s package is authored yet still `status=review`. `G` is therefore **not
+known** until the gates resolve, and **no analysis, simulation or report may assume
+G = 3 beforehand**.
+
+| Realised `G` | Pre-registered specification |
+|---|---|
+| **`G = 3`** *(current expectation)* | The **existing §4b specification is retained unchanged**: `decision_cluster_id` as a **fixed 3-level blocking factor** (2 contrasts), no cluster variance component, sensitivity programme S1–S4 as written. |
+| **`G = 2`** *(pre-registered contingency)* | `decision_cluster_id` enters as a **fixed 2-level blocking factor** (1 contrast). See the constraints below. |
+| **`G < 2`** *(pre-registered blocking rule)* | The confirmatory E1 condition model that requires architecture-decision blocking is **NOT run**, and Stage-0 E1 eligibility **remains blocked** until the design is re-adjudicated. See below. |
+
+**If `G = 2` — binding constraints.** The inferential logic is unchanged: the
+condition and reset contrasts remain the target and stay **identified within
+clusters**, because conditions are crossed within every eligible task. What changes
+is only what may be estimated and what may be claimed.
+
+1. **No cluster random-intercept variance is estimated.** A cluster-level variance
+   component is **not identified** at two groups, exactly as it is not at three
+   (§4b). The 2-level factor is fixed. Substituting a random cluster intercept here
+   is prohibited, not optional.
+2. **Task observations are never treated as independent architecture decisions.**
+   Task and opportunity **nesting and repetition are retained** as in §4b(3)–(4):
+   opportunities and repeated runs stay nested observations inside the two known
+   clusters, and `task` remains a block nested within cluster (with `TD-B41`(1)
+   governing whether it is fixed or random at the realised counts).
+3. **Randomisation inference remains a principal small-`G` sensitivity.** S2 — the
+   within-block permutation test of the condition contrast — does not depend on the
+   number of clusters and is reported as a **principal** sensitivity at `G = 2`.
+4. **CR2/CR3 is not promoted to primary evidence.** Cluster-robust variance with a
+   small-sample correction is already a *bounded* sensitivity at `G = 3`; at two
+   clusters its effective degrees of freedom make it **unusable**. S1 is therefore
+   **omitted at `G = 2`, or reported and explicitly labelled unreliable** — never
+   presented as the basis of an inferential claim.
+5. **Leave-one-cluster-out becomes two deterministic exclusions.** S3 degenerates
+   to two single-cluster refits. It is **descriptive robustness only** and carries
+   no inferential weight.
+6. **Cluster × condition heterogeneity has exactly one between-cluster contrast.**
+   The §4b(5) heterogeneity check is reportable only as that single contrast and
+   must be interpreted accordingly — never as evidence about heterogeneity across
+   the decision space in general. Whether it is reportable at the realised cell
+   sizes stays `TD-B41`(3).
+7. **The generalisation limit tightens with the space.** At `G = 2` the represented
+   decision space is smaller still, and §2.2's reporting rule binds
+   correspondingly: effects generalise to the represented families only.
+
+**If `G < 2` — the blocking rule.** With fewer than two eligible clusters there is
+no between-cluster structure to block on and no architecture-decision replication
+to speak of. In that case:
+
+- the **confirmatory E1 condition model requiring architecture-decision blocking is
+  NOT run**;
+- **Stage-0 E1 eligibility remains blocked** and the design must be
+  **re-adjudicated** — through `TD-B34` (replication depth), `TD-B37` (power) and
+  `TD-B41` (residual specification) — before any confirmatory E1 analysis;
+- **no post-hoc fallback model may be invented once data exist.** Re-adjudication
+  is a pre-data governance act; substituting an unregistered specification after
+  seeing outcomes is prohibited.
+- E1-ineligible material still contributes to the functional and cost endpoints
+  exactly as §2.1 provides; `G < 2` blocks the E1 confirmatory model, not the
+  study's other pre-registered analyses.
+
+**Nothing here is a fallback chosen after data.** All three branches are fixed
+now, before the `TD-B37` power simulation, which itself stays blocked. This section
+runs **no** model, uses **no** data and produces **no** power value.
 
 ---
 

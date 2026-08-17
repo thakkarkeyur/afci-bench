@@ -144,8 +144,9 @@ acceptance test is allowed to look at when it decides pass or fail**. It is
 decided **before** any further hidden acceptance is implemented, so no task's
 grading surface is chosen after its assertions are written. Blocking decisions:
 **`TD-B39`** (migrate the existing hidden acceptance packages onto this boundary)
-and **`TD-B40`** (the analytically inactive dependency opportunities still
-physically present in the private manifests).
+and **`TD-B40`** (now re-scoped: the preservation-only dependency opportunities
+have since been migrated out of the active E1 set, and what remains is the residual
+inactive-reserve rows and the outstanding independent re-approval).
 
 ## 9. The name of the boundary
 

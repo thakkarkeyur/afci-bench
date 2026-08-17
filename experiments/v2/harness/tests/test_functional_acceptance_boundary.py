@@ -6,8 +6,9 @@ stated in ``docs/v2/HIDDEN_EVALUATOR_BOUNDARY.md`` sections 9-14, carried into
 ``docs/v2/TASK_AUTHORING_POLICY.md`` section 8a as an authoring rule, and into
 ``docs/v2/ORACLE_VALIDATION_REQUIREMENTS.md`` section 3a as a channel-separation
 requirement. Blocking decisions: ``TD-B39`` (migrate the private hidden acceptance
-packages onto it) and ``TD-B40`` (the analytically inactive opportunities still
-physically present in the stale private manifests).
+packages onto it) and ``TD-B40`` (re-scoped: the preservation-only opportunities
+have since been migrated out of the active E1 set, leaving the residual
+inactive-reserve rows and the outstanding independent re-approval).
 
 These tests assert the *governance*, not any hidden acceptance: nothing here
 implements, mounts, or reads a hidden test, and no model is invoked. They also
@@ -30,11 +31,13 @@ TASK_INDEX = REPO / "experiments" / "v2" / "tasks" / "public" / "TASK_INDEX.csv"
 PUBLIC_TASK_DIR = REPO / "experiments" / "v2" / "tasks" / "public"
 
 #: The private evaluator repository is a *sibling* of the public repository and is
-#: never vendored into it. Its HEAD is recorded so "the private package was not
-#: modified" is a checked claim wherever the sibling is present, and an honest
-#: skip where it is not.
+#: never vendored into it. The invariant checked below is **separation**, not a
+#: pinned revision: public operations must not mutate the private repository. The
+#: private repository is a live review repository and its HEAD advances under
+#: authorised private work, so pinning one historical SHA would guarantee a false
+#: failure after the next legitimate private commit — which is exactly what
+#: happened to the previous version of this check.
 PRIVATE_REPO = REPO.parent / "afci-bench-evaluator-private"
-PRIVATE_HEAD = "cffc095b74e2a1c04b92c34ead19871397427329"
 
 #: The candidate task bodies and their recorded SHA-256 values, pinned here
 #: literally. ``test_public_task_integrity.py`` checks each body against
@@ -292,7 +295,15 @@ def test_authoring_report_records_the_boundary_and_the_aggregate_novelty_conclus
     assert "pre-authoring feasibility review" in report
     assert "No task body has been authored" in report
     assert "decision_cluster_id" in report
-    assert "AR-DEP-005" in report and "currently unrepresented" in report
+    # The boundary-era coverage statement stays on the record, but only as history:
+    # PT07 has since represented that boundary, so the present tense would be false.
+    assert "AR-DEP-005" in report and "unrepresented at that time" in report
+    assert "no longer unrepresented" in report, (
+        "the superseding correction must accompany the historical statement"
+    )
+    assert "currently unrepresented" not in report, (
+        "AR-DEP-005 is represented in the active set; the present tense is stale"
+    )
     assert "TD-B34 remains" in report or "TD-B34` remains" in report
 
 
@@ -432,19 +443,123 @@ def test_private_evaluator_repository_is_not_vendored_into_the_public_repository
     assert not (REPO / "experiments" / "v2" / "tasks" / "private").exists()
 
 
-def test_private_evaluator_repository_is_unchanged():
-    """Checked where the sibling private repo is present; skipped honestly where not."""
+def _private_head():
+    return _git("rev-parse", "HEAD", cwd=PRIVATE_REPO)
+
+
+def _private_worktree_is_clean():
+    return _git("status", "--porcelain", cwd=PRIVATE_REPO) == ""
+
+
+def _public_read_only_operation():
+    """Run the public work this package actually performs, for real.
+
+    Separation is a claim about what *public* operations do, so the guard exercises
+    the same public reads the rest of this module performs — governance document
+    reads, a sweep of every public task body, and a public ``git`` query — rather
+    than asserting over an idle interval in which nothing was attempted. Only
+    public paths are touched; nothing here opens a private file.
+    """
+    import hashlib
+
+    for path in (BOUNDARY, POLICY, ORACLE_REQS, AUTHORING_REPORT):
+        _flat(_read(path))
+    for task_id in sorted(FROZEN_TASK_HASHES):
+        hashlib.sha256((PUBLIC_TASK_DIR / f"{task_id}.md").read_bytes()).hexdigest()
+    _git("rev-parse", "HEAD", cwd=REPO)
+
+
+def test_public_operations_do_not_mutate_the_private_evaluator_repository():
+    """The separation invariant: public work never writes to the private repository.
+
+    This replaces an earlier check that pinned one historical private ``HEAD``. That
+    pin was wrong in principle as well as brittle: the private repository is a live
+    review repository whose ``HEAD`` advances under authorised private work, so the
+    pin asserted "history has not advanced" when the property that actually matters
+    is "*this* operation changed nothing". A legitimate private commit made the old
+    check fail while a public operation that genuinely wrote to the private tree
+    between two runs could still have passed it.
+
+    The invariant here is a before/after comparison **around** a real public
+    operation, so it stays green when private history advances legitimately and goes
+    red when a public operation mutates the private repository. Only ``git``
+    metadata is read; no private file content is opened. Checked where the sibling
+    is present, skipped honestly where it is not.
+    """
     import pytest
 
     if not (PRIVATE_REPO / ".git").is_dir():
         pytest.skip(f"private evaluator repository not present at {PRIVATE_REPO}")
-    head = _git("rev-parse", "HEAD", cwd=PRIVATE_REPO)
-    assert head == PRIVATE_HEAD, (
-        f"private evaluator HEAD moved: expected {PRIVATE_HEAD}, found {head}. "
-        "This package inspects the private repository read-only."
+
+    # 1. precondition: a dirty tree beforehand would make "unchanged" meaningless
+    assert _private_worktree_is_clean(), (
+        "the private evaluator working tree was already dirty before the public "
+        "operation ran; the separation invariant cannot be evaluated against it.\n"
+        f"{_git('status', '--porcelain', cwd=PRIVATE_REPO)}"
     )
-    status = _git("status", "--porcelain", cwd=PRIVATE_REPO)
-    assert status == "", f"private evaluator working tree is dirty:\n{status}"
+    # 2. capture private HEAD before
+    before = _private_head()
+
+    # 3. perform the public read-only operation under test
+    _public_read_only_operation()
+
+    # 4-5. HEAD must be unchanged *during* the operation
+    after = _private_head()
+    assert after == before, (
+        f"a public operation moved the private evaluator HEAD: {before} -> {after}. "
+        "Public packages inspect the private repository read-only and must never "
+        "commit to it."
+    )
+    # 6. and the operation must leave no working-tree residue behind
+    assert _private_worktree_is_clean(), (
+        "a public operation left the private evaluator working tree dirty:\n"
+        f"{_git('status', '--porcelain', cwd=PRIVATE_REPO)}"
+    )
+
+
+def test_the_separation_guard_detects_a_repository_that_actually_moves(tmp_path):
+    """Guard the guard, without touching the real private repository.
+
+    A before/after invariant is only worth having if it can fail. Both halves are
+    exercised against a throwaway repository: a commit must change ``HEAD``, and an
+    untracked file must make the tree dirty. If either detector silently stopped
+    working, the check above would pass vacuously.
+    """
+    import shutil
+
+    import pytest
+
+    if shutil.which("git") is None:
+        pytest.skip("git is not available")
+
+    stand_in = tmp_path / "stand-in"
+    stand_in.mkdir()
+    for args in (
+        ("init", "-q"),
+        ("config", "user.email", "guard@example.invalid"),
+        ("config", "user.name", "guard"),
+    ):
+        _git(*args, cwd=stand_in)
+    (stand_in / "a.txt").write_text("one", encoding="utf-8")
+    _git("add", "-A", cwd=stand_in)
+    _git("commit", "-qm", "one", cwd=stand_in)
+
+    before = _git("rev-parse", "HEAD", cwd=stand_in)
+    assert _git("status", "--porcelain", cwd=stand_in) == ""
+
+    # a mutation the guard must catch: history advances during the window
+    (stand_in / "b.txt").write_text("two", encoding="utf-8")
+    _git("add", "-A", cwd=stand_in)
+    _git("commit", "-qm", "two", cwd=stand_in)
+    assert _git("rev-parse", "HEAD", cwd=stand_in) != before, (
+        "the HEAD-movement detector is inert"
+    )
+
+    # and the other half: an uncommitted write must register as a dirty tree
+    (stand_in / "c.txt").write_text("three", encoding="utf-8")
+    assert _git("status", "--porcelain", cwd=stand_in) != "", (
+        "the dirty-worktree detector is inert"
+    )
 
 
 # --------------------------------------------------------------------------- 9
