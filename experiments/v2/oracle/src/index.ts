@@ -15,10 +15,11 @@ export { loadManifest, VALID_MANIFEST_STATUSES } from './manifest';
 export {
   assertManifestScorable,
   assertOpportunityRulesValid,
+  assertOpportunityAccountingComplete,
   assertEligibilityConsistent,
   e1DenominatorOpportunities,
 } from './manifestIntegrity';
-export type { EligibilityOptions } from './manifestIntegrity';
+export type { EligibilityOptions, OpportunityAccounting } from './manifestIntegrity';
 export { LayerMap } from './layers';
 export {
   BASELINE_PRODUCTION_SOURCE_POLICY,

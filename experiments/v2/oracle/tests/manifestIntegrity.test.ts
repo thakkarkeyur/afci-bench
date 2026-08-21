@@ -9,7 +9,13 @@
  * PENDING.
  */
 
-import { evaluateSnapshot, ArchitectureFinding, EvaluateOptions, OracleError } from '../src';
+import {
+  ArchitectureFinding,
+  EvaluateOptions,
+  OracleError,
+  assertOpportunityAccountingComplete,
+  evaluateSnapshot,
+} from '../src';
 import { baseManifest, cleanup, makeTmpRoot, materializeSnapshot, writeManifest } from './helpers';
 
 function score(caseName: string, manifest: Record<string, unknown>): ArchitectureFinding {
@@ -506,5 +512,164 @@ describe('decision D gate 4 — a scored task needs a non-zero frozen denominato
       baseManifest({ opportunities: [], e1_analysis_eligibility: 'scored' }),
       /ELIGIBILITY_SCORED_WITHOUT_OPPORTUNITIES/,
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The frozen-opportunity accounting reconciliation (INCOMPLETE_SCORING).
+//
+// Both branches of this guard are DEFENSIVE: they cannot be reached through any
+// valid manifest, because the loader's DUPLICATE_OPPORTUNITY_ID check and
+// assertOpportunityRulesValid refuse first. An independent review accepted that
+// ordering as correct but flagged the consequence - the guard itself was never
+// exercised, so nothing would notice if it stopped working.
+//
+// It is therefore driven DIRECTLY here, at the unit that owns the reconciliation,
+// with inconsistent accounting inputs. No earlier integrity gate is weakened to
+// make the branch reachable through a manifest, and the engine calls this unit at
+// exactly the point the inline code used to occupy.
+// ---------------------------------------------------------------------------
+describe('assertOpportunityAccountingComplete — the INCOMPLETE_SCORING guard', () => {
+  const consistent = {
+    applicable_opportunity_count: 2,
+    fixed_opportunity_count: 1,
+    violated_opportunity_count: 1,
+    absent_opportunity_count: 0,
+  };
+
+  function expectIncompleteScoring(fn: () => void, detail: RegExp): OracleError {
+    let thrown: unknown;
+    try {
+      fn();
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).toBeInstanceOf(OracleError);
+    const err = thrown as OracleError;
+    expect(err.reason).toBe('INCOMPLETE_SCORING');
+    expect(`${err.message} ${err.detail ?? ''}`).toMatch(detail);
+    return err;
+  }
+
+  it('accepts a complete, consistent accounting', () => {
+    expect(() =>
+      assertOpportunityAccountingComplete(2, 2, consistent),
+    ).not.toThrow();
+  });
+
+  it('accepts a zero-opportunity accounting (a functional-only manifest)', () => {
+    expect(() =>
+      assertOpportunityAccountingComplete(0, 0, {
+        applicable_opportunity_count: 0,
+        fixed_opportunity_count: 0,
+        violated_opportunity_count: 0,
+        absent_opportunity_count: 0,
+      }),
+    ).not.toThrow();
+  });
+
+  it('BRANCH 1: refuses when a frozen opportunity was dropped from accounting', () => {
+    // The denominator would be 1 while the manifest froze 2 - a smaller
+    // denominator on the same numerator, i.e. a silently inflated rate.
+    const err = expectIncompleteScoring(
+      () =>
+        assertOpportunityAccountingComplete(1, 2, {
+          ...consistent,
+          applicable_opportunity_count: 1,
+          violated_opportunity_count: 0,
+        }),
+      /accounted=1 manifest=2/,
+    );
+    expect(err.message).toMatch(/excluded from accounting/);
+    expect(err.message).toMatch(/denominator != scoring-opportunity set/);
+  });
+
+  it('BRANCH 1: refuses in the other direction too (more accounted than frozen)', () => {
+    expectIncompleteScoring(
+      () => assertOpportunityAccountingComplete(3, 2, consistent),
+      /accounted=3 manifest=2/,
+    );
+  });
+
+  it('BRANCH 2: refuses when an opportunity is bucketed under no status', () => {
+    // applicable=2 but only one opportunity reached a bucket: one was scored
+    // under nothing at all.
+    expectIncompleteScoring(
+      () =>
+        assertOpportunityAccountingComplete(2, 2, {
+          applicable_opportunity_count: 2,
+          fixed_opportunity_count: 1,
+          violated_opportunity_count: 0,
+          absent_opportunity_count: 0,
+        }),
+      /applicable=2 fixed\+violated\+absent=1/,
+    );
+  });
+
+  it('BRANCH 2: refuses when an opportunity is bucketed twice', () => {
+    // The same opportunity counted as both violated and absent would double-count
+    // one architectural decision.
+    expectIncompleteScoring(
+      () =>
+        assertOpportunityAccountingComplete(2, 2, {
+          applicable_opportunity_count: 2,
+          fixed_opportunity_count: 1,
+          violated_opportunity_count: 1,
+          absent_opportunity_count: 1,
+        }),
+      /applicable=2 fixed\+violated\+absent=3/,
+    );
+  });
+
+  it('the guard is the one the engine actually calls', () => {
+    // Guard the guard: a real end-to-end score must still pass through a
+    // consistent reconciliation, so the extraction did not bypass it.
+    const finding = score('clean_alias', baseManifest({}));
+    const acc = finding.opportunity_accounting;
+    expect(() =>
+      assertOpportunityAccountingComplete(
+        acc.applicable_opportunity_count,
+        acc.applicable_opportunity_count,
+        acc,
+      ),
+    ).not.toThrow();
+    expect(
+      acc.fixed_opportunity_count +
+        acc.violated_opportunity_count +
+        acc.absent_opportunity_count,
+    ).toBe(acc.applicable_opportunity_count);
+  });
+
+  it('remains unreachable through a valid manifest: the earlier gates refuse first', () => {
+    // This is the reason the guard needs a direct test at all. The two manifests
+    // that would otherwise reach the reconciliation are caught EARLIER - by P1-2
+    // (rule not in force, so the dep-family filter would have dropped it) and by
+    // the loader (duplicate opportunity_id, so one id would be bucketed twice).
+    // That ordering is correct and must not be "fixed" to make the branch
+    // reachable through a manifest.
+    const dropped = expectFailClosed(
+      'clean_alias',
+      baseManifest({
+        applicable_rule_ids: ['AR-DEP-006'],
+        opportunities: [
+          depOpp('OPP-1', 'AR-DEP-006', 'libs/features/src/index.ts', 'features', ['infra']),
+          depOpp('OPP-2', 'AR-DEP-003', 'libs/core/src/index.ts', 'core', ['infra']),
+        ],
+      }),
+      /INVALID_OPPORTUNITY_RULE/,
+    );
+    expect(dropped.reason).not.toBe('INCOMPLETE_SCORING');
+
+    const doubled = expectFailClosed(
+      'clean_alias',
+      baseManifest({
+        opportunities: [
+          depOpp('OPP-SAME', 'AR-DEP-006', 'libs/features/src/index.ts', 'features', ['infra']),
+          depOpp('OPP-SAME', 'AR-DEP-003', 'libs/core/src/index.ts', 'core', ['infra']),
+        ],
+      }),
+      /DUPLICATE_OPPORTUNITY_ID/,
+    );
+    expect(doubled.reason).not.toBe('INCOMPLETE_SCORING');
   });
 });

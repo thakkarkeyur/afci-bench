@@ -52,6 +52,7 @@ import {
   EligibilityOptions,
   assertEligibilityConsistent,
   assertManifestScorable,
+  assertOpportunityAccountingComplete,
   assertOpportunityRulesValid,
 } from './manifestIntegrity';
 
@@ -258,30 +259,19 @@ export function evaluateSnapshot(opts: EvaluateOptions): ArchitectureFinding {
     absent_opportunity_count: depOpportunities.filter((o) => absentOppIds.has(o.opportunity_id)).length,
   };
 
-  // 10b. Reconcile the accounting (fail closed rather than under-count). After
-  // the P1-2 validation every frozen opportunity is an in-force dep-family
-  // scoring opportunity, so NONE may be dropped by the dep-family filter, and
-  // (opportunity_ids being unique, P1-1) each is bucketed exactly once. If either
-  // invariant does not hold, the denominator would silently disagree with the
-  // uniquely-scored opportunity set — refuse to emit a result.
-  if (depOpportunities.length !== manifest.opportunities.length) {
-    throw new OracleError(
-      'INCOMPLETE_SCORING',
-      'a frozen opportunity was excluded from accounting (denominator != scoring-opportunity set)',
-      `accounted=${depOpportunities.length} manifest=${manifest.opportunities.length}`,
-    );
-  }
-  const bucketed =
-    oppAccounting.fixed_opportunity_count +
-    oppAccounting.violated_opportunity_count +
-    oppAccounting.absent_opportunity_count;
-  if (bucketed !== oppAccounting.applicable_opportunity_count) {
-    throw new OracleError(
-      'INCOMPLETE_SCORING',
-      'frozen-opportunity accounting is incomplete (applicable != fixed + violated + absent)',
-      `applicable=${oppAccounting.applicable_opportunity_count} fixed+violated+absent=${bucketed}`,
-    );
-  }
+  // 10b. Reconcile the accounting (fail closed rather than under-count). The two
+  // invariants and the reasoning behind them live with the unit that owns them,
+  // manifestIntegrity.assertOpportunityAccountingComplete: no frozen opportunity
+  // may be dropped by the dep-family filter, and each must be bucketed exactly
+  // once. Both branches are defensive — the loader's DUPLICATE_OPPORTUNITY_ID
+  // check and assertOpportunityRulesValid refuse first — which is why the guard is
+  // a separately callable unit with its own direct tests rather than inline code
+  // nothing can exercise.
+  assertOpportunityAccountingComplete(
+    depOpportunities.length,
+    manifest.opportunities.length,
+    oppAccounting,
+  );
 
   // 11. Verdict.
   const anyUnimplemented = rulesEvaluated.some((r) => r.status === 'unimplemented');

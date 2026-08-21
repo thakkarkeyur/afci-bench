@@ -247,6 +247,65 @@ export function e1DenominatorOpportunities(manifest: EvaluatorManifest) {
   );
 }
 
+/** The four frozen-opportunity accounting buckets the engine reports. */
+export interface OpportunityAccounting {
+  applicable_opportunity_count: number;
+  fixed_opportunity_count: number;
+  violated_opportunity_count: number;
+  absent_opportunity_count: number;
+}
+
+/**
+ * Reconcile the frozen-opportunity accounting, or refuse to emit a result.
+ *
+ * Two invariants, both of which must hold before an E1 rate means anything:
+ *
+ *   1. NO FROZEN OPPORTUNITY WAS DROPPED. After the P1-2 validation every frozen
+ *      opportunity is an in-force dependency-family scoring opportunity, so the
+ *      dep-family filter must not have excluded any of them. If it did, the
+ *      denominator would silently disagree with the uniquely-scored opportunity
+ *      set — a smaller denominator on the same numerator.
+ *   2. EACH OPPORTUNITY IS BUCKETED EXACTLY ONCE. Opportunity ids are unique
+ *      (P1-1, enforced by the loader), and the checker emits exactly one outcome
+ *      per opportunity, so fixed + violated + absent must equal applicable. A
+ *      shortfall means an opportunity was scored under no status; an excess means
+ *      one was counted under two.
+ *
+ * WHY THIS IS A SEPARATE, EXPORTED UNIT. Both branches are DEFENSIVE: they are
+ * unreachable through any valid manifest, because the loader's
+ * DUPLICATE_OPPORTUNITY_ID check and `assertOpportunityRulesValid` refuse first.
+ * That is the correct design — the earlier gates should fail first — but it left
+ * the guard itself untested, and a defensive guard nobody exercises is a guard
+ * that can rot. Extracting it here lets both branches be driven directly with
+ * inconsistent inputs WITHOUT weakening any earlier gate to make them reachable
+ * through a manifest. The engine calls this at exactly the point the inline code
+ * used to occupy, with exactly the same values, so behaviour is unchanged.
+ */
+export function assertOpportunityAccountingComplete(
+  accountedOpportunityCount: number,
+  manifestOpportunityCount: number,
+  accounting: OpportunityAccounting,
+): void {
+  if (accountedOpportunityCount !== manifestOpportunityCount) {
+    throw new OracleError(
+      'INCOMPLETE_SCORING',
+      'a frozen opportunity was excluded from accounting (denominator != scoring-opportunity set)',
+      `accounted=${accountedOpportunityCount} manifest=${manifestOpportunityCount}`,
+    );
+  }
+  const bucketed =
+    accounting.fixed_opportunity_count +
+    accounting.violated_opportunity_count +
+    accounting.absent_opportunity_count;
+  if (bucketed !== accounting.applicable_opportunity_count) {
+    throw new OracleError(
+      'INCOMPLETE_SCORING',
+      'frozen-opportunity accounting is incomplete (applicable != fixed + violated + absent)',
+      `applicable=${accounting.applicable_opportunity_count} fixed+violated+absent=${bucketed}`,
+    );
+  }
+}
+
 export interface EligibilityOptions {
   /**
    * Approved public eligibility per task id, read from the public task index
