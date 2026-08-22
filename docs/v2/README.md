@@ -227,14 +227,40 @@ authored **no** task, ran **no** benchmark, and froze **nothing**.
   boundaries**, and repeated tasks over one boundary are **not** independent
   architecture constructs.
 - **DECISION B — additional public architecture tasks are required before
-  Stage 0** (`TD-B34`). New candidates must exercise genuinely different existing
-  dependency-direction **leaf rules and source/target boundaries**. The motivation
-  is **construct validity**; the deficiency is **task-set coverage, not an oracle
-  failure**; the repaired scope-based oracle **remains** the approved attribution
-  mechanism; and **no new rule family is required**, because unused implemented
-  dependency leaf relationships already exist. `TD-B34` stays **open and
-  blocking**; **G1**, **G2** and **G6** remain **not passed** and the suite is
-  **not** ready.
+  Stage 0** (`TD-B34`). *As recorded then:* new candidates must exercise genuinely
+  different existing dependency-direction **leaf rules and source/target
+  boundaries**. The motivation is **construct validity**; the deficiency is
+  **task-set coverage, not an oracle failure**; the repaired scope-based oracle
+  **remains** the approved attribution mechanism; and **no new rule family is
+  required**, because unused implemented dependency leaf relationships already
+  exist. `TD-B34` stays **open and blocking**; **G1**, **G2** and **G6** remain
+  **not passed** and the suite is **not** ready.
+
+  > **HISTORICAL — SUPERSEDED by the `TD-B34` replication-depth re-scope. This
+  > breadth directive is NOT current governance and must not be authored
+  > against.** The **withdrawn directive** is the sentence above requiring
+  > additional tasks to exercise *genuinely different existing
+  > dependency-direction leaf rules and source/target boundaries* before Stage 0.
+  > It is **obsolete and structurally unattainable**: an independent
+  > remaining-leaf feasibility review classified `AR-DEP-002` (`contracts`),
+  > `AR-DEP-003` (`core`) and `AR-DEP-004` (`infra`) **theoretically detectable
+  > but NOT task-creatable on the current substrate**, leaving a demonstrated
+  > ceiling of **3 decision clusters / 2 leaf rules / 2 source scopes / 3
+  > forbidden targets** with **all three clusters already represented**. The
+  > clause *"no new rule family is required, because unused implemented dependency
+  > leaf relationships already exist"* is superseded in its **reason**: the
+  > binding constraint is **substrate feasibility**, not checker coverage, and
+  > `AR-DEP-002`/`003`/`004` are already implemented and already mechanically
+  > detectable while being not task-creatable. `TD-B34` is now gated on
+  > **replication depth** inside the two singleton clusters
+  > (`DC-FEATURES-API-AR-DEP-006`, then `DC-API-CORE-AR-DEP-005`;
+  > `DC-FEATURES-INFRA-AR-DEP-006` is **not** the immediate priority), and the
+  > ceiling is recorded as a **construct-validity limitation** of the study rather
+  > than a defect to engineer away. Current governance:
+  > [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md),
+  > [`TASK_AUTHORING_POLICY.md`](TASK_AUTHORING_POLICY.md) §12 and the re-scoped
+  > `TD-B34` row in [`OPEN_DECISIONS.md`](OPEN_DECISIONS.md). The historical
+  > directive is kept above rather than erased so the decision trail stays intact.
 - **Production-source scoring (P0 repair).** E1 is computed from the **production
   dependency graph** only: `*.spec.ts` / `*.test.ts`, `__tests__/`, test support
   material and tooling/config TypeScript such as `jest.config.ts` are partitioned
@@ -248,10 +274,23 @@ authored **no** task, ran **no** benchmark, and froze **nothing**.
   (`PT01`–`PT04`; now five scored candidates over three decision clusters — see
   the remaining-leaf feasibility section below) is **not**
   confirmatory-ready. Repeated exposures to one boundary are **clustered**; task
-  count ≠ independent architecture-decision count; the final power simulation runs
-  **only after** additional distinct decisions are authored and approved; the
-  analysis artifact will need a **decision/boundary cluster identifier**; and **no
-  final power value is frozen now** (`TD-B37`; no power simulation was run here).
+  count ≠ independent architecture-decision count; *as recorded then,* the final
+  power simulation runs **only after** additional **distinct decisions** are
+  authored and approved; the analysis artifact will need a **decision/boundary
+  cluster identifier**; and **no final power value is frozen now** (`TD-B37`; no
+  power simulation was run here).
+
+  > **HISTORICAL — the power precondition above is SUPERSEDED in the same way.**
+  > "Additional **distinct decisions**" was the breadth objective, and it is
+  > **withdrawn**: all three task-creatable clusters are already represented, so no
+  > additional distinct decision is available to author. The power simulation is
+  > now gated on the **re-scoped** `TD-B34` (replication depth inside the singleton
+  > clusters) plus `TD-B37`'s other three preconditions and the residual
+  > small-cluster specification `TD-B41`. What has **not** changed: clustering is
+  > real, `decision_cluster_id` is mandatory, **no power simulation has been run**
+  > and **no power value is frozen**
+  > ([`PILOT_AND_POWER_POLICY.md`](PILOT_AND_POWER_POLICY.md) Stage 0;
+  > [`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §4b–§4c).
 - **Four further blockers opened, none closed** — `TD-B34`–`TD-B37`. The registry
   now holds **37 blocking + 6 non-blocking** decisions, **all open**.
   *(Superseded on status only: `TD-B23` and `TD-B24` were subsequently resolved by
@@ -349,7 +388,11 @@ substrate is still `630d3180`.
   opportunity set or E1 denominator; each survives as a superseded, detection-only
   record), the active set spans **three** clusters, and `api → core` /
   `AR-DEP-005` are **represented**. `TD-B40` now governs only the residual
-  **inactive-reserve** rows and the outstanding **independent re-approval**.
+  **inactive-reserve** rows and the outstanding **independent re-approval** — and
+  of those two, the **reserve-row re-authoring has since been performed** as well
+  (four legacy rows demoted, one retained as a task-created candidate, no reserve
+  activated, reserve denominator **0**); what remains is the **independent
+  re-approval** of the whole migration, so the row stays **open and blocking**.
 - **One candidate cleared, none authored.** A candidate using an implemented
   dependency leaf **and** source scope that were **then unrepresented** passed
   pre-authoring feasibility review, and is gradeable through HTTP alone. **No task body was
@@ -407,13 +450,43 @@ canonical substrate is still `630d3180` / `0198d76c…`, and the protocol remain
   sample enough distinct dependency-direction decisions. **Further candidate
   authoring is still required before Stage 0**, **no power simulation may run yet**
   (`TD-B37`), gates **G1/G2/G6** remain **not passed**, and the suite is **not**
-  ready. `PT07` still cannot enter E1. **Reconciled against private HEAD
-  `d7638210`:** its private evaluator package **has since been authored** and
-  linked to the approved public hash, so the earlier "no package exists" statement
-  is **withdrawn as stale**; that package is `status=review`, **not frozen** and
-  **not independently reviewed**, so validation, approval and freeze remain
-  outstanding (`TD-B05`/`TD-B14`/`TD-B32`, `G1`) and its `scored` eligibility still
-  records **intent**, never a demonstrated denominator.
+  ready. `PT07` still cannot enter E1. **Reconciled against the authorised private
+  state:** its private evaluator package **has since been authored** and linked to
+  the approved public hash, so the earlier "no package exists" statement is
+  **withdrawn as stale**; and that package **has since been independently reviewed
+  and approved** — see the next bullet — so the earlier "not independently
+  reviewed" statement is **also withdrawn as stale**. What has **not** changed:
+  the package is `status=review` and **not frozen**, so validation and freeze
+  remain outstanding (`TD-B05`/`TD-B14`/`TD-B32`, `G1`) and its `scored`
+  eligibility still records **intent**, never a demonstrated denominator.
+- **`PT07`'s private package: independently reviewed and APPROVED — and that is
+  not a freeze.** An external independent **read-only** review of the package
+  returned verdict **APPROVE** with **P0 = 0**, **P1 = 0** and **P2 = 6**
+  hardening findings, all six of which the private package has since implemented.
+  Because the review was read-only it changed no private byte, so the private
+  repository still recorded `independently_reviewed: false` afterwards — which
+  meant the approval had **not been propagated**, never that the review had not
+  happened. It is now propagated into the private governance record. Four things
+  approval does **not** confer, each independently true: the manifest is still
+  `status=review` and **not frozen**; gate **`G1` is not passed**; `PT07` is **not
+  yet eligible for an actual E1 run**; and nothing here is a **protocol freeze**.
+  Freezing remains a separate, later, explicitly authorised action. Provenance is
+  recorded exactly as supplied: **no reviewer identity, external URL or timestamp
+  was supplied and none is claimed**, and the review **precedes** the commit that
+  records it. The approval covers the **`PT07` package only** — not the private
+  opportunity migration, whose independent re-approval is still outstanding under
+  `TD-B40` residual (B), and not the eight other private packages, which remain
+  `review_required`.
+- **The private reserve rows are reconciled, and no reserve was activated**
+  (`TD-B40` residual (A)). `PR01`/`PR02` stay `inactive-reserve` with a **zero**
+  reserve denominator; the **active** set is unchanged at **5** opportunities over
+  **3** clusters. Four of their five legacy draft rows were **demoted** to
+  superseded, non-scoring records and one survives as a task-created reserve
+  candidate. The legacy `infra → core` / `AR-DEP-004` row is **permanently barred**
+  from any E1 denominator because that relationship is **not task-creatable** on
+  this substrate — it is **not** an available fourth cluster. The reconciliation is
+  **performed but not independently re-approved**, so `TD-B40` stays **open and
+  blocking**.
 - **No blocker was opened or closed.** The registry still holds **40 blocking + 6
   non-blocking** decisions, **43 open**.
 

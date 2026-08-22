@@ -284,6 +284,13 @@ def test_pt07_public_eligibility_is_scored_and_consistent():
 
 
 def test_pt07_eligibility_reason_records_intent_not_a_demonstrated_denominator():
+    """`scored` records INTENT. Four separate facts keep it from reading as more.
+
+    The reason must state the approval that IS true and, independently, the three
+    things that are still not: not frozen, G1 not passed, not run-eligible. Those
+    are asserted apart from one another so recording the approval can never be the
+    thing that relaxes the freeze statement (see test_private_state_reconciliation).
+    """
     reason = _by_id(MATRIX_PATH)["PT07"]["e1_eligibility_reason"].lower()
     assert "intended for e1" in reason
     assert "pre-freeze" in reason
@@ -291,13 +298,25 @@ def test_pt07_eligibility_reason_records_intent_not_a_demonstrated_denominator()
         "the reason must say the private evaluator package is not frozen; it now "
         "exists, so 'not yet authored' would be stale"
     )
-    assert "not independently reviewed" in reason, (
-        "an authored package is not an approved one; the reason must say so"
+    # the package HAS been independently reviewed and approved - and that is not a
+    # freeze, which the reason must say in the same breath
+    assert "independently reviewed and approved" in reason, (
+        "PT07's private package has been independently reviewed and approved; the "
+        "reason must record it"
     )
+    assert "not independently reviewed" not in reason, (
+        "that claim is stale: the package HAS been independently reviewed"
+    )
+    assert "not a freeze" in reason and "not a gate pass" in reason, (
+        "an approved package is not a frozen one; the reason must say so"
+    )
+    assert "gate g1 is not passed" in reason
+    assert "not yet e1 run-eligible" in reason
     assert "not yet authored" not in reason, (
         "PT07's private package has been authored; that claim is stale"
     )
     assert "subject to private evaluator validation" in reason
+    assert "explicit freeze of a non-zero frozen opportunity set" in reason
     assert "before any benchmark or model execution" in reason, (
         "the reason must record that authoring predates any run"
     )
@@ -373,8 +392,18 @@ def test_pt07_is_traceable_to_e1_as_an_intended_scored_candidate():
     assert "no private evaluator package at all" not in notes, (
         "PT07's private package has been authored; that claim is stale"
     )
-    assert "not_yet_frozen" in notes and "not independently reviewed" in notes, (
-        "the row must record that the authored package is neither frozen nor approved"
+    assert "not independently reviewed" not in notes, (
+        "that claim is stale: the package HAS been independently reviewed"
+    )
+    assert "independently reviewed and approved" in notes, (
+        "the row must record the external independent approval of the package"
+    )
+    assert "not_yet_frozen" in notes, (
+        "the row must record that the approved package is still not frozen"
+    )
+    assert "gate g1 not passed" in notes or "g1 not passed" in notes
+    assert "package approval is not a freeze" in notes, (
+        "approval and freeze are different facts; the row must not blur them"
     )
     assert "records intent only" in notes
 

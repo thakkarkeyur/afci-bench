@@ -414,9 +414,22 @@ not a suite.
 > enters any manifest opportunity set or any denominator, each surviving as a
 > superseded, detection-only record — so `TD-B40` no longer claims that
 > `api → core` is unrepresented. It now governs only the residual
-> **inactive-reserve** rows (`PR01`/`PR02`, which must be re-authored before any
-> activation) and the outstanding **independent re-approval** of the migration; no
-> manifest is frozen.
+> **inactive-reserve** rows (`PR01`/`PR02`) and the outstanding **independent
+> re-approval** of the migration; no manifest is frozen.
+>
+> **The reserve rows have since been re-authored, and no reserve was activated.**
+> Every `PR01`/`PR02` draft row has been re-assessed under the current governance
+> and carries an explicit disposition: four are **demoted** to superseded,
+> non-scoring records and one survives as a task-created reserve candidate. The
+> legacy `infra → core` / `AR-DEP-004` row is **permanently barred** from any E1
+> denominator because that relationship is **not task-creatable** on this substrate,
+> so **no legacy reserve row is a task-creatable fourth cluster** — see
+> [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §3a. Both
+> reserves remain `inactive-reserve`, the reserve denominator is **0**, the active
+> counts in §3 are unchanged, and `PR02` stays independently blocked by `TD-B26`.
+> What remains outstanding under `TD-B40` is the **independent re-approval** of
+> that reconciliation and of the migration as a whole, so no reserve may be
+> activated yet.
 
 ### 12.2b The cleared candidate is now authored as `PT07` (`TD-B34` still open)
 
@@ -443,14 +456,22 @@ modified, no benchmark or model ran, and nothing was frozen.
   state, and reaching for it internally is exactly what §8a forbids. What `PT07`
   requires is the observable consequence: its answer carries none of the fields
   that identify a created order.
-- **`PT07` still cannot enter E1.** Reconciled against private HEAD `d7638210`: a
-  private evaluator package for `PT07` **has now been authored** and linked to the
-  approved public hash, so the earlier statement that none exists is withdrawn as
-  stale. That package is `status=review`, **not frozen** and **not independently
-  reviewed**, so it must still be independently validated, approved and frozen, and
-  shown to carry a valid non-zero frozen opportunity set, before `PT07` enters E1
-  (`TD-B05`/`TD-B14`/`TD-B32`, gate `G1`). Its public eligibility of `scored`
-  records intent, never a demonstrated denominator.
+- **`PT07` still cannot enter E1.** Reconciled against the authorised private
+  state: a private evaluator package for `PT07` **has now been authored** and
+  linked to the approved public hash, so the earlier statement that none exists is
+  withdrawn as stale. That package **has also now been independently reviewed and
+  APPROVED** in an external **read-only** review (verdict **APPROVE**; **P0 = 0**,
+  **P1 = 0**, **P2 = 6**, all six hardening findings since implemented), and that
+  approval is propagated into the private governance record — so the earlier
+  statement that it is **not independently reviewed** is withdrawn as stale too.
+  **Approval is not a freeze and not a gate pass.** The package is still
+  `status=review` and **not frozen**, gate **`G1` is not passed**, and `PT07` is
+  **not yet E1 run-eligible**: its hidden acceptance must still be validated and a
+  valid non-zero frozen opportunity set must still be **explicitly frozen** before
+  `PT07` enters E1 (`TD-B05`/`TD-B14`/`TD-B32`, gate `G1`). Its public eligibility
+  of `scored` records intent, never a demonstrated denominator. The approval covers
+  the `PT07` **package** only — not the private opportunity migration (`TD-B40`
+  residual (B)) and not the other eight private packages.
 
 **`TD-B34` is NOT resolved.** One authored task does not provide the breadth or the
 repetition the confirmatory construct needs; the active set plus `PT07` still does

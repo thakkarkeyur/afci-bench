@@ -320,12 +320,38 @@ not replaced - by the production-source scoring policy recorded below.
 
 ## DECISION B - additional architecture tasks required before Stage 0
 
+> **HISTORICAL RECORD - THE BREADTH OBJECTIVE IN THIS SECTION IS SUPERSEDED AND IS
+> NOT CURRENT GOVERNANCE.** Everything in this section is preserved exactly as
+> recorded when `TD-B34` was opened. The **withdrawn directive** is the sentence
+> immediately below, requiring additional tasks to exercise *genuinely different
+> existing dependency-direction leaf rules and source/target boundaries* before
+> Stage 0, together with the "unused implemented dependency leaf relationships
+> already exist" reason for it. Both are **obsolete and structurally
+> unattainable**: an independent remaining-leaf feasibility review has since
+> classified `AR-DEP-002` (`contracts`), `AR-DEP-003` (`core`) and `AR-DEP-004`
+> (`infra`) **theoretically detectable but NOT task-creatable on the current
+> substrate**, leaving a demonstrated ceiling of **3 decision clusters / 2 leaf
+> rules / 2 source scopes / 3 forbidden targets** with **all three clusters
+> already represented**. `TD-B34` is re-scoped to **replication depth** inside the
+> two singleton clusters - priority **A** `DC-FEATURES-API-AR-DEP-006`, then
+> priority **B** `DC-API-CORE-AR-DEP-005`; `DC-FEATURES-INFRA-AR-DEP-006` is
+> **not** the immediate priority. **Do not author against this section.** Current
+> governance: the *Addendum: remaining-leaf feasibility and the `TD-B34` re-scope*
+> below, [`DEPENDENCY_TASK_FEASIBILITY.md`](../../../../docs/v2/DEPENDENCY_TASK_FEASIBILITY.md),
+> [`TASK_AUTHORING_POLICY.md`](../../../../docs/v2/TASK_AUTHORING_POLICY.md) section 12,
+> and the re-scoped `TD-B34` row in
+> [`OPEN_DECISIONS.md`](../../../../docs/v2/OPEN_DECISIONS.md). Nothing here is
+> rewritten: the original decision is kept verbatim so the trail stays intact.
+
 **DECISION B: author additional public tasks exercising genuinely different existing
 dependency-direction leaf rules and source/target boundaries before Stage 0.** Registered as
-blocking decision **`TD-B34`**.
+blocking decision **`TD-B34`**. *(As originally recorded; superseded - see the
+supersession note above.)*
 
 The motivation is **construct validity**: the current task set does not sample enough
 distinct dependency-direction decisions to support the intended confirmatory endpoint.
+*(The motivation is unchanged and still current; only the breadth REMEDY is
+superseded.)*
 
 Stated explicitly, so the record cannot be misread later:
 
@@ -341,14 +367,32 @@ Stated explicitly, so the record cannot be misread later:
   **unused implemented dependency leaf relationships already exist** in the frozen matrix
   (see the boundary space below). Implementing new rule families stays future work
   (`TD-B33`) and must never be used to readmit an excluded task post hoc.
+  *(SUPERSEDED REASON. The conclusion "no new rule family is required" still holds,
+  but not for this reason: the binding constraint is **substrate feasibility**, not
+  checker coverage. `AR-DEP-002`/`003`/`004` are already implemented and already
+  mechanically detectable while being **not task-creatable**, so implementing a
+  further rule family would not make the substrate able to create a decision it
+  cannot create.)*
 
 `TD-B34` is **open and blocking**. Gates **G1**, **G2** and **G6** remain **not passed**, and
-the suite is **not** ready.
+the suite is **not** ready. *(Still true. What changed is the objective `TD-B34`
+carries - replication depth, not breadth.)*
 
 ## Authoring requirements for the NEXT work package (no task is authored here)
 
 **No new or replacement task is authored in this package.** These are the requirements the
 next candidates must satisfy; they are recorded now so authoring cannot drift.
+
+> **SUPERSESSION NOTE for requirement 3 below.** "Exercise a dependency
+> leaf/source-target decision **not already represented**" is now satisfiable only
+> in the trivial sense: all three task-creatable clusters are already represented,
+> so no unrepresented decision remains to exercise. Under the re-scoped `TD-B34`
+> the requirement a replication candidate must meet is to add an **independent
+> functional instrument to an existing singleton cluster** - priority
+> `DC-FEATURES-API-AR-DEP-006`, then `DC-API-CORE-AR-DEP-005` - while every other
+> requirement in this list continues to apply unchanged. The "where the substrate
+> permits it" qualifier already present in requirement 3 is what makes it
+> non-contradictory rather than merely stale.
 
 Every next candidate task must:
 
@@ -879,15 +923,38 @@ externally ungradeable.
   `stored_in_private_evaluator_repo`. **That is no longer the current state** — see
   the reconciliation note below.
 
-> **Reconciled against private HEAD `d7638210`.** A private evaluator package for
-> `PT07` **has since been authored** under separate authorised private work and
+> **Reconciled against the authorised private state.** A private evaluator package
+> for `PT07` **has since been authored** under separate authorised private work and
 > linked to the approved public hash `557caed09420354e...`, so the bullet above —
-> which recorded that no such package existed — is **withdrawn as stale**. It is
-> `status=review`, **not frozen** and **not independently reviewed**, so it is an
-> authored candidate package and **not** a demonstrated frozen opportunity set:
-> gate `G1` is not passed and `PT07` cannot enter E1. `TASK_ACCEPTANCE_MATRIX.csv`,
-> `TASK_LAYER_MATRIX.csv`, `TASK_RULE_MATRIX.csv` and
-> `PILOT_PUBLIC_TASK_MATRIX.csv` now record `stored_in_private_evaluator_repo` for
+> which recorded that no such package existed — is **withdrawn as stale**.
+>
+> **It has also since been independently reviewed and APPROVED.** An external
+> independent **read-only** review of that package returned verdict **APPROVE**
+> with **P0 = 0**, **P1 = 0** and **P2 = 6** hardening findings, all six of which
+> the private package has since implemented, and that approval is now propagated
+> into the private governance record. The earlier statement that the package was
+> **not independently reviewed** is therefore **also withdrawn as stale**. Because
+> the review was read-only it modified no private byte, which is why the private
+> lifecycle metadata still said otherwise afterwards: the approval had not been
+> **propagated**, not that the review had not happened. Provenance is recorded
+> exactly as supplied — **no reviewer identity, external URL or timestamp was
+> supplied and none is claimed** — and the review **precedes** the private commit
+> that records it.
+>
+> **Approval is not a freeze and not a gate pass.** Four facts remain
+> independently true and none of them is changed by the approval: the package is
+> `status=review` and **not frozen**; gate **`G1` is not passed**; `PT07` is **not
+> yet eligible for an actual E1 run**; and its opportunity set is an authored
+> candidate, **not** a demonstrated frozen opportunity set. Freezing remains a
+> separate, later, explicitly authorised action.
+>
+> **The approval is narrow.** It covers the `PT07` **package** only. It does *not*
+> cover the private opportunity migration, whose independent re-approval is still
+> outstanding under `TD-B40` residual (B), and it does *not* cover the other eight
+> private packages, which remain `review_required`.
+>
+> `TASK_ACCEPTANCE_MATRIX.csv`, `TASK_LAYER_MATRIX.csv`, `TASK_RULE_MATRIX.csv` and
+> `PILOT_PUBLIC_TASK_MATRIX.csv` record `stored_in_private_evaluator_repo` for
 > `PT07`, matching the other candidates, while every public row keeps its
 > `candidate-not-frozen` status. `EM-PT07` is no longer merely a reserved
 > identifier. The private repository was inspected **read-only** for this
@@ -899,9 +966,21 @@ externally ungradeable.
 - The package authored for `PT07` must pin the public hash `557caed09420354e...`,
   and must demonstrate a non-empty fixed opportunity set before it may be approved
   or frozen (`TD-B05`/`TD-B14`, gate `G1`). Those requirements are **not**
-  discharged by the package now existing: it remains `status=review` and
-  unreviewed. A private manifest hash must never be silently accepted against a
-  changed public task.
+  discharged by the package existing, and they are **not** discharged by its
+  independent approval either: it remains `status=review` and **not frozen**, so
+  the demonstrated-and-frozen opportunity set is still outstanding. A private
+  manifest hash must never be silently accepted against a changed public task.
+- **The private reserve rows are reconciled, and no reserve was activated**
+  (`TD-B40` residual (A)). `PR01`/`PR02` remain `inactive-reserve` with a **zero**
+  reserve denominator and the **active** set is unchanged at **5** opportunities
+  over **3** clusters. Four of their five legacy draft rows were **demoted** to
+  superseded, non-scoring records; one survives as a task-created reserve
+  candidate. The legacy `infra → core` / `AR-DEP-004` row is **permanently barred**
+  from any E1 denominator because that relationship is **not task-creatable** on
+  this substrate, so it is **not** an available fourth decision cluster. The
+  reconciliation is **performed but not independently re-approved**, so `TD-B40`
+  stays **open and blocking**. No public task, hash or eligibility changed for
+  either reserve.
 
 ### What this package deliberately did NOT do
 

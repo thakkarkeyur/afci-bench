@@ -938,3 +938,277 @@ def test_the_registry_records_the_package_without_closing_anything():
     assert resolved == {"TD-B23", "TD-B24", "TD-B38"}, (
         f"this package closes no blocker; resolved set is {sorted(resolved)}"
     )
+
+
+# --------------------------------------------------------------------------- #
+# 16. The breadth directive is SUPERSEDED wherever it still appears (PART I / J).
+#
+# The re-scope was already pinned in the TD-B34 registry row and in the Stage-0
+# gate. A later review found two places it had NOT reached, both still reading as
+# live instruction:
+#
+#   * docs/v2/README.md - the DECISION B bullet, telling the next authoring
+#     packages that additional tasks must exercise "genuinely different existing
+#     dependency-direction leaf rules and source/target boundaries" before Stage 0,
+#     plus the power sentence in the same historical section gating the power
+#     simulation on "additional distinct decisions";
+#   * TASK_AUTHORING_REPORT.md - the original DECISION B section, stating the same
+#     directive and its "unused implemented dependency leaf relationships already
+#     exist" reason.
+#
+# Neither is rewritten. Each is marked HISTORICAL / SUPERSEDED in place, with a
+# forward pointer to the current governance, and the guards below stop the live
+# instruction being silently restored. They are SECTION-SCOPED: a supersession note
+# elsewhere in a long document must not be able to rescue a live directive.
+# --------------------------------------------------------------------------- #
+#: The withdrawn breadth wording, as it actually appears.
+BREADTH_DIRECTIVE_RE = re.compile(
+    r"genuinely different existing\s*dependency-direction\s*leaf rules",
+    re.IGNORECASE,
+)
+#: A marker that turns an occurrence into recorded history rather than instruction.
+SUPERSESSION_MARKERS = (
+    "superseded", "withdrawn", "as recorded then", "as originally recorded",
+    "historical", "obsolete", "no longer current",
+)
+
+#: Where the withdrawn directive survives, and which section must carry the marker.
+BREADTH_HISTORY_SECTIONS = {
+    DOCS_V2_README: "opportunity reassessment",
+    REPORT_PATH: "decision b - additional architecture tasks required before stage 0",
+}
+
+
+@pytest.mark.parametrize(
+    "path", sorted(BREADTH_HISTORY_SECTIONS, key=lambda p: p.name), ids=lambda p: p.name
+)
+def test_the_breadth_directive_survives_only_as_superseded_history(path):
+    """Every occurrence in the owning section must be marked, in that section."""
+    body = _section_starting_with(path, BREADTH_HISTORY_SECTIONS[path])
+    flat = _norm(body)
+    hits = list(BREADTH_DIRECTIVE_RE.finditer(flat))
+    assert hits, (
+        f"{path.name}: the historical breadth directive is not in the section this "
+        f"guard scopes to; if it moved, the guard must move with it"
+    )
+    for match in hits:
+        window = flat[max(0, match.start() - 700) : match.end() + 700]
+        assert any(m in window for m in SUPERSESSION_MARKERS), (
+            f"{path.name}: the breadth directive reads as LIVE instruction: "
+            f"...{window[:240]!r}"
+        )
+
+
+@pytest.mark.parametrize(
+    "path", sorted(BREADTH_HISTORY_SECTIONS, key=lambda p: p.name), ids=lambda p: p.name
+)
+def test_each_breadth_section_carries_a_supersession_and_forward_pointer(path):
+    """A marker alone is not enough: the reader needs the CURRENT rule and why."""
+    flat = _norm(_section_starting_with(path, BREADTH_HISTORY_SECTIONS[path]))
+    assert "superseded" in flat
+    assert "structurally unattainable" in flat or (
+        "not task-creatable on the current substrate" in flat
+    )
+    assert "replication depth" in flat, (
+        f"{path.name}: the superseded section must point at the current objective"
+    )
+    assert "3 decision clusters / 2 leaf rules / 2 source scopes / 3 forbidden targets" in flat, (
+        f"{path.name}: the superseded section must state the demonstrated ceiling"
+    )
+    assert "dependency_task_feasibility.md" in flat, (
+        f"{path.name}: the supersession note must point at the normative record"
+    )
+    for cluster in sorted(SINGLETON_CLUSTERS):
+        assert cluster.lower() in flat, f"{path.name} must name {cluster}"
+
+
+def test_the_readme_marks_the_directive_as_not_to_be_authored_against():
+    """The README is the entry point, so its note must be unmistakable."""
+    flat = _norm(_section_starting_with(DOCS_V2_README, "opportunity reassessment"))
+    assert "not current governance" in flat
+    assert "must not be authored against" in flat
+    assert "withdrawn directive" in flat
+    # the "no new rule family" REASON is superseded, not just the directive
+    assert "binding constraint is substrate feasibility" in flat
+
+
+def test_the_report_marks_the_decision_b_section_as_not_to_be_authored_against():
+    flat = _norm(
+        _section_starting_with(
+            REPORT_PATH,
+            "decision b - additional architecture tasks required before stage 0",
+        )
+    )
+    assert "historical record" in flat
+    assert "not current governance" in flat
+    assert "do not author against this section" in flat
+    assert "withdrawn directive" in flat
+    # history is preserved, not rewritten
+    assert "as originally recorded" in flat
+    assert "nothing here is rewritten" in flat
+    # the motivation survives; only the remedy is superseded
+    assert "the motivation is unchanged and still current" in flat
+
+
+def test_the_report_supersedes_the_unused_leaf_relationships_reason():
+    """The reason, not only the directive.
+
+    "Unused implemented dependency leaf relationships already exist" is WHY the
+    breadth objective looked achievable. Left live it would justify re-adopting it,
+    so it carries its own supersession.
+    """
+    flat = _flat(REPORT_PATH)
+    for match in re.finditer(
+        r"unused implemented dependency leaf relationships already exist", flat
+    ):
+        window = flat[max(0, match.start() - 1200) : match.end() + 900]
+        assert "superseded" in window, (
+            f"the 'unused leaves already exist' reason reads as live: "
+            f"...{window[:240]!r}"
+        )
+    assert "binding constraint is substrate feasibility" in flat
+
+
+def test_the_readme_power_precondition_is_superseded_too():
+    """The power sentence in the same historical section is part of the directive.
+
+    "The final power simulation runs only after additional DISTINCT DECISIONS are
+    authored and approved" is the breadth objective wearing a statistical hat: no
+    additional distinct decision is available, so left live it would block the
+    power simulation on something unattainable.
+    """
+    flat = _norm(_section_starting_with(DOCS_V2_README, "opportunity reassessment"))
+    hits = list(re.finditer(r"additional distinct decisions are\s*authored", flat))
+    assert hits, "the historical power precondition is not in the scoped section"
+    for match in hits:
+        window = flat[max(0, match.start() - 700) : match.end() + 700]
+        assert any(m in window for m in SUPERSESSION_MARKERS), (
+            f"the README power precondition reads as live: ...{window[:240]!r}"
+        )
+    assert "the power precondition above is superseded" in flat
+    assert "replication depth" in flat
+    # what has NOT changed is restated, so the supersession is not read as a
+    # licence to run a power simulation
+    assert "no power simulation has been run" in flat
+    assert "no power value is frozen" in flat
+    assert "decision_cluster_id is mandatory" in flat
+
+
+def test_the_breadth_guard_is_not_vacuous():
+    """Guard the guard: the pattern must match the wording it polices."""
+    live = _norm(
+        "New candidates must exercise genuinely different existing "
+        "dependency-direction **leaf rules and source/target boundaries**."
+    )
+    assert BREADTH_DIRECTIVE_RE.search(live), (
+        "the breadth-directive pattern no longer matches the directive it exists to "
+        "police; restoring the live instruction would go unnoticed"
+    )
+    assert not any(m in live for m in SUPERSESSION_MARKERS)
+
+
+# --------------------------------------------------------------------------- #
+# 17. Inactive-reserve draft rows do not contradict the ceiling (PART K).
+# --------------------------------------------------------------------------- #
+RESERVE_SECTION = "3a. inactive-reserve draft rows do not contradict"
+
+
+def test_the_feasibility_record_explains_the_inactive_reserve_draft_rows():
+    body = _norm(_section_starting_with(FEASIBILITY_PATH, RESERVE_SECTION))
+    assert "pr01" in body and "pr02" in body
+    # the exact misreading the section exists to prevent
+    assert "ar-dep-004" in body
+    assert "fourth cluster" in body
+    assert "permanently barred" in body
+    # historical / pre-reassessment material, entering no active endpoint
+    assert "historical, pre-reassessment material" in body
+    assert "contributes to no endpoint" in body
+    assert "no active cluster register" in body
+    assert "zero" in body and "denominator" in body
+    # being inactive was never a licence to leave an invalid row standing
+    assert "being inactive was never a licence" in body
+    # the dispositions are machine-readable, not only prose
+    assert "machine-readable" in body
+    assert "checkable rather than a matter of reading prose" in body
+    # nothing private is disclosed
+    assert "no private identifier" in body
+    assert "no task-to-cluster mapping is published" in body
+    # still open
+    assert "not independently re-approved" in body
+    assert "td-b40" in body
+
+
+def test_the_reserve_explanation_is_carried_into_the_policy_and_the_report():
+    """One record explaining it is not enough: the authoring bar must carry it."""
+    policy = _flat(POLICY_PATH)
+    assert "the reserve rows have since been re-authored" in policy
+    assert "permanently barred" in policy
+    assert "no legacy reserve row is a task-creatable fourth cluster" in policy
+    assert "reserve denominator is 0" in policy
+    report = _flat(REPORT_PATH)
+    assert "the private reserve rows are reconciled, and no reserve was activated" in report
+    assert "permanently barred" in report
+    assert "not an available fourth decision cluster" in report
+
+
+#: Any way of naming a fourth (or larger) decision cluster. The ceiling is three,
+#: so every occurrence must be a DENIAL. Word order is deliberately not assumed:
+#: "a task-creatable fourth cluster" and "a fourth task-creatable cluster" are the
+#: same false claim, and an earlier draft of this guard missed the first.
+_COUNT_WORD = r"(?:fourth|4th|four|4|fifth|5th|five|5)"
+FOURTH_CLUSTER_RE = re.compile(
+    # "four decision clusters", "a task-creatable fourth cluster", "4 clusters"
+    rf"{_COUNT_WORD}\s+(?:[\w/-]+\s+){{0,3}}clusters?"
+    # "clusters: 4", "decision clusters = 5"
+    rf"|clusters?\s*[:=]\s*(?:4|5)\b",
+    re.IGNORECASE,
+)
+#: A denial marker within the window makes the occurrence a denial, not a claim.
+_DENIAL = re.compile(
+    r"\b(not|never|cannot|can't|no|none|nor|barred|withdrawn|false|"
+    r"impossible|ceiling|at\s+most|only|unattainable|superseded|denies|denied)\b",
+    re.IGNORECASE,
+)
+
+
+def test_no_public_artifact_reads_a_reserve_row_as_active_coverage():
+    """The load-bearing negative: a reserve row is never active coverage.
+
+    The demonstrated ceiling is THREE task-creatable clusters, so any mention of a
+    fourth has to be a denial. This is the misreading the legacy `AR-DEP-004`
+    reserve row invites, and it is checked by pattern rather than by a fixed list of
+    phrasings so a re-worded claim cannot slip through.
+    """
+    for path in (FEASIBILITY_PATH, POLICY_PATH, REPORT_PATH, DECISIONS_CSV,
+                 DECISIONS_MD, DOCS_V2_README):
+        flat = _flat(path)
+        for match in FOURTH_CLUSTER_RE.finditer(flat):
+            window = flat[max(0, match.start() - 260) : match.end() + 200]
+            assert _DENIAL.search(window), (
+                f"{path.name} appears to assert a further decision cluster as "
+                f"available coverage: ...{window[:240]!r}"
+            )
+    # the adjudicated active counts are still the three-cluster ones
+    flat = _flat(FEASIBILITY_PATH)
+    assert f"active e1 opportunities: {ACTIVE_OPPORTUNITIES}" in flat
+    assert "decision clusters: 3" in flat
+    # and the occupancy statement itself is not padded with an extra cluster
+    occupancy = re.search(r"current occupancy is[^.]*\.", flat)
+    assert occupancy, "the occupancy statement is missing"
+    assert not FOURTH_CLUSTER_RE.search(occupancy.group(0)), (
+        f"the occupancy statement claims a further cluster: {occupancy.group(0)!r}"
+    )
+
+
+def test_the_fourth_cluster_guard_is_not_vacuous():
+    """Guard the guard: the pattern must match the claim it exists to police."""
+    for claim in (
+        "the inactive reserve supplies a task-creatable fourth cluster",
+        "a fourth task-creatable cluster is available in reserve",
+        "the active set spans four decision clusters",
+        "decision clusters: 4",
+    ):
+        assert FOURTH_CLUSTER_RE.search(_norm(claim)), claim
+        assert not _DENIAL.search(_norm(claim)), (
+            f"the denial pattern matches a bare claim, which would excuse it: {claim!r}"
+        )

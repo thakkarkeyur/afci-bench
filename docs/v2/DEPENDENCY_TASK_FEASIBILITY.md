@@ -169,6 +169,60 @@ effort or task count.
 
 ---
 
+## 3a. Inactive-reserve draft rows do not contradict the ceiling
+
+The two inactive reserves, `PR01` and `PR02`, historically carried **draft**
+architecture-opportunity rows in the private evaluator repository, and one of those
+rows named the `infra → core` / `AR-DEP-004` relationship that §2 classifies **not
+task-creatable**. A reader comparing the two could conclude that the ceiling is
+wrong, or that a fourth decision cluster is available in reserve. **Neither is the
+case, and the reason is not merely that the reserves are inactive.**
+
+- **Reserve draft rows are historical, pre-reassessment material.** They were
+  authored *before* the repaired scope-based oracle and *before* the independent
+  pre-authoring opportunity reassessment. They were never adjudicated against the
+  current task-created-decision standard, so their mere existence is evidence about
+  what was once drafted, not about what the substrate can support.
+- **They enter no active endpoint.** An inactive reserve contributes to **no**
+  endpoint: its draft rows are analytically inactive, enter **no** active cluster
+  register, count toward **no** E1 denominator, and are reported as a **zero**
+  denominator rather than deleted. The adjudicated **active** counts in §3 are
+  therefore unaffected by them in either direction.
+- **Being inactive was never a licence to leave an invalid row standing.**
+  Authorised private work has since **reconciled every one of those rows** under
+  the current governance — the task-created-decision standard, scope attribution,
+  this feasibility ceiling, the preservation-only rule and the production-source
+  policy — and each now carries an explicit recorded disposition. Four rows were
+  **demoted** to superseded, detection-only, non-scoring records; one survives as a
+  task-created reserve candidate. **No reserve was activated**, the active set did
+  not move, and the reserve denominator is **0**.
+- **The legacy `AR-DEP-004` row is permanently barred, not merely dormant.**
+  Because `infra` is **not task-creatable** on this substrate, that row is recorded
+  as *detectable but not task-creatable* and **cannot enter an E1 denominator on
+  any future activation**. It is therefore **not** a task-creatable fourth cluster,
+  and no coverage claim, power calculation or novelty assessment may treat it as
+  one. Nothing mechanically valid is lost: a forbidden `infra → core` edge is still
+  detected and attributed as a raw violation if it ever appears.
+- **One reserve now carries no architecture opportunity at all.** After the
+  reconciliation, one of the two reserves holds **no** dependency-direction row, so
+  on any future activation it could be a **functional** candidate only — never an
+  E1-scored one — unless a genuinely task-created decision is authored for it first
+  and independently approved.
+- **Machine-readable, not only narrative.** Each reserve row's disposition, its
+  reserve denominator of `0`, its exclusion from the active cluster register and the
+  permanent bar on the infeasible row are recorded as fields in the private
+  migration register and per-task linkage records, so the distinction is checkable
+  rather than a matter of reading prose. No private identifier and no
+  rule id is published here, and **no task-to-cluster mapping is published**
+  either - this section is suite-level only.
+- **Still open.** The reconciliation is **performed but not independently
+  re-approved**, and `TD-B40` residual (A) stays open on exactly that; `PR02` is
+  additionally blocked by `TD-B26` for a reason unrelated to its rows — its
+  terminal-state criterion is not externally reachable, and a defensible
+  architecture row does not unblock an ungradeable functional contract.
+
+---
+
 ## 4. The theoretical pair space, annotated
 
 The dependency matrix admits **15** theoretical `(source scope, forbidden target)`
@@ -288,3 +342,12 @@ to expand the substrate, and nothing here authorizes one.
 - **The analysis must treat the cluster count as fixed and small (G = 3)**
   ([`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §4b; `TD-B41`),
   and the power simulation stays blocked (`TD-B37`).
+- **The inactive-reserve draft rows have been reconciled against this ceiling and
+  cannot be read as extra coverage** (§3a; `TD-B40` residual (A)). Four legacy rows
+  are demoted to superseded, non-scoring records, one survives as a task-created
+  reserve candidate, and the legacy `infra → core` / `AR-DEP-004` row is
+  **permanently barred** from any E1 denominator because that relationship is not
+  task-creatable here. **No reserve was activated**, the active counts in §3 are
+  unchanged, and the reserve denominator is **0**. The reconciliation is
+  **performed but not independently re-approved**, so `TD-B40` stays open and
+  blocking.
