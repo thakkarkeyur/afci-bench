@@ -196,13 +196,16 @@ case, and the reason is not merely that the reserves are inactive.**
   **demoted** to superseded, detection-only, non-scoring records; one survives as a
   task-created reserve candidate. **No reserve was activated**, the active set did
   not move, and the reserve denominator is **0**.
-- **The legacy `AR-DEP-004` row is permanently barred, not merely dormant.**
-  Because `infra` is **not task-creatable** on this substrate, that row is recorded
-  as *detectable but not task-creatable* and **cannot enter an E1 denominator on
-  any future activation**. It is therefore **not** a task-creatable fourth cluster,
-  and no coverage claim, power calculation or novelty assessment may treat it as
-  one. Nothing mechanically valid is lost: a forbidden `infra → core` edge is still
-  detected and attributed as a raw violation if it ever appears.
+- **The legacy `infra → core` / `AR-DEP-004` reserve row is permanently barred, not
+  merely dormant.** Because `infra` is **not task-creatable** on this substrate, that
+  row is recorded as *detectable but not task-creatable* and **cannot enter an E1
+  denominator on any future activation**. Stated once, exactly, so it cannot be
+  paraphrased into its opposite: **the legacy `infra → core` / `AR-DEP-004` reserve
+  row is not evidence of a fourth task-creatable decision cluster, and it is
+  permanently barred from E1.** It is therefore **not** a task-creatable fourth
+  cluster, and no coverage claim, power calculation or novelty assessment may treat
+  it as one. Nothing mechanically valid is lost: a forbidden `infra → core` edge is
+  still detected and attributed as a raw violation if it ever appears.
 - **One reserve now carries no architecture opportunity at all.** After the
   reconciliation, one of the two reserves holds **no** dependency-direction row, so
   on any future activation it could be a **functional** candidate only — never an

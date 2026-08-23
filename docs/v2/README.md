@@ -221,11 +221,19 @@ authored **no** task, ran **no** benchmark, and froze **nothing**.
   scored dependency-direction opportunity.
 - **Aggregate construct coverage (suite level only; no private content
   published).** `PT01`–`PT04` remain E1-scored candidates; `PT05`/`PT06` are
-  `functional-only`; `PR01`/`PR02` remain inactive. **The current active task set
-  does not provide enough distinct dependency-direction decisions for confirmatory
-  inference** — the active opportunities exercise too few **distinct dependency
-  boundaries**, and repeated tasks over one boundary are **not** independent
-  architecture constructs.
+  `functional-only`; `PR01`/`PR02` remain inactive. Repeated tasks over one
+  boundary are **not** independent architecture constructs.
+  <!-- TD-B34-BREADTH-HISTORICAL -->
+  *HISTORICAL — SUPERSEDED, **not** current governance and not to be authored
+  against: as recorded then, "the current active task set does not provide enough
+  distinct dependency-direction decisions for confirmatory inference" and the
+  active opportunities exercise "too few distinct dependency boundaries". Under the
+  `TD-B34` replication-depth re-scope the ceiling is **3 decision clusters / 2 leaf
+  rules / 2 source scopes / 3 forbidden targets** with all three already
+  represented, so the live deficiency is **replication depth inside those three
+  clusters, not missing breadth** — see
+  [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) and
+  [`TASK_AUTHORING_POLICY.md`](TASK_AUTHORING_POLICY.md) §12.2c.*
 - **DECISION B — additional public architecture tasks are required before
   Stage 0** (`TD-B34`). *As recorded then:* new candidates must exercise genuinely
   different existing dependency-direction **leaf rules and source/target
@@ -235,7 +243,9 @@ authored **no** task, ran **no** benchmark, and froze **nothing**.
   required**, because unused implemented dependency leaf relationships already
   exist. `TD-B34` stays **open and blocking**; **G1**, **G2** and **G6** remain
   **not passed** and the suite is **not** ready.
+  <!-- TD-B34-BREADTH-HISTORICAL -->
 
+  > <!-- TD-B34-BREADTH-HISTORICAL -->
   > **HISTORICAL — SUPERSEDED by the `TD-B34` replication-depth re-scope. This
   > breadth directive is NOT current governance and must not be authored
   > against.** The **withdrawn directive** is the sentence above requiring
@@ -279,7 +289,9 @@ authored **no** task, ran **no** benchmark, and froze **nothing**.
   authored and approved; the analysis artifact will need a **decision/boundary
   cluster identifier**; and **no final power value is frozen now** (`TD-B37`; no
   power simulation was run here).
+  <!-- TD-B34-BREADTH-HISTORICAL -->
 
+  > <!-- TD-B34-BREADTH-HISTORICAL -->
   > **HISTORICAL — the power precondition above is SUPERSEDED in the same way.**
   > "Additional **distinct decisions**" was the breadth objective, and it is
   > **withdrawn**: all three task-creatable clusters are already represented, so no
@@ -445,9 +457,18 @@ canonical substrate is still `630d3180` / `0198d76c…`, and the protocol remain
   (`PT06`); no order read, list or count surface (`PT01`/`PT02`); logging outside it
   (`PT04`). Details in
   [`TASK_AUTHORING_REPORT.md`](../../experiments/v2/tasks/public/TASK_AUTHORING_REPORT.md).
-- **`TD-B34` is NOT resolved.** One task is neither the breadth nor the repetition
-  the confirmatory construct needs; the active set plus `PT07` still does **not**
-  sample enough distinct dependency-direction decisions. **Further candidate
+- **`TD-B34` is NOT resolved.** One task is not the **replication depth** the
+  confirmatory construct needs. The live deficiency is **depth and balance inside
+  the three demonstrated decision clusters, not missing breadth**: the ceiling is
+  **3 decision clusters / 2 leaf rules / 2 source scopes / 3 forbidden targets**
+  with all three already represented, so no further dependency-direction decision
+  is available on this substrate to sample
+  ([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md);
+  [`TASK_AUTHORING_POLICY.md`](TASK_AUTHORING_POLICY.md) §12.2c).
+  <!-- TD-B34-BREADTH-HISTORICAL -->
+  *HISTORICAL — SUPERSEDED and **not** current governance: as recorded then, "the
+  active set plus `PT07` still does not sample enough distinct dependency-direction
+  decisions".* **Further candidate
   authoring is still required before Stage 0**, **no power simulation may run yet**
   (`TD-B37`), gates **G1/G2/G6** remain **not passed**, and the suite is **not**
   ready. `PT07` still cannot enter E1. **Reconciled against the authorised private
@@ -482,9 +503,12 @@ canonical substrate is still `630d3180` / `0198d76c…`, and the protocol remain
   reserve denominator; the **active** set is unchanged at **5** opportunities over
   **3** clusters. Four of their five legacy draft rows were **demoted** to
   superseded, non-scoring records and one survives as a task-created reserve
-  candidate. The legacy `infra → core` / `AR-DEP-004` row is **permanently barred**
-  from any E1 denominator because that relationship is **not task-creatable** on
-  this substrate — it is **not** an available fourth cluster. The reconciliation is
+  candidate. The legacy `infra → core` / `AR-DEP-004` reserve row is **permanently
+  barred** from any E1 denominator because that relationship is **not
+  task-creatable** on this substrate: **the legacy `infra → core` / `AR-DEP-004`
+  reserve row is not evidence of a fourth task-creatable decision cluster, and it is
+  permanently barred from E1** — it is **not** an available fourth cluster
+  ([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §3a). The reconciliation is
   **performed but not independently re-approved**, so `TD-B40` stays **open and
   blocking**.
 - **No blocker was opened or closed.** The registry still holds **40 blocking + 6

@@ -473,12 +473,34 @@ modified, no benchmark or model ran, and nothing was frozen.
   the `PT07` **package** only — not the private opportunity migration (`TD-B40`
   residual (B)) and not the other eight private packages.
 
-**`TD-B34` is NOT resolved.** One authored task does not provide the breadth or the
-repetition the confirmatory construct needs; the active set plus `PT07` still does
-not sample enough distinct dependency-direction decisions for confirmatory
-inference. **Further candidate authoring is still required before Stage 0**, **no
-power simulation may be run yet** (`TD-B37`), and gates **G1**/**G2**/**G6** remain
-**not passed**.
+**`TD-B34` is NOT resolved.** One authored task does not provide the **replication
+depth** the confirmatory construct needs. **Further candidate authoring is still
+required before Stage 0**, **no power simulation may be run yet** (`TD-B37`), and
+gates **G1**/**G2**/**G6** remain **not passed**.
+
+**Current normative reading of that deficiency (§12.2c).** It is **replication
+depth and balance inside the three demonstrated decision clusters**, and it is
+**not** missing breadth. The demonstrated ceiling is **3 decision clusters / 2 leaf
+rules / 2 source scopes / 3 forbidden targets** and **all three achievable clusters
+are already occupied** ([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)
+§2–§3), so there is no further dependency-direction decision on this substrate left
+to sample. **Nothing in this section requires new leaf-rule breadth, new
+source-scope breadth, or genuinely different source/target boundaries as a Stage-0
+prerequisite.**
+
+> <!-- TD-B34-BREADTH-HISTORICAL -->
+> **HISTORICAL — SUPERSEDED breadth wording, retained so the decision trail is not
+> erased. Not current governance; must not be authored against. See §12.2c.**
+> *As recorded then:* "One authored task does not provide the breadth or the
+> repetition the confirmatory construct needs; the active set plus `PT07` still
+> does not sample enough distinct dependency-direction decisions for confirmatory
+> inference." That sentence read the deficiency as missing **breadth** and is
+> **obsolete** under the feasibility ceiling recorded in §12.2c and in
+> [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md). The current
+> normative reading is the paragraph immediately above. Nothing else about the
+> sentence's conclusion changes: `TD-B34` is still open and blocking, further
+> candidate authoring is still required before Stage 0, and no power simulation may
+> run yet.
 
 Overlap safeguards for `PT07` against `PT05`, `PR01`, `PT06`, `PT01`/`PT02` and
 `PT04` (requirement 9) are recorded in

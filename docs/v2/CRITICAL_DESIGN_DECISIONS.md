@@ -165,10 +165,22 @@ is narrowed is **which construct that endpoint measures**:
   numerator, and adding or removing test files can never move its denominator
   (`ORACLE_VALIDATION_REQUIREMENTS.md` §1b).
 - **DECISION B — additional public architecture tasks are required before
-  Stage 0** (`TD-B34`). The current task set does not sample enough **distinct**
-  dependency-direction decisions to support the confirmatory endpoint. This is a
+  Stage 0** (`TD-B34`, **re-scoped**). The current task set does not carry the
+  **replication depth** the confirmatory endpoint needs: the demonstrated ceiling
+  is **3 decision clusters / 2 leaf rules / 2 source scopes / 3 forbidden targets**
+  and **all three achievable clusters are already occupied**, so the deficiency is
+  **depth and balance inside those three clusters, not missing breadth**
+  ([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §2–§3;
+  [`TASK_AUTHORING_POLICY.md`](TASK_AUTHORING_POLICY.md) §12.2c). This is a
   task-set coverage deficiency, decided **before any experimental result exists**;
   it is not an oracle failure, and it is not a reason to activate a reserve.
+  **This decision requires no new leaf-rule or source-scope breadth.**
+  <!-- TD-B34-BREADTH-HISTORICAL -->
+  *HISTORICAL — SUPERSEDED wording, retained for the decision trail and **not**
+  current governance: as recorded then, "the current task set does not sample
+  enough distinct dependency-direction decisions to support the confirmatory
+  endpoint". That reading is obsolete under the feasibility ceiling; see
+  `TASK_AUTHORING_POLICY.md` §12.2c.*
 
 This narrowing resolves no blocking decision, freezes nothing, and is itself
 pending independent classification review.

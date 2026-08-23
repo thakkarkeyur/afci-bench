@@ -32,6 +32,15 @@ module asserts:
 
 Pure file inspection plus read-only git object reads; no model is invoked and no
 benchmark runs.
+
+MUTATION REPAIR (P2-A / P2-B). Two families of assertion in this module used
+fixed-width character windows, and an independent mutation review proved neither
+was load-bearing: a restored live breadth directive and an inverted
+fourth-cluster denial both stayed green because unrelated text in the window
+rescued them. Those windows are gone. Classification and denial are now
+passage-exact and pinned, and the document-wide fail-closed backstop lives in
+``test_replication_depth_guards.py``, which this module delegates to so there is
+one authority rather than two that can drift apart.
 """
 from __future__ import annotations
 
@@ -43,6 +52,8 @@ import subprocess
 from pathlib import Path
 
 import pytest
+
+import governance_text as G
 
 REPO = Path(__file__).resolve().parents[4]
 DOCS_V2 = REPO / "docs" / "v2"
@@ -407,14 +418,22 @@ def test_td_b34_stays_open_and_blocking():
 
 
 def test_td_b34_no_longer_directs_authoring_toward_impossible_breadth():
+    """The superseded objective may only appear as explicitly marked history.
+
+    The ±320-character window this test used to apply was not load-bearing: an
+    independent mutation review showed that supersession prose belonging to a
+    neighbouring clause rescued a restored live directive. Classification is now
+    field-exact and explicit — the TD-B34 registry field must carry the
+    `TD-B34-BREADTH-HISTORICAL` marker in its own text — and the document-wide
+    backstop lives in test_replication_depth_guards.py.
+    """
     text = _decision("TD-B34")
-    # The superseded objective may only appear as history, never as a directive.
-    for match in re.finditer(r"genuinely different existing dependency-direction leaf rules", text):
-        window = text[max(0, match.start() - 320) : match.end() + 320]
-        assert "as originally recorded" in window or "superseded" in window, (
-            "the breadth objective may only be restated as superseded history: "
-            f"...{window[:200]!r}"
+    if re.search(r"genuinely different existing dependency-direction leaf rules", text):
+        assert G.BREADTH_HISTORICAL_MARKER in text, (
+            "the TD-B34 registry field restates the breadth objective without the "
+            "explicit historical marker"
         )
+        assert "as originally recorded" in text
     assert "superseded and structurally unattainable" in text
     assert "replication depth" in text
     assert "not task-creatable on the current substrate" in text
@@ -729,15 +748,23 @@ def test_the_stage_0_gate_no_longer_demands_impossible_breadth():
     )
     flat = _norm(body)
 
-    # the withdrawn directive may appear only as explicitly withdrawn history
-    for match in re.finditer(
-        r"genuinely different (?:existing )?dependency-direction\s*leaf rules", flat
+    # The withdrawn directive may appear only inside a passage that carries the
+    # explicit historical marker in its OWN text. The ±400-character window this
+    # used to apply was rescuable by neighbouring prose; classification is now
+    # passage-exact, and the document-wide backstop is in
+    # test_replication_depth_guards.py.
+    for passage in G.markdown_passages(
+        POWER_POLICY_PATH, POWER_POLICY_PATH.relative_to(REPO).as_posix()
     ):
-        window = flat[max(0, match.start() - 400) : match.end() + 400]
-        assert any(
-            marker in window
-            for marker in ("withdrawn", "superseded", "previously required", "obsolete")
-        ), f"the impossible breadth directive is live in the Stage-0 gate: ...{window[:220]!r}"
+        if not re.search(
+            r"genuinely different (?:existing )?dependency-direction\s*leaf rules",
+            passage.flat,
+        ):
+            continue
+        assert G.BREADTH_HISTORICAL_MARKER in passage.flat, (
+            "the impossible breadth directive is live in the Stage-0 gate: "
+            f"{passage} ...{passage.flat[:220]!r}"
+        )
     assert "withdrawn directive" in flat, (
         "the Stage-0 gate must record that the breadth directive was withdrawn"
     )
@@ -957,16 +984,39 @@ def test_the_registry_records_the_package_without_closing_anything():
 #     exist" reason.
 #
 # Neither is rewritten. Each is marked HISTORICAL / SUPERSEDED in place, with a
-# forward pointer to the current governance, and the guards below stop the live
-# instruction being silently restored. They are SECTION-SCOPED: a supersession note
-# elsewhere in a long document must not be able to rescue a live directive.
+# forward pointer to the current governance.
+#
+# MUTATION-REPAIRED (P2-A). The original guards here were section-scoped but then
+# applied a +/-700-character window, and an independent mutation review proved that
+# is not load-bearing. All four demonstrated mutations passed:
+#
+#   1. a NEW live breadth directive inserted inside the historical README section;
+#   2. one inserted elsewhere in README;
+#   3. one inserted in TASK_AUTHORING_REPORT.md;
+#   4. removing the HISTORICAL/SUPERSEDED classification from the original README
+#      directive while retaining nearby supersession prose.
+#
+# (1) and (4) passed because the window swept up a NEIGHBOURING passage's
+# supersession prose; (2) and (3) passed because the section scoping meant the
+# guard never looked there at all.
+#
+# The window is gone. Classification is now PASSAGE-EXACT and EXPLICIT: an
+# occurrence is history only if its own passage carries the
+# `TD-B34-BREADTH-HISTORICAL` marker, and the document-wide fail-closed backstop -
+# every governed document, every passage, pinned by anchor - lives in
+# test_replication_depth_guards.py. The assertions below remain as the LOCAL
+# section checks the repaired design keeps in addition to that backstop.
 # --------------------------------------------------------------------------- #
 #: The withdrawn breadth wording, as it actually appears.
 BREADTH_DIRECTIVE_RE = re.compile(
     r"genuinely different existing\s*dependency-direction\s*leaf rules",
     re.IGNORECASE,
 )
-#: A marker that turns an occurrence into recorded history rather than instruction.
+#: Prose that reads as supersession. Retained only for the non-vacuity check that
+#: proves a bare live directive carries none of it; it is NEVER accepted as the
+#: classification of an occurrence, because the mutation review showed such words
+#: are routinely present for unrelated reasons ("withdrawn as stale", said about a
+#: different statement entirely, was already rescuing a live breadth claim).
 SUPERSESSION_MARKERS = (
     "superseded", "withdrawn", "as recorded then", "as originally recorded",
     "historical", "obsolete", "no longer current",
@@ -983,20 +1033,31 @@ BREADTH_HISTORY_SECTIONS = {
     "path", sorted(BREADTH_HISTORY_SECTIONS, key=lambda p: p.name), ids=lambda p: p.name
 )
 def test_the_breadth_directive_survives_only_as_superseded_history(path):
-    """Every occurrence in the owning section must be marked, in that section."""
+    """Every occurrence must be marked in its OWN passage, not its neighbourhood.
+
+    Section-scoped for the "did it move?" check, passage-exact for the
+    classification check. No character window.
+    """
+    rel = path.relative_to(REPO).as_posix()
     body = _section_starting_with(path, BREADTH_HISTORY_SECTIONS[path])
-    flat = _norm(body)
-    hits = list(BREADTH_DIRECTIVE_RE.finditer(flat))
-    assert hits, (
+    assert BREADTH_DIRECTIVE_RE.search(_norm(body)), (
         f"{path.name}: the historical breadth directive is not in the section this "
         f"guard scopes to; if it moved, the guard must move with it"
     )
-    for match in hits:
-        window = flat[max(0, match.start() - 700) : match.end() + 700]
-        assert any(m in window for m in SUPERSESSION_MARKERS), (
-            f"{path.name}: the breadth directive reads as LIVE instruction: "
-            f"...{window[:240]!r}"
+    section_lines = {ln for ln in body.split("\n") if ln.strip()}
+    checked = 0
+    for passage in G.markdown_passages(path, rel):
+        if not BREADTH_DIRECTIVE_RE.search(passage.flat):
+            continue
+        if not any(ln in section_lines for ln in passage.raw.split("\n") if ln.strip()):
+            continue  # a different section's occurrence; the backstop covers it
+        checked += 1
+        assert G.BREADTH_HISTORICAL_MARKER in passage.flat, (
+            f"{path.name}: the breadth directive reads as LIVE instruction - its own "
+            f"passage carries no explicit historical marker: {passage} "
+            f"...{passage.flat[:240]!r}"
         )
+    assert checked, f"{path.name}: no passage of the scoped section was checked"
 
 
 @pytest.mark.parametrize(
@@ -1057,16 +1118,18 @@ def test_the_report_supersedes_the_unused_leaf_relationships_reason():
     breadth objective looked achievable. Left live it would justify re-adopting it,
     so it carries its own supersession.
     """
-    flat = _flat(REPORT_PATH)
-    for match in re.finditer(
-        r"unused implemented dependency leaf relationships already exist", flat
-    ):
-        window = flat[max(0, match.start() - 1200) : match.end() + 900]
-        assert "superseded" in window, (
-            f"the 'unused leaves already exist' reason reads as live: "
-            f"...{window[:240]!r}"
+    rel = REPORT_PATH.relative_to(REPO).as_posix()
+    seen = 0
+    for passage in G.markdown_passages(REPORT_PATH, rel):
+        if "unused implemented dependency leaf relationships already exist" not in passage.flat:
+            continue
+        seen += 1
+        assert G.BREADTH_HISTORICAL_MARKER in passage.flat, (
+            f"the 'unused leaves already exist' reason reads as live: {passage} "
+            f"...{passage.flat[:240]!r}"
         )
-    assert "binding constraint is substrate feasibility" in flat
+    assert seen, "the 'unused leaves already exist' reason is no longer present"
+    assert "binding constraint is substrate feasibility" in _flat(REPORT_PATH)
 
 
 def test_the_readme_power_precondition_is_superseded_too():
@@ -1078,13 +1141,20 @@ def test_the_readme_power_precondition_is_superseded_too():
     power simulation on something unattainable.
     """
     flat = _norm(_section_starting_with(DOCS_V2_README, "opportunity reassessment"))
-    hits = list(re.finditer(r"additional distinct decisions are\s*authored", flat))
-    assert hits, "the historical power precondition is not in the scoped section"
-    for match in hits:
-        window = flat[max(0, match.start() - 700) : match.end() + 700]
-        assert any(m in window for m in SUPERSESSION_MARKERS), (
-            f"the README power precondition reads as live: ...{window[:240]!r}"
+    assert re.search(r"additional distinct decisions are\s*authored", flat), (
+        "the historical power precondition is not in the scoped section"
+    )
+    rel = DOCS_V2_README.relative_to(REPO).as_posix()
+    seen = 0
+    for passage in G.markdown_passages(DOCS_V2_README, rel):
+        if not re.search(r"additional distinct decisions are\s*authored", passage.flat):
+            continue
+        seen += 1
+        assert G.BREADTH_HISTORICAL_MARKER in passage.flat, (
+            f"the README power precondition reads as live: {passage} "
+            f"...{passage.flat[:240]!r}"
         )
+    assert seen, "the historical power precondition is no longer present"
     assert "the power precondition above is superseded" in flat
     assert "replication depth" in flat
     # what has NOT changed is restated, so the supersession is not read as a
@@ -1155,39 +1225,45 @@ def test_the_reserve_explanation_is_carried_into_the_policy_and_the_report():
 #: so every occurrence must be a DENIAL. Word order is deliberately not assumed:
 #: "a task-creatable fourth cluster" and "a fourth task-creatable cluster" are the
 #: same false claim, and an earlier draft of this guard missed the first.
-_COUNT_WORD = r"(?:fourth|4th|four|4|fifth|5th|five|5)"
+#:
+#: Shared with the exact register in test_replication_depth_guards.py so there is
+#: one vocabulary, not two that can drift apart.
 FOURTH_CLUSTER_RE = re.compile(
-    # "four decision clusters", "a task-creatable fourth cluster", "4 clusters"
-    rf"{_COUNT_WORD}\s+(?:[\w/-]+\s+){{0,3}}clusters?"
-    # "clusters: 4", "decision clusters = 5"
-    rf"|clusters?\s*[:=]\s*(?:4|5)\b",
-    re.IGNORECASE,
-)
-#: A denial marker within the window makes the occurrence a denial, not a claim.
-_DENIAL = re.compile(
-    r"\b(not|never|cannot|can't|no|none|nor|barred|withdrawn|false|"
-    r"impossible|ceiling|at\s+most|only|unattainable|superseded|denies|denied)\b",
-    re.IGNORECASE,
+    "|".join(G.FOURTH_CLUSTER_VOCABULARY.values()), re.IGNORECASE
 )
 
 
 def test_no_public_artifact_reads_a_reserve_row_as_active_coverage():
     """The load-bearing negative: a reserve row is never active coverage.
 
-    The demonstrated ceiling is THREE task-creatable clusters, so any mention of a
-    fourth has to be a denial. This is the misreading the legacy `AR-DEP-004`
-    reserve row invites, and it is checked by pattern rather than by a fixed list of
-    phrasings so a re-worded claim cannot slip through.
+    MUTATION-REPAIRED (P2-B). This test used to accept any denial word inside a
+    +/-260-character window. An independent mutation review inverted
+    *"not a task-creatable fourth cluster"* to *"a task-creatable fourth cluster"*
+    and the test stayed green, because `not`, `cannot`, `no` and
+    `not task-creatable` elsewhere in the window satisfied the denial pattern.
+
+    Proximity matching is gone. Each mention now has to be a REGISTERED passage
+    stating its OWN exact denial and containing none of its own inverted forms -
+    see FOURTH_CLUSTER_REGISTER in test_replication_depth_guards.py, which this
+    test delegates to so there is exactly one authority.
     """
+    from test_replication_depth_guards import FOURTH_CLUSTER_REGISTER
+
+    problems = G.check_register(G.FOURTH_CLUSTER_VOCABULARY, FOURTH_CLUSTER_REGISTER)
+    assert problems == [], (
+        "a public artifact asserts a further decision cluster as available "
+        "coverage, or a required denial has moved:\n  - " + "\n  - ".join(problems)
+    )
+
+    # Every document this test historically covered must still be inside the
+    # governed corpus the register is evaluated over, so delegation cannot narrow
+    # the blast radius.
+    governed = set(G.governed_files())
     for path in (FEASIBILITY_PATH, POLICY_PATH, REPORT_PATH, DECISIONS_CSV,
                  DECISIONS_MD, DOCS_V2_README):
-        flat = _flat(path)
-        for match in FOURTH_CLUSTER_RE.finditer(flat):
-            window = flat[max(0, match.start() - 260) : match.end() + 200]
-            assert _DENIAL.search(window), (
-                f"{path.name} appears to assert a further decision cluster as "
-                f"available coverage: ...{window[:240]!r}"
-            )
+        rel = path.relative_to(REPO).as_posix()
+        assert rel in governed, f"{rel} dropped out of the governed corpus"
+
     # the adjudicated active counts are still the three-cluster ones
     flat = _flat(FEASIBILITY_PATH)
     assert f"active e1 opportunities: {ACTIVE_OPPORTUNITIES}" in flat
@@ -1209,6 +1285,3 @@ def test_the_fourth_cluster_guard_is_not_vacuous():
         "decision clusters: 4",
     ):
         assert FOURTH_CLUSTER_RE.search(_norm(claim)), claim
-        assert not _DENIAL.search(_norm(claim)), (
-            f"the denial pattern matches a bare claim, which would excuse it: {claim!r}"
-        )

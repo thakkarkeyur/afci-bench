@@ -46,6 +46,7 @@ this work package** (no runner exists; no paid/dry run here) — `TD-B21`
 replication depth.** `TD-B34` remains **open and blocking** before Stage 0, but
 what it requires has changed and the earlier breadth directive is **withdrawn**.
 
+> <!-- TD-B34-BREADTH-HISTORICAL -->
 > **Withdrawn directive.** This gate previously required additional public
 > architecture tasks exercising *genuinely different* dependency-direction leaf
 > rules and source/target boundaries. That objective is **scientifically obsolete

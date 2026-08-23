@@ -30,7 +30,9 @@ Correcting the record, since the earlier single-notion wording could be read as 
 - **Five of the seven primary candidates currently remain E1-scored candidates.** `PT01`-`PT04` and `PT07` are `scored`; `PT05` and `PT06` are `functional-only` - valid primary functional candidates that are structurally excluded from E1 while still contributing to hidden functional acceptance, cost, reset-related functional outcomes and pre-registered exploratory analyses. `PR01` and `PR02` are `inactive-reserve` and contribute to no endpoint. **No reserve was activated** to restore the scored count. A `scored` eligibility records **intent**: no candidate enters E1 until its private evaluator package is authored, validated, approved and shown to carry a valid non-zero frozen opportunity set (`TD-B05`/`TD-B14`, gate `G1`).
 - **All current scored E1 opportunities use dependency-direction rules** (the `AR-DEP-001..006` family). No contract-boundary, observability, coding-discipline or change-footprint rule is scored into E1: each is an unimplemented oracle stub that reports `UNIMPLEMENTED` and can never report PASS.
 - **The opportunity instances reduce to a small number of repeated boundary decisions.** They are not independent observations; the same few layer-boundary judgements recur across tasks, so the power simulation must model that pseudo-replication (`TD-B30`).
-- **The surviving active task set does not sample enough distinct dependency-direction decisions for confirmatory inference.** Repeated task exposures to the same source/target boundary are one architectural instrument observed several times, not several independent architecture constructs. Further public task authoring is required before Stage 0 (**DECISION B**, `TD-B34`); see *Opportunity reassessment* below.
+- **The surviving active task set does not carry the replication depth the confirmatory endpoint needs.** Repeated task exposures to the same source/target boundary are one architectural instrument observed several times, not several independent architecture constructs. Under the re-scoped `TD-B34` the deficiency is **depth and balance inside the three demonstrated decision clusters, not missing breadth**: the demonstrated ceiling is **3 decision clusters / 2 leaf rules / 2 source scopes / 3 forbidden targets** and all three are already represented (`docs/v2/DEPENDENCY_TASK_FEASIBILITY.md` §2-§3; `docs/v2/TASK_AUTHORING_POLICY.md` §12.2c). Further public task authoring is required before Stage 0 (**DECISION B**, `TD-B34`); see *Opportunity reassessment* below.
+  <!-- TD-B34-BREADTH-HISTORICAL -->
+  *HISTORICAL - SUPERSEDED and **not** current governance: as recorded then, "the surviving active task set does not sample enough distinct dependency-direction decisions for confirmatory inference".*
 - **Task count and final opportunity count remain unfrozen** (`TD-B10`/`TD-B14`/`TD-B20`, and `TD-B05`/`TD-B14` for the per-task opportunity sets). The nine candidates are candidates. **Task count must never substitute for decision diversity or independence**, and the suite must not be optimised toward any particular total (`DEPENDENCY_TASK_FEASIBILITY.md`).
 - **No statement here implies that categories 1-3 are directly measured by E1.** Subject-matter breadth, hidden functional coverage and manual-rubric coverage are separate evidence types with separate endpoints or no endpoint at all. **E1 must not be described as broad or general architectural conformance** (gate **G8**).
 
@@ -303,10 +305,18 @@ hidden test, a hidden acceptance detail, or an implementation answer.
 - **`PT01`-`PT04` currently remain E1-scored candidates.**
 - **`PT05` and `PT06` are `functional-only`.**
 - **`PR01`/`PR02` remain inactive; no reserve was activated.**
-- **The current active task set does not provide enough distinct dependency-direction
-  decisions for confirmatory inference.** The active opportunities exercise **too few
-  distinct dependency boundaries** - too few distinct (source scope, forbidden target)
-  relationships - to support the named confirmatory construct.
+- **The current active task set does not carry the replication depth the named
+  confirmatory construct needs.** Under the re-scoped `TD-B34` the deficiency is
+  **depth and balance inside the three demonstrated decision clusters, not missing
+  breadth**: the demonstrated ceiling is **3 decision clusters / 2 leaf rules / 2
+  source scopes / 3 forbidden targets** and all three are already represented.
+  <!-- TD-B34-BREADTH-HISTORICAL -->
+  *HISTORICAL - SUPERSEDED and **not** current governance: as recorded then, "the
+  current active task set does not provide enough distinct dependency-direction
+  decisions for confirmatory inference" and the active opportunities exercise "too
+  few distinct dependency boundaries - too few distinct (source scope, forbidden
+  target) relationships - to support the named confirmatory construct". See
+  `docs/v2/TASK_AUTHORING_POLICY.md` section 12.2c.*
 - **Repeated tasks over one boundary do not count as independent architecture
   constructs.** Several tasks that each re-expose the same source/target boundary are one
   architectural instrument measured repeatedly; they are clustered observations, not
@@ -320,6 +330,7 @@ not replaced - by the production-source scoring policy recorded below.
 
 ## DECISION B - additional architecture tasks required before Stage 0
 
+> <!-- TD-B34-BREADTH-HISTORICAL -->
 > **HISTORICAL RECORD - THE BREADTH OBJECTIVE IN THIS SECTION IS SUPERSEDED AND IS
 > NOT CURRENT GOVERNANCE.** Everything in this section is preserved exactly as
 > recorded when `TD-B34` was opened. The **withdrawn directive** is the sentence
@@ -343,15 +354,18 @@ not replaced - by the production-source scoring policy recorded below.
 > [`OPEN_DECISIONS.md`](../../../../docs/v2/OPEN_DECISIONS.md). Nothing here is
 > rewritten: the original decision is kept verbatim so the trail stays intact.
 
+<!-- TD-B34-BREADTH-HISTORICAL -->
 **DECISION B: author additional public tasks exercising genuinely different existing
 dependency-direction leaf rules and source/target boundaries before Stage 0.** Registered as
 blocking decision **`TD-B34`**. *(As originally recorded; superseded - see the
 supersession note above.)*
 
+<!-- TD-B34-BREADTH-HISTORICAL -->
 The motivation is **construct validity**: the current task set does not sample enough
 distinct dependency-direction decisions to support the intended confirmatory endpoint.
 *(The motivation is unchanged and still current; only the breadth REMEDY is
-superseded.)*
+superseded. The current normative wording of the remedy is replication depth inside
+the three demonstrated clusters - `docs/v2/TASK_AUTHORING_POLICY.md` section 12.2c.)*
 
 Stated explicitly, so the record cannot be misread later:
 
@@ -363,7 +377,8 @@ Stated explicitly, so the record cannot be misread later:
 - **The deficiency is task-set coverage, not an oracle failure.**
 - **The repaired scope-based oracle remains the approved attribution mechanism**
   (`TD-B27`, mutation corpus M0-M8).
-- **New rule families are not required for this immediate remedy**, because additional
+- <!-- TD-B34-BREADTH-HISTORICAL -->
+  **New rule families are not required for this immediate remedy**, because additional
   **unused implemented dependency leaf relationships already exist** in the frozen matrix
   (see the boundary space below). Implementing new rule families stays future work
   (`TD-B33`) and must never be used to readmit an excluded task post hoc.
@@ -819,10 +834,18 @@ remains **PRE-FREEZE**.
 ### `DECISION B` / `TD-B34` remains OPEN
 
 **`TD-B34` is not resolved by this package and must not be recorded as resolved.**
-One task does not provide the breadth or the repetition the confirmatory construct
+One task does not provide the **replication depth** the confirmatory construct
 needs: a single new boundary-decision cluster observed once is still a thin
-instrument, and the surviving active set plus `PT07` does **not** yet sample
-enough distinct dependency-direction decisions for confirmatory inference.
+instrument. Under the re-scoped `TD-B34` the live deficiency is **depth and balance
+inside the three demonstrated decision clusters, not missing breadth** - the
+demonstrated ceiling is **3 decision clusters / 2 leaf rules / 2 source scopes / 3
+forbidden targets** and all three are already represented
+(`docs/v2/TASK_AUTHORING_POLICY.md` section 12.2c).
+
+<!-- TD-B34-BREADTH-HISTORICAL -->
+*HISTORICAL - SUPERSEDED and **not** current governance: as recorded then, "the
+surviving active set plus `PT07` does not yet sample enough distinct
+dependency-direction decisions for confirmatory inference".*
 
 Consequently:
 
