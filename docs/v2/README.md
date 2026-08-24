@@ -508,9 +508,12 @@ canonical substrate is still `630d3180` / `0198d76c…`, and the protocol remain
   task-creatable** on this substrate: **the legacy `infra → core` / `AR-DEP-004`
   reserve row is not evidence of a fourth task-creatable decision cluster, and it is
   permanently barred from E1** — it is **not** an available fourth cluster
-  ([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §3a). The reconciliation is
-  **performed but not independently re-approved**, so `TD-B40` stays **open and
-  blocking**.
+  ([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §3a). *As
+  recorded then*, the reconciliation was **performed but not independently
+  re-approved**, so `TD-B40` stayed **open and blocking**; it has since been
+  **independently re-approved** and `TD-B40` is now **resolved** — see the
+  migration-reapproval section below, which also records everything closure does
+  **not** confer.
 - **No blocker was opened or closed.** The registry still holds **40 blocking + 6
   non-blocking** decisions, **43 open**.
 
@@ -576,6 +579,84 @@ substrate is still `630d3180` / `0198d76c…` and the protocol remains
   produced.**
 - **One blocker opened, none closed.** The registry now holds **41 blocking + 6
   non-blocking** decisions, **44 open**.
+
+### Migration re-approval propagated, `TD-B40` closed, `CAND-A1` pinned pre-authoring
+
+A **pre-authoring, pre-run** governance package. It authored **no** task, assigned
+**no** `PT08` identifier, created **no** private evaluator package and **no**
+manifest, changed **no** task body, hash or eligibility, touched **no** file under
+`apps/`/`libs/`, activated **no** reserve, ran **no** benchmark, model or power
+simulation, and froze **nothing**. The canonical substrate is still `630d3180` /
+`0198d76c…` and the protocol remains **PRE-FREEZE**.
+
+- **The complete opportunity migration is independently re-approved, and that
+  result is now propagated** (`TD-B40` residual (B), pre-authoring finding
+  **`P1-4`**). An **external independent read-only** re-review of the complete
+  migration — the six active-set supersessions, the current five active
+  opportunities over three decision clusters, the `PR01`/`PR02` reserve
+  reconciliation, the active cluster register and the repaired cross-repository
+  linkage — closed linkage findings **`P1-J1`** and **`P1-J2`**, raised **no new
+  P0** and **no new P1**, confirmed the **migration state unchanged**, confirmed the
+  repaired linkage **fails closed** on evaluation-relevant drift, and returned
+  **`TD-B40(B)` COMPLETE MIGRATION — INDEPENDENTLY RE-APPROVED**. Because that
+  review was **read-only** it changed no byte, which is why both repositories still
+  carried stale metadata afterwards — meaning the result had not been
+  **propagated**, never that the review had not happened. The review event
+  **precedes** the commits that record it; both repositories **propagate** it and
+  **neither performs it**. **No reviewer identity, external URL, timestamp or
+  external evidence identifier was supplied and none is claimed** — the same honest
+  convention already used for the `PT07` package approval.
+- **`TD-B40` is RESOLVED and CLOSED, and closure is bounded.** Both residuals are
+  complete: (A) the inactive-reserve reconciliation, performed earlier and now
+  independently re-adjudicated inside the re-review's recorded scope, and (B) the
+  independent re-approval above. **Closing `TD-B40` freezes no manifest, passes no
+  gate (`G1` included), makes no experiment run-ready, activates no reserve, and
+  resolves neither `TD-B34` nor `TD-B39`.** Freeze and `G1` are governed by
+  `TD-B05`/`TD-B14`/`TD-B32` and, for the eight legacy hidden-acceptance packages,
+  by `TD-B39`; `TD-B40` never governed freeze. Every historical record it carried is
+  preserved.
+- **Forcing strength is now recorded separately from task-createdness**
+  (pre-authoring finding **`P1-3`**;
+  [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §2a).
+  `AR-DEP-006` is task-creatable for **both** represented forbidden targets, but
+  `features → infra` is **strong/strict** task-created forcing while
+  `features → api` is **natural-path / opportunity-creating**: `api` is the editable
+  composition/boundary layer, so some externally equivalent conforming
+  implementations solve the behaviour entirely at the boundary without touching
+  `features`. **Task-creatable does not mean every valid implementation must
+  encounter the forbidden decision.** This invalidates neither `PT04` nor the
+  `CAND-A1` candidate; it is a **construct-validity limitation**, it redefines no
+  endpoint, changes no feasibility ceiling and adds no cluster.
+  `api → core` / `AR-DEP-005` is deliberately **not adjudicated**.
+- **The Priority-A replication candidate is pinned before authoring, and is not
+  authored** ([`CAND_A1_PREAUTHORING_DECISION.md`](CAND_A1_PREAUTHORING_DECISION.md)).
+  The independent Priority-A pre-authoring review returned **`DECISION B` — REPAIR
+  CANDIDATE BEFORE AUTHORING** with **P0 = 0** and **four P1 findings**, all four now
+  closed. `SL-CA1-01` makes the carrier a **publicly specified query parameter
+  `maxTotal`**, **not** a new request header, which removes the requirement-5
+  ambiguity by construction (`P1-1`). `SL-CA1-02` **accepts natural-path forcing** as
+  a recorded construct-validity limitation, with discriminative difficulty evaluated
+  **only** through the pre-registered **Stage-1 baseline-only `C1`** pilot and **no
+  `C4` or treatment-effect tuning** permitted (`P1-2`). The `P-3`…`P-6` contract
+  pins — rejection outcome, wire determinacy, validation precedence, the
+  **no-new-money-semantics** prohibition and the **HTTP-only** observation boundary —
+  are recorded before any prose exists, and the legal implementation families
+  `ALT-A`/`ALT-C`/`ALT-F`/`ALT-H`/`ALT-I`/`ALT-K` are **pre-declared** so the hidden
+  scorer cannot mistake a legal solution for a violation.
+- **Nothing in the experimental inventory moved.** Active E1 opportunities remain
+  **5**, decision clusters remain **3**, cluster depths remain **3 / 1 / 1**, and
+  `DC-FEATURES-API-AR-DEP-006` remains at **one** observation — it reaches two only
+  after the public task is authored, an independent public-authoring review passes, a
+  private package is authored and validated, and eligibility governance permits
+  inclusion. **No `PT08` exists.**
+- **`CAND-A1` is not finally approved.** Closing the four P1 findings is
+  remediation, not approval: **one focused independent remediation re-review is
+  still required** before authoring may begin, and **priority B**
+  (`DC-API-CORE-AR-DEP-005`) has had **no** candidate review at all. **`TD-B34`
+  stays open and blocking.**
+- **No blocker was opened; one was closed.** The registry still holds **41 blocking
+  + 6 non-blocking** decisions, now **43 open** with **4 resolved**
+  (`TD-B23`, `TD-B24`, `TD-B38`, `TD-B40`).
 
 ### Model-visible worktree isolation
 

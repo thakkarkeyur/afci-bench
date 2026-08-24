@@ -121,7 +121,86 @@ cluster in the active set: `api → core`.
 ### `AR-DEP-006` — source scope `features`
 
 **Classification: TASK-CREATABLE.** Currently represented by **two** decision
-clusters in the active set: `features → infra` and `features → api`.
+clusters in the active set: `features → infra` and `features → api`. The two are
+**equally task-creatable** and **not equally forced** — see §2a, which is
+normative and must be read with this classification.
+
+---
+
+## 2a. Task-createdness is not forcing strength (normative)
+
+§2 answers exactly one question per `(source scope, forbidden target)` pair: **can
+a public functional task CREATE the decision at all?** That is a binary, and it is
+the only question §2 ever settled. It is **not** the same question as: **must every
+externally equivalent conforming implementation CONFRONT the decision?**
+
+An independent Priority-A pre-authoring review established that the two
+represented `AR-DEP-006` decision families answer the second question
+**differently**, and that the difference was recorded nowhere. It is recorded here,
+in the authoritative feasibility record, so no later reader can take
+*task-creatable* to mean *strictly forced*.
+
+**`AR-DEP-006` is task-creatable for both represented forbidden targets. The two
+existing decision families have different forcing strength on the canonical
+substrate.**
+
+| Decision family | Task-creatable? | Forcing strength | Boundary-only conforming solution? |
+|---|---|---|---|
+| `features → infra` (`DC-FEATURES-INFRA-AR-DEP-006`) | **yes** | **STRONG / STRICT task-created forcing** | **no** |
+| `features → api` (`DC-FEATURES-API-AR-DEP-006`) | **yes** | **NATURAL-PATH / OPPORTUNITY-CREATING forcing** | **yes** |
+
+**`features → infra` — strong/strict task-created forcing.** In the retained
+instruments the functional contract requires **persistence/query behaviour that
+cannot be satisfied without confronting the dependency decision**. A conforming
+implementation must resolve the source-to-target choice; it cannot route around it
+and still pass.
+
+**`features → api` — natural-path / opportunity-creating forcing.** A public
+functional task **can** make an `api`-owned boundary datum relevant to feature
+computation and **can** create a plausible forbidden reach-back. But `api` is the
+**editable composition/boundary layer**, so **some externally equivalent conforming
+implementations may solve the required behaviour entirely at the boundary without
+touching `features` at all**. The decision is genuinely *created*; it is not
+*compelled*.
+
+**Consequences, stated so none can be paraphrased away:**
+
+- **Task-creatable does NOT mean every valid implementation must encounter the
+  forbidden decision.** The two properties are independent and only the first was
+  ever demonstrated by §2.
+- **`features → api` instruments may have weaker forcing than `features → infra`
+  instruments.** Where they do, the difference must be reported, not smoothed over.
+- **This does not invalidate `PT04`, and it does not invalidate the `CAND-A1`
+  candidate** ([`CAND_A1_PREAUTHORING_DECISION.md`](CAND_A1_PREAUTHORING_DECISION.md)).
+  Both remain task-created decisions under requirement 1 of the authoring bar.
+- **It is a construct-validity limitation of the study**, carried as such
+  ([`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) CON-AC;
+  [`STATISTICAL_ANALYSIS_PLAN.md`](STATISTICAL_ANALYSIS_PLAN.md) §2.2), not a
+  defect to be engineered away and not a reason to withdraw an instrument.
+- **Replication inside `DC-FEATURES-API-AR-DEP-006` estimates behaviour under this
+  naturally induced decision pressure**, not under a strictly forced architecture
+  fork. An effect observed there must be reported against that description of the
+  instrument.
+- **Baseline-only Stage-1 difficulty checks remain required** for any instrument in
+  this family: discriminative difficulty is evaluated on **C1 baseline** behaviour
+  only ([`PILOT_AND_POWER_POLICY.md`](PILOT_AND_POWER_POLICY.md), D3).
+- **No treatment-dependent task tuning is permitted.** Difficulty is never tuned on
+  `C4`, on an observed AFCI advantage, or on any treatment-effect estimate.
+- **Within-cluster observations remain pseudo-replicates** — statistically
+  clustered exposures of one instrument — and are never entered as independent
+  architecture decisions (`TD-B30`, `TD-B37`).
+
+**What §2a does NOT do.** It does **not** redefine `E1`; it does **not** change the
+feasibility ceiling of §3; it adds **no** decision cluster; and it reopens **none**
+of `AR-DEP-002`, `AR-DEP-003` or `AR-DEP-004`, which stay classified **not
+task-creatable** on this substrate. `api → core` / `AR-DEP-005` is **deliberately
+not adjudicated** for forcing strength: the review assessed the two `AR-DEP-006`
+families only, no adjudication of that family was supplied, and none is invented
+here. The private cluster register carries the same fields per cluster, including
+the explicit *not adjudicated* marker, so the distinction is machine-checkable
+rather than a matter of reading prose.
+
+This closes pre-authoring finding **`P1-3`**.
 
 ---
 
@@ -155,10 +234,13 @@ Source scopes: **2**. Forbidden targets: **3**.
 > preservation-only rows `TD-B40` ordered removed are excluded, and that removal
 > has since been **performed** under separate authorised private work: no such row
 > appears in any manifest opportunity set or any E1 denominator, and each survives
-> only as a **superseded, detection-only historical record**. What `TD-B40` still
-> governs is the residual **inactive-reserve** rows and the outstanding
-> **independent re-approval** — the migration is performed but not yet re-approved,
-> and no manifest is frozen. No task-to-cluster mapping is published.
+> only as a **superseded, detection-only historical record**. `TD-B40` is now
+> **resolved and closed**: its residual **inactive-reserve** reconciliation and its
+> outstanding **independent re-approval** are both complete, the complete migration
+> having been **independently re-approved** in an external read-only re-review.
+> **Closure changes none of these counts and freezes nothing** — no manifest is
+> frozen, gate `G1` is not passed, and no reserve is activated. No task-to-cluster
+> mapping is published.
 
 **Therefore the remaining actionable deficiency is cluster replication depth and
 balance, not additional source-scope or leaf-rule breadth.** Two of the three
@@ -218,11 +300,16 @@ case, and the reason is not merely that the reserves are inactive.**
   rather than a matter of reading prose. No private identifier and no
   rule id is published here, and **no task-to-cluster mapping is published**
   either - this section is suite-level only.
-- **Still open.** The reconciliation is **performed but not independently
-  re-approved**, and `TD-B40` residual (A) stays open on exactly that; `PR02` is
-  additionally blocked by `TD-B26` for a reason unrelated to its rows — its
-  terminal-state criterion is not externally reachable, and a defensible
-  architecture row does not unblock an ungradeable functional contract.
+- **Now re-approved, and still not activated.** The reconciliation has been
+  **independently re-approved** in an external read-only re-review whose recorded
+  scope expressly includes it, so `TD-B40` residual (A) is discharged and `TD-B40`
+  is **closed** (§8). **Re-approval is not activation and not a freeze:** both
+  reserves stay `inactive-reserve`, the reserve denominator stays **0**, no
+  manifest is frozen, gate `G1` is not passed, and activation still requires a
+  **separately recorded, independently approved pre-run activation decision** that
+  does not exist. `PR02` is additionally blocked by `TD-B26` for a reason unrelated
+  to its rows — its terminal-state criterion is not externally reachable, and a
+  defensible architecture row does not unblock an ungradeable functional contract.
 
 ---
 
@@ -351,6 +438,31 @@ to expand the substrate, and nothing here authorizes one.
   reserve candidate, and the legacy `infra → core` / `AR-DEP-004` row is
   **permanently barred** from any E1 denominator because that relationship is not
   task-creatable here. **No reserve was activated**, the active counts in §3 are
-  unchanged, and the reserve denominator is **0**. The reconciliation is
-  **performed but not independently re-approved**, so `TD-B40` stays open and
-  blocking.
+  unchanged, and the reserve denominator is **0**.
+- **`TD-B40` is RESOLVED and CLOSED, and closure confers nothing.** Its two
+  residuals — (A) inactive-reserve re-authoring/reconciliation and (B) independent
+  re-approval of the complete migration — are **both complete**: (A) was performed
+  under authorised private work and is independently re-adjudicated, and (B) was
+  **independently re-approved** in an external **read-only** re-review of the
+  complete migration (the active-set supersessions, the current active
+  opportunities, the `PR01`/`PR02` reserve reconciliation, the active cluster
+  register and the repaired cross-repository linkage), which closed both
+  outstanding linkage findings, raised **no new P0 and no new P1**, and confirmed
+  the migration state unchanged. The re-review event **precedes** the record of it;
+  the repositories **propagate** that result rather than perform it, and no reviewer
+  identity, URL, timestamp or external evidence identifier was supplied or is
+  claimed. **Closing `TD-B40` freezes no manifest, passes no gate (`G1` included),
+  makes no experiment run-ready, activates no reserve, and resolves neither
+  `TD-B34` nor `TD-B39`.** Freeze and `G1` are governed by
+  `TD-B05`/`TD-B14`/`TD-B32` and, for the legacy hidden-acceptance packages, by
+  `TD-B39`; `TD-B40` never governed freeze, so a still-pending freeze is not a
+  `TD-B40` residual. Every historical record it carried is preserved.
+- **Forcing strength is recorded separately from task-createdness** (§2a; `P1-3`).
+  `features → infra` is strictly forced in the retained instruments; `features →
+  api` is natural-path / opportunity-creating. The asymmetry is a
+  **construct-validity limitation**, changes no count in §3, and adds no cluster.
+- **The Priority-A replication candidate is pinned before authoring, and is not
+  authored** ([`CAND_A1_PREAUTHORING_DECISION.md`](CAND_A1_PREAUTHORING_DECISION.md)).
+  `DC-FEATURES-API-AR-DEP-006` therefore stays at **one** active observation in §3
+  until a body is authored, independently reviewed, privately packaged and admitted
+  by eligibility governance.

@@ -574,13 +574,20 @@ NEW_BLOCKERS = [f"TD-B{i}" for i in range(23, 34)]
 #: this family must still be open.
 RESOLVED_BLOCKERS = {"TD-B23", "TD-B24"}
 
-#: Closed by a later, separate work package: the experiment-awareness remediation
-#: (TD-B38). It is listed apart from RESOLVED_BLOCKERS because it belongs to a
-#: different threat class and a different family — TD-B23/TD-B24 are about the
-#: substrate stating the scored RULE, TD-B38 is about it revealing the EXPERIMENT.
-#: Keeping them separate preserves this guard's real job: proving that neither
-#: remediation let an unrelated blocker ride along.
-RESOLVED_ELSEWHERE = {"TD-B38"}
+#: Closed by later, separate work packages, and listed apart from
+#: RESOLVED_BLOCKERS because they belong to different threat classes and different
+#: families. TD-B23/TD-B24 are about the substrate stating the scored RULE; TD-B38
+#: is about it revealing the EXPERIMENT; TD-B40 is about the private opportunity
+#: MIGRATION and its independent re-approval, and closed only once both of its
+#: residuals completed. Keeping them separate preserves this guard's real job:
+#: proving that no remediation let an unrelated blocker ride along.
+#:
+#: TD-B40's closure is deliberately narrow and is asserted as such in
+#: test_private_state_reconciliation.py: it freezes no manifest, passes no gate
+#: (G1 included), activates no reserve, and resolves neither TD-B34 nor TD-B39 —
+#: all four of which this module's own per-blocker status assertions still require
+#: to be open.
+RESOLVED_ELSEWHERE = {"TD-B38", "TD-B40"}
 
 
 @pytest.mark.parametrize("decision_id", NEW_BLOCKERS)

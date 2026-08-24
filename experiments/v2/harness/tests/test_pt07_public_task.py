@@ -714,12 +714,27 @@ def test_the_report_does_not_declare_the_suite_ready():
     assert "the suite is not ready" in report or "is not ready" in report
 
 
+#: Blockers closed by packages unrelated to task authoring: the two substrate
+#: leakage remediations, the experiment-awareness remediation, and the private
+#: opportunity migration whose two residuals both completed (TD-B40). None was
+#: closed by authoring a task, and TD-B40's closure in particular freezes nothing
+#: and passes no gate.
+CLOSED_BY_UNRELATED_PACKAGES = {"TD-B23", "TD-B24", "TD-B38", "TD-B40"}
+
+
 def test_no_blocker_was_closed_while_authoring_pt07():
     closed = {
         r["decision_id"]
         for r in _rows(DECISIONS_CSV)
         if r["status"].strip().lower() != "open"
     }
-    assert closed == {"TD-B23", "TD-B24", "TD-B38"}, (
-        f"authoring a task closed a blocker: {sorted(closed - {'TD-B23', 'TD-B24', 'TD-B38'})}"
+    assert closed == CLOSED_BY_UNRELATED_PACKAGES, (
+        "authoring a task closed a blocker: "
+        f"{sorted(closed - CLOSED_BY_UNRELATED_PACKAGES)}"
     )
+    # The blockers that authoring PT07 must never close, asserted by name.
+    by_id = {r["decision_id"]: r for r in _rows(DECISIONS_CSV)}
+    for still_open in ("TD-B34", "TD-B37", "TD-B39", "TD-B05", "TD-B14", "TD-B32"):
+        assert by_id[still_open]["status"].strip().lower() == "open", (
+            f"{still_open} must remain open after PT07 authoring"
+        )

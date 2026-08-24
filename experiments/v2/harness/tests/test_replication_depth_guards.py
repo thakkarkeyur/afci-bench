@@ -81,10 +81,18 @@ BREADTH_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.md",
         heading="added by the pre-authoring opportunity reassessment — td-b34 – td-b37",
-        anchor="6b87909d22292ee5",
-        why="the re-scoped TD-B34 registry row quotes the original breadth objective",
+        anchor="26a989cc3a237e33",
+        why="the re-scoped TD-B34 registry row quotes the original breadth objective; "
+            "re-anchored when the row gained the CAND-A1 priority-A pre-authoring "
+            "progress, which is progress toward REPLICATION DEPTH and must never be "
+            "read as reviving the breadth objective",
         required=(MARKER, "is superseded and structurally unattainable",
-                  "replication depth"),
+                  "replication depth",
+                  # the addendum is progress, not resolution, and not breadth
+                  "priority-a pre-authoring progress, not resolution",
+                  "td-b34 therefore remains open and blocking"),
+        forbidden=("the breadth objective is restored",
+                   "breadth is again required"),
     ),
     RC(
         rel="docs/v2/PILOT_AND_POWER_POLICY.md",
@@ -159,10 +167,17 @@ BREADTH_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.csv",
         heading="row TD-B34 / column decision",
-        anchor="aaaa1d999122b964",
-        why="the machine-readable TD-B34 row quotes the original breadth objective",
+        anchor="f9a408859466175a",
+        why="the machine-readable TD-B34 row quotes the original breadth objective; "
+            "re-anchored when the row gained the CAND-A1 priority-A pre-authoring "
+            "progress, which is progress toward REPLICATION DEPTH and must never be "
+            "read as reviving the breadth objective",
         required=(MARKER, "as originally recorded",
-                  "breadth objective is superseded and structurally unattainable"),
+                  "breadth objective is superseded and structurally unattainable",
+                  "priority-a pre-authoring progress, not resolution",
+                  "td-b34 therefore remains open and blocking"),
+        forbidden=("the breadth objective is restored",
+                   "breadth is again required"),
     ),
     RC(
         rel="experiments/v2/tasks/public/TASK_AUTHORING_REPORT.md",
@@ -280,13 +295,26 @@ FOURTH_CLUSTER_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.md",
         heading="added by the pre-authoring functional-evaluator boundary package — td-b39 – td-b40",
-        anchor="2cebbeb7f2eac427",
+        anchor="8df07ee7245b3dae",
         why="the TD-B40 registry row bars any legacy reserve row from being read as a "
-            "fourth cluster",
+            "fourth cluster; re-anchored when the row was resolved. A CLOSED row is "
+            "the most dangerous place for this bar to weaken, so the closure text "
+            "must carry both the bar and the full statement of what closure does not "
+            "confer",
         required=("no legacy reserve row may be read as a task-creatable fourth cluster",
-                  "5 opportunities across 3 clusters"),
+                  "5 opportunities across 3 clusters",
+                  # closure is bounded: every denial pinned in the row itself
+                  "freezes no manifest",
+                  "passes no gate (g1 included)",
+                  "activates neither pr01 nor pr02",
+                  "resolves neither td-b34 nor td-b39",
+                  "td-b40 never governed freeze",
+                  "permanently barred"),
         forbidden=("is a task-creatable fourth cluster",
-                   "a legacy reserve row may be read as a task-creatable fourth cluster"),
+                   "a legacy reserve row may be read as a task-creatable fourth cluster",
+                   # closure must never be readable as a freeze or a gate pass
+                   "gate g1 is passed",
+                   "the migration is frozen"),
     ),
     RC(
         rel="docs/v2/PILOT_AND_POWER_POLICY.md",
@@ -299,14 +327,20 @@ FOURTH_CLUSTER_REGISTER = (
     RC(
         rel="docs/v2/README.md",
         heading="pt07 authored under decision b — one task, td-b34 still open",
-        anchor="933e25d013506e3f",
-        why="the README reserve-reconciliation bullet carries the same denial",
+        anchor="5a483cb7850aa077",
+        why="the README reserve-reconciliation bullet carries the same denial; "
+            "re-anchored when the bullet recorded that the reconciliation has since "
+            "been independently re-approved. The historical reading is kept as 'as "
+            "recorded then' rather than rewritten",
         required=(
             "the legacy infra → core / ar-dep-004 reserve row is not evidence of a "
             "fourth task-creatable decision cluster, and it is permanently barred "
             "from e1",
             "it is not an available fourth cluster",
             "the active set is unchanged at 5 opportunities over 3 clusters",
+            # the superseding fact, and the historical framing it replaces
+            "as recorded then",
+            "has since been independently re-approved",
         ),
         forbidden=(
             "reserve row is evidence of a fourth task-creatable decision cluster",
@@ -325,30 +359,70 @@ FOURTH_CLUSTER_REGISTER = (
     RC(
         rel="docs/v2/TASK_AUTHORING_POLICY.md",
         heading="12.2a coverage of the surviving active set, and one candidate cleared for authoring",
-        anchor="f3e8f983fe69b6a6",
-        why="§12.2a's reserve-reconciliation blockquote carries the authoring-bar denial",
+        anchor="bcf23b64919cf2e4",
+        why="§12.2a's reserve-reconciliation blockquote carries the authoring-bar "
+            "denial; re-anchored when the blockquote recorded TD-B40's closure. The "
+            "bar and the reserve denominator must survive that closure verbatim",
         required=("no legacy reserve row is a task-creatable fourth cluster",
-                  "permanently barred", "the reserve denominator is 0"),
+                  "permanently barred", "the reserve denominator is 0",
+                  # closure did not activate anything
+                  "re-approval is not activation",
+                  "no reserve may be activated yet",
+                  "closure freezes nothing"),
         forbidden=("a legacy reserve row is a task-creatable fourth cluster",
-                   "one legacy reserve row is a task-creatable fourth cluster"),
+                   "one legacy reserve row is a task-creatable fourth cluster",
+                   "a reserve may now be activated"),
+    ),
+    RC(
+        rel="docs/v2/TASK_AUTHORING_POLICY.md",
+        heading="12.2d forcing strength, and the priority-a candidate's pre-authoring state",
+        anchor="81fbc6e77ad77922",
+        why="§12.2d's 'nothing is authored' paragraph states the counts CAND-A1 must "
+            "not move. It names the active counts, so it is registered here to stop a "
+            "pre-counted second observation being smuggled into it",
+        required=("no pt08 identifier",
+                  "the active set stays 5 opportunities over 3 clusters at depths "
+                  "3 / 1 / 1",
+                  "dc-features-api-ar-dep-006 stays at one observation",
+                  "the candidate is not finally approved",
+                  "td-b34 stays open and blocking"),
+        forbidden=("dc-features-api-ar-dep-006 stays at two observations",
+                   "at depths 3 / 2 / 1",
+                   "6 opportunities over 3 clusters",
+                   "5 opportunities over 4 clusters"),
     ),
     RC(
         rel="docs/v2/OPEN_DECISIONS.csv",
         heading="row TD-B40 / column decision",
-        anchor="9b959fcf2743bd77",
-        why="the machine-readable TD-B40 row carries the same bar",
+        anchor="c5840696b992d2a8",
+        why="the machine-readable TD-B40 row carries the same bar; re-anchored when "
+            "the row was resolved. The CSV row is what a machine reader consumes, so "
+            "the bar and the bound on closure must both live in it",
         required=("no legacy reserve row may be read as a task-creatable fourth "
                   "decision cluster",
-                  "5 opportunities across 3 decision clusters"),
-        forbidden=("is a task-creatable fourth decision cluster",),
+                  "5 opportunities across 3 decision clusters",
+                  "freezes no manifest",
+                  "passes no gate including g1",
+                  "activates neither pr01 nor pr02",
+                  "resolves neither td-b34 nor td-b39",
+                  "td-b40 never governed freeze",
+                  "no such decision exists"),
+        forbidden=("is a task-creatable fourth decision cluster",
+                   "gate g1 is passed",
+                   "the migration is frozen"),
     ),
     RC(
         rel="experiments/v2/tasks/public/TASK_AUTHORING_REPORT.md",
         heading="private evaluator consequences (nothing private was touched)",
-        anchor="3cfc4139bc1518a0",
-        why="the report's reserve-reconciliation bullet carries the same denial",
+        anchor="1401bb7d249e9d29",
+        why="the report's reserve-reconciliation bullet carries the same denial; "
+            "re-anchored when the bullet recorded that the reconciliation has since "
+            "been independently re-approved, with the historical reading kept as 'as "
+            "recorded then'",
         required=("not an available fourth decision cluster", "permanently barred",
-                  "the active set is unchanged at 5 opportunities over 3 clusters"),
+                  "the active set is unchanged at 5 opportunities over 3 clusters",
+                  "as recorded then",
+                  "neither an activation nor a freeze"),
         forbidden=("is an available fourth decision cluster",),
     ),
 )

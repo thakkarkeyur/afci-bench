@@ -303,6 +303,21 @@ restore a task count**.
    substrate (§11.3, and the suite-wide reachability requirement `TD-B31`).
 5. **It avoids implementation-dependent hidden setup** — no failure-injection
    hook, test-only route, special header, or environment flag.
+
+   > **Adjudication (pre-authoring finding `P1-1`).** Requirement 5 targets
+   > **hidden, implementation-dependent** setup: a channel that exists only to
+   > drive the evaluator, is not part of the documented functional contract, or
+   > whose effect depends on how the implementation is built. It does **not**
+   > forbid ordinary public API input. A **publicly specified query parameter**
+   > that is fully documented in the functional task contract is ordinary public
+   > input and is therefore **admissible** under requirement 5. A **new request
+   > header** is **not adjudicated admissible here**: it sits ambiguously against
+   > the "special header" prohibition, and a candidate that needs a caller-supplied
+   > datum must carry it as a documented query parameter or documented request-body
+   > field instead. The Priority-A candidate `CAND-A1` was repaired on exactly this
+   > basis — its carrier is the query parameter `maxTotal`, **not** a header — so
+   > no special-header adjudication was required
+   > ([`CAND_A1_PREAUTHORING_DECISION.md`](CAND_A1_PREAUTHORING_DECISION.md) §3).
 6. **Its opportunity is fixed before model output** — frozen at authoring time,
    never inferred from what a model produced.
 7. **It remains compatible with legitimate implementation alternatives** — more
@@ -413,9 +428,12 @@ not a suite.
 > removed from the active E1 set under separate authorised private work — none
 > enters any manifest opportunity set or any denominator, each surviving as a
 > superseded, detection-only record — so `TD-B40` no longer claims that
-> `api → core` is unrepresented. It now governs only the residual
+> `api → core` is unrepresented. It then governed only the residual
 > **inactive-reserve** rows (`PR01`/`PR02`) and the outstanding **independent
-> re-approval** of the migration; no manifest is frozen.
+> re-approval** of the migration, and **both of those are now complete, so
+> `TD-B40` is resolved and closed** ([`OPEN_DECISIONS.md`](OPEN_DECISIONS.md)).
+> **Closure freezes nothing:** no manifest is frozen, gate `G1` is not passed, and
+> no reserve is activated.
 >
 > **The reserve rows have since been re-authored, and no reserve was activated.**
 > Every `PR01`/`PR02` draft row has been re-assessed under the current governance
@@ -427,9 +445,11 @@ not a suite.
 > [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §3a. Both
 > reserves remain `inactive-reserve`, the reserve denominator is **0**, the active
 > counts in §3 are unchanged, and `PR02` stays independently blocked by `TD-B26`.
-> What remains outstanding under `TD-B40` is the **independent re-approval** of
-> that reconciliation and of the migration as a whole, so no reserve may be
-> activated yet.
+> That reconciliation, and the migration as a whole, have since been
+> **independently re-approved** in an external read-only re-review, which is why
+> `TD-B40` closes. **Re-approval is not activation:** a reserve may still be
+> activated only through a separately recorded, independently approved pre-run
+> activation decision, and **none exists**, so **no reserve may be activated yet**.
 
 ### 12.2b The cleared candidate is now authored as `PT07` (`TD-B34` still open)
 
@@ -471,7 +491,10 @@ modified, no benchmark or model ran, and nothing was frozen.
   `PT07` enters E1 (`TD-B05`/`TD-B14`/`TD-B32`, gate `G1`). Its public eligibility
   of `scored` records intent, never a demonstrated denominator. The approval covers
   the `PT07` **package** only — not the private opportunity migration (`TD-B40`
-  residual (B)) and not the other eight private packages.
+  residual (B)) and not the other eight private packages. **The migration's own
+  re-approval has since been reached separately** and is what closes `TD-B40`;
+  package approval and migration re-approval remain **different facts**, and
+  **neither is a freeze**.
 
 **`TD-B34` is NOT resolved.** One authored task does not provide the **replication
 depth** the confirmatory construct needs. **Further candidate authoring is still
@@ -553,6 +576,53 @@ required work genuinely *creates* the decision rather than preserving it
 (requirement 2), remain **open questions for a separate pre-authoring review**
 under requirements 1–11. `TD-B34` stays **open and blocking** until that review
 has happened and its outcome is independently approved.
+
+### 12.2d Forcing strength, and the priority-A candidate's pre-authoring state
+
+**Requirement 1 is satisfied by a task-created decision; it does not demand a
+strictly forced one.** The independent Priority-A pre-authoring review established
+that the two represented `AR-DEP-006` families differ in **forcing strength**, and
+the distinction is now recorded normatively in
+[`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §2a:
+
+- **`features → infra` — strong/strict task-created forcing.** The functional
+  contract of the retained instruments requires persistence/query behaviour that
+  cannot be satisfied without confronting the dependency decision.
+- **`features → api` — natural-path / opportunity-creating forcing.** A public task
+  can make an `api`-owned boundary datum relevant to feature computation and create
+  a plausible forbidden reach-back, but because `api` is the editable
+  composition/boundary layer, some externally equivalent conforming implementations
+  may solve the behaviour entirely at the boundary without touching `features`.
+
+**Consequences for authoring.** A candidate in a natural-path family is
+**admissible** — it still creates the decision, and doing nothing still fails the
+contract — but three obligations attach: (a) its forcing class must be **recorded**
+and must never be represented as equal to a `features → infra` instrument's; (b)
+its **legitimate implementation alternatives must be pre-declared before authoring**
+so the hidden architecture scorer cannot mistake a legal boundary-only solution for
+a violation, and **no hidden rule may be designed to eliminate them**; and (c) its
+discriminative difficulty must be evaluated **only** on **C1 baseline** behaviour
+in the Stage-1 pilot, **never** on `C4`, an observed AFCI advantage, or any
+treatment-effect estimate ([`PILOT_AND_POWER_POLICY.md`](PILOT_AND_POWER_POLICY.md),
+D3). **`api → core` / `AR-DEP-005` is deliberately not adjudicated** for forcing
+strength; no adjudication was supplied and none is invented.
+
+**Priority-A candidate state.** The pre-authoring review this re-scope requires
+**has now happened for priority A**, and returned **`DECISION B` — REPAIR CANDIDATE
+BEFORE AUTHORING** (P0 = 0, four P1 findings, all four now closed). The provisional
+candidate **`CAND-A1`** and its pinned contract decisions — carrier, rejection
+outcome, wire determinacy, validation precedence, money-semantics prohibition,
+observation boundary, and the pre-declared legal implementation families — are
+recorded in
+[`CAND_A1_PREAUTHORING_DECISION.md`](CAND_A1_PREAUTHORING_DECISION.md).
+
+**Nothing is authored.** `CAND-A1` has **no** public task body, **no** private
+evaluator package, **no** manifest, **no** `PT08` identifier, **no** eligibility
+status and **no** denominator row; the active set stays **5** opportunities over
+**3** clusters at depths **3 / 1 / 1**; and `DC-FEATURES-API-AR-DEP-006` stays at
+**one** observation. **The candidate is not finally approved** — one **focused
+independent remediation re-review** is still required, and **priority B has had no
+candidate review at all**. `TD-B34` stays **open and blocking**.
 
 ### 12.3 What is forbidden
 

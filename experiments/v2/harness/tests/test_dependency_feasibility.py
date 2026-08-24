@@ -385,10 +385,63 @@ def test_the_active_set_is_five_opportunities_over_three_clusters():
 
 @pytest.mark.parametrize("cluster,depth", sorted(CLUSTER_DEPTHS.items()))
 def test_each_cluster_records_its_observation_depth(cluster, depth):
-    flat = _flat(FEASIBILITY_PATH)
-    assert cluster.lower() in flat, f"{cluster} must be named"
-    row = flat[flat.index(cluster.lower()) :][:200]
-    assert re.search(rf"\|\s*{depth}\s*\|", row), f"{cluster} must record {depth} observation(s)"
+    """The occupancy table's own row, not a character window around a name.
+
+    MUTATION REPAIR. This used ``flat.index(cluster)`` plus a 200-character
+    window, so it read whichever mention of the cluster came first in the
+    document. Adding the forcing-strength table of §2a — which names both
+    ``AR-DEP-006`` clusters *before* the occupancy table of §3 — made the window
+    land on the wrong table, and the assertion failed for a reason that had
+    nothing to do with observation depth. Worse, the same fragility could have
+    made it pass against an unrelated table that happened to carry the right
+    digit.
+
+    The row is now located structurally: the one table row of the occupancy
+    section that names this cluster, with the depth read from that row's own
+    final cell.
+    """
+    rel = FEASIBILITY_PATH.relative_to(REPO).as_posix()
+    rows = [
+        p for p in G.markdown_passages(FEASIBILITY_PATH, rel)
+        if p.kind == "table-row"
+        and p.heading.startswith("3. the demonstrated feasibility ceiling")
+        and cluster.lower() in p.flat
+    ]
+    assert len(rows) == 1, (
+        f"expected exactly one occupancy row naming {cluster} under the ceiling "
+        f"section, found {len(rows)}"
+    )
+    cells = [c.strip() for c in rows[0].flat.strip("|").split("|")]
+    assert cells[0] == cluster.lower(), (
+        f"the occupancy row must start with {cluster}, not {cells[0]!r}"
+    )
+    assert cells[-1] == str(depth), (
+        f"{cluster} must record {depth} active observation(s), not {cells[-1]!r}"
+    )
+
+
+@pytest.mark.parametrize("cluster", sorted(CLUSTER_DEPTHS))
+def test_the_forcing_strength_table_does_not_restate_observation_depth(cluster):
+    """§2a records forcing strength; it must never carry a depth that can drift.
+
+    Two tables naming the same clusters is two places a depth could disagree. §2a
+    is deliberately about forcing strength only, so no cell of it may be a bare
+    observation count.
+    """
+    rel = FEASIBILITY_PATH.relative_to(REPO).as_posix()
+    rows = [
+        p for p in G.markdown_passages(FEASIBILITY_PATH, rel)
+        if p.kind == "table-row"
+        and p.heading.startswith("2a. task-createdness is not forcing strength")
+        and cluster.lower() in p.flat
+    ]
+    for row in rows:
+        cells = [c.strip() for c in row.flat.strip("|").split("|")]
+        numeric = [c for c in cells if re.fullmatch(r"\d+", c)]
+        assert numeric == [], (
+            f"the §2a forcing-strength row for {cluster} carries a bare count "
+            f"{numeric}; observation depth belongs only to the §3 occupancy table"
+        )
 
 
 def test_the_singleton_clusters_are_the_named_replication_priorities():
@@ -955,16 +1008,29 @@ def test_the_protocol_is_still_pre_freeze():
     assert "protocol-freeze" not in tags, "no protocol-freeze tag may exist"
 
 
-def test_the_registry_records_the_package_without_closing_anything():
+def test_the_registry_records_the_feasibility_package_without_closing_its_own_blockers():
+    """The feasibility package opened `TD-B41` and closed nothing of its own.
+
+    `TD-B40` has since been closed by a **later** governance package, once both of
+    its residuals completed. That is recorded here rather than asserted away: the
+    resolved set is pinned exactly, and the blockers this package must never close
+    — `TD-B34`, `TD-B37`, `TD-B41` — are asserted open by name.
+    """
     md = _text(DECISIONS_MD)
     assert "Blocking decisions: 41**" in md
     assert "Total decisions: 47**" in md
-    assert "**44 remain open**" in md
     rows = _rows(DECISIONS_CSV)
     resolved = {r["decision_id"] for r in rows if r["status"].strip().lower() == "resolved"}
-    assert resolved == {"TD-B23", "TD-B24", "TD-B38"}, (
-        f"this package closes no blocker; resolved set is {sorted(resolved)}"
+    assert resolved == {"TD-B23", "TD-B24", "TD-B38", "TD-B40"}, (
+        f"unexpected resolved set: {sorted(resolved)}"
     )
+    assert f"**{len(resolved)} are resolved**" in md, "resolved count drifted"
+    assert f"**{len(rows) - len(resolved)} remain open**" in md, "open count drifted"
+    by_id = {r["decision_id"]: r for r in rows}
+    for still_open in ("TD-B34", "TD-B37", "TD-B41", "TD-B39"):
+        assert by_id[still_open]["status"].strip().lower() == "open", (
+            f"{still_open} must stay open; the feasibility re-scope closes nothing"
+        )
 
 
 # --------------------------------------------------------------------------- #
@@ -1203,8 +1269,17 @@ def test_the_feasibility_record_explains_the_inactive_reserve_draft_rows():
     # nothing private is disclosed
     assert "no private identifier" in body
     assert "no task-to-cluster mapping is published" in body
-    # still open
-    assert "not independently re-approved" in body
+    # The reconciliation is now independently re-approved, and the section must say
+    # so WITHOUT that reading as an activation. Both halves are required: a section
+    # that recorded only the re-approval would let a reader take the reserve as live.
+    assert "independently re-approved" in body
+    assert "re-approval is not activation and not a freeze" in body
+    assert "both reserves stay inactive-reserve" in body
+    assert "gate g1 is not passed" in body
+    assert (
+        "activation still requires a separately recorded, independently approved "
+        "pre-run activation decision" in body
+    )
     assert "td-b40" in body
 
 

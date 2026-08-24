@@ -382,7 +382,11 @@ after the fact.
 **Definition of `G` (pre-registered).** `G` is the number of `decision_cluster_id`
 levels containing **at least one final, frozen, E1-eligible opportunity** after the
 eligibility gates are resolved. The gates are the manifest validation, approval and
-freeze requirements of `TD-B05`/`TD-B14`/`TD-B32`/`TD-B40` under gate **`G1`**. A
+freeze requirements of `TD-B05`/`TD-B14`/`TD-B32` under gate **`G1`**. `TD-B40`
+governed the opportunity **migration** and its independent re-approval, both now
+complete, so it no longer gates `G`; **its closure does not resolve any of the
+remaining gates and freezes no manifest**, so `G` stays unknown until
+`TD-B05`/`TD-B14`/`TD-B32` are discharged. A
 cluster whose only opportunities are unfrozen, withdrawn, reclassified
 `functional-only`, or carried solely by an inactive reserve **does not count toward
 `G`**.

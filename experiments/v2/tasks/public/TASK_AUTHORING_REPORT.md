@@ -734,10 +734,12 @@ mechanism.
 > **`TD-B40` is re-scoped, not unaffected**: the ordered removal has since been
 > performed under separate authorised private work — no preservation-only row
 > enters any manifest opportunity set or any E1 denominator, and each survives only
-> as a superseded, detection-only historical record. `TD-B40` now governs only the
-> residual **inactive-reserve** rows (`PR01`/`PR02`, which must be re-authored
+> as a superseded, detection-only historical record. `TD-B40` then governed only the
+> residual **inactive-reserve** rows (`PR01`/`PR02`, which had to be re-authored
 > before any activation) and the outstanding **independent re-approval** of the
-> migration; no manifest is frozen.
+> migration — and **both of those are now complete, so `TD-B40` is resolved and
+> closed**. **Closure freezes nothing:** no manifest is frozen, gate `G1` is not
+> passed, no reserve is activated, and neither `TD-B34` nor `TD-B39` is resolved.
 
 ### 3. Boundary audit of the eight existing candidates
 
@@ -972,9 +974,12 @@ externally ungradeable.
 > separate, later, explicitly authorised action.
 >
 > **The approval is narrow.** It covers the `PT07` **package** only. It does *not*
-> cover the private opportunity migration, whose independent re-approval is still
-> outstanding under `TD-B40` residual (B), and it does *not* cover the other eight
-> private packages, which remain `review_required`.
+> cover the private opportunity migration and it does *not* cover the other eight
+> private packages, which remain `review_required`. The migration's own independent
+> re-approval was reached separately, in a later external read-only re-review
+> recorded under `TD-B40` residual (B); **package approval and migration
+> re-approval remain different facts even now that both exist**, neither may be
+> read off the other, and **neither is a freeze**.
 >
 > `TASK_ACCEPTANCE_MATRIX.csv`, `TASK_LAYER_MATRIX.csv`, `TASK_RULE_MATRIX.csv` and
 > `PILOT_PUBLIC_TASK_MATRIX.csv` record `stored_in_private_evaluator_repo` for
@@ -1000,10 +1005,16 @@ externally ungradeable.
   superseded, non-scoring records; one survives as a task-created reserve
   candidate. The legacy `infra → core` / `AR-DEP-004` row is **permanently barred**
   from any E1 denominator because that relationship is **not task-creatable** on
-  this substrate, so it is **not** an available fourth decision cluster. The
-  reconciliation is **performed but not independently re-approved**, so `TD-B40`
-  stays **open and blocking**. No public task, hash or eligibility changed for
-  either reserve.
+  this substrate, so it is **not** an available fourth decision cluster. *As
+  recorded then*, the reconciliation was **performed but not independently
+  re-approved**, so `TD-B40` stayed **open and blocking**; it has since been
+  **independently re-approved** in an external read-only re-review whose recorded
+  scope expressly includes it, and `TD-B40` is now **resolved and closed**.
+  **Re-approval and closure are neither an activation nor a freeze:** both
+  reserves stay `inactive-reserve`, the reserve denominator stays **0**, no
+  manifest is frozen, `G1` is not passed, and activation still requires a
+  separately recorded, independently approved pre-run activation decision that does
+  not exist. No public task, hash or eligibility changed for either reserve.
 
 ### What this package deliberately did NOT do
 
@@ -1018,7 +1029,10 @@ externally ungradeable.
 - It did **not** activate `PR01` or `PR02`, promote a reserve, or alter `PT01`–
   `PT06`.
 - It did **not** close a blocker. `TD-B34` stays open and blocking, and so do
-  `TD-B39`, `TD-B40`, `TD-B26`, `TD-B31`, `TD-B22`, `TD-B05` and `TD-B14`. The
+  `TD-B39`, `TD-B26`, `TD-B31`, `TD-B22`, `TD-B05` and `TD-B14`. *(`TD-B40` was
+  also open and blocking at the time of this package; it has since been resolved by
+  a separate governance package once both of its residuals completed, and that
+  closure freezes nothing here.)* The
   registry still holds 40 blocking and 6 non-blocking decisions.
 - It did **not** freeze a task count, an opportunity count, an endpoint, a
   manifest or the protocol, and it did **not** run a power simulation.

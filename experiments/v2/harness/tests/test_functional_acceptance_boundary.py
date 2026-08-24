@@ -78,6 +78,11 @@ PERSISTENCE_INTERNAL_CODE_ALLOWLIST = {
     "libs/infra/src/index.ts",
     "apps/api/src/app.ts",
     "apps/api/src/app.spec.ts",
+    # A governance guard that FORBIDS a symbol must be able to name it, which is
+    # the same exemption this module already grants itself below. This one pins
+    # that the CAND-A1 observation boundary excludes the legacy reset helper; it
+    # neither imports nor calls anything, and it is not on any evaluator path.
+    "experiments/v2/harness/tests/test_cand_a1_preauthoring.py",
 }
 
 CODE_SUFFIXES = {".ts", ".tsx", ".js", ".py", ".fixture"}

@@ -26,10 +26,15 @@ Two things this module is careful **not** to do:
 * it does not claim ``PT07`` is **frozen**, that gate ``G1`` is passed, or that
   ``PT07`` is run-eligible. Package approval is none of those, and each is asserted
   separately from the approval so recording one can never relax another;
-* it does not close ``TD-B40`` — a genuine residual survives the migration. Its
-  reserve-row half **(A)** has since been performed but is not independently
-  re-approved, and its independent-re-approval half **(B)** is still pending;
-  package approval and migration re-approval are different facts.
+* it does not let ``TD-B40``'s closure widen. Both of that row's residuals have
+  since completed — the reserve-row reconciliation **(A)**, now independently
+  re-adjudicated inside the re-review's recorded scope, and the independent
+  re-approval of the complete migration **(B)** — so the row is now **resolved**.
+  Every assertion about it therefore comes in two halves: the fact that closed it,
+  and the bound on what closure confers. Closure freezes no manifest, passes no
+  gate (``G1`` included), activates no reserve, and resolves neither ``TD-B34`` nor
+  ``TD-B39``; package approval and migration re-approval remain different facts
+  even now that both exist.
 
 Pure file inspection; no model is invoked.
 """
@@ -111,11 +116,44 @@ def _decision(decision_id: str) -> dict[str, str]:
 # TD-B40: re-scoped, still open, and no longer asserting false active-set facts.
 
 
-def test_td_b40_stays_open_and_blocking():
-    """The residual is real, so the row must not be closed by this reconciliation."""
+def test_td_b40_is_closed_only_because_both_residuals_completed():
+    """A closed row must earn its closure and must carry the bound on it.
+
+    Earlier this test asserted `TD-B40` **open**, which was correct while a
+    residual survived. Both residuals have since completed — the inactive-reserve
+    reconciliation, and the independent re-approval of the complete migration — so
+    the row is closed. Closure is only safe if it is bounded, so the row must state
+    that both residuals are complete AND that closure confers nothing.
+    """
     row = _decision("TD-B40")
-    assert row["blocking"] == "yes"
-    assert row["status"].strip().lower() == "open"
+    assert row["blocking"] == "yes", (
+        "the row's blocking NATURE does not change when its status resolves"
+    )
+    assert row["status"].strip().lower() == "resolved"
+    text = _norm(row["decision"])
+    assert "resolved / closed" in text
+    assert "both residuals of the re-scoped row are complete" in text
+    assert "no longer a blocking gate" in text
+    # both residuals, named complete
+    assert "residual (a) inactive-reserve re-authoring / reconciliation - complete" in text
+    assert "residual (b) independent re-approval of the complete migration - complete" in text
+    # and the bound on closure, stated in the row itself
+    for denial in ("freezes no manifest", "passes no gate including g1",
+                   "makes no experiment run-ready",
+                   "activates neither pr01 nor pr02",
+                   "resolves neither td-b34 nor td-b39",
+                   "td-b40 never governed freeze"):
+        assert denial in text, f"the row does not deny: {denial!r}"
+
+
+def test_closing_td_b40_leaves_the_blockers_that_actually_gate_freeze_open():
+    """The register must not have quietly closed anything alongside it."""
+    for still_open in ("TD-B05", "TD-B14", "TD-B32", "TD-B34", "TD-B39"):
+        row = _decision(still_open)
+        assert row["status"].strip().lower() == "open", (
+            f"{still_open} must stay open; TD-B40's closure governs only the "
+            f"migration and its re-approval"
+        )
 
 
 def test_td_b40_no_longer_claims_api_core_is_unrepresented():
@@ -144,25 +182,38 @@ def test_td_b40_records_the_active_set_migration_as_discharged():
     )
 
 
-def test_td_b40_is_re_scoped_to_the_genuine_residual_only():
-    """Not a relabelled blocker: the row must name what actually remains."""
+def test_td_b40_closure_names_exactly_the_two_residuals_it_discharged():
+    """Not a quietly widened closure: the row closes what it scoped, and no more."""
     text = _norm(_decision("TD-B40")["decision"])
     assert "re-scoped" in text
-    # (A) inactive reserves
-    assert "inactive-reserve housekeeping" in text
+    # (A) inactive reserves — discharged, and still not activated
+    assert "inactive-reserve re-authoring / reconciliation - complete" in text
     assert "pr01 and pr02" in text
-    assert "no reserve may be activated" in text
-    # (B) the migration is performed but not yet independently approved
-    assert "independent re-approval" in text
-    assert "has not been independently reviewed" in text
-    assert "no per-task manifest is frozen" in text
-    # and the coverage deficiency is handed to the decision that actually owns it
+    assert "independently re-adjudicated" in text
+    assert "no such decision exists" in text, (
+        "closure must restate that no reserve-activation decision exists"
+    )
+    # (B) the migration is now independently re-approved, propagated not performed
+    assert "independent re-approval of the complete migration - complete" in text
+    assert "external independent read-only" in text
+    assert "p1-j1 and p1-j2" in text
+    assert "no new p0 and no new p1" in text
+    assert "migration state unchanged" in text
+    assert "fails closed" in text
+    assert "precedes the commits that record it" in text
+    assert "propagate that result and neither performs it" in text
+    assert "none is claimed" in text
+    # closure rationale, and the coverage deficiency still owned by TD-B34
+    assert "closure rationale" in text
     assert "replication depth" in text and "td-b34" in text
+    # the historical record is not tidied away by closing the row
+    assert "historical record preserved" in text
 
 
 def test_td_b40_narrative_and_registry_agree():
     md = _flat(DECISIONS_MD)
-    assert "re-scoped to the residual inactive-reserve and re-approval housekeeping" in md
+    assert "resolved / closed" in md
+    assert "both residuals complete" in md
     assert "now withdrawn as false" in md, (
         "the narrative row must mark the old active-set facts as withdrawn"
     )
@@ -170,6 +221,12 @@ def test_td_b40_narrative_and_registry_agree():
     assert "spanning only two distinct clusters" not in md, (
         "the narrative row still carries the withdrawn two-cluster claim"
     )
+    # the narrative must carry the same bound on closure as the CSV row
+    for denial in ("freezes no manifest", "passes no gate (g1 included)",
+                   "activates neither pr01 nor pr02",
+                   "resolves neither td-b34 nor td-b39",
+                   "td-b40 never governed freeze"):
+        assert denial in md, f"the narrative registry does not deny: {denial!r}"
 
 
 @pytest.mark.parametrize("path", GOVERNANCE_FILES, ids=lambda p: p.name)
@@ -679,41 +736,60 @@ def test_the_withdrawn_review_claim_is_marked_withdrawn_where_it_survives():
 # --------------------------------------------------------------------------- 6
 # TD-B40's two residuals, tracked apart.
 # --------------------------------------------------------------------------- #
-def test_td_b40_residual_a_records_the_reserve_reconciliation_as_performed():
+def test_td_b40_residual_a_records_the_reserve_reconciliation_and_its_re_approval():
     text = _norm(_decision("TD-B40")["decision"])
-    assert "re-authoring now performed, re-approval outstanding" in text
+    assert "inactive-reserve re-authoring / reconciliation - complete" in text
     assert "re-assessed every one of those rows under the current governance" in text
     assert "four rows were demoted" in text
     assert "one row survives as a" in text and "task-created reserve candidate" in text
     assert "bars it from ever entering an e1 denominator" in text
     assert "fourth decision cluster" in text
-    assert "no reserve was activated" in text
-    assert "reserve denominator is 0" in text
+    assert "reserve denominator of 0" in text
     assert "td-b26" in text
+    # the re-approval that discharged (A), and what it did NOT do
+    assert "independently re-adjudicated" in text
+    assert (
+        "records the pr01/pr02 reserve reconciliation expressly inside its own scope"
+        in text
+    ), "the row must say WHY (A) is discharged, not merely that it is"
+    assert "remain inactive-reserve" in text
+    assert "no such decision exists" in text
 
 
-def test_td_b40_residual_b_is_still_pending_and_still_blocking():
+def test_td_b40_residual_b_is_re_approved_and_still_confers_no_freeze():
     row = _decision("TD-B40")
     assert row["blocking"] == "yes"
-    assert row["status"].strip().lower() == "open"
+    assert row["status"].strip().lower() == "resolved"
     text = _norm(row["decision"])
-    assert "independent re-approval" in text
-    assert "has not been independently reviewed" in text
-    assert "no per-task manifest is frozen" in text
-    assert "gate g1 is not passed" in text
-    # and the PT07 PACKAGE approval must not be read as the migration's re-approval
-    assert "unaffected by the independent approval of the pt07 package" in text
+    assert "independent re-approval of the complete migration - complete" in text
+    assert "td-b40(b) complete migration - independently re-approved" in text
+    assert (
+        "approve linkage remediation - td-b40(b) re-approved - replication review "
+        "may begin" in text
+    )
+    assert "every manifest remains status=review and unfrozen" in text
+    assert "passes no gate including g1" in text
+    # the recorded scope must name every element the re-approval covered
+    for item in ("six active-set supersessions", "five active opportunities",
+                 "pr01/pr02 reserve reconciliation", "active cluster register",
+                 "repaired cross-repository linkage"):
+        assert item in text, f"the re-approval scope omits: {item!r}"
+    # and the PT07 PACKAGE approval must still not be read as the migration's
+    assert "package approval and migration re-approval remain" in text
     assert "different facts" in text
+    assert "neither may be read off the other" in text
     assert "neither is a freeze" in text
 
 
 def test_the_narrative_row_agrees_about_both_residuals():
     md = _flat(DECISIONS_MD)
-    assert "re-authoring now performed, re-approval outstanding" in md
-    assert "no reserve was activated" in md
+    assert "residual (a) — inactive-reserve re-authoring / reconciliation: complete" in md
+    assert "residual (b) — independent re-approval of the complete migration: complete" in md
     assert "permanently barred" in md or "bars it from ever entering" in md
     assert "fourth cluster" in md
-    assert "package approval and migration re-approval are different facts" in md
+    assert "package approval and migration re-approval remain different facts" in md
+    assert "propagate" in md and "neither performs it" in md
+    assert "none is claimed" in md
 
 
 def test_td_b39_is_surfaced_as_recorded_privately_but_still_open():

@@ -16,8 +16,10 @@ model-visible package metadata still announcing the experiment itself;
 TD-B39..TD-B40 by the pre-authoring functional-evaluator boundary package that
 defined the functional acceptance observation boundary and recorded that the
 reassessment's preservation-only opportunities had not yet been migrated out of the
-private manifests (TD-B40 has since been re-scoped to the residual inactive-reserve
-and re-approval housekeeping that survives that migration); TD-B41 by the
+private manifests (TD-B40 was then re-scoped to the residual inactive-reserve and
+re-approval housekeeping that survives that migration, and is now RESOLVED because
+both of those residuals completed - a closure that freezes nothing and passes no
+gate); TD-B41 by the
 remaining-leaf feasibility package that re-scoped TD-B34 to replication depth and
 had to settle how a fixed, very small decision space is analysed at the realised
 cluster count). Pure file inspection; no model is invoked.
@@ -34,10 +36,24 @@ TD_RE = re.compile(r"TD-[BN][0-9]+")
 
 #: The only decisions any package has resolved so far: the model-visible
 #: architecture-comment remediation (TD-B23), the leakage audit that proves it
-#: (TD-B24), and the experiment-awareness remediation (TD-B38). Enumerating them
-#: keeps the registry fail-closed — a blocker quietly flipped to ``resolved``
-#: still fails this suite.
-RESOLVED_IDS = {"TD-B23", "TD-B24", "TD-B38"}
+#: (TD-B24), the experiment-awareness remediation (TD-B38), and the opportunity
+#: migration whose two residuals - the inactive-reserve reconciliation and the
+#: independent re-approval of the complete migration - are both complete (TD-B40).
+#: Enumerating them keeps the registry fail-closed — a blocker quietly flipped to
+#: ``resolved`` still fails this suite.
+RESOLVED_IDS = {"TD-B23", "TD-B24", "TD-B38", "TD-B40"}
+
+#: What each resolved row must name as the evidence that closes it. A resolved row
+#: with no closure evidence is an assertion, not a decision, so the requirement is
+#: per row rather than one shared string: the three leakage/substrate remediations
+#: are closed by a regression proof over committed fixtures, while TD-B40 is closed
+#: by both residuals completing and by the propagated independent re-approval.
+RESOLUTION_EVIDENCE = {
+    "TD-B23": ("PROOF 10", "leakage_fixtures"),
+    "TD-B24": ("PROOF 10",),
+    "TD-B38": ("PROOF 11", "leakage_fixtures"),
+    "TD-B40": ("INDEPENDENTLY RE-APPROVED", "P1-J1", "P1-J2"),
+}
 
 #: Blockers that must never be closed as a side effect of unrelated work. The
 #: task-authoring blockers in particular gate Stage 0 and are not this package's
@@ -50,7 +66,6 @@ MUST_STAY_OPEN = {
     "TD-B05",  # hidden acceptance criteria
     "TD-B14",  # private opportunity-set adequacy
     "TD-B39",  # hidden acceptance packages migrated onto the observation boundary
-    "TD-B40",  # residual inactive-reserve rows + independent re-approval of the migration
     "TD-B41",  # residual small-cluster (G = 3) analysis specification
 }
 
@@ -104,20 +119,67 @@ def test_task_authoring_and_runner_blockers_are_still_open():
 
 
 def test_resolved_decisions_record_what_was_done_and_how_it_is_proven():
-    """A resolved row must carry its disposition and its regression evidence."""
+    """A resolved row must carry its disposition and its closure evidence."""
     by_id = {r["decision_id"]: r for r in _registry_rows()}
+    assert set(RESOLUTION_EVIDENCE) == RESOLVED_IDS, (
+        "every resolved decision must declare what evidence closes it"
+    )
     for decision_id in sorted(RESOLVED_IDS):
         text = by_id[decision_id]["decision"]
         assert text.strip().upper().startswith("RESOLVED"), (
             f"{decision_id} must state its resolution first"
         )
-        assert "PROOF 10" in text or "leakage_fixtures" in text, (
-            f"{decision_id} must name the regression proof that closes it"
-        )
+        for needle in RESOLUTION_EVIDENCE[decision_id]:
+            assert needle in text, (
+                f"{decision_id} must name the evidence that closes it: {needle!r}"
+            )
     # TD-B23's disposition was a real choice between two options; record which.
     assert "NEUTRALISE" in by_id["TD-B23"]["decision"].upper(), (
         "TD-B23 offered neutralise-or-pre-register; the registry must say which was taken"
     )
+
+
+def test_closing_td_b40_confers_no_freeze_and_no_gate_pass():
+    """A closed row must carry the bound on its own closure.
+
+    ``TD-B40`` is the first resolved row that is not a substrate remediation, and
+    the risk it introduces is a reader taking "the migration row is closed" for
+    "the migration is frozen" or "``G1`` is passed". The row must therefore state
+    what closure does NOT do, must record that the re-approval was PROPAGATED
+    rather than performed, and must not have quietly resolved the blockers that
+    genuinely gate freeze.
+    """
+    by_id = {r["decision_id"]: r for r in _registry_rows()}
+    text = by_id["TD-B40"]["decision"]
+    for denial in (
+        "FREEZES NO MANIFEST",
+        "PASSES NO GATE INCLUDING G1",
+        "MAKES NO EXPERIMENT RUN-READY",
+        "ACTIVATES NEITHER PR01 NOR PR02",
+        "RESOLVES NEITHER TD-B34 NOR TD-B39",
+        "Every manifest remains status=review and unfrozen",
+        "TD-B40 NEVER GOVERNED FREEZE",
+    ):
+        assert denial in text, f"the TD-B40 row does not deny: {denial!r}"
+    # propagated, not performed, and with honest provenance
+    assert "PRECEDES the commits that record it" in text
+    assert "PROPAGATE that result and NEITHER PERFORMS IT" in text
+    assert "NONE IS CLAIMED" in text, (
+        "the row must state that no reviewer identity/URL/timestamp is claimed"
+    )
+    # both residuals named complete, and the standing constraints preserved
+    assert "RESIDUAL (A) INACTIVE-RESERVE RE-AUTHORING / RECONCILIATION - COMPLETE" in text
+    assert "RESIDUAL (B) INDEPENDENT RE-APPROVAL OF THE COMPLETE MIGRATION - COMPLETE" in text
+    assert "NO SUCH DECISION EXISTS" in text, (
+        "closure must not relax the reserve-activation requirement"
+    )
+    assert "PERMANENTLY BARRED" in text
+    assert "HISTORICAL RECORD PRESERVED" in text
+    # the blockers that actually gate freeze are untouched
+    for still_open in ("TD-B05", "TD-B14", "TD-B32", "TD-B39"):
+        assert by_id[still_open]["status"].strip().lower() == "open", (
+            f"{still_open} gates freeze and must not close with TD-B40"
+        )
 
 
 def test_counts_are_41_blocking_6_nonblocking():
