@@ -167,17 +167,25 @@ BREADTH_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.csv",
         heading="row TD-B34 / column decision",
-        anchor="f9a408859466175a",
+        anchor="e5732339c5cec2de",
         why="the machine-readable TD-B34 row quotes the original breadth objective; "
-            "re-anchored when the row gained the CAND-A1 priority-A pre-authoring "
-            "progress, which is progress toward REPLICATION DEPTH and must never be "
-            "read as reviving the breadth objective",
+            "re-anchored when the stale TD-B40(B) claim was corrected (P1-4). The row "
+            "records progress toward REPLICATION DEPTH, which must never be read as "
+            "reviving the breadth objective, and it must not inherit a residual that "
+            "belongs to a decision now resolved",
         required=(MARKER, "as originally recorded",
                   "breadth objective is superseded and structurally unattainable",
                   "priority-a pre-authoring progress, not resolution",
-                  "td-b34 therefore remains open and blocking"),
+                  "td-b34 therefore remains open and blocking",
+                  # P1-4: the row states the residual's real state and does not
+                  # inherit it, and replication depth stays the only live objective
+                  "td-b40 residual (b) is itself complete",
+                  "td-b34 neither inherits nor reopens td-b40(b)",
+                  "td-b34 remains open and blocking on replication depth alone"),
         forbidden=("the breadth objective is restored",
-                   "breadth is again required"),
+                   "breadth is again required",
+                   "re-approval remains outstanding",
+                   "re-approval is still outstanding"),
     ),
     RC(
         rel="experiments/v2/tasks/public/TASK_AUTHORING_REPORT.md",

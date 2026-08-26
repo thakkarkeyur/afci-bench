@@ -495,9 +495,15 @@ canonical substrate is still `630d3180` / `0198d76c…`, and the protocol remain
   recorded exactly as supplied: **no reviewer identity, external URL or timestamp
   was supplied and none is claimed**, and the review **precedes** the commit that
   records it. The approval covers the **`PT07` package only** — not the private
-  opportunity migration, whose independent re-approval is still outstanding under
-  `TD-B40` residual (B), and not the eight other private packages, which remain
-  `review_required`.
+  opportunity migration (`TD-B40` residual (B)) and not the eight other private
+  packages, which remain `review_required`. *As recorded then*, that migration's
+  **independent re-approval was still outstanding** under `TD-B40` residual (B);
+  it has since been **independently re-approved** and that re-approval is now
+  **propagated**, so `TD-B40` is now **resolved** and the outstanding-re-approval
+  sentence is **history, not current governance** — see the migration-reapproval
+  section below, which also records everything closure does **not** confer.
+  Package approval and migration re-approval remain **different facts** even now
+  that both exist, and **neither is a freeze**.
 - **The private reserve rows are reconciled, and no reserve was activated**
   (`TD-B40` residual (A)). `PR01`/`PR02` stay `inactive-reserve` with a **zero**
   reserve denominator; the **active** set is unchanged at **5** opportunities over
