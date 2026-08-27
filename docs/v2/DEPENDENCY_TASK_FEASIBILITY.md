@@ -48,9 +48,15 @@ private evaluator repository exactly as before.
 > an **inference cost**. The public record already states that the pre-`PT07`
 > active set sat under one source scope and one leaf rule, and that `PT07`
 > introduced a new source scope and a new leaf rule; against §3 a reader can
-> therefore infer which cluster `PT07`'s decision occupies. Which of the earlier
-> scored candidates share a cluster remains **not** inferable, and no public
-> artifact states it. Nothing here changes what the coding model sees — `docs/v2/`
+> therefore infer which cluster `PT07`'s decision occupies. The same cost now
+> attaches to `PT08`, and for the same recorded reason: the priority-A replication
+> target was published here and in the authoring bar **before** the candidate was
+> authored, so a reader who knows that `PT08` is the authored priority-A instrument
+> can infer its expected area. That was accepted when the priority list was
+> published; **no public artifact states the mapping**, no task-facing artifact
+> carries it, and the expected violating implementation is published nowhere. Which
+> of the earlier scored candidates share a cluster remains **not** inferable, and no
+> public artifact states it. Nothing here changes what the coding model sees — `docs/v2/`
 > is excluded from every condition's worktree by
 > [`MODEL_VISIBLE_WORKTREE_POLICY.md`](MODEL_VISIBLE_WORKTREE_POLICY.md) — so the
 > cost is to reviewer-facing blinding of one candidate's expected area, not to the
@@ -248,6 +254,17 @@ achievable clusters are **singletons**, and a singleton cluster is one boundary
 decision observed once. Breadth beyond the ceiling above is **structurally
 impossible on this substrate** — it is not a matter of authoring effort, review
 effort or task count.
+
+**A public replication body now exists for the priority-A target, and the
+occupancy table above is unchanged.** The priority-A candidate has been publicly
+authored as the task body `PT08`
+([`CAND_A1_PREAUTHORING_DECISION.md`](CAND_A1_PREAUTHORING_DECISION.md) §2a;
+[`TASK_AUTHORING_POLICY.md`](TASK_AUTHORING_POLICY.md) §12.2e). It adds **no active
+observation**: an active observation requires a private evaluator package carrying a
+validated architecture opportunity, and none exists. So the table's **Active
+observations** column, the active opportunity count and the depths above all stand
+exactly as recorded, the priority-A row still reads **1**, and the second
+observation **must not be pre-counted** from the existence of a public body.
 
 ---
 

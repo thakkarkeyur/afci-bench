@@ -42,9 +42,9 @@ REPORT_PATH = PUBLIC_TASKS_DIR / "TASK_AUTHORING_REPORT.md"
 MATRIX_PATH = REPO / "docs" / "v2" / "PILOT_PUBLIC_TASK_MATRIX.csv"
 SCHEMA_JSON = REPO / "experiments" / "v2" / "schemas" / "public_task.schema.json"
 
-#: PT01-PT06 are the repaired pilot suite; PT07 was authored later under
-#: DECISION B (TD-B34). PR01/PR02 are the pre-declared reserves.
-EXPECTED_IDS = [f"PT0{i}" for i in range(1, 8)] + ["PR01", "PR02"]
+#: PT01-PT06 are the repaired pilot suite; PT07 and then PT08 were authored later
+#: under DECISION B (TD-B34). PR01/PR02 are the pre-declared reserves.
+EXPECTED_IDS = [f"PT0{i}" for i in range(1, 9)] + ["PR01", "PR02"]
 NON_TASK_STEMS = {"README", "TASK_AUTHORING_REPORT"}
 
 
@@ -178,7 +178,7 @@ def test_index_and_matrix_agree_on_every_shared_column(task_id):
 
 def test_primary_reserve_classification_is_consistent_and_expected():
     kinds = {tid: INDEX_BY_ID[tid]["primary_or_reserve"] for tid in EXPECTED_IDS}
-    assert [tid for tid, k in kinds.items() if k == "primary"] == [f"PT0{i}" for i in range(1, 8)]
+    assert [tid for tid, k in kinds.items() if k == "primary"] == [f"PT0{i}" for i in range(1, 9)]
     assert [tid for tid, k in kinds.items() if k == "reserve"] == ["PR01", "PR02"]
     for tid, kind in kinds.items():
         assert _front_matter(PUBLIC_TASKS_DIR / f"{tid}.md")["kind"] == kind

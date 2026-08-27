@@ -1,13 +1,22 @@
 # docs/v2 — `CAND-A1` pre-authoring candidate decision record
 
-Status: **development record for study v2**. `CAND-A1` is a **provisional
-candidate identifier**, not a task. This record authors **no** public task body,
-creates **no** private evaluator package, creates **no** manifest, assigns **no**
-`PT08` identifier, creates **no** architecture opportunity, enters **no** `E1`
-denominator, activates **no** reserve, authorizes **no** paid model run, freezes
-**no** benchmark configuration, changes **no** task body or hash, touches **no**
-file under `apps/` or `libs/`, runs **no** power simulation and **produces no
-power value**. The protocol remains **PRE-FREEZE**.
+Status: **development record for study v2**, now carrying the recorded lifecycle
+transition in §2a. **As originally issued** this was a pre-authoring record only:
+`CAND-A1` was a **provisional candidate identifier**, not a task, and the record
+itself authors **no** public task body, creates **no** private evaluator package,
+creates **no** manifest, assigns **no** `PT08` identifier, creates **no**
+architecture opportunity, enters **no** `E1` denominator, activates **no** reserve,
+authorizes **no** paid model run, freezes **no** benchmark configuration, changes
+**no** task body or hash, touches **no** file under `apps/` or `libs/`, runs **no**
+power simulation and **produces no power value**. The protocol remains
+**PRE-FREEZE**.
+
+**`CAND-A1` has since been publicly authored, by a separate public-authoring
+package, as the public task body `PT08` (§2a).** That package — not this record —
+is what assigned the identifier. Everything else in the list above still holds of
+this record and of that package alike: no private evaluator package, no manifest,
+no architecture opportunity, no `E1` denominator row, no activated reserve, no paid
+model run, nothing frozen and no power value.
 
 Decision: **`TD-B34`** (re-scoped to replication depth), priority **A**.
 Feasibility and forcing strength:
@@ -58,18 +67,70 @@ remediation re-review is still required before authoring may begin.**
 | **Forbidden target** | `api` |
 | **Leaf rule** | `AR-DEP-006` |
 | **Priority** | **A** (`TD-B34` §12.2c) |
-| **Authoring state** | **NOT YET AUTHORED** |
-| **Review state** | `DECISION B` remediation completed / **awaiting focused remediation review** |
+| **Authoring state** | **PUBLICLY AUTHORED** as `PT08` (§2a); public-authoring review pending |
+| **Review state** | `DECISION B` remediation completed / focused remediation re-review **APPROVED — public authoring may begin** / **independent public-authoring review of the authored body pending** |
 | **Approved carrier** | **publicly specified query parameter** `maxTotal` |
 | **Forcing class** | **natural-path / opportunity-creating** |
 | **Study Lead acceptance** | **recorded** (`SL-CA1-01`, `SL-CA1-02`) |
-| **Task identifier assigned** | **none** |
+| **Task identifier assigned** | **`PT08`**, assigned at public authoring only (§2a) |
 
-**No `PT08` identifier is assigned by this record, and none exists anywhere in the
-repository.** `CAND-A1` has **no** eligibility status, **no** denominator row and
-**no** active opportunity. It is **not** in
-[`TASK_INDEX.csv`](../../experiments/v2/tasks/public/TASK_INDEX.csv), and that
-index is unchanged.
+**No `PT08` identifier is assigned by this record**; the separate public-authoring
+package assigned it, and *as originally recorded* here none existed anywhere in the
+repository. `CAND-A1` still has **no** private evaluator package, **no** manifest,
+**no** denominator row and **no** active opportunity. Its public `PT08` row in
+[`TASK_INDEX.csv`](../../experiments/v2/tasks/public/TASK_INDEX.csv) carries the
+public eligibility value `scored`, which records **intent only** and is never a
+demonstrated denominator.
+
+---
+
+## 2a. Lifecycle transition — publicly authored as `PT08`
+
+Recorded so the transition is legible and bounded. **This section changes no pin,
+no adjudication and no count in the rest of this record**; §3–§9 stand as written,
+and the pre-authoring history above them is preserved rather than rewritten.
+
+| Lifecycle fact | State |
+|---|---|
+| **Focused independent remediation re-review** | **PASSED — APPROVE: public authoring may begin** |
+| **Public task body** | **authored** |
+| **Public task identifier** | **`PT08`** (assigned at public authoring; §2, §9) |
+| **Independent public-authoring review of `PT08`** | **PENDING** |
+| **Private evaluator package** | **absent — not authored** |
+| **Private manifest** | **absent** |
+| **Private architecture opportunity** | **absent** |
+| **Frozen** | **no** |
+| **Gate `G1`** | **not passed** |
+| **Benchmark run** | **no** |
+| **Result / power value** | **none** |
+| **Active `E1` contribution** | **none — `PT08` is not in any active denominator** |
+
+- **`CAND-A1` → `PT08` occurs only at public authoring.** The mapping is created by
+  the public-authoring package and by nothing earlier: no pre-authoring record, no
+  feasibility review and no registry row assigned an identifier before that package
+  existed.
+- **The final independent authoring-readiness confirmation passed.** The focused
+  remediation re-review that §8 required has happened and returned **APPROVE —
+  public authoring may begin**. Provenance is recorded exactly as supplied: the
+  review was an external read-only confirmation supplied to the governance process,
+  **no reviewer identity, external URL or timestamp was supplied and none is
+  claimed**, and the review **precedes** the commit that records it — this record
+  and the authoring package **propagate** that result and **neither performs it**.
+- **Public authoring is not private authoring.** No private evaluator package, no
+  hidden acceptance suite, no manifest and no architecture opportunity was created
+  for `PT08`, and none may be inferred from its existence. The private package is
+  to be authored only **after** an independent review of the public-authored body.
+- **The active experimental inventory did not move.** Active `E1` opportunities
+  remain **5**; decision clusters remain **3**; cluster observation depths remain
+  **3 / 1 / 1**; and the priority-A cluster still stands at **one** active
+  observation. An authored public body is not an observation: it carries no private
+  opportunity, so it adds nothing to any denominator and **must not be
+  pre-counted** (§7).
+- **`TD-B34` is not resolved by this transition** and stays **open and blocking** on
+  replication depth. Priority B (`DC-API-CORE-AR-DEP-005`) still has had **no**
+  candidate review at all.
+- **Nothing is frozen, no gate is passed, and no experiment is run-ready.** `PT08`
+  is a `candidate`, exactly like the nine bodies authored before it.
 
 ---
 
@@ -297,7 +358,10 @@ conceptually only.** It is deliberately absent from this record's detail and mus
 
 ## 7. What must not move before authoring
 
-`CAND-A1` is **not authored**, so nothing in the experimental inventory changes:
+*As originally recorded*, `CAND-A1` was **not authored**, so nothing in the
+experimental inventory changed. **It has since been publicly authored as `PT08`
+(§2a), and still nothing in the experimental inventory changes** — a public body
+carries no private opportunity, so every count below is exactly as it was:
 
 - **Active `E1` opportunities remain 5.**
 - **Decision clusters remain 3.**
@@ -314,6 +378,13 @@ conceptually only.** It is deliberately absent from this record's detail and mus
 4. **eligibility governance permits inclusion** (`TD-B05`/`TD-B14`/`TD-B32`, gate
    `G1`).
 
+**Exactly one of those four now holds: the first.** The public body exists as
+`PT08`; its independent public-authoring review is **pending**; no private
+evaluator package exists; and eligibility governance has admitted nothing. The
+cluster therefore still stands at **one** active observation, and the second
+observation **must not be pre-counted** on the strength of an authored public body
+alone.
+
 ---
 
 ## 8. Pre-authoring `P1` disposition
@@ -327,22 +398,42 @@ conceptually only.** It is deliberately absent from this record's detail and mus
 
 **P0 count: 0.** No P0 finding was raised against `CAND-A1`.
 
-**The overall `CAND-A1` authoring review is NOT finally approved.** Closing the
-four P1 findings is remediation, not approval. **One focused independent
-remediation re-review of this record is still required, and authoring may not begin
-before it passes.**
+*As recorded then:* **the overall `CAND-A1` authoring review was NOT finally
+approved.** Closing the four P1 findings is remediation, not approval. **One
+focused independent remediation re-review of this record was required, and
+authoring could not begin before it passed.**
+
+**That re-review has since happened and it PASSED.** Its verdict was **APPROVE —
+PUBLIC AUTHORING MAY BEGIN**, and the sentence above is therefore history rather
+than a live bar: the condition it stated is discharged, not waived. Public
+authoring proceeded on that basis and produced `PT08` (§2a). Three things the
+passed re-review did **not** do: it approved **no** private evaluator package
+(none exists), it **replaced no** independent review of the authored public body
+(that review is **pending**), and it froze **nothing** and passed **no** gate.
 
 ---
 
 ## 9. Prohibitions attaching to this record
 
-Stated so no later reader can extract a licence this record does not grant:
+Stated so no later reader can extract a licence this record does not grant.
+**Three of these were amended by the public-authoring package recorded in §2a —
+two superseded outright and one narrowed — and are kept here, marked, rather than
+deleted; every other prohibition below is current and binding.**
 
-- **No `PT08` identifier is assigned**, here or anywhere.
-- **`CAND-A1` is not an authored public task.**
+- **No `PT08` identifier is assigned** by this record, here or anywhere — *as
+  originally recorded*. **Superseded on this point only:** the separate
+  public-authoring package assigned `PT08` (§2a). Nothing else in this list moved
+  with it.
+- **`CAND-A1` is not an authored public task** — *as originally recorded*.
+  **Superseded on this point only:** it is now the authored public task `PT08`
+  (§2a), whose independent public-authoring review is pending.
 - **`CAND-A1` has no private evaluator package.**
 - **`CAND-A1` has no manifest.**
-- **`CAND-A1` has no eligibility status.**
+- **`CAND-A1` has no eligibility status** — *as originally recorded*. **Narrowed on
+  this point only:** its authored body `PT08` carries the public
+  `e1_analysis_eligibility` value `scored`, which records **intent** and is
+  **never** a demonstrated denominator; no private eligibility, no manifest field
+  and no denominator row exists for it.
 - **`CAND-A1` enters no `E1` denominator row.**
 - **`CAND-A1` is not an active opportunity and is not counted as active.**
 - **`CAND-A1`'s forcing strength must not be represented as equal to a

@@ -42,9 +42,10 @@ REPORT_PATH = PUBLIC_TASKS_DIR / "TASK_AUTHORING_REPORT.md"
 TASKS_ROOT = REPO / "experiments" / "v2" / "tasks"
 
 #: The eight candidates this module's PT06 amendment was written against, plus
-#: PT07, authored later under DECISION B (TD-B34). The count is pinned so a stray
-#: or duplicated body is caught; changing it must be a deliberate authoring act.
-EXPECTED_PUBLIC_TASK_COUNT = 9
+#: PT07 and then PT08, both authored later under DECISION B (TD-B34). The count is
+#: pinned so a stray or duplicated body is caught; changing it must be a deliberate
+#: authoring act.
+EXPECTED_PUBLIC_TASK_COUNT = 10
 
 
 @pytest.fixture(scope="module")

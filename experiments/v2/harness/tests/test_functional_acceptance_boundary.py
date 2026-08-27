@@ -45,11 +45,14 @@ PRIVATE_REPO = REPO.parent / "afci-bench-evaluator-private"
 #: being edited *together*, which that check alone cannot see.
 #:
 #: The first eight existed when the observation boundary was defined and must stay
-#: byte-identical. ``PT07`` was authored afterwards, under DECISION B, and is
-#: listed separately in :data:`AUTHORED_AFTER_THE_BOUNDARY` so "the boundary
-#: package changed nothing" stays a checkable claim about those eight.
+#: byte-identical. ``PT07`` and then ``PT08`` were authored afterwards, under
+#: DECISION B, and are listed separately in :data:`AUTHORED_AFTER_THE_BOUNDARY` so
+#: "the boundary package changed nothing" stays a checkable claim about those eight.
+#: Both were authored *after* the boundary was fixed, so both must conform to it
+#: from the start rather than joining the legacy packages awaiting migration.
 AUTHORED_AFTER_THE_BOUNDARY = {
     "PT07": "557caed09420354efbc823c8b72e54b0760ac72847aba0d9c07d99e37ff7d2d7",
+    "PT08": "a31bb515b79cc1e211a662de2a8761c97082dd8bf266ee5b4f660981435badf2",
 }
 
 BOUNDARY_ERA_TASK_HASHES = {
@@ -374,9 +377,9 @@ def test_task_index_still_records_the_same_hashes():
 def test_analysis_eligibility_of_the_boundary_era_tasks_is_unchanged():
     """The boundary package changed no eligibility, and no later package may either.
 
-    ``PT07`` carries its own eligibility (``scored``) because it was authored after
-    this boundary was defined; it is asserted separately so it cannot mask a
-    silent reclassification of one of the eight.
+    ``PT07`` and ``PT08`` carry their own eligibility (``scored``) because both were
+    authored after this boundary was defined; they are asserted separately so
+    neither can mask a silent reclassification of one of the eight.
     """
     import csv
 
@@ -393,7 +396,8 @@ def test_analysis_eligibility_of_the_boundary_era_tasks_is_unchanged():
         "PR01": "inactive-reserve",
         "PR02": "inactive-reserve",
     }, "no package may change one of these tasks' analysis eligibility"
-    assert rows["PT07"] == "scored"
+    for later in sorted(AUTHORED_AFTER_THE_BOUNDARY):
+        assert rows[later] == "scored", later
 
 
 # --------------------------------------------------------------------------- 7

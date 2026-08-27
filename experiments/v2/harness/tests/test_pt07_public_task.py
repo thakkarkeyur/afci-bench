@@ -69,6 +69,13 @@ CANONICAL_SUBSTRATE_CONTENT_HASH = (
 
 PT07_SHA256 = "557caed09420354efbc823c8b72e54b0760ac72847aba0d9c07d99e37ff7d2d7"
 
+#: Authored after `PT07`, under the same DECISION B, by a later package. Listed
+#: apart so "authoring PT07 added exactly one body" stays a checkable claim about
+#: the state at that package, while the current task set is still asserted exactly.
+AUTHORED_AFTER_PT07 = {
+    "PT08": "a31bb515b79cc1e211a662de2a8761c97082dd8bf266ee5b4f660981435badf2",
+}
+
 #: The eight bodies that existed before `PT07`. Authoring a task may not touch one.
 PRE_EXISTING_HASHES = {
     "PT01": "6c938822fe19cd6e87942a6ee24ec8f604c0883da1b7f80d45216be35d7c9c39",
@@ -147,11 +154,17 @@ def _git(*args) -> str:
 # The body exists, validates against the public schema, and is `primary`.
 
 
-def test_pt07_exists_and_is_the_only_new_body():
+def test_pt07_exists_and_the_task_set_is_exactly_the_recorded_one():
+    """`PT07` added exactly one body; every later body must be declared here too.
+
+    A new task file that nobody recorded is drift, so the set is asserted exactly:
+    the eight that predate `PT07`, `PT07` itself, and the bodies authored after it
+    (`PT08`).
+    """
     assert PT07_PATH.is_file(), "PT07.md was not authored"
     stems = {p.stem for p in _task_files()}
-    assert stems == set(PRE_EXISTING_HASHES) | {"PT07"}, (
-        f"exactly one new task body is expected, found {sorted(stems)}"
+    assert stems == set(PRE_EXISTING_HASHES) | {"PT07"} | set(AUTHORED_AFTER_PT07), (
+        f"the public task set drifted from the recorded one, found {sorted(stems)}"
     )
 
 
@@ -436,10 +449,21 @@ def test_pr01_and_pr02_remain_inactive_reserve():
     assert "no reserve was activated" in report
 
 
-def test_the_public_task_count_went_up_by_exactly_one():
-    assert len(_task_files()) == len(PRE_EXISTING_HASHES) + 1 == 9
-    assert len(_rows(INDEX_PATH)) == 9
-    assert len({r["task_id"] for r in _rows(MATRIX_PATH)}) == 9
+def test_authoring_pt07_raised_the_count_by_one_and_every_later_body_is_declared():
+    """The count is pinned, and each increment has to be a deliberate authoring act.
+
+    `PT07` took the suite from eight to nine. Each body authored afterwards is
+    declared in :data:`AUTHORED_AFTER_PT07`, so the total is still exact and an
+    undeclared body still fails.
+    """
+    expected = len(PRE_EXISTING_HASHES) + 1 + len(AUTHORED_AFTER_PT07)
+    assert len(PRE_EXISTING_HASHES) + 1 == 9, "PT07 was the ninth body"
+    assert len(_task_files()) == expected == 10
+    assert len(_rows(INDEX_PATH)) == expected
+    assert len({r["task_id"] for r in _rows(MATRIX_PATH)}) == expected
+    for task_id, digest in AUTHORED_AFTER_PT07.items():
+        assert _sha256(PUBLIC_TASKS_DIR / f"{task_id}.md") == digest, task_id
+        assert _by_id(INDEX_PATH)[task_id]["public_task_sha256"] == digest
 
 
 # --------------------------------------------------------------------------- 7

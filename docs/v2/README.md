@@ -147,7 +147,7 @@ decisions are tracked as explicit blockers in
   review, and benchmark discrimination remain open; gates **G1/G2 not passed**;
   the protocol remains **PRE-FREEZE**; **no pilot model execution occurred** and
   **no final task count**, repetition count, run count or numerical budget was
-  selected. The **nine** candidates — seven primary `PT01`–`PT07`, two reserve
+  selected. The **ten** candidates — eight primary `PT01`–`PT08`, two reserve
   `PR01`/`PR02` — are candidates, not a core-study task set.
 
 ### Suite classification — the confirmatory construct is NARROW
@@ -175,7 +175,9 @@ hash, manifest, endpoint or protocol was frozen or edited by that decision**, an
   ([`PILOT_PUBLIC_TASK_MATRIX.csv`](PILOT_PUBLIC_TASK_MATRIX.csv),
   `experiments/v2/tasks/public/TASK_INDEX.csv`, field
   `e1_analysis_eligibility`): **`PT01`–`PT04` `scored`** (joined later by
-  **`PT07`**, authored under `DECISION B` — see below), **`PT05` and `PT06`
+  **`PT07`** and then **`PT08`**, both authored under `DECISION B` — see below;
+  `PT08`'s value records **intent only**, with its public-authoring review pending
+  and no private evaluator package), **`PT05` and `PT06`
   `functional-only`** (valid primary functional candidates, structurally excluded
   from E1, still contributing to hidden functional acceptance, cost,
   reset-related functional outcomes and exploratory analyses — **not** failed
@@ -197,7 +199,8 @@ hash, manifest, endpoint or protocol was frozen or edited by that decision**, an
   provides "reset-continuation coverage", multiple retained primary tasks already
   admit condition-neutral checkpoints, and `PT06` must not stay in E1 to satisfy a
   bookkeeping reset label. `RESET_CHECKPOINT_MATRIX.csv` now carries a **withheld**
-  row for each candidate (eight at the time, nine since `PT07` was authored).
+  row for each candidate (eight at the time; ten since `PT07` and then `PT08` were
+  authored).
 - **Eleven blockers were opened, none closed** — `TD-B23`–`TD-B33`
   ([`OPEN_DECISIONS.md`](OPEN_DECISIONS.md)): architecture-revealing model-visible
   source comments and their floor-effect risk; the leakage sweep not scanning
@@ -654,15 +657,76 @@ simulation, and froze **nothing**. The canonical substrate is still `630d3180` /
   `DC-FEATURES-API-AR-DEP-006` remains at **one** observation — it reaches two only
   after the public task is authored, an independent public-authoring review passes, a
   private package is authored and validated, and eligibility governance permits
-  inclusion. **No `PT08` exists.**
+  inclusion. *As recorded then*, **no `PT08` existed**; the first of those four
+  conditions has since been met and `PT08` is now authored in public — see the
+  `PT08` section below. **Every count in this bullet is unchanged by that**, because
+  an authored public body carries no private opportunity and is not an observation.
 - **`CAND-A1` is not finally approved.** Closing the four P1 findings is
-  remediation, not approval: **one focused independent remediation re-review is
-  still required** before authoring may begin, and **priority B**
-  (`DC-API-CORE-AR-DEP-005`) has had **no** candidate review at all. **`TD-B34`
-  stays open and blocking.**
+  remediation, not approval: *as recorded then*, **one focused independent
+  remediation re-review was still required** before authoring could begin, and
+  **priority B** (`DC-API-CORE-AR-DEP-005`) has had **no** candidate review at all.
+  **`TD-B34` stays open and blocking.** That re-review has since **passed**
+  (**APPROVE — public authoring may begin**), which is the basis on which `PT08` was
+  authored; **priority B still has had no candidate review**, and the passed
+  re-review approved no private package, replaced no review of the authored body,
+  and froze nothing.
 - **No blocker was opened; one was closed.** The registry still holds **41 blocking
   + 6 non-blocking** decisions, now **43 open** with **4 resolved**
   (`TD-B23`, `TD-B24`, `TD-B38`, `TD-B40`).
+
+### `PT08` authored — the priority-A replication instrument, public side only
+
+A **public-authoring** package, and nothing more. It added **one** public task body
+and the registry rows that body mechanically requires. It created **no** private
+evaluator package, **no** manifest and **no** architecture opportunity; changed
+**no** other task body, hash or eligibility; touched **no** file under
+`apps/`/`libs/`; activated **no** reserve; ran **no** benchmark, model or power
+simulation; and froze **nothing**. The canonical substrate is still `630d3180` /
+`0198d76c…` and the protocol remains **PRE-FREEZE**.
+
+- **`CAND-A1` is now the public task body `PT08`** — *Apply a caller-declared
+  maximum total to order creation* (`write-endpoint`, `primary`,
+  `e1_analysis_eligibility` `scored`, `task_status` `candidate`, SHA-256
+  `a31bb515b79cc1e2…`). The identifier was assigned **at public authoring and
+  nowhere earlier**: `PT08` is the next sequential primary identifier under the
+  naming convention of
+  [`TASK_AUTHORING_POLICY.md`](TASK_AUTHORING_POLICY.md) §2, and
+  `experiments/v2/tasks/public/TASK_INDEX.csv` — the authoritative definition of the
+  expected task set — is where the assignment takes effect.
+- **It was authored on an approved, pinned design.** The focused independent
+  remediation re-review of the pre-authoring record returned **APPROVE — public
+  authoring may begin**, and the body implements the pins that record fixed before
+  any prose existed: the carrier is the **query parameter `maxTotal`** (never a
+  header), a total above the ceiling answers **HTTP 409** with `error` exactly
+  `OrderValueLimitExceeded` and exactly the keys `error`/`message`/`correlationId`,
+  **equality is accepted**, **zero is a valid ceiling**, a malformed or repeated
+  `maxTotal` reuses the **existing HTTP 400 `ValidationError`** body, **existing
+  body validation keeps its answer** when both are invalid, and **no new rounding,
+  precision, discount or currency rule** is introduced.
+- **Its public wording is functional only.** The unmodified leakage validator
+  reports **no** leak for it and it needs **no** reviewed exception; the body names
+  no rule, no area, no path, no file and no hidden criterion.
+- **It is gradeable through HTTP alone** — no declared seam, no internal-state
+  inspection, no seeded state and **no assertion about stored state**. That last
+  omission is deliberate: a "nothing is stored" criterion is not externally
+  observable at this substrate and would have outlawed a **pre-declared legitimate
+  boundary-only** implementation.
+- **Numeric spellings that are not pinned are explicitly out of scope**, not
+  silently decided: exponent, hexadecimal, leading `+`, `.5`, `5.`, `-0`,
+  whitespace, digit grouping, a value-less key and bracketed keys all state **no**
+  required answer, so no future hidden test may assert one.
+- **`PT08` contributes to no endpoint yet, and to no cluster depth.** Its
+  **independent public-authoring review is pending**; it has **no** private
+  evaluator package, **no** manifest and **no** opportunity; gate **`G1`** is
+  **not passed**; it is **not** frozen, **not** run-ready and **not** independently
+  reviewed; and its `scored` eligibility records **intent**, never a demonstrated
+  denominator. Active E1 opportunities remain **5**, decision clusters remain
+  **3**, and cluster depths remain **3 / 1 / 1**.
+- **`TD-B34` stays open and blocking.** An authored public body is not an active
+  observation, so the priority-A cluster still stands at **one**; **priority B**
+  still has had **no** candidate review; **no power simulation may run yet**
+  (`TD-B37`); and gates **G1/G2/G6** remain **not passed**. No reserve was
+  activated and no blocker was opened or closed.
 
 ### Model-visible worktree isolation
 

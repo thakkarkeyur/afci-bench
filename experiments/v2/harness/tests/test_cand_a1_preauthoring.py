@@ -21,11 +21,16 @@ This module makes the repaired state load-bearing in the *public* record:
 
 AND IN THE OTHER DIRECTION
 --------------------------
-`CAND-A1` must stay a candidate: **no** ``PT08`` identifier anywhere, **no**
-authored body, **no** eligibility row, **no** denominator row, **no** change to
-the active counts (**5** opportunities over **3** clusters at depths **3 / 1 /
-1**), and ``DC-FEATURES-API-AR-DEP-006`` still at **one** observation. Nothing is
-frozen and no gate is passed.
+`CAND-A1` has since been **publicly authored** as ``PT08``, and this module now
+guards the *bounds* of that transition rather than its absence: the identifier was
+assigned **only at public authoring**, the pre-authoring history is preserved
+rather than rewritten, and everything public authoring did **not** confer stays
+denied — **no** private evaluator package, **no** manifest, **no** architecture
+opportunity, **no** denominator row, **no** change to the active counts (**5**
+opportunities over **3** decision clusters at depths **3 / 1 / 1**), and
+``DC-FEATURES-API-AR-DEP-006`` still at **one active** observation. The independent
+public-authoring review of the authored body is **pending**. Nothing is frozen and
+no gate is passed.
 
 HOW IT ASSERTS
 --------------
@@ -243,50 +248,114 @@ def test_requirement_five_is_adjudicated_rather_than_left_ambiguous():
 
 
 # --------------------------------------------------------------------------- #
-# PART L.3 / L.4 / L.17 — no PT08, not active, no denominator row.
+# PART L.3 / L.4 / L.17 — PT08 assigned only at authoring, still not active.
 # --------------------------------------------------------------------------- #
-def test_no_pt08_identifier_exists_in_any_public_artifact():
-    """PART L.3: not in the index, not on disk, not claimed by the record."""
+def test_the_pt08_identifier_was_assigned_only_at_public_authoring():
+    """PART L.3, after the transition: one body, one row, and one assigning act.
+
+    The identifier now exists, which is what makes *where* it was assigned the
+    load-bearing claim. The record must still say that **it** assigned none, and
+    the assignment must be recorded as happening at public authoring.
+    """
     with open(TASK_INDEX, newline="", encoding="utf-8") as fh:
         ids = [r["task_id"] for r in csv.DictReader(fh)]
-    assert "PT08" not in ids
-    assert len(ids) == 9, f"the approved index must still hold nine tasks, not {len(ids)}"
-    assert not (PUBLIC_TASKS / "PT08.md").exists()
+    assert ids.count("PT08") == 1, "PT08 must appear in the index exactly once"
+    assert len(ids) == 10, f"the index must hold ten tasks, not {len(ids)}"
+    assert (PUBLIC_TASKS / "PT08.md").is_file(), "PT08.md is missing"
+
     cells = _row_cells(RECORD_PATH, "2. candidate identity", "task identifier assigned")
-    assert cells[1] == "none"
+    assert "pt08" in cells[1]
+    assert "assigned at public authoring only" in cells[1]
     body = _section(RECORD_PATH, "2. candidate identity")
-    assert "no pt08 identifier is assigned by this record, and none exists" in body
+    assert "no pt08 identifier is assigned by this record" in body, (
+        "the record must still disclaim assigning the identifier itself"
+    )
+    assert "as originally recorded" in body, (
+        "the superseded 'none exists anywhere' claim must be marked historical"
+    )
+
+    transition = _section(RECORD_PATH, "2a. lifecycle transition")
+    assert _row_by_first_cell(RECORD_PATH, "2a. lifecycle transition",
+                             "public task identifier")[1].startswith("pt08")
+    assert "cand-a1 → pt08 occurs only at public authoring" in transition
+    assert "no pre-authoring record" in transition
 
 
-def test_the_candidate_is_not_counted_as_active_anywhere():
-    """PART L.4 / L.17: no eligibility, no denominator row, not in the index."""
+def test_the_candidate_is_still_not_counted_as_active_anywhere():
+    """PART L.4 / L.17: no private package, no denominator row, no active count."""
     body = _section(RECORD_PATH, "2. candidate identity")
-    assert "has no eligibility status" in body
+    assert "no private evaluator package" in body
     assert "no denominator row" in body
     assert "no active opportunity" in body
-    assert "it is not in" in body and "task_index.csv" in body
+    assert "records intent only" in body, (
+        "the public eligibility must be recorded as intent, never as a denominator"
+    )
 
     # the record's own prohibition list says it again, independently
     prohibitions = _section(RECORD_PATH, "9. prohibitions attaching to this record")
     assert "cand-a1 enters no e1 denominator row" in prohibitions
     assert "cand-a1 is not an active opportunity and is not counted as active" in prohibitions
 
-    # and no public per-task matrix has acquired a CAND-A1 row
+    # the lifecycle table denies every private-side and gate-side claim
+    for fact, expected in (("private evaluator package", "absent"),
+                           ("private manifest", "absent"),
+                           ("private architecture opportunity", "absent"),
+                           ("frozen", "no"),
+                           ("benchmark run", "no"),
+                           ("result / power value", "none")):
+        cells = _row_by_first_cell(RECORD_PATH, "2a. lifecycle transition", fact)
+        assert expected in cells[1], f"{fact!r} must record {expected!r}, got {cells[1]!r}"
+    gate = _row_by_first_cell(RECORD_PATH, "2a. lifecycle transition", "gate g1")
+    assert gate[1] == "not passed"
+    active = _row_by_first_cell(RECORD_PATH, "2a. lifecycle transition",
+                                "active e1 contribution")
+    assert "none" in active[1] and "not in any active denominator" in active[1]
+
+    # no public per-task matrix has acquired a CAND-A1 row, and PT08's OWN per-task
+    # row carries no hidden answer: no rule id, no opportunity id, no expected area.
+    # A row that lists several tasks against the whole implemented leaf family is
+    # public catalog information and is not a per-task binding, exactly as
+    # test_pt07_public_task.py already records.
     for name in ("PILOT_PUBLIC_TASK_MATRIX.csv", "TASK_RULE_MATRIX.csv",
                  "TASK_ACCEPTANCE_MATRIX.csv", "TASK_LAYER_MATRIX.csv",
                  "ORACLE_TRACEABILITY.csv"):
-        text = (DOCS_V2 / name).read_text(encoding="utf-8")
-        assert "CAND-A1" not in text and "PT08" not in text, (
-            f"{name} carries a row for an unauthored candidate"
+        path = DOCS_V2 / name
+        assert "CAND-A1" not in path.read_text(encoding="utf-8"), (
+            f"{name} carries a row for the provisional candidate identifier"
         )
+        with open(path, newline="", encoding="utf-8") as fh:
+            rows = [r for r in csv.reader(fh) if r]
+        header = rows[0]
+        key = header.index("task_id") if "task_id" in header else None
+        if key is None:
+            continue
+        for row in rows[1:]:
+            if key >= len(row):
+                continue
+            if set(re.findall(r"\b(?:PT|PR)\d{2}\b", row[key])) != {"PT08"}:
+                continue
+            for cell in row:
+                assert not re.search(r"\bAR-[A-Z]+-\d+|\bOPP-", cell), (
+                    f"{name} binds PT08's own row to a rule or opportunity id: "
+                    f"{cell[:120]!r}"
+                )
 
 
 def test_the_authoring_state_and_review_state_are_recorded_honestly():
-    assert _row_cells(RECORD_PATH, "2. candidate identity", "authoring state")[1] == (
-        "not yet authored"
+    authoring = _row_cells(RECORD_PATH, "2. candidate identity", "authoring state")[1]
+    assert "publicly authored" in authoring
+    assert "pt08" in authoring
+    assert "public-authoring review pending" in authoring
+    assert "not yet authored" not in authoring, (
+        "the authoring state is stale: the body exists"
     )
     review = _row_cells(RECORD_PATH, "2. candidate identity", "review state")[1]
-    assert "decision b" in review and "awaiting focused remediation review" in review
+    assert "decision b" in review
+    assert "approved" in review and "public authoring may begin" in review
+    assert "independent public-authoring review of the authored body pending" in review
+    assert "awaiting focused remediation review" not in review, (
+        "the remediation re-review has passed; that state is stale"
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -705,17 +774,35 @@ def test_the_p1_dispositions_name_the_right_mechanisms():
     assert "p0 count: 0" in body
 
 
-def test_the_candidate_is_not_finally_approved():
-    """PART J: closing the P1 findings is remediation, not approval."""
+def test_the_pre_authoring_bar_is_kept_as_history_and_the_re_review_passed():
+    """PART J, after the transition: the bar is discharged, not deleted.
+
+    Both facts have to survive in the same section. Losing the first would let the
+    record read as though authoring had never needed approval; losing the second
+    would leave a live bar standing against a body that has already been written.
+    """
     body = _section(RECORD_PATH, "8. pre-authoring")
-    assert "the overall" in body and "authoring review is not finally approved" in body
+    assert "as recorded then" in body, (
+        "the superseded 'not finally approved' bar must be marked historical, not "
+        "deleted"
+    )
+    assert "authoring review was not finally approved" in body
     assert "closing the four p1 findings is remediation, not approval" in body
     assert (
-        "one focused independent remediation re-review of this record is still "
-        "required, and authoring may not begin before it passes" in body
+        "one focused independent remediation re-review of this record was required, "
+        "and authoring could not begin before it passed" in body
     )
+    # ...and the discharge, with its bounds
+    assert "that re-review has since happened and it passed" in body
+    assert "approve — public authoring may begin" in body
+    assert "discharged, not waived" in body
+    assert "approved no private evaluator package" in body
+    assert "replaced no independent review of the authored public body" in body
+    assert "froze nothing and passed no gate" in body
     intro = _section(RECORD_PATH, "1. what this record is")
-    assert "it is not an approval" in intro
+    assert "it is not an approval" in intro, (
+        "the record's own account of what it was must stay"
+    )
 
 
 def test_the_prohibition_list_is_complete():
@@ -798,15 +885,26 @@ def test_nothing_is_frozen_and_no_result_exists():
     )
 
 
-def test_td_b34_stays_open_and_records_the_candidate_as_progress_only():
-    """The candidate is progress toward replication depth, not its resolution."""
+def test_td_b34_stays_open_and_records_the_authoring_as_progress_only():
+    """Public authoring is progress toward replication depth, not its resolution."""
     row = _decision("TD-B34")
     assert row["status"].strip().lower() == "open"
     assert row["blocking"] == "yes"
     text = G.norm(row["decision"])
     assert "priority-a pre-authoring progress, not resolution" in text
     assert "cand-a1" in text
-    assert "no pt08 identifier is assigned" in text
+    # the authoring fact, and every bound on it, in the same machine-read field
+    assert "publicly authored as the task body pt08" in text
+    assert "assigned at public authoring and nowhere earlier" in text
+    assert "the independent public-authoring review of pt08 is pending" in text
+    assert "adds no active observation to any decision cluster" in text
+    assert "gate g1 is not passed" in text
+    assert "the active set remains 5 opportunities over 3 decision clusters" in text
+    # the superseded pre-authoring claims survive only in the past tense
+    assert "no pt08 identifier was assigned" in text
+    assert "as originally recorded" in text
+    assert "no pt08 identifier is assigned" not in text, (
+        "the row asserts as current a claim the authoring package superseded"
+    )
     assert "td-b34 therefore remains open and blocking" in text
-    assert "one focused independent remediation re-review" in text
     assert "priority b" in text and "no candidate review at all" in text

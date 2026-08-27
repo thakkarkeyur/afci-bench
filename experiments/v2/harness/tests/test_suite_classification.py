@@ -64,12 +64,14 @@ ORACLE_TRACE_PATH = DOCS_V2 / "ORACLE_TRACEABILITY.csv"
 ORACLE_REQS_PATH = DOCS_V2 / "ORACLE_VALIDATION_REQUIREMENTS.md"
 ORACLE_SRC = REPO / "experiments" / "v2" / "oracle" / "src"
 
-#: ``PT07`` was authored later, under DECISION B (``TD-B34``), and is ``scored``
-#: like ``PT01``-``PT04``. It is listed apart in :data:`AUTHORED_UNDER_DECISION_B`
-#: wherever a check is specifically about the classification package, which
-#: predates it.
+#: ``PT07`` and then ``PT08`` were authored later, under DECISION B (``TD-B34``),
+#: and are ``scored`` like ``PT01``-``PT04``. They are listed apart in
+#: :data:`AUTHORED_UNDER_DECISION_B` wherever a check is specifically about the
+#: classification package, which predates both. ``PT08``'s ``scored`` value records
+#: intent only: its public-authoring review is pending and it has no private
+#: evaluator package, so it contributes to no denominator.
 CLASSIFICATION_SCORED = ["PT01", "PT02", "PT03", "PT04"]
-AUTHORED_UNDER_DECISION_B = ["PT07"]
+AUTHORED_UNDER_DECISION_B = ["PT07", "PT08"]
 SCORED = CLASSIFICATION_SCORED + AUTHORED_UNDER_DECISION_B
 FUNCTIONAL_ONLY = ["PT05", "PT06"]
 INACTIVE_RESERVE = ["PR01", "PR02"]
@@ -90,11 +92,19 @@ FROZEN_HASHES = {
     "PT06": "3e0f84cfef1f9fbf97e3cd31b6704c3a0fb172b04b5e7bc33ea39927b1c8e0f2",
     "PR01": "0e1527bce41498836bb57b802d4566251d6fcfed4cca13fe59e6a97330f02302",
     "PR02": "e89a4aab236813c082f9152db779b8bbfb298148a51a8435a1e2bf38330caa83",
-    # authored later, under DECISION B; pinned the moment it was authored
+    # authored later, under DECISION B; each pinned the moment it was authored
     "PT07": "557caed09420354efbc823c8b72e54b0760ac72847aba0d9c07d99e37ff7d2d7",
+    "PT08": "a31bb515b79cc1e211a662de2a8761c97082dd8bf266ee5b4f660981435badf2",
 }
 
 ELIGIBILITY_VOCABULARY = {"scored", "functional-only", "inactive-reserve"}
+
+#: Candidates that have been authored in public but have **no private evaluator
+#: package yet**, so their public rows must carry the `not_yet_authored`
+#: placeholder rather than `stored_in_private_evaluator_repo`. Being on this list is
+#: a statement about the private side only: it is never a licence to treat the task
+#: as frozen, reviewed or E1-active.
+NO_PRIVATE_PACKAGE_YET = {"PT08"}
 
 #: Dimensions E1 must never be claimed to measure directly.
 NOT_DIRECTLY_MEASURED = (
@@ -156,8 +166,8 @@ def test_both_public_csvs_still_record_the_unchanged_hash(task_id):
 def test_exactly_the_recorded_tasks_are_present_and_no_extra_appeared():
     assert sorted(INDEX_BY_ID) == sorted(ALL_TASKS)
     assert sorted(MATRIX_BY_ID) == sorted(ALL_TASKS)
-    assert len(ALL_TASKS) == 9, (
-        "the eight classified candidates plus PT07; a change here must be a "
+    assert len(ALL_TASKS) == 10, (
+        "the eight classified candidates plus PT07 and PT08; a change here must be a "
         "deliberate authoring decision, never drift"
     )
 
@@ -207,17 +217,17 @@ def test_pr01_and_pr02_are_inactive_reserves():
         assert INDEX_BY_ID[task_id]["e1_analysis_eligibility"] == "inactive-reserve", task_id
 
 
-def test_exactly_five_of_the_seven_primary_candidates_are_scored():
-    """Four from the classification decision, plus PT07 authored under DECISION B.
+def test_exactly_six_of_the_eight_primary_candidates_are_scored():
+    """Four from the classification decision, plus PT07 and PT08 under DECISION B.
 
     ``PT05``/``PT06`` stay structurally excluded; nothing about authoring a new
     candidate may readmit them.
     """
     primary = [t for t in ALL_TASKS if INDEX_BY_ID[t]["primary_or_reserve"] == "primary"]
-    assert len(primary) == 7, primary
+    assert len(primary) == 8, primary
     scored = [t for t in primary if INDEX_BY_ID[t]["e1_analysis_eligibility"] == "scored"]
     assert sorted(scored) == sorted(SCORED), (
-        f"five of seven primary candidates may contribute to E1, got {scored}"
+        f"six of eight primary candidates may contribute to E1, got {scored}"
     )
     assert set(FUNCTIONAL_ONLY).isdisjoint(scored)
 
@@ -534,12 +544,13 @@ def test_report_states_which_primary_candidates_contribute_to_e1():
     """The scored subset must be stated for the CURRENT suite, not a stale one.
 
     It read "four of the six primary candidates" while the suite held six; after
-    ``PT07`` was authored under DECISION B the current statement is five of seven,
-    and the assertion moves with it rather than pinning a superseded count.
+    ``PT07`` and then ``PT08`` were authored under DECISION B the current statement
+    is six of eight, and the assertion moves with it rather than pinning a
+    superseded count.
     """
     report = _flat(REPORT_PATH)
-    assert "five of the seven primary candidates currently remain e1-scored candidates" in report
-    assert "pt01-pt04 and pt07 are scored" in report
+    assert "six of the eight primary candidates currently remain e1-scored candidates" in report
+    assert "pt01-pt04, pt07 and pt08 are scored" in report
 
 
 def test_report_records_repeated_boundary_decisions_and_unfrozen_counts():
@@ -897,14 +908,20 @@ def test_task_statuses_stay_candidate_and_nothing_is_frozen():
     for task_id in ALL_TASKS:
         assert INDEX_BY_ID[task_id]["task_status"] == "candidate", task_id
         assert MATRIX_BY_ID[task_id]["task_status"] == "candidate", task_id
-        # Exactly one placeholder is legal now that every candidate has a private
-        # package: `stored_in_private_evaluator_repo`. (`not_yet_authored` was
-        # PT07's value until its package was authored; it is no longer accurate for
-        # any task.) A real hash here would pin private content publicly and would
-        # also imply a frozen package.
+        # Two placeholders are legal, and only these two. Every candidate that has
+        # a private package carries `stored_in_private_evaluator_repo`; a candidate
+        # authored in public with no private package yet carries `not_yet_authored`
+        # (PT08's value, and PT07's until its package was authored). A real hash
+        # here would pin private content publicly and would also imply a frozen
+        # package, so neither is admissible pre-freeze.
         manifest_hash = MATRIX_BY_ID[task_id]["hidden_evaluator_manifest_hash"]
-        assert manifest_hash == "stored_in_private_evaluator_repo", (
-            f"{task_id}: no manifest hash may be pinned publicly"
+        expected = (
+            "not_yet_authored" if task_id in NO_PRIVATE_PACKAGE_YET
+            else "stored_in_private_evaluator_repo"
+        )
+        assert manifest_hash == expected, (
+            f"{task_id}: expected the {expected!r} placeholder, got {manifest_hash!r}; "
+            "no manifest hash may be pinned publicly"
         )
         assert not re.fullmatch(r"[0-9a-f]{16,}", manifest_hash), task_id
 

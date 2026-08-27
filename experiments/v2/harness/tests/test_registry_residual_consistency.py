@@ -523,39 +523,91 @@ def test_e8_g1_is_not_passed():
     assert "PRE-FREEZE" in README.read_text(encoding="utf-8")
 
 
-def test_e9_cand_a1_remains_unauthored():
-    """PART E.9 — still a candidate, still not finally approved."""
-    record = G.norm(RECORD_PATH.read_text(encoding="utf-8"))
-    assert "authoring state | not yet authored" in record.replace("  ", " ")
+def test_e9_cand_a1_is_publicly_authored_and_its_history_is_preserved():
+    """PART E.9, after the transition: the new state, and the old one kept as history.
+
+    The pre-authoring bar is **discharged**, not deleted: the record must carry the
+    passed re-review *and* the marked-historical sentence it replaces. A record that
+    kept only one of the two would either look retro-approved or look blocked
+    against a body that already exists.
+    """
+    record = G.norm(RECORD_PATH.read_text(encoding="utf-8")).replace("  ", " ")
+    assert "authoring state | publicly authored as pt08" in record
+    assert "authoring state | not yet authored" not in record, (
+        "the authoring state is stale: the body exists"
+    )
+    # history preserved
+    assert "as recorded then" in record
     assert "closing the four p1 findings is remediation, not approval" in record
+    # and the discharge
+    assert "that re-review has since happened and it passed" in record
+    assert "approve — public authoring may begin" in record
     with open(TASK_INDEX, newline="", encoding="utf-8") as fh:
         ids = [r["task_id"] for r in csv.DictReader(fh)]
-    assert len(ids) == 9, f"the index must still hold nine tasks, not {len(ids)}"
-    assert "CAND-A1" not in ",".join(ids)
-    assert "no pt08 identifier is assigned" in G.norm(_decision("TD-B34")["decision"])
+    assert len(ids) == 10, f"the index must hold ten tasks, not {len(ids)}"
+    assert "CAND-A1" not in ",".join(ids), (
+        "the provisional candidate identifier is not a task id"
+    )
+    row = G.norm(_decision("TD-B34")["decision"])
+    assert "publicly authored as the task body pt08" in row
+    assert "no pt08 identifier was assigned" in row, (
+        "the superseded claim must survive in the past tense"
+    )
+    assert "no pt08 identifier is assigned" not in row, (
+        "the row asserts as current a claim public authoring superseded"
+    )
 
 
-def test_e10_no_pt08_exists_anywhere_public():
-    """PART E.10 — no identifier, no body, no row, and no affirmative mention.
+#: Claims that would over-state what public authoring conferred on ``PT08``. Each
+#: is the inversion of a fact the authoring package recorded, phrased so it cannot
+#: occur in correct text. A governed document asserting any of them is a defect
+#: whether or not it also says something true elsewhere.
+PT08_OVERCLAIMS: Tuple[str, ...] = (
+    "pt08 is frozen",
+    "pt08 has been frozen",
+    "pt08 is run-ready",
+    "pt08 is independently reviewed",
+    "pt08 has been independently reviewed",
+    "pt08 is privately evaluator-approved",
+    "pt08 has a private evaluator package",
+    "pt08's private evaluator package exists",
+    "pt08 has a manifest",
+    "pt08 is active in e1",
+    "pt08 enters the e1 denominator",
+    "pt08 contributes to e1",
+    "pt08 adds an active observation",
+    "gate g1 is passed",
+)
 
-    Every sentence in every governed document that names ``PT08`` must deny it.
-    An added entry — an index row, a matrix row, a "PT08 is authored" sentence —
-    is an affirmative mention and fails here even if it never reaches the index.
+
+def test_e10_pt08_exists_and_no_governed_document_over_states_it():
+    """PART E.10, after the transition: the body exists, bounded by every denial.
+
+    The old form of this test required every ``PT08`` sentence to deny it, which was
+    right while nothing was authored. The live risk is now the opposite one: a
+    governed document quietly upgrading an authored public body into a frozen,
+    reviewed, privately packaged or E1-active one.
     """
     with open(TASK_INDEX, newline="", encoding="utf-8") as fh:
-        ids = [r["task_id"] for r in csv.DictReader(fh)]
-    assert "PT08" not in ids
-    assert not (TASK_INDEX.parent / "PT08.md").exists()
+        rows = list(csv.DictReader(fh))
+    ids = [r["task_id"] for r in rows]
+    assert ids.count("PT08") == 1
+    assert (TASK_INDEX.parent / "PT08.md").is_file()
     bodies = sorted(p.stem for p in TASK_INDEX.parent.glob("PT*.md"))
-    assert bodies == [f"PT0{i}" for i in range(1, 8)], (
+    assert bodies == [f"PT0{i}" for i in range(1, 9)], (
         f"the public task bodies changed: {bodies}"
     )
-    affirmative = []
+    pt08 = next(r for r in rows if r["task_id"] == "PT08")
+    assert pt08["task_status"] == "candidate", "PT08 must stay a candidate"
+
+    offenders = []
     for rel in G.governed_files():
-        for sentence in _sentences(G.norm((REPO / rel).read_text(encoding="utf-8"))):
-            if "pt08" in sentence and "no pt08" not in sentence:
-                affirmative.append(f"{rel}: {sentence[:160]!r}")
-    assert affirmative == [], (
-        "a governed document mentions PT08 without denying it:\n  - "
-        + "\n  - ".join(affirmative)
+        flat = G.norm((REPO / rel).read_text(encoding="utf-8"))
+        for sentence in _sentences(flat):
+            for claim in PT08_OVERCLAIMS:
+                if claim in sentence:
+                    offenders.append(f"{rel}: {claim!r} in {sentence[:160]!r}")
+    assert offenders == [], (
+        "a governed document over-states what public authoring conferred on PT08:\n"
+        "  - " + "\n  - ".join(offenders)
     )

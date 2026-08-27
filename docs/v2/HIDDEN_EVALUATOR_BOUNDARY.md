@@ -290,7 +290,7 @@ two scoring channels from contaminating each other.
 
 ## 14. Applying the boundary to the current candidates
 
-High-level audit of the nine candidates against §10/§11. It records what each
+High-level audit of the ten candidates against §10/§11. It records what each
 task's acceptance **needs**, and does not disclose any hidden assertion.
 
 | Task | Channel required | Status |
@@ -302,6 +302,7 @@ task's acceptance **needs**, and does not disclose any hidden assertion.
 | `PT05` | HTTP only | admissible (`functional-only`) |
 | `PT06` | HTTP only — including a raw unparseable body with a JSON content type, and the `Content-Type` response header | admissible; its out-of-scope classes are graded as *unchanged relative to a baseline capture*, which is itself an HTTP observation, and whether every named out-of-scope class is elicitable on the substrate stays open under `TD-B31` |
 | `PT07` | HTTP only | admissible. Needs **no** seam (its text states log output is not part of its required behaviour), **no** repository-state observation, **no** reset helper, **no** seeded state, **no** implementation-specific import and **no** architecture finding. A non-persistence criterion ("previewing does not persist / leaves the stored order count unchanged") was considered and **rejected as externally ungradeable** under §11: the substrate exposes no public way to observe stored state, and the only checks available are the internal ones §11.1/§11.3 forbid. `PT07` instead requires the observable consequence — its answer carries no `id`, `status`, `createdAt` or `customerId`. **The absent response fields are required; a hidden persistence side-effect assertion is not, and no hidden test may add one.** |
+| `PT08` | HTTP only | admissible. Needs **no** seam (its text states log output is not part of its required behaviour), **no** repository-state observation, **no** reset helper, **no** seeded state, **no** implementation-specific import and **no** architecture finding. Every requirement it states is a status code plus a JSON response body of one ordinary request. It states **no** requirement about what the service stores for a rejected request, and that omission is deliberate: such a criterion is not externally observable at this substrate under §11, and requiring it would additionally outlaw a legitimate implementation shape. **No hidden test may add a stored-state assertion, and none may assert a numeric spelling the public text places out of scope.** |
 | `PR01` | HTTP only | admissible (`inactive-reserve`) |
 | `PR02` | **unresolved / unreachable setup** | blocked. Its terminal-state precondition (`shipped`, `delivered`) is not reachable through the public interface of the unchanged substrate (`TD-B26`), and §11.3 forecloses the only workaround — seeding that state through implementation modules. This boundary makes `TD-B26` **stricter**, not softer. |
 

@@ -116,6 +116,7 @@ FROZEN_HASHES = {
     "PT05": "f6efc772e76d6c287e0c71daaa93c7e1d9e62e72a1b37878df70113269ed27b3",
     "PT06": "3e0f84cfef1f9fbf97e3cd31b6704c3a0fb172b04b5e7bc33ea39927b1c8e0f2",
     "PT07": "557caed09420354efbc823c8b72e54b0760ac72847aba0d9c07d99e37ff7d2d7",
+    "PT08": "a31bb515b79cc1e211a662de2a8761c97082dd8bf266ee5b4f660981435badf2",
     "PR01": "0e1527bce41498836bb57b802d4566251d6fcfed4cca13fe59e6a97330f02302",
     "PR02": "e89a4aab236813c082f9152db779b8bbfb298148a51a8435a1e2bf38330caa83",
 }
@@ -128,6 +129,10 @@ EXPECTED_ELIGIBILITY = {
     "PT05": "functional-only",
     "PT06": "functional-only",
     "PT07": "scored",
+    # authored later as the priority-A replication instrument; `scored` records
+    # intent only - its public-authoring review is pending, it has no private
+    # evaluator package, and it contributes to no denominator
+    "PT08": "scored",
     "PR01": "inactive-reserve",
     "PR02": "inactive-reserve",
 }

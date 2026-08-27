@@ -46,11 +46,14 @@ package.
 - `README.md` and `TASK_AUTHORING_REPORT.md` are documented **non-task** files.
   The authoring report is a public handoff document, not a benchmark task, and is
   never counted as one.
-- Nine **draft candidates** currently exist: seven primary (`PT01`–`PT07`, of
-  which `PT07` was authored later under `DECISION B`) and two reserve
-  (`PR01`–`PR02`). They are **candidates**: authored, **not approved and not
-  frozen**. Current public eligibility: `PT01`–`PT04` and `PT07` `scored`,
-  `PT05`/`PT06` `functional-only`, `PR01`/`PR02` `inactive-reserve`.
+- Ten **draft candidates** currently exist: eight primary (`PT01`–`PT08`, of
+  which `PT07` and then `PT08` were authored later under `DECISION B`) and two
+  reserve (`PR01`–`PR02`). They are **candidates**: authored, **not approved and
+  not frozen**. Current public eligibility: `PT01`–`PT04`, `PT07` and `PT08`
+  `scored`, `PT05`/`PT06` `functional-only`, `PR01`/`PR02` `inactive-reserve`.
+  `PT08`'s public eligibility records **intent only**: its independent
+  public-authoring review is pending and it has **no** private evaluator package
+  (§12.2e).
 
 ## 3. What is scanned
 
@@ -623,6 +626,84 @@ status and **no** denominator row; the active set stays **5** opportunities over
 **one** observation. **The candidate is not finally approved** — one **focused
 independent remediation re-review** is still required, and **priority B has had no
 candidate review at all**. `TD-B34` stays **open and blocking**.
+
+> **Superseded on the authoring state and the review state only** (§12.2e). The
+> focused independent remediation re-review the paragraph above required has since
+> **passed**, with verdict **APPROVE — public authoring may begin**, and the
+> candidate has since been **publicly authored** as the task body `PT08`. The
+> paragraph remains an accurate record of the pre-authoring state it describes, and
+> **every count it names is unchanged**: an authored public body carries no private
+> opportunity, so the active counts and the cluster depths are exactly as recorded
+> there and the priority-A cluster still stands at **one** active observation.
+> **Priority B still has had no candidate review at all**, and `TD-B34` still stays
+> **open and blocking**.
+
+### 12.2e The priority-A candidate is now authored as `PT08` (`TD-B34` still open)
+
+The candidate pinned in §12.2d has since been authored as the public task body
+`PT08` — *Apply a caller-declared maximum total to order creation*
+(`write-endpoint`, `primary`, `e1_analysis_eligibility` `scored`, `task_status`
+`candidate`). The authoring package added **one** task body and nothing else: no
+other task body or hash changed, no other eligibility changed, no reserve was
+activated, no file under `apps/` or `libs/` was touched, no private evaluator
+material was authored or modified, no benchmark or model ran, and nothing was
+frozen.
+
+- **It was authored before any benchmark or model execution**, from a candidate
+  whose carrier, rejection outcome, wire determinacy, validation precedence,
+  money-semantics prohibition, observation boundary and legal implementation
+  families were **pinned and independently reviewed before any prose existed**
+  ([`CAND_A1_PREAUTHORING_DECISION.md`](CAND_A1_PREAUTHORING_DECISION.md) §5, §6),
+  and whose focused remediation re-review then returned **APPROVE — public
+  authoring may begin** (that record, §2a).
+- **The identifier was assigned at public authoring and nowhere earlier.** `PT08`
+  is the next sequential primary identifier under the naming convention of §2, and
+  [`TASK_INDEX.csv`](../../experiments/v2/tasks/public/TASK_INDEX.csv) — the
+  authoritative definition of the expected task set — is where the assignment
+  takes effect.
+- **Its public wording is functional only** and passes the unmodified leakage
+  validator with **no** reviewed exception: no hard leak and no uncovered
+  review-required term (§4, §5, requirement 10).
+- **It is decidable through HTTP alone** (requirement 11 / §8a): no declared seam,
+  no internal-state inspection, no seeded state, and **no assertion about stored
+  state**. Its text says so explicitly, which is what keeps a **boundary-only**
+  conforming implementation legal — a pre-declared legitimate family that a
+  storage-based criterion would have outlawed.
+- **Which leaf rule, source scope and forbidden target its decision uses stay
+  private**, as for every other candidate: no public task-facing artifact maps
+  `PT08` to a rule id, an opportunity, or an expected or prohibited area. *(The
+  cluster remains inferable from the disclosure this policy and the feasibility
+  record already made about the priority-A target; that consequence is recorded
+  there and is unchanged by authoring.)*
+- **`PT08` cannot enter E1, and adds no observation to any cluster.** Its
+  independent public-authoring review is **pending**; it has **no** private
+  evaluator package, **no** manifest and **no** architecture opportunity; gate
+  **`G1`** is **not passed**; and its public eligibility of `scored` records
+  **intent**, never a demonstrated denominator. The active counts and cluster
+  depths recorded in §12.2d and in
+  [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §3 are
+  **unchanged**.
+- **Its forcing class is unchanged and must not be upgraded.** It is a
+  **natural-path / opportunity-creating** instrument (§12.2d), never to be
+  represented as carrying `features → infra` forcing strength; its discriminative
+  difficulty may be evaluated **only** on **`C1` baseline** behaviour in the
+  Stage-1 pilot, never on `C4` or any treatment-effect estimate; and within-cluster
+  observations remain **pseudo-replicates**.
+- **No hidden rule may be designed to eliminate the pre-declared legal
+  alternatives** (`ALT-A`, `ALT-C`, `ALT-F`, `ALT-H`, `ALT-I`, `ALT-K`), and the
+  expected violating implementation appears **nowhere** in `PT08`'s public text.
+
+**`TD-B34` is NOT resolved.** A second authored public body is not replication
+depth: depth is created by an **active** observation, and `PT08` has none until an
+independent public-authoring review passes, a private evaluator package is authored
+and validated, and eligibility governance admits it. **No power simulation may run
+yet** (`TD-B37`), and gates **G1**/**G2**/**G6** remain **not passed**.
+
+Overlap safeguards for `PT08` against `PT04`, `PT05`, `PT06`, `PR01`, `PT01`/`PT02`
+and `PT07` (requirement 9) are recorded in
+[`TASK_AUTHORING_REPORT.md`](../../experiments/v2/tasks/public/TASK_AUTHORING_REPORT.md).
+They are **governance rationale only** and deliberately appear nowhere in `PT08`'s
+public text.
 
 ### 12.3 What is forbidden
 

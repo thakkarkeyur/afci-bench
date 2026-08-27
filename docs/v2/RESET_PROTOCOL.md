@@ -158,8 +158,8 @@ placed in contracts", or any trigger that presupposes the correct architecture.
 Every task **intended for reset analysis must have a frozen checkpoint**. Each
 candidate task row in
 [`RESET_CHECKPOINT_MATRIX.csv`](RESET_CHECKPOINT_MATRIX.csv) carries these fields
-with `status = TODO` and no finalized value (`TD-B01`). All nine candidates
-(`PT01`–`PT07`, `PR01`, `PR02`) now have a per-task row whose predicate contents
+with `status = TODO` and no finalized value (`TD-B01`). All ten candidates
+(`PT01`–`PT08`, `PR01`, `PR02`) now have a per-task row whose predicate contents
 are **withheld** (`withheld_pending_TD-B01`) so the matrix is complete without
 publishing a private checkpoint predicate.
 

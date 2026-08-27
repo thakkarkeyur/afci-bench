@@ -81,18 +81,31 @@ BREADTH_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.md",
         heading="added by the pre-authoring opportunity reassessment — td-b34 – td-b37",
-        anchor="26a989cc3a237e33",
+        anchor="b5289d9a7c5fb1b7",
         why="the re-scoped TD-B34 registry row quotes the original breadth objective; "
-            "re-anchored when the row gained the CAND-A1 priority-A pre-authoring "
-            "progress, which is progress toward REPLICATION DEPTH and must never be "
-            "read as reviving the breadth objective",
+            "re-anchored again when CAND-A1 was PUBLICLY AUTHORED as PT08. Public "
+            "authoring is progress toward REPLICATION DEPTH and must never be read as "
+            "reviving the breadth objective, nor as an active observation: the row has "
+            "to carry the authoring fact and every denial that bounds it in the same "
+            "field a machine reader consumes",
         required=(MARKER, "is superseded and structurally unattainable",
                   "replication depth",
                   # the addendum is progress, not resolution, and not breadth
                   "priority-a pre-authoring progress, not resolution",
-                  "td-b34 therefore remains open and blocking"),
+                  "td-b34 therefore remains open and blocking",
+                  # public authoring, and the bounds on what it conferred
+                  "publicly authored as the task body pt08",
+                  "the independent public-authoring review of pt08 is pending",
+                  "adds no active observation to any decision cluster",
+                  "gate g1 is not passed",
+                  "the active set remains 5 opportunities over 3 decision clusters "
+                  "at depths 3 / 1 / 1"),
         forbidden=("the breadth objective is restored",
-                   "breadth is again required"),
+                   "breadth is again required",
+                   "at depths 3 / 2 / 1",
+                   "6 opportunities over 3 decision clusters",
+                   "adds one active observation",
+                   "pt08 is frozen"),
     ),
     RC(
         rel="docs/v2/PILOT_AND_POWER_POLICY.md",
@@ -167,12 +180,15 @@ BREADTH_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.csv",
         heading="row TD-B34 / column decision",
-        anchor="e5732339c5cec2de",
+        anchor="51b32ec534fdf066",
         why="the machine-readable TD-B34 row quotes the original breadth objective; "
-            "re-anchored when the stale TD-B40(B) claim was corrected (P1-4). The row "
+            "re-anchored again when CAND-A1 was PUBLICLY AUTHORED as PT08. The row "
             "records progress toward REPLICATION DEPTH, which must never be read as "
-            "reviving the breadth objective, and it must not inherit a residual that "
-            "belongs to a decision now resolved",
+            "reviving the breadth objective; it must not inherit a residual that "
+            "belongs to a decision now resolved; and, because a CSV field is consumed "
+            "as current machine-readable state, the authoring fact and every denial "
+            "that bounds it (no private package, no active observation, G1 not "
+            "passed) must both live in this one field",
         required=(MARKER, "as originally recorded",
                   "breadth objective is superseded and structurally unattainable",
                   "priority-a pre-authoring progress, not resolution",
@@ -181,11 +197,22 @@ BREADTH_REGISTER = (
                   # inherit it, and replication depth stays the only live objective
                   "td-b40 residual (b) is itself complete",
                   "td-b34 neither inherits nor reopens td-b40(b)",
-                  "td-b34 remains open and blocking on replication depth alone"),
+                  "td-b34 remains open and blocking on replication depth alone",
+                  # public authoring, and the bounds on what it conferred
+                  "publicly authored as the task body pt08",
+                  "the independent public-authoring review of pt08 is pending",
+                  "adds no active observation to any decision cluster",
+                  "gate g1 is not passed",
+                  "the active set remains 5 opportunities over 3 decision clusters "
+                  "at depths 3/1/1"),
         forbidden=("the breadth objective is restored",
                    "breadth is again required",
                    "re-approval remains outstanding",
-                   "re-approval is still outstanding"),
+                   "re-approval is still outstanding",
+                   "at depths 3/2/1",
+                   "6 opportunities over 3 decision clusters",
+                   "adds one active observation",
+                   "pt08 is frozen"),
     ),
     RC(
         rel="experiments/v2/tasks/public/TASK_AUTHORING_REPORT.md",

@@ -11,7 +11,7 @@ version: "1.0.0"
 
 front_matter:
   required_fields:
-    - id                  # neutral identifier: PT01-PT07 (primary), PR01-PR02 (reserve)
+    - id                  # neutral identifier: PT01-PT08 (primary), PR01-PR02 (reserve)
     - title               # functional, human-readable
     - category            # functional category (see enum)
     - kind                # primary | reserve
