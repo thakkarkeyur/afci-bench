@@ -72,6 +72,7 @@ remediation re-review is still required before authoring may begin.**
 | **Approved carrier** | **publicly specified query parameter** `maxTotal` |
 | **Forcing class** | **natural-path / opportunity-creating** |
 | **Study Lead acceptance** | **recorded** (`SL-CA1-01`, `SL-CA1-02`) |
+| **Difficulty-diagnostic adjudication** | **`SL-PT08-01`** — pre-Stage-0, `PT08`-only, `C1`-only, non-confirmatory (§4) |
 | **Task identifier assigned** | **`PT08`**, assigned at public authoring only (§2a) |
 
 **No `PT08` identifier is assigned by this record**; the separate public-authoring
@@ -193,6 +194,36 @@ weaker than `PT04`'s. Every one of the following is recorded:
   `TD-B37`).
 
 **`P1-2` is CLOSED.**
+
+### `SL-CA1-02` clarified by `SL-PT08-01` — the authorised baseline vehicle
+
+**Nothing above is edited, withdrawn or rewritten.** The bullet that names the
+pre-registered Stage-1 baseline-only `C1` pilot stands exactly as written, and it
+still describes the confirmatory path correctly.
+
+**As recorded then**, that pilot was the only vehicle this record named for
+`CAND-A1`'s baseline-difficulty evidence, and the pilot sits after Stage 0, which
+`TD-B34` gates. **Clarified on this point only, and on no other:** the Study Lead
+has since authorised, in **`SL-PT08-01`**
+([`PT08_C1_DIFFICULTY_DIAGNOSTIC_DECISION.md`](PT08_C1_DIFFICULTY_DIAGNOSTIC_DECISION.md)),
+one pre-registered **pre-Stage-0**, `PT08`-only, `C1`-only, **non-confirmatory**
+difficulty diagnostic as an **additional authorised vehicle** for satisfying the
+**baseline-difficulty purpose** of `SL-CA1-02`.
+
+The clarification changes the **vehicle**, never the **evidence class**:
+
+- baseline **`C1`** evidence may inform difficulty — unchanged;
+- **`C4` and any treatment-effect result may never tune the task** — unchanged,
+  and an observed AFCI advantage, a condition contrast and an interaction
+  estimate all stay inadmissible;
+- every other statement of `SL-CA1-02` — the natural-path forcing class, the
+  construct-validity limitation, the forcing-strength representation
+  prohibition, and the pseudo-replicate status of within-cluster observations —
+  is untouched and remains binding.
+
+`SL-PT08-01` resolves **no** other question: `TD-B34` stays open and blocking on
+the normal path, `TD-B12` and `G6` stay open, nothing is frozen, no gate is
+passed, no model is selected, no sample size is selected, and no result exists.
 
 ---
 

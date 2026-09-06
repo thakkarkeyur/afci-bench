@@ -82,6 +82,54 @@ That decision **predates any benchmark or model outcome**, is a **task-set
 coverage** deficiency rather than an oracle failure, and is **not** a reason to
 activate a reserve.
 
+**One bounded exception, and only one.** `TD-B34` stays **open and blocking**
+before Stage 0, before normal Stage 1, before final pilot progression, before
+confirmatory execution and before the power simulation where applicable. It does
+**not** block the single pre-registered, `PT08`-only, `C1`-only,
+**non-confirmatory** difficulty diagnostic authorised by **`SL-PT08-01`**
+([`PT08_C1_DIFFICULTY_DIAGNOSTIC_DECISION.md`](PT08_C1_DIFFICULTY_DIAGNOSTIC_DECISION.md)),
+which sits outside the staged sequence entirely (next section). The exception
+marks priority B neither started nor complete, weakens none of `TD-B34`'s
+closure conditions, closes none of its subconditions, counts as no replication
+observation, changes no observation depth and creates no additional active
+opportunity.
+
+## Pre-Stage-0 instrument diagnostics (outside the staged sequence)
+
+Exactly one such diagnostic is authorised, by **`SL-PT08-01`**: a
+pre-registered, **`PT08`-only**, **`C1`-only**, **non-confirmatory** difficulty
+diagnostic, permitted **before** `TD-B34` closure. It exists because the
+instrument's own baseline difficulty is one of the inputs that should decide
+whether further benchmark expansion is worth the investment, and the staged
+sequence could not deliver that evidence until after the expansion it was meant
+to inform.
+
+- **It is not Stage 0** (Stage 0 scores nothing and proves the machinery), **not
+  Stage 1** (the paid `C1`/`C3`/`C4` screening pilot over both candidate models)
+  and **not** part of the core grid. Completing it advances **no** stage.
+- **It is analytically quarantined.** Its observations must never enter the
+  confirmatory dataset, confirmatory `E1` effect estimation, treatment-effect
+  analysis or power estimation, and must never be pooled with the later Stage-1
+  or core-grid observations.
+- **It discharges nothing** — not `TD-B34`, not priority B, not Stage 0, not
+  `G1`, and not the global power-analysis gates.
+- **For this diagnostic only**, completion of the **global** `TD-B12`/`G6`
+  precision-and-recall bar is not required beforehand. That narrow exception
+  discharges **neither** `TD-B12` **nor** `G6`, and the global precision/recall
+  and blinded double-rating requirements stay mandatory at their existing gate.
+- **It is not executable on the strength of this policy.** A real runner,
+  runner-time worktree enforcement, a fresh process, a clean context audit,
+  governed isolation and identity, Study-Lead model selection with `Q1`/`Q8`
+  validation, `PT08` hidden-acceptance authoring, validation and independent
+  review, `PT08`'s manifest freeze and the public `PT08-PUB-P2-2`
+  synchronization that must precede it are **all still required**.
+- **Its sample size is undecided** (Study-Lead decision pending) and **no model
+  is selected** (`primary_model` stays null; `TD-B03` open).
+
+The full adjudication, its evidence basis, its data firewall and the complete
+list of what it does and does not waive are in
+[`PT08_C1_DIFFICULTY_DIAGNOSTIC_DECISION.md`](PT08_C1_DIFFICULTY_DIAGNOSTIC_DECISION.md).
+
 ## Stage 1 — Screening pilot (paid; NOT part of this work package)
 
 - **Conditions:** includes **C1, C3, and C4** for **both** candidate models
@@ -117,7 +165,10 @@ The pilot informs, in order:
    repetition counts (`TD-B20`, feeding `TD-B10`/`TD-B14`);
 5. **baseline-only task-hardening decisions** — difficulty is tuned on **C1
    baseline** behaviour only, **never** on the size of the observed AFCI (C4)
-   advantage (D3).
+   advantage (D3). The Stage-1 pilot is not the **only** authorised vehicle for
+   that baseline-only evidence: the pre-Stage-0 `PT08` `C1` difficulty
+   diagnostic (`SL-PT08-01`) is authorised separately, on the same baseline-only
+   terms and with the same prohibition on `C4`/effect-based tuning.
 
 **Pilot data must not be pooled into confirmatory results** when **any** relevant
 task, oracle, condition, or protocol changed afterward (a changed
