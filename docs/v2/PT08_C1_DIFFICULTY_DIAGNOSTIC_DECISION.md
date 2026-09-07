@@ -219,7 +219,10 @@ current mechanical state is **NO-GO** until they are completed:
     (`TD-B32`);
 14. **`PT08`'s required manifest freeze** under the existing lifecycle rules
     (`TD-B05`/`TD-B14`/`TD-B32`, gate `G1`);
-15. **public `PT08-PUB-P2-2` synchronization before that freeze**;
+15. **public `PT08-PUB-P2-2` synchronization before that freeze** — the **one**
+    item on this list that is now **COMPLETE and CLOSED**
+    ([`PT08_PUBLIC_ACCOUNTING_SYNCHRONIZATION.md`](PT08_PUBLIC_ACCOUNTING_SYNCHRONIZATION.md));
+    its closure discharges **nothing else here** and confers **no** readiness;
 16. **`PT08` public/private hash and linkage consistency**;
 17. **no signed non-finite hidden semantic cases while public `P2-1` remains
     open**;
@@ -337,6 +340,18 @@ none, and it neither confirms nor updates any public count or lifecycle row for
 and is NOT performed in this package**, and it must precede `PT08`'s freeze
 (§7.15). Any residual difference between the public accounting rows and the
 private state is owned by that synchronization and is not resolved here.
+
+> **Superseded on this point only, and on no other.** `PT08-PUB-P2-2` has since
+> been performed and **CLOSED** by a separate public accounting-synchronization
+> package
+> ([`PT08_PUBLIC_ACCOUNTING_SYNCHRONIZATION.md`](PT08_PUBLIC_ACCOUNTING_SYNCHRONIZATION.md)).
+> The paragraph above remains an accurate record of what **this** package did — it
+> performed none of it — and every other statement in this record stands unchanged.
+> This record still states **no** active opportunity count, **no** decision-cluster
+> count and **no** observation depth, and it still confirms and updates none. That
+> closure freezes nothing, passes no gate, validates no hidden acceptance, makes
+> nothing run-eligible, produces no result and no power value, and leaves `TD-B34`
+> **open and blocking** and priority B **not started**.
 
 ---
 

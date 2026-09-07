@@ -81,13 +81,14 @@ BREADTH_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.md",
         heading="added by the pre-authoring opportunity reassessment — td-b34 – td-b37",
-        anchor="b5289d9a7c5fb1b7",
+        anchor="95d23b3704e3e8c2",
         why="the re-scoped TD-B34 registry row quotes the original breadth objective; "
-            "re-anchored again when CAND-A1 was PUBLICLY AUTHORED as PT08. Public "
-            "authoring is progress toward REPLICATION DEPTH and must never be read as "
-            "reviving the breadth objective, nor as an active observation: the row has "
-            "to carry the authoring fact and every denial that bounds it in the same "
-            "field a machine reader consumes",
+            "re-anchored again when PT08's opportunity was ADMITTED (PT08-PUB-P2-2). "
+            "Admission is progress toward REPLICATION DEPTH and must never be read as "
+            "reviving the breadth objective, as closing TD-B34, or as an outcome: the "
+            "row has to carry the admitted counts, the pre-admission counts as history, "
+            "and every denial that bounds them, in the same field a machine reader "
+            "consumes",
         required=(MARKER, "is superseded and structurally unattainable",
                   "replication depth",
                   # the addendum is progress, not resolution, and not breadth
@@ -95,17 +96,29 @@ BREADTH_REGISTER = (
                   "td-b34 therefore remains open and blocking",
                   # public authoring, and the bounds on what it conferred
                   "publicly authored as the task body pt08",
-                  "the independent public-authoring review of pt08 is pending",
-                  "adds no active observation to any decision cluster",
+                  # the admitted lifecycle, and the admitted counts
+                  "the independent public-authoring review of pt08 has since passed",
+                  "pt08 adds the second active observation",
+                  "the priority-a cluster dc-features-api-ar-dep-006 stands at two "
+                  "observations",
+                  "the active set therefore now holds 6 opportunities over 3 decision "
+                  "clusters at depths 3 / 2 / 1",
+                  # admission confers nothing beyond the accounting
                   "gate g1 is not passed",
-                  "the active set remains 5 opportunities over 3 decision clusters "
-                  "at depths 3 / 1 / 1"),
+                  "priority b is not started",
+                  # and the pre-admission reading survives as explicit history
+                  "at that point the active set held 5 opportunities over 3 decision "
+                  "clusters at depths 3 / 1 / 1"),
         forbidden=("the breadth objective is restored",
                    "breadth is again required",
-                   "at depths 3 / 2 / 1",
-                   "6 opportunities over 3 decision clusters",
-                   "adds one active observation",
-                   "pt08 is frozen"),
+                   # the superseded live claims, in the exact form they had
+                   "the active set remains 5 opportunities over 3 decision clusters",
+                   "adds no active observation to any decision cluster",
+                   # and the over-claims admission must never be readable as
+                   "pt08 is frozen",
+                   "gate g1 is passed",
+                   "td-b34 is resolved",
+                   "priority b is complete"),
     ),
     RC(
         rel="docs/v2/PILOT_AND_POWER_POLICY.md",
@@ -133,8 +146,10 @@ BREADTH_REGISTER = (
     RC(
         rel="docs/v2/README.md",
         heading="opportunity reassessment — pt05 reclassified, decision b recorded",
-        anchor="5c349508b67f7f07",
-        why="the README supersession blockquote for the DECISION B directive",
+        anchor="502aed23c22dc579",
+        why="the README supersession blockquote for the DECISION B directive; "
+            "re-anchored when its live replication-depth reading stopped calling both "
+            "under-replicated clusters singletons (PT08-PUB-P2-2)",
         required=(MARKER, "historical", "superseded",
                   "not current governance", "must not be authored",
                   "withdrawn directive", "replication depth",
@@ -151,8 +166,10 @@ BREADTH_REGISTER = (
     RC(
         rel="docs/v2/README.md",
         heading="opportunity reassessment — pt05 reclassified, decision b recorded",
-        anchor="7f92fa30fb0c6f75",
-        why="the README supersession blockquote for the power precondition",
+        anchor="7ca86d18c4c5ea48",
+        why="the README supersession blockquote for the power precondition; "
+            "re-anchored when its live replication-depth reading stopped calling both "
+            "under-replicated clusters singletons (PT08-PUB-P2-2)",
         required=(MARKER, "historical", "superseded", "withdrawn",
                   "replication depth", "no power simulation has been run",
                   "no power value is frozen", "decision_cluster_id is mandatory"),
@@ -180,15 +197,16 @@ BREADTH_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.csv",
         heading="row TD-B34 / column decision",
-        anchor="51b32ec534fdf066",
+        anchor="628b1d29542db58b",
         why="the machine-readable TD-B34 row quotes the original breadth objective; "
-            "re-anchored again when CAND-A1 was PUBLICLY AUTHORED as PT08. The row "
-            "records progress toward REPLICATION DEPTH, which must never be read as "
-            "reviving the breadth objective; it must not inherit a residual that "
-            "belongs to a decision now resolved; and, because a CSV field is consumed "
-            "as current machine-readable state, the authoring fact and every denial "
-            "that bounds it (no private package, no active observation, G1 not "
-            "passed) must both live in this one field",
+            "re-anchored again when PT08's opportunity was ADMITTED (PT08-PUB-P2-2). "
+            "The row records progress toward REPLICATION DEPTH, which must never be "
+            "read as reviving the breadth objective; it must not inherit a residual "
+            "that belongs to a decision now resolved; and, because a CSV field is "
+            "consumed as current machine-readable state, the admitted counts, the "
+            "pre-admission counts as history, and every denial that bounds them "
+            "(nothing frozen, G1 not passed, priority B not started) must all live in "
+            "this one field",
         required=(MARKER, "as originally recorded",
                   "breadth objective is superseded and structurally unattainable",
                   "priority-a pre-authoring progress, not resolution",
@@ -200,19 +218,31 @@ BREADTH_REGISTER = (
                   "td-b34 remains open and blocking on replication depth alone",
                   # public authoring, and the bounds on what it conferred
                   "publicly authored as the task body pt08",
-                  "the independent public-authoring review of pt08 is pending",
-                  "adds no active observation to any decision cluster",
+                  # the admitted lifecycle, and the admitted counts
+                  "the independent public-authoring review of pt08 has since passed",
+                  "pt08 adds the second active observation",
+                  "the priority-a cluster dc-features-api-ar-dep-006 stands at two "
+                  "observations",
+                  "the active set now holds 6 opportunities over 3 decision clusters "
+                  "at depths 3/2/1",
+                  # admission confers nothing beyond the accounting
                   "gate g1 is not passed",
-                  "the active set remains 5 opportunities over 3 decision clusters "
-                  "at depths 3/1/1"),
+                  "priority b is not started",
+                  # and the pre-admission reading survives as explicit history
+                  "at that point the active set held 5 opportunities over 3 decision "
+                  "clusters at depths 3/1/1"),
         forbidden=("the breadth objective is restored",
                    "breadth is again required",
                    "re-approval remains outstanding",
                    "re-approval is still outstanding",
-                   "at depths 3/2/1",
-                   "6 opportunities over 3 decision clusters",
-                   "adds one active observation",
-                   "pt08 is frozen"),
+                   # the superseded live claims, in the exact form they had
+                   "the active set remains 5 opportunities over 3 decision clusters",
+                   "adds no active observation to any decision cluster",
+                   # and the over-claims admission must never be readable as
+                   "pt08 is frozen",
+                   "gate g1 is passed",
+                   "td-b34 is resolved",
+                   "priority b is complete"),
     ),
     RC(
         rel="experiments/v2/tasks/public/TASK_AUTHORING_REPORT.md",
@@ -235,8 +265,10 @@ BREADTH_REGISTER = (
     RC(
         rel="experiments/v2/tasks/public/TASK_AUTHORING_REPORT.md",
         heading="decision b - additional architecture tasks required before stage 0",
-        anchor="a5b81cba9ff5b8e8",
-        why="the report's DECISION B supersession blockquote",
+        anchor="14ea498e73f4f5e9",
+        why="the report's DECISION B supersession blockquote; re-anchored when its "
+            "live replication-depth reading stopped calling both under-replicated "
+            "clusters singletons (PT08-PUB-P2-2)",
         required=(MARKER, "historical record", "superseded",
                   "not current governance", "do not author against this section",
                   "withdrawn directive", "nothing here is rewritten",
@@ -290,6 +322,22 @@ BREADTH_REGISTER = (
 FOURTH_CLUSTER_REGISTER = (
     RC(
         rel="docs/v2/DEPENDENCY_TASK_FEASIBILITY.md",
+        heading="3. the demonstrated feasibility ceiling",
+        anchor="e28ca47db73ac207",
+        why="added by PT08-PUB-P2-2: the post-admission depth bullet. Depth 2 in the "
+            "priority-A cluster is the single most likely place for a reader to "
+            "manufacture a fourth cluster or a second independent architecture "
+            "construct, so the denial is stated in the same passage as the depth",
+        required=("the added depth is replication depth over one shared decision, not "
+                  "a fourth cluster and not a second architecture construct",
+                  "pseudo-replicates",
+                  "the cluster count is unchanged at 3"),
+        forbidden=("the added depth is a fourth cluster",
+                   "a fourth cluster and a second architecture construct",
+                   "two independent architecture constructs"),
+    ),
+    RC(
+        rel="docs/v2/DEPENDENCY_TASK_FEASIBILITY.md",
         heading="3a. inactive-reserve draft rows do not contradict the ceiling",
         anchor="700c279f16638a24",
         why="§3a names the misreading it exists to refute, then refutes it",
@@ -330,12 +378,13 @@ FOURTH_CLUSTER_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.md",
         heading="added by the pre-authoring functional-evaluator boundary package — td-b39 – td-b40",
-        anchor="8df07ee7245b3dae",
+        anchor="f6e0432b3e28bb7e",
         why="the TD-B40 registry row bars any legacy reserve row from being read as a "
-            "fourth cluster; re-anchored when the row was resolved. A CLOSED row is "
-            "the most dangerous place for this bar to weaken, so the closure text "
-            "must carry both the bar and the full statement of what closure does not "
-            "confer",
+            "fourth cluster; re-anchored when the row was resolved, and again when "
+            "PT08-PUB-P2-2 marked its active count as the count AT CLOSURE. A CLOSED "
+            "row is the most dangerous place for this bar to weaken, so the closure "
+            "text must carry the bar, the full statement of what closure does not "
+            "confer, and an explicit denial that TD-B40 caused the later movement",
         required=("no legacy reserve row may be read as a task-creatable fourth cluster",
                   "5 opportunities across 3 clusters",
                   # closure is bounded: every denial pinned in the row itself
@@ -344,29 +393,41 @@ FOURTH_CLUSTER_REGISTER = (
                   "activates neither pr01 nor pr02",
                   "resolves neither td-b34 nor td-b39",
                   "td-b40 never governed freeze",
-                  "permanently barred"),
+                  "permanently barred",
+                  # the later movement is attributed away from this row
+                  "current post-admission state, which td-b40 neither caused nor "
+                  "governs",
+                  "moved the active set to 6 over the same 3 clusters at depths "
+                  "3 / 2 / 1"),
         forbidden=("is a task-creatable fourth cluster",
                    "a legacy reserve row may be read as a task-creatable fourth cluster",
                    # closure must never be readable as a freeze or a gate pass
                    "gate g1 is passed",
-                   "the migration is frozen"),
+                   "the migration is frozen",
+                   # nor as the cause of the admitted accounting
+                   "td-b40 moved the active set"),
     ),
     RC(
         rel="docs/v2/PILOT_AND_POWER_POLICY.md",
         heading="precondition on the power simulation (td-b37)",
-        anchor="edfb0e83dff93f9e",
-        why="a benign active-count statement; it must never acquire a fourth-cluster claim",
-        required=("5 across 3 decision clusters", "replication depth"),
+        anchor="488a92cce7cc3355",
+        why="a benign active-count statement; it must never acquire a fourth-cluster "
+            "claim. Re-anchored by PT08-PUB-P2-2, which moved the live count to 6 and "
+            "kept the pre-admission count as explicit history in the same passage",
+        required=("6 across 3 decision clusters",
+                  "5 across 3 decision clusters",
+                  "replication depth"),
         forbidden=("fourth cluster", "fourth decision cluster", "4th cluster"),
     ),
     RC(
         rel="docs/v2/README.md",
         heading="pt07 authored under decision b — one task, td-b34 still open",
-        anchor="5a483cb7850aa077",
+        anchor="086f056d2c10b34b",
         why="the README reserve-reconciliation bullet carries the same denial; "
             "re-anchored when the bullet recorded that the reconciliation has since "
-            "been independently re-approved. The historical reading is kept as 'as "
-            "recorded then' rather than rewritten",
+            "been independently re-approved, and again when PT08-PUB-P2-2 recorded "
+            "that the active set has since moved for an unrelated reason. The "
+            "historical reading is kept as 'as recorded then' rather than rewritten",
         required=(
             "the legacy infra → core / ar-dep-004 reserve row is not evidence of a "
             "fourth task-creatable decision cluster, and it is permanently barred "
@@ -376,6 +437,8 @@ FOURTH_CLUSTER_REGISTER = (
             # the superseding fact, and the historical framing it replaces
             "as recorded then",
             "has since been independently re-approved",
+            # the later movement is attributed away from this reconciliation
+            "it has since moved to 6 at depths 3 / 2 / 1 on pt08's separate admission",
         ),
         forbidden=(
             "reserve row is evidence of a fourth task-creatable decision cluster",
@@ -386,9 +449,12 @@ FOURTH_CLUSTER_REGISTER = (
     RC(
         rel="docs/v2/STATISTICAL_ANALYSIS_PLAN.md",
         heading="4a. the current architecture task set is not confirmatory-ready (td-b37)",
-        anchor="84558259d7ba86b5",
-        why="a benign active-count statement; it must never acquire a fourth-cluster claim",
-        required=("5 across 3 decision clusters",),
+        anchor="ff086b9bae29152b",
+        why="a benign active-count statement; it must never acquire a fourth-cluster "
+            "claim. Re-anchored by PT08-PUB-P2-2, which moved the live count to 6 and "
+            "kept the pre-admission count as explicit history in the same passage",
+        required=("6 across 3 decision clusters",
+                  "5 across 3 decision clusters"),
         forbidden=("fourth cluster", "fourth decision cluster", "4th cluster"),
     ),
     RC(
@@ -411,11 +477,18 @@ FOURTH_CLUSTER_REGISTER = (
     RC(
         rel="docs/v2/TASK_AUTHORING_POLICY.md",
         heading="12.2d forcing strength, and the priority-a candidate's pre-authoring state",
-        anchor="81fbc6e77ad77922",
+        anchor="400e6b1c7451ec58",
         why="§12.2d's 'nothing is authored' paragraph states the counts CAND-A1 must "
             "not move. It names the active counts, so it is registered here to stop a "
-            "pre-counted second observation being smuggled into it",
-        required=("no pt08 identifier",
+            "pre-counted second observation being smuggled into it. Re-anchored by "
+            "PT08-PUB-P2-2, which added the historical marker the paragraph's own "
+            "text was missing: the counts it names are now history, and a passage "
+            "stating superseded counts must say so in its own text rather than rely "
+            "on the supersession blockquote that follows it",
+        required=("as originally recorded",
+                  "superseded on the authoring state, the review state and the "
+                  "active counts",
+                  "no pt08 identifier",
                   "the active set stays 5 opportunities over 3 clusters at depths "
                   "3 / 1 / 1",
                   "dc-features-api-ar-dep-006 stays at one observation",
@@ -429,10 +502,12 @@ FOURTH_CLUSTER_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.csv",
         heading="row TD-B40 / column decision",
-        anchor="c5840696b992d2a8",
+        anchor="b7caa57025e84b1a",
         why="the machine-readable TD-B40 row carries the same bar; re-anchored when "
-            "the row was resolved. The CSV row is what a machine reader consumes, so "
-            "the bar and the bound on closure must both live in it",
+            "the row was resolved, and again when PT08-PUB-P2-2 marked its active "
+            "count as the count AT CLOSURE. The CSV row is what a machine reader "
+            "consumes, so the bar, the bound on closure and the denial that TD-B40 "
+            "caused the later movement must all live in it",
         required=("no legacy reserve row may be read as a task-creatable fourth "
                   "decision cluster",
                   "5 opportunities across 3 decision clusters",
@@ -441,23 +516,33 @@ FOURTH_CLUSTER_REGISTER = (
                   "activates neither pr01 nor pr02",
                   "resolves neither td-b34 nor td-b39",
                   "td-b40 never governed freeze",
-                  "no such decision exists"),
+                  "no such decision exists",
+                  # the later movement is attributed away from this row
+                  "current post-admission state, which td-b40 neither caused nor "
+                  "governs",
+                  "moved the active set to 6 opportunities across the same 3 decision "
+                  "clusters at depths 3/2/1"),
         forbidden=("is a task-creatable fourth decision cluster",
                    "gate g1 is passed",
-                   "the migration is frozen"),
+                   "the migration is frozen",
+                   "td-b40 moved the active set"),
     ),
     RC(
         rel="experiments/v2/tasks/public/TASK_AUTHORING_REPORT.md",
         heading="private evaluator consequences (nothing private was touched)",
-        anchor="1401bb7d249e9d29",
+        anchor="4001a954aec2a20f",
         why="the report's reserve-reconciliation bullet carries the same denial; "
             "re-anchored when the bullet recorded that the reconciliation has since "
-            "been independently re-approved, with the historical reading kept as 'as "
-            "recorded then'",
+            "been independently re-approved, and again when PT08-PUB-P2-2 recorded "
+            "that the active set has since moved for an unrelated reason, with the "
+            "historical reading kept as 'as recorded then'",
         required=("not an available fourth decision cluster", "permanently barred",
                   "the active set is unchanged at 5 opportunities over 3 clusters",
                   "as recorded then",
-                  "neither an activation nor a freeze"),
+                  "neither an activation nor a freeze",
+                  # the later movement is attributed away from this reconciliation
+                  "it has since moved to 6 at depths 3 / 2 / 1 on pt08's separate "
+                  "admission"),
         forbidden=("is an available fourth decision cluster",),
     ),
 )
@@ -752,9 +837,14 @@ def test_the_fourth_cluster_vocabulary_is_not_vacuous():
 
 
 def test_the_adjudicated_active_counts_are_still_the_three_cluster_ones():
-    """The positive statement the denials protect."""
+    """The positive statement the denials protect.
+
+    The opportunity count moved 5 -> 6 when PT08's opportunity was admitted
+    (PT08-PUB-P2-2); the CLUSTER count did not, and must not. That asymmetry is the
+    whole point of this module, so both halves are asserted together.
+    """
     flat = G.norm((G.REPO / "docs/v2/DEPENDENCY_TASK_FEASIBILITY.md").read_text(encoding="utf-8"))
-    assert "active e1 opportunities: 5" in flat
+    assert "active e1 opportunities: 6" in flat
     assert "decision clusters: 3" in flat
     occupancy = re.search(r"current occupancy is[^.]*\.", flat)
     assert occupancy, "the occupancy statement is missing"

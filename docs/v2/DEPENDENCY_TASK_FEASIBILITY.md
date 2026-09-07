@@ -230,10 +230,10 @@ each represented in the active set:
 | `decision_cluster_id` | Source scope | Forbidden target | Leaf rule | Active observations |
 |---|---|---|---|---|
 | `DC-FEATURES-INFRA-AR-DEP-006` | `features` | `infra` | `AR-DEP-006` | **3** |
-| `DC-FEATURES-API-AR-DEP-006` | `features` | `api` | `AR-DEP-006` | **1** |
+| `DC-FEATURES-API-AR-DEP-006` | `features` | `api` | `AR-DEP-006` | **2** |
 | `DC-API-CORE-AR-DEP-005` | `api` | `core` | `AR-DEP-005` | **1** |
 
-Active E1 opportunities: **5**. Decision clusters: **3**. Leaf rules: **2**.
+Active E1 opportunities: **6**. Decision clusters: **3**. Leaf rules: **2**.
 Source scopes: **2**. Forbidden targets: **3**.
 
 > These are the **independently adjudicated active** counts — the
@@ -249,22 +249,40 @@ Source scopes: **2**. Forbidden targets: **3**.
 > mapping is published.
 
 **Therefore the remaining actionable deficiency is cluster replication depth and
-balance, not additional source-scope or leaf-rule breadth.** Two of the three
-achievable clusters are **singletons**, and a singleton cluster is one boundary
-decision observed once. Breadth beyond the ceiling above is **structurally
+balance, not additional source-scope or leaf-rule breadth.** One of the three
+achievable clusters is still a **singleton**, and a singleton cluster is one
+boundary decision observed once. Breadth beyond the ceiling above is **structurally
 impossible on this substrate** — it is not a matter of authoring effort, review
 effort or task count.
 
-**A public replication body now exists for the priority-A target, and the
-occupancy table above is unchanged.** The priority-A candidate has been publicly
-authored as the task body `PT08`
-([`CAND_A1_PREAUTHORING_DECISION.md`](CAND_A1_PREAUTHORING_DECISION.md) §2a;
-[`TASK_AUTHORING_POLICY.md`](TASK_AUTHORING_POLICY.md) §12.2e). It adds **no active
-observation**: an active observation requires a private evaluator package carrying a
-validated architecture opportunity, and none exists. So the table's **Active
-observations** column, the active opportunity count and the depths above all stand
-exactly as recorded, the priority-A row still reads **1**, and the second
-observation **must not be pre-counted** from the existence of a public body.
+**The priority-A replication instrument is now admitted, and the occupancy table
+above records that.** The priority-A candidate was publicly authored as the task
+body `PT08` ([`CAND_A1_PREAUTHORING_DECISION.md`](CAND_A1_PREAUTHORING_DECISION.md)
+§2a; [`TASK_AUTHORING_POLICY.md`](TASK_AUTHORING_POLICY.md) §12.2e), that authoring
+was **independently reviewed and approved**, its **private evaluator package has
+since been authored** and **approved on a discharged conditional independent
+review**, and a **separately recorded governance admission step** then admitted its
+architecture opportunity to the active E1 denominator and the active cluster
+register.
+
+- *As recorded then*, before that admission: the active set held **5** E1
+  opportunities over **3** decision clusters at depths **3 / 1 / 1**, the
+  priority-A row read **1**, and an authored public body was correctly said to add
+  **no active observation** — a public body carries no private opportunity, so the
+  second observation could not be pre-counted from its existence alone.
+- **Current post-admission state:** the active set holds **6** E1 opportunities
+  over **3** decision clusters at depths **3 / 2 / 1**, and the priority-A row
+  reads **2**.
+- **The added depth is replication depth over one shared decision, not a fourth
+  cluster and not a second architecture construct.** The two observations in
+  `DC-FEATURES-API-AR-DEP-006` remain **pseudo-replicates**; the cluster count is
+  unchanged at **3** and the ceiling above is untouched.
+- **Admission is a lifecycle and accounting transition only.** One applicable
+  opportunity is an **instrument count**, never a violation, a success, an outcome
+  or a result. Nothing is frozen, gate `G1` is **not** passed, no task is E1
+  run-eligible, and **no result, violation value or treatment-effect estimate
+  exists**. `TD-B34` stays **open and blocking** (§7), because priority B
+  (`DC-API-CORE-AR-DEP-005`) has had **no** candidate review at all.
 
 ---
 
@@ -394,7 +412,7 @@ silently dropped.
 | ≥ 3 source scopes | **NOT ACHIEVABLE** — hard ceiling **2** |
 | ≥ 3 forbidden targets | **ACHIEVED** — currently **3** |
 | ≥ 4 independent decision clusters | **NOT ACHIEVABLE** — hard ceiling **3** |
-| ≥ 2 observations per cluster | **REPLICATION-DEPTH OBJECTIVE — NOT CURRENTLY ACHIEVED UNIVERSALLY** (two of the three clusters are singletons); **potentially achievable** through carefully reviewed replication (`TD-B34`) |
+| ≥ 2 observations per cluster | **REPLICATION-DEPTH OBJECTIVE — NOT CURRENTLY ACHIEVED UNIVERSALLY** (one of the three clusters is still a singleton; *as recorded then*, two were); **potentially achievable** through carefully reviewed replication (`TD-B34`) |
 | ≥ 8 E1-scored tasks | **not a scientifically meaningful standalone target** |
 
 **Task count must not substitute for decision diversity or independence.** A task
@@ -455,7 +473,7 @@ to expand the substrate, and nothing here authorizes one.
   reserve candidate, and the legacy `infra → core` / `AR-DEP-004` row is
   **permanently barred** from any E1 denominator because that relationship is not
   task-creatable here. **No reserve was activated**, the active counts in §3 are
-  unchanged, and the reserve denominator is **0**.
+  unchanged **by that reconciliation**, and the reserve denominator is **0**.
 - **`TD-B40` is RESOLVED and CLOSED, and closure confers nothing.** Its two
   residuals — (A) inactive-reserve re-authoring/reconciliation and (B) independent
   re-approval of the complete migration — are **both complete**: (A) was performed
@@ -478,8 +496,12 @@ to expand the substrate, and nothing here authorizes one.
   `features → infra` is strictly forced in the retained instruments; `features →
   api` is natural-path / opportunity-creating. The asymmetry is a
   **construct-validity limitation**, changes no count in §3, and adds no cluster.
-- **The Priority-A replication candidate is pinned before authoring, and is not
-  authored** ([`CAND_A1_PREAUTHORING_DECISION.md`](CAND_A1_PREAUTHORING_DECISION.md)).
-  `DC-FEATURES-API-AR-DEP-006` therefore stays at **one** active observation in §3
-  until a body is authored, independently reviewed, privately packaged and admitted
-  by eligibility governance.
+- **The Priority-A replication candidate is authored and its opportunity is
+  admitted** ([`CAND_A1_PREAUTHORING_DECISION.md`](CAND_A1_PREAUTHORING_DECISION.md)).
+  *As recorded then*, the candidate was pinned before authoring and not authored, so
+  `DC-FEATURES-API-AR-DEP-006` stayed at **one** active observation in §3 until a
+  body was authored, independently reviewed, privately packaged and admitted by
+  eligibility governance. **All four of those steps have since occurred**, so §3
+  records **two** observations in that cluster. Admission moved a **depth** and the
+  active opportunity count and nothing else: it froze no manifest, passed no gate,
+  made nothing run-eligible and produced no result.

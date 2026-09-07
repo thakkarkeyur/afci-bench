@@ -24,15 +24,23 @@ WHAT MUST BE TRUE
 * every registry that must list every public task carries exactly one consistent
   `PT08` row.
 
+WHAT HAS SINCE BECOME TRUE
+--------------------------
+`PT08`'s public authoring has been **independently reviewed and approved**, its
+**private evaluator package authored** and **approved on a discharged conditional
+independent review**, and its architecture opportunity **admitted** by a separately
+recorded governance step. So the active accounting is **6** opportunities over
+**3** decision clusters at depths **3 / 2 / 1**, and the priority-A cluster carries
+**two** observations — which stay **pseudo-replicates** of one shared decision.
+
 WHAT MUST STAY FALSE
 --------------------
-`PT08` is **not** frozen, **not** run-ready, **not** independently reviewed, **not**
-privately evaluator-approved and **not** active in any E1 denominator; it has **no**
-private evaluator package, **no** manifest and **no** architecture opportunity; the
-active private state stays **5** opportunities over **3** decision clusters at
-depths **3 / 1 / 1**; `TD-B34` stays open and blocking; `G1` is not passed; nothing
-is frozen; and the protocol is still PRE-FREEZE. The nine bodies authored before it
-are byte-identical.
+`PT08` is **not** frozen, **not** run-ready and **not** E1 run-eligible; its
+manifest is `status=review`; its hidden functional acceptance is
+**`draft_unvalidated`** and has never been runtime-validated; `TD-B34` stays open
+and blocking; priority B is **not started**; `G1` is not passed; **no** result,
+violation value or power value exists; and the protocol is still PRE-FREEZE. The
+nine bodies authored before it are byte-identical.
 
 No `PT08` implementation is written or tested here, and no hidden acceptance is
 implemented. Pure file and ``git`` inspection; no model is invoked and no benchmark
@@ -115,10 +123,15 @@ TASK_REGISTRIES = (
     RESET_MATRIX,
 )
 
-#: The active private state that authoring a public body must not move.
-ACTIVE_OPPORTUNITIES = 5
+#: The CURRENT active private state, after PT08's opportunity was admitted.
+ACTIVE_OPPORTUNITIES = 6
 ACTIVE_CLUSTERS = 3
-CLUSTER_DEPTHS = "3 / 1 / 1"
+CLUSTER_DEPTHS = "3 / 2 / 1"
+
+#: The state as recorded before that admission, kept as its own constant so the
+#: preserved history can be asserted without any test reading it as current.
+PRE_ADMISSION_OPPORTUNITIES = 5
+PRE_ADMISSION_CLUSTER_DEPTHS = "3 / 1 / 1"
 
 
 def _text(path: Path) -> str:
@@ -276,33 +289,53 @@ def test_pt08_is_not_frozen_and_pins_no_manifest_hash():
     matrix = _by_id(MATRIX_PATH)["PT08"]
     assert matrix["task_status"] == "candidate"
     assert _by_id(INDEX_PATH)["PT08"]["task_status"] == "candidate"
-    assert matrix["hidden_evaluator_manifest_hash"] == "not_yet_authored", (
-        "PT08 has no private package, so its manifest placeholder must say so; a "
-        "real hash would publish private content and imply a frozen package"
+    assert matrix["hidden_evaluator_manifest_hash"] == "stored_in_private_evaluator_repo", (
+        "PT08's private package now exists, so its rows carry the withheld "
+        "placeholder every other packaged candidate carries; a real hash would "
+        "publish private content and would also imply a frozen package"
     )
     assert not re.fullmatch(r"[0-9a-f]{16,}", matrix["hidden_evaluator_manifest_hash"])
     for path in (ACCEPTANCE_MATRIX, LAYER_MATRIX, RULE_MATRIX):
         row = _by_id(path)["PT08"]
         assert row["status"] == "candidate-not-frozen", path.name
-        assert "not_yet_authored" in ",".join(row.values()), path.name
+        values = ",".join(row.values())
+        assert "stored_in_private_evaluator_repo" in values, path.name
+        assert "not_yet_authored" not in values, (
+            f"{path.name}: PT08's private package exists; 'not_yet_authored' is stale"
+        )
 
 
-def test_pt08_is_not_presented_as_run_ready_reviewed_or_privately_approved():
-    """Four separate over-claims, each excluded from the public rows and prose."""
+def test_pt08_is_not_presented_as_run_ready_frozen_or_validated():
+    """The over-claims that stay false, each excluded from the public rows.
+
+    Two of the four this once policed — "no private package" and "review pending" —
+    have become true statements about the past and false ones about the present, so
+    they are asserted absent here and their history is checked in
+    :func:`test_the_public_record_keeps_the_pre_admission_reading_as_history`.
+    """
     reason = _by_id(MATRIX_PATH)["PT08"]["e1_eligibility_reason"].lower()
     assert "not run-ready" in reason
-    assert "public-authoring review of this body is pending" in reason
-    assert "no private evaluator package and no manifest exists for it" in reason
+    assert "not frozen" in reason
+    assert "draft_unvalidated" in reason
     assert "gate g1 is not passed" in reason
     assert "records intent only and never a demonstrated denominator" in reason
-    for overclaim in ("independently reviewed and approved", "run-ready:",
-                      "frozen opportunity set is demonstrated"):
+    for overclaim in ("run-ready:", "frozen opportunity set is demonstrated",
+                      "hidden acceptance is validated", "g1 is passed"):
         assert overclaim not in reason, f"PT08's reason over-claims: {overclaim!r}"
+    for stale in ("public-authoring review of this body is pending",
+                  "no private evaluator package and no manifest exists for it"):
+        assert stale not in reason, f"PT08's reason is stale: {stale!r}"
 
 
-def test_no_public_artifact_claims_a_private_package_for_pt08():
-    """PART Q.8 / Q.28: the private side is absent, and no row may imply otherwise."""
-    offenders = []
+def test_the_public_rows_record_pt08_like_every_other_packaged_candidate():
+    """PART Q.8 / Q.28, inverted: the package exists, so the rows must withhold.
+
+    While no package existed, `not_yet_authored` was the honest placeholder and
+    `stored_in_private_evaluator_repo` would have been a false claim. The package
+    exists now, so the honest placeholder is the withheld one — and a *real* hash
+    still is not, because that would publish private content and imply a freeze.
+    """
+    checked = 0
     for path in sorted(DOCS_V2.glob("*.csv")) + [INDEX_PATH]:
         rows = _rows(path)
         if not rows or "task_id" not in rows[0]:
@@ -311,16 +344,27 @@ def test_no_public_artifact_claims_a_private_package_for_pt08():
             if set(re.findall(r"\b(?:PT|PR)\d{2}\b", row["task_id"])) != {"PT08"}:
                 continue
             joined = ",".join(v or "" for v in row.values())
-            if "stored_in_private_evaluator_repo" in joined:
-                offenders.append(f"{path.name}: {joined[:160]}")
-    assert offenders == [], (
-        "a public row claims PT08's answers are stored in the private evaluator "
-        f"repository, but no such package exists: {offenders}"
-    )
+            assert "not_yet_authored" not in joined, (
+                f"{path.name}: PT08's package exists; 'not_yet_authored' is stale: "
+                f"{joined[:160]}"
+            )
+            checked += 1
+    assert checked >= 4, f"only {checked} PT08-only rows were checked"
+
     record = _flat(RECORD_PATH)
-    assert "private evaluator package | absent" in record
-    assert "private manifest | absent" in record
-    assert "private architecture opportunity | absent" in record
+    assert "private evaluator package | authored" in record
+    assert "private manifest | authored, status=review, not frozen" in record
+    assert "private architecture opportunity | authored and admitted" in record
+
+
+def test_the_public_record_keeps_the_pre_admission_reading_as_history():
+    """Nothing superseded is erased; it is marked."""
+    record = _flat(RECORD_PATH)
+    assert record.count("as recorded then: absent") == 3, (
+        "each of the three private-side rows must keep its pre-admission reading"
+    )
+    assert "as recorded then: pending" in record
+    assert "as recorded then: none" in record
 
 
 def test_pt08_is_not_publicly_bound_to_a_rule_or_an_opportunity():
@@ -724,16 +768,24 @@ def test_the_authoring_report_inventory_carries_pt08():
     ), "the public task inventory must carry a PT08 row"
 
 
-def test_pt08_is_listed_as_an_intended_scored_candidate_with_its_caveats():
+def test_pt08_is_listed_as_a_scored_candidate_with_its_caveats():
     trace = {r["oracle_id"]: r for r in _rows(ORACLE_TRACE)}
     assert "PT08" in trace["OT-AC-VIOL"]["task_id"]
     private = trace["OT-TASKS-PRIVATE-SCORED"]
     assert "PT08" in private["task_id"]
-    assert "not_yet_authored for PT08" in private["rule_or_criterion_id"]
+    assert "stored_in_private_evaluator_repo" in private["rule_or_criterion_id"]
+    assert "not_yet_authored" not in private["rule_or_criterion_id"], (
+        "PT08's private package exists; the not-yet-authored mapping is stale"
+    )
     notes = private["notes"].lower()
-    assert "no private evaluator package of its own yet" in notes
-    assert "adds no active observation to any decision cluster" in notes
-    assert "records intent only" in notes
+    assert "no private evaluator package of its own yet" not in notes
+    assert "adds no active observation to any decision cluster" not in notes
+    # what the row must say instead: one applicable opportunity, and no run
+    assert "one active applicable opportunity" in notes
+    assert "never a violation a success or a result" in notes
+    assert "status=review and not frozen" in notes
+    assert "draft_unvalidated" in notes
+    assert "gate g1 is not passed" in notes
 
 
 def test_the_new_error_value_is_recorded_in_the_binding_vocabulary():
@@ -752,7 +804,10 @@ def test_the_record_maps_cand_a1_to_pt08_only_at_public_authoring():
     flat = _flat(RECORD_PATH)
     assert "cand-a1 → pt08 occurs only at public authoring" in flat
     assert "public task identifier | pt08" in flat
-    assert "independent public-authoring review of pt08 | pending" in flat
+    assert "independent public-authoring review of pt08 | passed" in flat
+    assert "as recorded then: pending" in flat, (
+        "the pending state must survive as history, not be erased"
+    )
     policy = _flat(POLICY_PATH)
     assert "the identifier was assigned at public authoring and nowhere earlier" in policy
     report = _flat(REPORT_PATH)
@@ -760,35 +815,62 @@ def test_the_record_maps_cand_a1_to_pt08_only_at_public_authoring():
     assert "the next unused primary identifier under that convention is pt08" in report
 
 
-def test_the_active_private_state_expectations_did_not_move():
-    """PART Q.29: 5 / 3 / 3-1-1, as recorded in the authoritative public places."""
+def test_the_active_private_state_is_the_admitted_one():
+    """PART Q.29, after admission: 6 / 3 / 3-2-1 in the authoritative public places."""
     feasibility = _flat(FEASIBILITY_PATH)
     assert f"active e1 opportunities: {ACTIVE_OPPORTUNITIES}" in feasibility
     assert f"decision clusters: {ACTIVE_CLUSTERS}" in feasibility
-    assert "it adds no active observation" in feasibility
-    assert "the priority-a row still reads 1" in feasibility
+    assert "the priority-a row reads 2" in feasibility
+    assert f"active e1 opportunities: {PRE_ADMISSION_OPPORTUNITIES}" not in feasibility
+    assert "the priority-a row still reads 1" not in feasibility, (
+        "the pre-admission depth must not be restated as current"
+    )
     record = _flat(RECORD_PATH)
-    assert f"active e1 opportunities remain {ACTIVE_OPPORTUNITIES}" in record
-    assert f"decision clusters remain {ACTIVE_CLUSTERS}" in record
-    assert f"cluster observation depths remain {CLUSTER_DEPTHS}" in record
-    assert "an authored public body is not an observation" in record
+    assert f"active `e1` opportunities are {ACTIVE_OPPORTUNITIES}".replace("`", "") in record
+    assert f"cluster observation depths are {CLUSTER_DEPTHS}" in record
     report = _flat(REPORT_PATH)
-    assert f"the active set is unchanged at {ACTIVE_OPPORTUNITIES} opportunities" in report
+    assert (
+        f"{ACTIVE_OPPORTUNITIES} active e1 opportunities over 3 decision clusters "
+        f"at depths {CLUSTER_DEPTHS}" in report
+    )
+
+
+def test_the_pre_admission_state_survives_as_marked_history():
+    """PART I: nothing is rewritten. Each superseded count keeps its own marker."""
+    for path, needle in (
+        (FEASIBILITY_PATH, "was correctly said to add no active observation"),
+        (FEASIBILITY_PATH, "the priority-a row read 1"),
+        (RECORD_PATH, f"active e1 opportunities remain {PRE_ADMISSION_OPPORTUNITIES}"),
+        (RECORD_PATH,
+         f"cluster observation depths remain {PRE_ADMISSION_CLUSTER_DEPTHS}"),
+        (RECORD_PATH, "an authored public body is not an observation"),
+        (REPORT_PATH,
+         f"the active set is unchanged at {PRE_ADMISSION_OPPORTUNITIES} opportunities"),
+    ):
+        flat = _flat(path)
+        assert needle in flat, f"{path.name}: superseded statement {needle!r} was erased"
+    for path in (FEASIBILITY_PATH, RECORD_PATH, REPORT_PATH):
+        assert "as recorded then" in _flat(path), (
+            f"{path.name} carries superseded statements with no historical marker"
+        )
 
 
 def test_td_b34_remains_open_and_blocking():
     row = _by_id(DECISIONS_CSV, key="decision_id")["TD-B34"]
     assert row["status"].strip().lower() == "open", (
-        "authoring a public replication body does not resolve TD-B34"
+        "admitting a replication opportunity does not resolve TD-B34"
     )
     assert row["blocking"] == "yes"
     text = row["decision"].lower()
     assert "publicly authored as the task body pt08" in text
-    assert "the independent public-authoring review of pt08 is pending" in text
+    assert "the independent public-authoring review of pt08 has since passed" in text
+    assert "the independent public-authoring review of pt08 is pending" not in text
     assert "td-b34 therefore remains open and blocking" in text
+    assert "priority b is not started" in text
     report = _flat(REPORT_PATH)
     assert "td-b34 is not resolved by this package" in report
     assert "replication depth is created by an active observation" in report
+    assert "td-b34 is still not resolved" in report
 
 
 def test_gate_g1_is_not_passed_and_no_gate_is():

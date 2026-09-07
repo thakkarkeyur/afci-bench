@@ -62,19 +62,25 @@ What `TD-B34` now requires before Stage 0 is **adequate replication depth and
 balance over the complete demonstrated task-creatable decision space**:
 
 - **all three demonstrated clusters stay represented**;
-- **the two singleton clusters** — `DC-FEATURES-API-AR-DEP-006` (n = 1) and
-  `DC-API-CORE-AR-DEP-005` (n = 1) — receive **independent functional instruments
-  where scientifically feasible**, priority **A** then **B**;
-  `DC-FEATURES-INFRA-AR-DEP-006` (n = 3) is **not** the immediate priority;
+- **the under-replicated clusters** — `DC-FEATURES-API-AR-DEP-006` (priority **A**)
+  and `DC-API-CORE-AR-DEP-005` (priority **B**) — receive **independent functional
+  instruments where scientifically feasible**;
+  `DC-FEATURES-INFRA-AR-DEP-006` (n = 3) is **not** the immediate priority. *As
+  recorded then*, both were **singletons at n = 1**; **priority A has since been
+  replicated**, so `DC-FEATURES-API-AR-DEP-006` carries **n = 2**, while
+  `DC-API-CORE-AR-DEP-005` **remains a singleton at n = 1**;
 - **no impossible breadth is demanded**: no additional leaf rule, source scope or
   cluster beyond the ceiling is required, and no artificial task may be authored
   merely to hit a mechanically implemented leaf;
 - **replicate candidates are not assumed to exist.** It is **not** asserted that a
-  suitable replication task exists for either singleton cluster. Each candidate
-  requires its **own separate pre-authoring review** against the eleven authoring
-  requirements and §8a of
-  [`TASK_AUTHORING_POLICY.md`](TASK_AUTHORING_POLICY.md) before it may be written;
-  that review has **not** happened;
+  suitable replication task exists for the remaining singleton cluster. Each
+  candidate requires its **own separate pre-authoring review** against the eleven
+  authoring requirements and §8a of
+  [`TASK_AUTHORING_POLICY.md`](TASK_AUTHORING_POLICY.md) before it may be written.
+  *As recorded then*, no such review had happened for either cluster; the
+  **priority-A review has since happened** and its instrument is admitted, which
+  did **not** close `TD-B34`, and for **priority B that review has still not
+  happened** — **priority B is not started**;
 - the residual breadth ceiling is carried as a **construct-validity limitation** of
   the study, not as a Stage-0 deliverable.
 
@@ -121,8 +127,11 @@ to inform.
   runner-time worktree enforcement, a fresh process, a clean context audit,
   governed isolation and identity, Study-Lead model selection with `Q1`/`Q8`
   validation, `PT08` hidden-acceptance authoring, validation and independent
-  review, `PT08`'s manifest freeze and the public `PT08-PUB-P2-2`
-  synchronization that must precede it are **all still required**.
+  review and `PT08`'s manifest freeze are **all still required**. The public
+  `PT08-PUB-P2-2` accounting synchronization that must precede that freeze is the
+  one item on this list that is **complete and CLOSED**
+  ([`PT08_PUBLIC_ACCOUNTING_SYNCHRONIZATION.md`](PT08_PUBLIC_ACCOUNTING_SYNCHRONIZATION.md));
+  its closure discharges **nothing else on this list** and confers no readiness.
 - **Its sample size is undecided** (Study-Lead decision pending) and **no model
   is selected** (`primary_model` stays null; `TD-B03` open).
 
@@ -195,9 +204,13 @@ current architecture task set**, and **no final power value is frozen**:
 - **Task count is not the independent architecture-decision count.** The
   confirmatory unit is the **distinct dependency decision**.
 - After `PT05`'s pre-run reclassification to `functional-only` (`TD-B35`) and the
-  authoring of `PT07`, the E1-scored candidates are `PT01`–`PT04` and `PT07`, and
-  their adjudicated active opportunities number **5** across **3** decision
-  clusters, **two of them observed once each**. **The remedy is replication depth,
+  authoring of `PT07` and then `PT08`, the E1-scored candidates are `PT01`–`PT04`,
+  `PT07` and `PT08`, and their adjudicated active opportunities number **6** across
+  **3** decision clusters, **one of them observed once**. *As recorded then*,
+  before `PT08`'s opportunity was admitted the count was **5** across **3** decision
+  clusters with **two** observed once each; admission added **replication depth**
+  to one cluster, created **no new cluster**, and produced **no** result and **no**
+  power value. **The remedy is replication depth,
   not further breadth**: the substrate's task-creatable ceiling is **3 clusters /
   2 leaf rules / 2 source scopes / 3 forbidden targets**, and all three clusters
   are already represented (re-scoped **`DECISION B`**, `TD-B34`;

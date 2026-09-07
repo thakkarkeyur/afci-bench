@@ -176,8 +176,10 @@ hash, manifest, endpoint or protocol was frozen or edited by that decision**, an
   `experiments/v2/tasks/public/TASK_INDEX.csv`, field
   `e1_analysis_eligibility`): **`PT01`–`PT04` `scored`** (joined later by
   **`PT07`** and then **`PT08`**, both authored under `DECISION B` — see below;
-  `PT08`'s value records **intent only**, with its public-authoring review pending
-  and no private evaluator package), **`PT05` and `PT06`
+  `PT08`'s value still records **intent**, never a demonstrated denominator: its
+  public-authoring review has passed and its private evaluator package is authored
+  and approved, but its manifest is `status=review`, `G1` is not passed and it is
+  not run-eligible), **`PT05` and `PT06`
   `functional-only`** (valid primary functional candidates, structurally excluded
   from E1, still contributing to hidden functional acceptance, cost,
   reset-related functional outcomes and exploratory analyses — **not** failed
@@ -265,7 +267,7 @@ authored **no** task, ran **no** benchmark, and froze **nothing**.
   > binding constraint is **substrate feasibility**, not checker coverage, and
   > `AR-DEP-002`/`003`/`004` are already implemented and already mechanically
   > detectable while being not task-creatable. `TD-B34` is now gated on
-  > **replication depth** inside the two singleton clusters
+  > **replication depth** inside the under-replicated clusters
   > (`DC-FEATURES-API-AR-DEP-006`, then `DC-API-CORE-AR-DEP-005`;
   > `DC-FEATURES-INFRA-AR-DEP-006` is **not** the immediate priority), and the
   > ceiling is recorded as a **construct-validity limitation** of the study rather
@@ -299,8 +301,8 @@ authored **no** task, ran **no** benchmark, and froze **nothing**.
   > "Additional **distinct decisions**" was the breadth objective, and it is
   > **withdrawn**: all three task-creatable clusters are already represented, so no
   > additional distinct decision is available to author. The power simulation is
-  > now gated on the **re-scoped** `TD-B34` (replication depth inside the singleton
-  > clusters) plus `TD-B37`'s other three preconditions and the residual
+  > now gated on the **re-scoped** `TD-B34` (replication depth inside the
+  > under-replicated clusters) plus `TD-B37`'s other three preconditions and the residual
   > small-cluster specification `TD-B41`. What has **not** changed: clustering is
   > real, `decision_cluster_id` is mandatory, **no power simulation has been run**
   > and **no power value is frozen**
@@ -509,8 +511,10 @@ canonical substrate is still `630d3180` / `0198d76c…`, and the protocol remain
   that both exist, and **neither is a freeze**.
 - **The private reserve rows are reconciled, and no reserve was activated**
   (`TD-B40` residual (A)). `PR01`/`PR02` stay `inactive-reserve` with a **zero**
-  reserve denominator; the **active** set is unchanged at **5** opportunities over
-  **3** clusters. Four of their five legacy draft rows were **demoted** to
+  reserve denominator; *as recorded then*, the **active** set is unchanged at **5**
+  opportunities over **3** clusters by that reconciliation, and it has since moved
+  to **6** at depths **3 / 2 / 1** on `PT08`'s separate admission, which `TD-B40`
+  neither caused nor governs. Four of their five legacy draft rows were **demoted** to
   superseded, non-scoring records and one survives as a task-created reserve
   candidate. The legacy `infra → core` / `AR-DEP-004` reserve row is **permanently
   barred** from any E1 denominator because that relationship is **not
@@ -546,12 +550,16 @@ substrate is still `630d3180` / `0198d76c…` and the protocol remains
 - **The substrate has a hard ceiling of 3 decision clusters / 2 leaf rules / 2
   source scopes / 3 forbidden targets**, and **all three achievable clusters are
   already represented** — `features → infra` (3 observations), `features → api`
-  (1) and `api → core` (1), from **5** adjudicated active E1 opportunities. The
-  remaining deficiency is **replication depth and balance**, not breadth.
+  (2) and `api → core` (1), from **6** adjudicated active E1 opportunities. *As
+  recorded then*, `features → api` carried **1** observation out of **5** active
+  opportunities, before `PT08`'s separately reviewed and separately admitted
+  instrument added a second. The remaining deficiency is **replication depth and
+  balance**, not breadth.
 - **`TD-B34` is re-scoped, not resolved.** It now governs adequate coverage of the
   **complete task-creatable decision space**: retain all three clusters, add
-  independent instruments to the two **singletons** where scientifically feasible
-  (priority **A** `features → api`, then **B** `api → core`), author **no**
+  independent instruments to the under-replicated clusters where scientifically
+  feasible (priority **A** `features → api`, since replicated; then **B**
+  `api → core`, still a **singleton** and **not started**), author **no**
   artificial task merely to reach a mechanically implemented leaf, record the
   ceiling as a **construct-validity limitation**, and defer broader generalisation
   to a declared substrate redesign. **No new task body was specified** and it is
@@ -652,15 +660,17 @@ simulation, and froze **nothing**. The canonical substrate is still `630d3180` /
   are recorded before any prose exists, and the legal implementation families
   `ALT-A`/`ALT-C`/`ALT-F`/`ALT-H`/`ALT-I`/`ALT-K` are **pre-declared** so the hidden
   scorer cannot mistake a legal solution for a violation.
-- **Nothing in the experimental inventory moved.** Active E1 opportunities remain
-  **5**, decision clusters remain **3**, cluster depths remain **3 / 1 / 1**, and
-  `DC-FEATURES-API-AR-DEP-006` remains at **one** observation — it reaches two only
-  after the public task is authored, an independent public-authoring review passes, a
-  private package is authored and validated, and eligibility governance permits
-  inclusion. *As recorded then*, **no `PT08` existed**; the first of those four
-  conditions has since been met and `PT08` is now authored in public — see the
-  `PT08` section below. **Every count in this bullet is unchanged by that**, because
-  an authored public body carries no private opportunity and is not an observation.
+- **Nothing in the experimental inventory moved *at that time*.** *As recorded
+  then*, active E1 opportunities remained **5**, decision clusters **3**, cluster
+  depths **3 / 1 / 1**, and `DC-FEATURES-API-AR-DEP-006` remained at **one**
+  observation — it reaches two only after the public task is authored, an
+  independent public-authoring review passes, a private package is authored and
+  validated, and eligibility governance permits inclusion; **no `PT08` existed**,
+  and an authored public body alone would have carried no private opportunity and
+  been no observation. **All four conditions have since been met**, in that order —
+  see the `PT08` sections below. **Current post-admission state:** active E1
+  opportunities **6**, decision clusters **3**, cluster depths **3 / 2 / 1**, and
+  `DC-FEATURES-API-AR-DEP-006` at **two** observations.
 - **`CAND-A1` is not finally approved.** Closing the four P1 findings is
   remediation, not approval: *as recorded then*, **one focused independent
   remediation re-review was still required** before authoring could begin, and
@@ -715,17 +725,26 @@ simulation; and froze **nothing**. The canonical substrate is still `630d3180` /
   silently decided: exponent, hexadecimal, leading `+`, `.5`, `5.`, `-0`,
   whitespace, digit grouping, a value-less key and bracketed keys all state **no**
   required answer, so no future hidden test may assert one.
-- **`PT08` contributes to no endpoint yet, and to no cluster depth.** Its
-  **independent public-authoring review is pending**; it has **no** private
-  evaluator package, **no** manifest and **no** opportunity; gate **`G1`** is
-  **not passed**; it is **not** frozen, **not** run-ready and **not** independently
-  reviewed; and its `scored` eligibility records **intent**, never a demonstrated
-  denominator. Active E1 opportunities remain **5**, decision clusters remain
-  **3**, and cluster depths remain **3 / 1 / 1**.
-- **`TD-B34` stays open and blocking.** An authored public body is not an active
-  observation, so the priority-A cluster still stands at **one**; **priority B**
-  still has had **no** candidate review; **no power simulation may run yet**
-  (`TD-B37`); and gates **G1/G2/G6** remain **not passed**. No reserve was
+- **`PT08` contributed to no endpoint and to no cluster depth *at authoring*.**
+  *As recorded then*, its **independent public-authoring review was pending**; it
+  had **no** private evaluator package, **no** manifest and **no** opportunity;
+  active E1 opportunities remained **5**, decision clusters **3**, and cluster
+  depths **3 / 1 / 1**. **Those facts have since been superseded, in order** — the
+  public-authoring review **passed**, a private evaluator package was **authored**
+  and **approved on a discharged conditional independent review**, and a
+  **separately recorded governance admission step** admitted its architecture
+  opportunity. **Current post-admission state:** active E1 opportunities **6**,
+  decision clusters **3**, cluster depths **3 / 2 / 1**. **Unchanged either way:**
+  gate **`G1`** is **not passed**; `PT08` is **not** frozen and **not** run-ready;
+  its manifest is `status=review`; its hidden functional acceptance is still
+  **`draft_unvalidated`**; **no result exists**; and its `scored` eligibility
+  records **intent**, never a demonstrated denominator.
+- **`TD-B34` stays open and blocking.** The priority-A cluster now stands at
+  **two** — replication depth over **one** shared decision, with `PT04` and `PT08`
+  remaining **pseudo-replicates** and **no new cluster** created — but **priority
+  B** still has had **no** candidate review and **is not started**, so the
+  re-scoped replication-depth objective is **not** satisfied. **No power simulation
+  may run yet** (`TD-B37`); gates **G1/G2/G6** remain **not passed**. No reserve was
   activated and no blocker was opened or closed.
 
 ### Model-visible worktree isolation

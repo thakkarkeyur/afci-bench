@@ -21,16 +21,25 @@ This module makes the repaired state load-bearing in the *public* record:
 
 AND IN THE OTHER DIRECTION
 --------------------------
-`CAND-A1` has since been **publicly authored** as ``PT08``, and this module now
-guards the *bounds* of that transition rather than its absence: the identifier was
-assigned **only at public authoring**, the pre-authoring history is preserved
-rather than rewritten, and everything public authoring did **not** confer stays
-denied — **no** private evaluator package, **no** manifest, **no** architecture
-opportunity, **no** denominator row, **no** change to the active counts (**5**
-opportunities over **3** decision clusters at depths **3 / 1 / 1**), and
-``DC-FEATURES-API-AR-DEP-006`` still at **one active** observation. The independent
-public-authoring review of the authored body is **pending**. Nothing is frozen and
-no gate is passed.
+`CAND-A1` has since been **publicly authored** as ``PT08``, its public authoring
+independently reviewed and approved, its private evaluator package authored and
+approved on a discharged conditional independent review, and its architecture
+opportunity **admitted** by a separately recorded governance step. This module now
+guards the *bounds* of that lifecycle rather than its absence:
+
+* the identifier was assigned **only at public authoring**;
+* the pre-authoring history is preserved rather than rewritten — every superseded
+  count and prohibition survives under an explicit *as recorded then* / *superseded
+  on this point only* framing, so the record never reads as though `PT08` was
+  already active when it was written;
+* the active accounting is the **admitted** one: **6** opportunities over **3**
+  decision clusters at depths **3 / 2 / 1**, with
+  ``DC-FEATURES-API-AR-DEP-006`` at **two** observations that stay
+  **pseudo-replicates**;
+* and everything admission did **not** confer stays denied — nothing is frozen,
+  ``G1`` is not passed, ``PT08`` is not run-eligible, its hidden functional
+  acceptance is ``draft_unvalidated``, ``TD-B34`` stays open and blocking, priority
+  B is not started, and **no** result or power value exists.
 
 HOW IT ASSERTS
 --------------
@@ -68,10 +77,16 @@ FEATURES_INFRA = "DC-FEATURES-INFRA-AR-DEP-006"
 FEATURES_API = "DC-FEATURES-API-AR-DEP-006"
 API_CORE = "DC-API-CORE-AR-DEP-005"
 
-#: The active cluster occupancy this package must not move.
-CLUSTER_DEPTHS = {FEATURES_INFRA: 3, FEATURES_API: 1, API_CORE: 1}
-ACTIVE_OPPORTUNITIES = 5
+#: The CURRENT active cluster occupancy, after PT08's opportunity was admitted.
+CLUSTER_DEPTHS = {FEATURES_INFRA: 3, FEATURES_API: 2, API_CORE: 1}
+ACTIVE_OPPORTUNITIES = 6
 ACTIVE_CLUSTERS = 3
+
+#: The occupancy AS RECORDED BEFORE that admission. Kept as its own constant so the
+#: pre-admission reading can be asserted to survive as history without any test
+#: being able to read it as the current state.
+PRE_ADMISSION_CLUSTER_DEPTHS = {FEATURES_INFRA: 3, FEATURES_API: 1, API_CORE: 1}
+PRE_ADMISSION_OPPORTUNITIES = 5
 
 #: The `P-4` subsection heading, used to scope every wire-determinacy assertion to
 #: that pin's own tables rather than to the whole pins section.
@@ -282,26 +297,58 @@ def test_the_pt08_identifier_was_assigned_only_at_public_authoring():
 
 
 def test_the_candidate_is_still_not_counted_as_active_anywhere():
-    """PART L.4 / L.17: no private package, no denominator row, no active count."""
+    """PART L.4 / L.17, after admission: the history survives, the bounds hold.
+
+    Every clause this test once read as a *current* denial is now recorded history.
+    The record must keep it as history — the pre-authoring prohibitions are the
+    thing this file exists to protect — while stating the admitted state next to
+    it. So each superseded claim is asserted to be present AND to be marked, and
+    the claims that are still true are asserted straight.
+    """
     body = _section(RECORD_PATH, "2. candidate identity")
     assert "no private evaluator package" in body
     assert "no denominator row" in body
     assert "no active opportunity" in body
+    assert "as recorded then" in body, (
+        "the superseded private-side denials must be marked as history, not deleted"
+    )
+    assert "superseded on those four points only" in body
     assert "records intent only" in body, (
         "the public eligibility must be recorded as intent, never as a denominator"
     )
 
-    # the record's own prohibition list says it again, independently
+    # the record's own prohibition list keeps every superseded prohibition verbatim,
+    # each carrying its own explicit supersession marker
     prohibitions = _section(RECORD_PATH, "9. prohibitions attaching to this record")
-    assert "cand-a1 enters no e1 denominator row" in prohibitions
-    assert "cand-a1 is not an active opportunity and is not counted as active" in prohibitions
+    for superseded in (
+        "cand-a1 has no private evaluator package",
+        "cand-a1 has no manifest",
+        "cand-a1 enters no e1 denominator row",
+        "cand-a1 is not an active opportunity and is not counted as active",
+    ):
+        assert superseded in prohibitions, f"the prohibition {superseded!r} was deleted"
+    assert prohibitions.count("as originally recorded") >= 5
+    assert prohibitions.count("superseded on this point only") >= 5
 
-    # the lifecycle table denies every private-side and gate-side claim
-    for fact, expected in (("private evaluator package", "absent"),
-                           ("private manifest", "absent"),
-                           ("private architecture opportunity", "absent"),
-                           ("frozen", "no"),
+    # the lifecycle table records the admitted state, and keeps the pre-admission
+    # reading in the same cell
+    for fact, expected, historical in (
+        ("private evaluator package", "authored", "as recorded then: absent"),
+        ("private manifest", "status=review, not frozen", "as recorded then: absent"),
+        ("private architecture opportunity", "authored and admitted",
+         "as recorded then: absent"),
+    ):
+        cells = _row_by_first_cell(RECORD_PATH, "2a. lifecycle transition", fact)
+        assert expected in cells[1], f"{fact!r} must record {expected!r}, got {cells[1]!r}"
+        assert historical in cells[1], (
+            f"{fact!r} must keep its pre-admission reading, got {cells[1]!r}"
+        )
+
+    # and nothing admission does not confer has moved
+    for fact, expected in (("frozen", "no"),
                            ("benchmark run", "no"),
+                           ("e1 run eligible", "no"),
+                           ("hidden functional acceptance", "draft_unvalidated"),
                            ("result / power value", "none")):
         cells = _row_by_first_cell(RECORD_PATH, "2a. lifecycle transition", fact)
         assert expected in cells[1], f"{fact!r} must record {expected!r}, got {cells[1]!r}"
@@ -309,7 +356,11 @@ def test_the_candidate_is_still_not_counted_as_active_anywhere():
     assert gate[1] == "not passed"
     active = _row_by_first_cell(RECORD_PATH, "2a. lifecycle transition",
                                 "active e1 contribution")
-    assert "none" in active[1] and "not in any active denominator" in active[1]
+    assert "one applicable opportunity instrument" in active[1]
+    assert "as recorded then: none" in active[1]
+    assert "never a violation, a success or a result" in active[1], (
+        "an instrument count must never be readable as an outcome"
+    )
 
     # no public per-task matrix has acquired a CAND-A1 row, and PT08's OWN per-task
     # row carries no hidden answer: no rule id, no opportunity id, no expected area.
@@ -345,44 +396,62 @@ def test_the_authoring_state_and_review_state_are_recorded_honestly():
     authoring = _row_cells(RECORD_PATH, "2. candidate identity", "authoring state")[1]
     assert "publicly authored" in authoring
     assert "pt08" in authoring
-    assert "public-authoring review pending" in authoring
-    assert "not yet authored" not in authoring, (
-        "the authoring state is stale: the body exists"
-    )
+    assert "public-authoring review passed" in authoring
+    assert "opportunity admitted" in authoring
+    for stale in ("not yet authored", "public-authoring review pending"):
+        assert stale not in authoring, (
+            f"the authoring state is stale: {stale!r} no longer holds"
+        )
     review = _row_cells(RECORD_PATH, "2. candidate identity", "review state")[1]
     assert "decision b" in review
     assert "approved" in review and "public authoring may begin" in review
-    assert "independent public-authoring review of the authored body pending" in review
-    assert "awaiting focused remediation review" not in review, (
-        "the remediation re-review has passed; that state is stale"
+    assert "independent public-authoring review of the authored body passed" in review
+    assert "approved on a discharged conditional independent review" in review, (
+        "the private package's own separate review must be recorded as its own event"
     )
+    for stale in ("awaiting focused remediation review",
+                  "independent public-authoring review of the authored body pending"):
+        assert stale not in review, f"the review state is stale: {stale!r}"
 
 
 # --------------------------------------------------------------------------- #
-# PART L.18 / L.20 — the counts and the cluster depth must not move.
+# PART L.18 / L.20 — the counts and the cluster depth, after admission.
 # --------------------------------------------------------------------------- #
-def test_the_active_set_is_still_five_over_three():
+def test_the_active_set_is_six_over_three():
     """PART L.18: asserted against the feasibility record, not the candidate record."""
     flat = _flat(FEASIBILITY_PATH)
     assert f"active e1 opportunities: {ACTIVE_OPPORTUNITIES}" in flat
     assert f"decision clusters: {ACTIVE_CLUSTERS}" in flat
+    assert f"active e1 opportunities: {PRE_ADMISSION_OPPORTUNITIES}" not in flat, (
+        "the pre-admission opportunity count must not be restated as current"
+    )
 
 
 @pytest.mark.parametrize("cluster,depth", sorted(CLUSTER_DEPTHS.items()))
-def test_the_occupancy_table_still_records_the_pre_authoring_depths(cluster, depth):
+def test_the_occupancy_table_records_the_admitted_depths(cluster, depth):
     """PART L.20: the depth comes from the occupancy row's own final cell."""
     cells = _row_cells(FEASIBILITY_PATH, "3. the demonstrated feasibility ceiling",
                        cluster)
     assert cells[0] == cluster.lower()
     assert cells[-1] == str(depth), (
-        f"{cluster} must still record {depth} active observation(s), not {cells[-1]!r}"
+        f"{cluster} must record {depth} active observation(s), not {cells[-1]!r}"
     )
 
 
-def test_the_record_forbids_pre_counting_the_replication():
-    """PART I: depth 2 needs four named preconditions, none of which has happened."""
+def test_the_record_keeps_the_pre_counting_bar_as_the_bar_that_was_met():
+    """PART I: depth 2 needed four named preconditions, and all four were met.
+
+    The bar itself is the thing worth protecting: it must survive verbatim, marked
+    as history, so no future reader can conclude that depth was ever conceded on a
+    weaker basis than the four preconditions. The section must therefore carry the
+    old counts AS HISTORY, the four preconditions, and the admitted counts.
+    """
     body = _section(RECORD_PATH, "7. what must not move before authoring")
-    assert f"active `e1` opportunities remain {ACTIVE_OPPORTUNITIES}".replace("`", "") in body
+    # the bar, preserved verbatim
+    assert (
+        f"active `e1` opportunities remain {PRE_ADMISSION_OPPORTUNITIES}".replace("`", "")
+        in body
+    )
     assert "decision clusters remain 3" in body
     assert "cluster observation depths remain 3 / 1 / 1" in body
     assert "remains at one observation" in body
@@ -393,6 +462,17 @@ def test_the_record_forbids_pre_counting_the_replication():
                          "validated",
                          "eligibility governance permits inclusion"):
         assert precondition in body, f"missing depth-2 precondition: {precondition!r}"
+    # marked as history, and explicitly met rather than waived
+    assert "as recorded then" in body
+    assert "that bar was never waived; it was met" in body
+    assert "all four conditions have since been satisfied in order" in body
+    # and the admitted counts stated next to it
+    assert f"active `e1` opportunities are {ACTIVE_OPPORTUNITIES}".replace("`", "") in body
+    assert "cluster observation depths are 3 / 2 / 1" in body
+    assert "pseudo-replicates" in body, (
+        "depth 2 must never be readable as two independent architecture constructs"
+    )
+    assert "one applicable opportunity is an instrument count" in body
 
 
 # --------------------------------------------------------------------------- #
@@ -885,8 +965,8 @@ def test_nothing_is_frozen_and_no_result_exists():
     )
 
 
-def test_td_b34_stays_open_and_records_the_authoring_as_progress_only():
-    """Public authoring is progress toward replication depth, not its resolution."""
+def test_td_b34_stays_open_and_records_the_admission_as_progress_only():
+    """Admission is progress toward replication depth, not its resolution."""
     row = _decision("TD-B34")
     assert row["status"].strip().lower() == "open"
     assert row["blocking"] == "yes"
@@ -896,15 +976,44 @@ def test_td_b34_stays_open_and_records_the_authoring_as_progress_only():
     # the authoring fact, and every bound on it, in the same machine-read field
     assert "publicly authored as the task body pt08" in text
     assert "assigned at public authoring and nowhere earlier" in text
-    assert "the independent public-authoring review of pt08 is pending" in text
-    assert "adds no active observation to any decision cluster" in text
+    # the admitted lifecycle, as three separate events in order
+    assert "the independent public-authoring review of pt08 has since passed" in text
+    assert "private evaluator package has since been authored" in text
+    assert "approved on a discharged conditional independent review" in text
+    assert "separately recorded governance admission step" in text
+    # the admitted accounting, and the depth's semantics
+    assert (
+        "the active set now holds 6 opportunities over 3 decision clusters "
+        "at depths 3/2/1" in text
+    )
+    assert "pt08 adds the second active observation" in text
+    assert (
+        "the priority-a cluster dc-features-api-ar-dep-006 stands at two observations"
+        in text
+    )
+    assert "pt04 and pt08 remain pseudo-replicates" in text
+    assert "admission creates no new decision cluster" in text
+    # and everything admission does not confer
     assert "gate g1 is not passed" in text
-    assert "the active set remains 5 opportunities over 3 decision clusters" in text
-    # the superseded pre-authoring claims survive only in the past tense
+    assert "not frozen" in text and "not e1 run-eligible" in text
+    assert "draft_unvalidated" in text
+    # the superseded pre-authoring and post-authoring claims survive as history only
     assert "no pt08 identifier was assigned" in text
     assert "as originally recorded" in text
     assert "no pt08 identifier is assigned" not in text, (
         "the row asserts as current a claim the authoring package superseded"
     )
+    assert (
+        "at that point the active set held 5 opportunities over 3 decision clusters "
+        "at depths 3/1/1" in text
+    ), "the pre-admission counts must survive as explicit history"
+    assert "the active set remains 5 opportunities over 3 decision clusters" not in text, (
+        "the row asserts as current a count the admission superseded"
+    )
+    assert "adds no active observation to any decision cluster" not in text, (
+        "the row asserts as current a denial the admission superseded"
+    )
+    # TD-B34 itself, and priority B, are untouched by all of it
     assert "td-b34 therefore remains open and blocking" in text
     assert "priority b" in text and "no candidate review at all" in text
+    assert "priority b is not started" in text

@@ -575,27 +575,38 @@ def test_no_gate_is_marked_passed():
 # M.24 / M.25 — no accounting moved, and none was synchronised here.
 
 
-def test_the_public_active_accounting_statements_are_untouched():
-    """The public counts stand exactly as they stood; this package moves none.
+def test_the_public_active_accounting_statements_are_untouched_by_this_record():
+    """This record moves no count. The counts it must not move are now 6 / 3 / 3-2-1.
 
-    Counted, not merely located: `CAND-A1` states the active accounting twice —
-    in §2a and again in §7 — and changing one of the two would leave the other
-    to satisfy a presence-only check while the record itself contradicted
-    itself.
+    PT08-PUB-P2-2 synchronised the public accounting to the admitted state; this
+    diagnostic record neither performed nor may pre-empt any of that (see
+    :func:`test_the_diagnostic_record_performs_no_accounting_synchronization`).
+    What this test pins is that the synchronised counts are internally consistent
+    where `CAND-A1` states them twice — in §2a and again in §7 — because changing
+    one of the two would leave the other to satisfy a presence-only check while the
+    record contradicted itself.
     """
     record = _flat(CAND_A1_PATH)
     for statement, occurrences in (
-        ("active e1 opportunities remain 5", 2),
-        ("decision clusters remain 3", 2),
-        ("cluster observation depths remain 3 / 1 / 1", 2),
+        # the admitted counts, stated in §2a and §7
+        ("active e1 opportunities 6", 1),
+        ("active e1 opportunities are 6", 1),
+        ("cluster observation depths 3 / 2 / 1", 1),
+        ("cluster observation depths are 3 / 2 / 1", 1),
+        # the pre-admission counts, preserved as history in both places
+        ("active e1 opportunities remained 5", 1),
+        ("active e1 opportunities remain 5", 1),
+        ("cluster observation depths 3 / 1 / 1", 1),
+        ("cluster observation depths remain 3 / 1 / 1", 1),
     ):
         assert record.count(statement) == occurrences, (
-            f"the public accounting statement {statement!r} now appears "
+            f"the public accounting statement {statement!r} appears "
             f"{record.count(statement)} times, not {occurrences}"
         )
     feasibility = _flat(FEASIBILITY_PATH)
-    assert "active e1 opportunities: 5" in feasibility
+    assert "active e1 opportunities: 6" in feasibility
     assert "decision clusters: 3" in feasibility
+    assert "active e1 opportunities: 5" not in feasibility
 
 
 @pytest.mark.parametrize(
@@ -611,13 +622,30 @@ def test_the_diagnostic_record_performs_no_accounting_synchronization(accounting
     )
 
 
-def test_the_record_says_the_public_synchronization_is_still_required():
+def test_the_record_keeps_its_synchronization_statement_and_marks_it_superseded():
+    """The statement of what THIS package did survives; its status is updated.
+
+    "PT08-PUB-P2-2 remains required and is not performed in this package" is a true
+    statement about this package and must not be rewritten. But a reader consuming
+    current state would read it as an outstanding item, so the record carries an
+    explicit supersession note pointing at the closure record — and that note must
+    not smuggle in an accounting synchronization of its own.
+    """
     section = _section(RECORD_PATH, S_PENDING)
     assert "no accounting synchronization is performed here" in section
     assert (
         "pt08-pub-p2-2 remains required and is not performed in this package" in section
     )
     assert "it must precede pt08's freeze" in section
+    # the supersession note, and the bounds on what closure conferred
+    assert "superseded on this point only, and on no other" in section
+    assert "has since been performed and closed" in section
+    assert "pt08_public_accounting_synchronization.md" in section
+    for denial in ("freezes nothing", "passes no gate",
+                   "validates no hidden acceptance", "makes nothing run-eligible",
+                   "produces no result and no power value",
+                   "open and blocking", "priority b not started"):
+        assert denial in section, f"the supersession note must still deny {denial!r}"
 
 
 # --------------------------------------------------------------------------- 11

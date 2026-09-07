@@ -250,11 +250,15 @@ Binding on the analysis, recorded **before** any data exists:
   decision**, not the task. Reporting *n tasks* as though it were *n independent
   architecture constructs* is prohibited.
 - **The current active set is insufficient.** After `PT05`'s pre-run
-  reclassification and the authoring of `PT07`, the E1-scored candidates are
-  `PT01`–`PT04` and `PT07`; their adjudicated active opportunities number **5**
-  across **3** decision clusters, **two of which carry a single observation**.
-  That is not enough replicated dependency decisions to support the confirmatory
-  endpoint. **The remedy is replication depth, not further breadth**: the
+  reclassification and the authoring of `PT07` and then `PT08`, the E1-scored
+  candidates are `PT01`–`PT04`, `PT07` and `PT08`; their adjudicated active
+  opportunities number **6** across **3** decision clusters, **one of which still
+  carries a single observation**. That is not enough replicated dependency
+  decisions to support the confirmatory endpoint. *As recorded then*, before
+  `PT08`'s opportunity was admitted the counts were **5** across **3** decision
+  clusters with **two** singletons; admission added **replication depth** to one
+  cluster and **no new cluster**, and it is **not** a result, a violation value or
+  any outcome. **The remedy is replication depth, not further breadth**: the
   substrate's task-creatable ceiling is 3 clusters / 2 leaf rules / 2 source
   scopes / 3 forbidden targets and all three clusters are already represented, so
   additional leaf rules and source scopes are **structurally unavailable here**
@@ -394,11 +398,13 @@ cluster whose only opportunities are unfrozen, withdrawn, reclassified
 **Three is a ceiling and an expectation, never an assumption.** The substrate's
 **task-creatable ceiling** is 3 clusters and all three are currently occupied
 ([`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md)), so `G` can
-never exceed 3 without a substrate redesign. But occupancy is not eligibility: two
-of the three clusters are **singletons**, no per-task manifest is frozen, and
-`PT07`'s package is authored yet still `status=review`. `G` is therefore **not
-known** until the gates resolve, and **no analysis, simulation or report may assume
-G = 3 beforehand**.
+never exceed 3 without a substrate redesign. But occupancy is not eligibility: one
+of the three clusters is still a **singleton** (*as recorded then*, two were), **no**
+per-task manifest is frozen, and `PT07`'s and `PT08`'s packages are authored yet
+still `status=review`. `G` is therefore **not known** until the gates resolve, and
+**no analysis, simulation or report may assume G = 3 beforehand**. Admitting
+`PT08`'s opportunity moved a cluster **depth**, not `G`: depth is not eligibility
+either.
 
 | Realised `G` | Pre-registered specification |
 |---|---|

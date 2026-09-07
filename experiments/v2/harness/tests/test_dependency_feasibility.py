@@ -91,14 +91,29 @@ CEILING = {
 }
 
 #: Active E1 coverage as independently adjudicated (suite level only — no task is
-#: mapped to a cluster anywhere in the public repository).
-ACTIVE_OPPORTUNITIES = 5
+#: mapped to a cluster anywhere in the public repository). These are the CURRENT
+#: counts, after PT08's opportunity was admitted.
+ACTIVE_OPPORTUNITIES = 6
 CLUSTER_DEPTHS = {
     "DC-FEATURES-INFRA-AR-DEP-006": 3,
-    "DC-FEATURES-API-AR-DEP-006": 1,
+    "DC-FEATURES-API-AR-DEP-006": 2,
     "DC-API-CORE-AR-DEP-005": 1,
 }
-SINGLETON_CLUSTERS = {"DC-FEATURES-API-AR-DEP-006", "DC-API-CORE-AR-DEP-005"}
+PRE_ADMISSION_OPPORTUNITIES = 5
+
+#: Clusters that still carry exactly ONE active observation. Admission of PT08's
+#: opportunity took the priority-A cluster out of this set; priority B is still in
+#: it, and TD-B34 stays open on exactly that.
+SINGLETON_CLUSTERS = {"DC-API-CORE-AR-DEP-005"}
+
+#: The clusters TD-B34 names as replication targets, in priority order. Kept
+#: separate from :data:`SINGLETON_CLUSTERS` because a cluster stays a named
+#: replication target after it has been replicated — the priority list is a
+#: governance fact, not a depth reading.
+REPLICATION_PRIORITY_CLUSTERS = {
+    "DC-FEATURES-API-AR-DEP-006",
+    "DC-API-CORE-AR-DEP-005",
+}
 
 NOT_TASK_CREATABLE_LEAVES = {
     "AR-DEP-002": "contracts",
@@ -838,15 +853,25 @@ def test_the_stage_0_gate_no_longer_demands_impossible_breadth():
 
 
 def test_the_stage_0_gate_does_not_assume_replication_candidates_exist():
-    """Singleton replicates are not presumed available; each needs its own review."""
+    """Singleton replicates are not presumed available; each needs its own review.
+
+    Priority A's review has since happened and its instrument is admitted, so the
+    gate can no longer say the review has not happened *at all*. What it must still
+    say — and what the assertion moved to — is that priority B's review has not
+    happened and priority B is not started.
+    """
     flat = _norm(
         _section_starting_with(POWER_POLICY_PATH, "stage 0 — non-evidentiary technical dry runs")
     )
     assert "not asserted that a suitable replication task exists" in flat, (
-        "the gate must not assume a replicate exists for either singleton cluster"
+        "the gate must not assume a replicate exists for the remaining singleton"
     )
     assert "separate pre-authoring review" in flat
-    assert "that review has not happened" in flat
+    assert "for priority b that review has still not happened" in flat
+    assert "priority b is not started" in flat
+    # and priority A's review is recorded as having happened without closing TD-B34
+    assert "the priority-a review has since happened" in flat
+    assert "did not close td-b34" in flat
     assert "td-b34" in flat and "open and blocking" in flat
 
 

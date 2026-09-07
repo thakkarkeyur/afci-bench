@@ -324,8 +324,14 @@ DELIBERATELY_PUBLIC_OPPORTUNITY_IDS = {"PT04-OPP-01"}
 
 
 def test_public_record_discloses_no_private_opportunity_identifier():
-    """PART I: the aggregate conclusion is published; the private slots are not."""
-    private_id = re.compile(r"\b(?:PT0[1-7]|PR0[1-2])-(?:OPP|EXP)-[A-Z0-9-]+\b")
+    """PART I: the aggregate conclusion is published; the private slots are not.
+
+    The task range is ``PT0[1-9]``, not ``PT0[1-7]``: a guard that stops at the
+    tasks that existed when it was written silently stops guarding every task
+    authored after it. PT08's opportunity identifier is private exactly like every
+    other, and admitting its opportunity to the active register did not publish it.
+    """
+    private_id = re.compile(r"\b(?:PT0[1-9]|PR0[1-2])-(?:OPP|EXP)-[A-Z0-9-]+\b")
     offenders = []
     for path in _iter_repo_files():
         if path.suffix not in {".md", ".csv", ".yml", ".yaml", ".json", ".py"}:

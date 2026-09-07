@@ -51,9 +51,10 @@ package.
   reserve (`PR01`–`PR02`). They are **candidates**: authored, **not approved and
   not frozen**. Current public eligibility: `PT01`–`PT04`, `PT07` and `PT08`
   `scored`, `PT05`/`PT06` `functional-only`, `PR01`/`PR02` `inactive-reserve`.
-  `PT08`'s public eligibility records **intent only**: its independent
-  public-authoring review is pending and it has **no** private evaluator package
-  (§12.2e).
+  `PT08`'s public eligibility still records **intent**, never a demonstrated
+  denominator: its independent public-authoring review has passed and its private
+  evaluator package has been authored and approved, but its manifest is
+  `status=review`, gate `G1` is not passed and it is not run-eligible (§12.2e).
 
 ## 3. What is scanned
 
@@ -619,7 +620,9 @@ observation boundary, and the pre-declared legal implementation families — are
 recorded in
 [`CAND_A1_PREAUTHORING_DECISION.md`](CAND_A1_PREAUTHORING_DECISION.md).
 
-**Nothing is authored.** `CAND-A1` has **no** public task body, **no** private
+**Nothing is authored** — *as originally recorded*, and superseded on the authoring
+state, the review state and the active counts by the blockquote below and by
+§12.2e. `CAND-A1` has **no** public task body, **no** private
 evaluator package, **no** manifest, **no** `PT08` identifier, **no** eligibility
 status and **no** denominator row; the active set stays **5** opportunities over
 **3** clusters at depths **3 / 1 / 1**; and `DC-FEATURES-API-AR-DEP-006` stays at
@@ -627,16 +630,26 @@ status and **no** denominator row; the active set stays **5** opportunities over
 independent remediation re-review** is still required, and **priority B has had no
 candidate review at all**. `TD-B34` stays **open and blocking**.
 
-> **Superseded on the authoring state and the review state only** (§12.2e). The
-> focused independent remediation re-review the paragraph above required has since
-> **passed**, with verdict **APPROVE — public authoring may begin**, and the
-> candidate has since been **publicly authored** as the task body `PT08`. The
-> paragraph remains an accurate record of the pre-authoring state it describes, and
-> **every count it names is unchanged**: an authored public body carries no private
-> opportunity, so the active counts and the cluster depths are exactly as recorded
-> there and the priority-A cluster still stands at **one** active observation.
-> **Priority B still has had no candidate review at all**, and `TD-B34` still stays
-> **open and blocking**.
+> **Superseded on the authoring state, the review state and the active counts**
+> (§12.2e). The focused independent remediation re-review the paragraph above
+> required has since **passed**, with verdict **APPROVE — public authoring may
+> begin**; the candidate has since been **publicly authored** as the task body
+> `PT08`; that public authoring has been **independently reviewed and approved**;
+> `PT08`'s **private evaluator package has since been authored** and **approved on
+> a discharged conditional independent review**; and a **separately recorded
+> governance admission step** has since admitted its architecture opportunity to the
+> active E1 denominator and the active cluster register. The paragraph above remains
+> an accurate record of the pre-authoring state it describes — *as recorded then*,
+> the active set stood at **5** opportunities over **3** decision clusters at depths
+> **3 / 1 / 1** with the priority-A cluster at **one** active observation, and an
+> authored public body alone would have changed none of that. **Current
+> post-admission state:** the active set holds **6** opportunities over **3**
+> decision clusters at depths **3 / 2 / 1**, and the priority-A cluster stands at
+> **two** observations. That is **replication depth over one shared decision** — `PT04` and
+> `PT08` remain **pseudo-replicates** — and admission creates **no new decision
+> cluster**. **Nothing is frozen, gate `G1` is not passed, nothing is run-eligible
+> and no result exists. Priority B still has had no candidate review at all** and
+> **is not started**, so `TD-B34` still stays **open and blocking**.
 
 ### 12.2e The priority-A candidate is now authored as `PT08` (`TD-B34` still open)
 
@@ -675,14 +688,24 @@ frozen.
   cluster remains inferable from the disclosure this policy and the feasibility
   record already made about the priority-A target; that consequence is recorded
   there and is unchanged by authoring.)*
-- **`PT08` cannot enter E1, and adds no observation to any cluster.** Its
-  independent public-authoring review is **pending**; it has **no** private
-  evaluator package, **no** manifest and **no** architecture opportunity; gate
-  **`G1`** is **not passed**; and its public eligibility of `scored` records
-  **intent**, never a demonstrated denominator. The active counts and cluster
-  depths recorded in §12.2d and in
-  [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §3 are
-  **unchanged**.
+- **`PT08`'s opportunity is admitted, and `PT08` still cannot be run.** *As
+  recorded then*, immediately after public authoring its independent
+  public-authoring review was **pending**, it had **no** private evaluator package,
+  **no** manifest and **no** architecture opportunity, and it added **no**
+  observation to any cluster. **All three lifecycle steps have since occurred, in
+  order:** the independent public-authoring review **passed**; a **private
+  evaluator package was authored** and **approved on a discharged conditional
+  independent review**; and a **separately recorded governance admission step**
+  admitted its architecture opportunity to the active E1 denominator and the active
+  cluster register. The active counts and cluster depths in
+  [`DEPENDENCY_TASK_FEASIBILITY.md`](DEPENDENCY_TASK_FEASIBILITY.md) §3 therefore
+  now read **6** opportunities over **3** decision clusters at depths
+  **3 / 2 / 1**, and the priority-A cluster carries **two** observations. **What is
+  still not conferred:** gate **`G1`** is **not passed**; the manifest is
+  `status=review` and **not frozen**; the hidden functional acceptance scaffold is
+  still **`draft_unvalidated`**; `PT08` is **not run-eligible**; **no** result,
+  violation value or treatment-effect estimate exists; and its public eligibility
+  of `scored` still records **intent**, never a demonstrated denominator.
 - **Its forcing class is unchanged and must not be upgraded.** It is a
   **natural-path / opportunity-creating** instrument (§12.2d), never to be
   represented as carrying `features → infra` forcing strength; its discriminative
@@ -693,11 +716,16 @@ frozen.
   alternatives** (`ALT-A`, `ALT-C`, `ALT-F`, `ALT-H`, `ALT-I`, `ALT-K`), and the
   expected violating implementation appears **nowhere** in `PT08`'s public text.
 
-**`TD-B34` is NOT resolved.** A second authored public body is not replication
-depth: depth is created by an **active** observation, and `PT08` has none until an
-independent public-authoring review passes, a private evaluator package is authored
-and validated, and eligibility governance admits it. **No power simulation may run
-yet** (`TD-B37`), and gates **G1**/**G2**/**G6** remain **not passed**.
+**`TD-B34` is NOT resolved.** *As recorded then*, a second authored public body was
+not replication depth: depth is created by an **active** observation, and `PT08` had
+none until an independent public-authoring review passed, a private evaluator
+package was authored and validated, and eligibility governance admitted it. **Those
+steps have since occurred and the priority-A cluster now carries two observations —
+and `TD-B34` still does not close.** The re-scoped objective is replication depth
+and balance across the demonstrated decision space, and **priority B**
+(`DC-API-CORE-AR-DEP-005`) has had **no** candidate review at all and **is not
+started**, so it remains a singleton. **No power simulation may run yet**
+(`TD-B37`), and gates **G1**/**G2**/**G6** remain **not passed**.
 
 Overlap safeguards for `PT08` against `PT04`, `PT05`, `PT06`, `PR01`, `PT01`/`PT02`
 and `PT07` (requirement 9) are recorded in

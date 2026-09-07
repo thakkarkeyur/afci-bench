@@ -351,7 +351,7 @@ not replaced - by the production-source scoring policy recorded below.
 > substrate**, leaving a demonstrated ceiling of **3 decision clusters / 2 leaf
 > rules / 2 source scopes / 3 forbidden targets** with **all three clusters
 > already represented**. `TD-B34` is re-scoped to **replication depth** inside the
-> two singleton clusters - priority **A** `DC-FEATURES-API-AR-DEP-006`, then
+> under-replicated clusters - priority **A** `DC-FEATURES-API-AR-DEP-006`, then
 > priority **B** `DC-API-CORE-AR-DEP-005`; `DC-FEATURES-INFRA-AR-DEP-006` is
 > **not** the immediate priority. **Do not author against this section.** Current
 > governance: the *Addendum: remaining-leaf feasibility and the `TD-B34` re-scope*
@@ -410,8 +410,9 @@ next candidates must satisfy; they are recorded now so authoring cannot drift.
 > in the trivial sense: all three task-creatable clusters are already represented,
 > so no unrepresented decision remains to exercise. Under the re-scoped `TD-B34`
 > the requirement a replication candidate must meet is to add an **independent
-> functional instrument to an existing singleton cluster** - priority
-> `DC-FEATURES-API-AR-DEP-006`, then `DC-API-CORE-AR-DEP-005` - while every other
+> functional instrument to an under-replicated cluster** - priority
+> `DC-FEATURES-API-AR-DEP-006`, since replicated, then `DC-API-CORE-AR-DEP-005`,
+> which is still a singleton and not started - while every other
 > requirement in this list continues to apply unchanged. The "where the substrate
 > permits it" qualifier already present in requirement 3 is what makes it
 > non-contradictory rather than merely stale.
@@ -533,8 +534,11 @@ DECISION B package recorded in the addenda below, has no earlier bytes, and no
 other task body or hash changed when it was added. `PT08` is **new** in the same
 sense — it is authored by the public-authoring package recorded in the final
 addendum, has no earlier bytes, and no other task body or hash changed when it was
-added. `PT08`'s `scored` eligibility records **intent only**: its independent
-public-authoring review is pending and it has no private evaluator package.
+added. `PT08`'s `scored` eligibility still records **intent**, never a demonstrated
+denominator: *as recorded then* its independent public-authoring review was pending
+and it had no private evaluator package; that review has since passed and the
+package has since been authored and approved, but the manifest is `status=review`,
+`G1` is not passed and `PT08` is not run-eligible.
 
 ## Private evaluator package staleness (mandatory)
 
@@ -1012,8 +1016,10 @@ externally ungradeable.
   manifest hash must never be silently accepted against a changed public task.
 - **The private reserve rows are reconciled, and no reserve was activated**
   (`TD-B40` residual (A)). `PR01`/`PR02` remain `inactive-reserve` with a **zero**
-  reserve denominator and the **active** set is unchanged at **5** opportunities
-  over **3** clusters. Four of their five legacy draft rows were **demoted** to
+  reserve denominator and, *as recorded then*, the **active** set is unchanged at
+  **5** opportunities over **3** clusters by that reconciliation; it has since moved
+  to **6** at depths **3 / 2 / 1** on `PT08`'s separate admission, which `TD-B40`
+  neither caused nor governs. Four of their five legacy draft rows were **demoted** to
   superseded, non-scoring records; one survives as a task-created reserve
   candidate. The legacy `infra → core` / `AR-DEP-004` row is **permanently barred**
   from any E1 denominator because that relationship is **not task-creatable** on
@@ -1092,21 +1098,25 @@ scope or a forbidden target**, and no private opportunity identifier appears her
 | Source scopes (ceiling) | **2** |
 | Forbidden targets (ceiling) | **3** |
 | Clusters currently occupied | **3 of 3** |
-| Adjudicated active E1 opportunities | **5** |
+| Adjudicated active E1 opportunities | **6** (*as recorded then*: **5**) |
 
 Observation depth per cluster: `DC-FEATURES-INFRA-AR-DEP-006` **3**;
-`DC-FEATURES-API-AR-DEP-006` **1**; `DC-API-CORE-AR-DEP-005` **1**.
+`DC-FEATURES-API-AR-DEP-006` **2**; `DC-API-CORE-AR-DEP-005` **1**. *As recorded
+then*, the second of those read **1**, before `PT08`'s separately reviewed and
+separately admitted opportunity added replication depth to it.
 
-**The remaining deficiency is replication depth and balance, not breadth.** Two of
-the three achievable clusters are singletons, and breadth beyond this ceiling is
-**structurally impossible on this substrate** rather than merely unfinished.
+**The remaining deficiency is replication depth and balance, not breadth.** One of
+the three achievable clusters is still a singleton — *as recorded then*, two were —
+and breadth beyond this ceiling is **structurally impossible on this substrate**
+rather than merely unfinished.
 
 ### 3. `TD-B34` is re-scoped and stays open
 
 `TD-B34` now governs adequate coverage of the **complete task-creatable
 dependency-decision space**: retain all three clusters; add independent functional
-instruments to the singletons where scientifically feasible (**priority A**
-`DC-FEATURES-API-AR-DEP-006`, then **priority B** `DC-API-CORE-AR-DEP-005`;
+instruments to the under-replicated clusters where scientifically feasible
+(**priority A** `DC-FEATURES-API-AR-DEP-006`, since replicated, then **priority B**
+`DC-API-CORE-AR-DEP-005`, still a singleton and not started;
 `DC-FEATURES-INFRA-AR-DEP-006` is **not** the immediate priority); create **no**
 artificial task merely to hit a mechanically implemented leaf; record the ceiling
 as a **construct-validity limitation**; and defer broader leaf/source-scope
@@ -1192,12 +1202,16 @@ remains **PRE-FREEZE**.
   external URL or timestamp supplied and none claimed**, and the review **precedes**
   the commit that records it - this package **propagates** the result and does not
   perform it.
-- **The independent review of the authored public body has NOT happened.** It is the
-  next step, and the private evaluator package is to be authored only after it
-  passes.
+- **The independent review of the authored public body had NOT happened when this
+  addendum was written.** *As recorded then*, it was the next step, and the private
+  evaluator package was to be authored only after it passed. **That order was
+  followed:** the review has since passed, and only then was the private package
+  authored.
 - **In aggregate terms it adds replication depth to an under-replicated demonstrated
-  cluster** - and it adds **no active observation** yet. Which leaf rule, which
-  source scope and which forbidden target its decision would use stay **private**,
+  cluster.** *As recorded then* it added **no active observation** yet; its
+  opportunity has since been admitted by a separately recorded governance step, so
+  it now adds **one**. Which leaf rule, which
+  source scope and which forbidden target its decision uses stay **private**,
   as for every other candidate: nothing here names a rule id, an opportunity, an
   expected or prohibited area, or an implementation for `PT08`.
 - **No reserve was activated.** `PR01` and `PR02` remain `inactive-reserve`, and
@@ -1207,23 +1221,41 @@ remains **PRE-FREEZE**.
 
 **`TD-B34` is not resolved by this package and must not be recorded as resolved.**
 Replication depth is created by an **active** observation, not by an authored public
-body: `PT08` carries no private opportunity, so the active set is unchanged at **5**
-opportunities over **3** decision clusters at depths **3 / 1 / 1**, and the
-priority-A cluster still stands at **one** active observation. Consequently:
+body: `PT08` carried no private opportunity when this addendum was written, so *as
+recorded then* the active set was unchanged at **5** opportunities over **3**
+decision clusters at depths **3 / 1 / 1**, and the priority-A cluster still stood at
+**one** active observation. Consequently, at that time:
 
-- **the independent public-authoring review of `PT08` is pending**, and the private
-  evaluator package for it may not be authored before that review passes;
-- **priority B** (`DC-API-CORE-AR-DEP-005`) has still had **no** candidate review at
+- **the independent public-authoring review of `PT08` was pending**, and the private
+  evaluator package for it could not be authored before that review passed;
+- **priority B** (`DC-API-CORE-AR-DEP-005`) had still had **no** candidate review at
   all;
 - **no power simulation should be run yet**, and no power value may be frozen
   (`TD-B37`);
 - gates **G1**, **G2** and **G6** remain **not passed**, and the suite is **not**
   ready;
-- `PT08` cannot enter E1: it has **no** private evaluator package, **no** manifest
-  and **no** architecture opportunity, so there is nothing to validate, approve or
+- `PT08` could not enter E1: it had **no** private evaluator package, **no** manifest
+  and **no** architecture opportunity, so there was nothing to validate, approve or
   freeze yet (`TD-B05`/`TD-B14`/`TD-B32`, gate `G1`). Its public
   `e1_analysis_eligibility` of `scored` records **intent**, never a demonstrated
   denominator.
+
+**Current post-admission state, reached by later separate packages — and `TD-B34`
+is still NOT resolved.** The independent public-authoring review of `PT08` **has
+since passed**; its private evaluator package **has since been authored** and
+**approved on a discharged conditional independent review**; and a **separately
+recorded governance admission step** admitted its architecture opportunity to the
+active E1 denominator and the active decision-cluster register. The active set
+therefore holds **6** opportunities over **3** decision clusters at depths
+**3 / 2 / 1**, and the priority-A cluster carries **two** observations, `PT04` and
+`PT08`, which remain **pseudo-replicates** of one shared decision. **What is still
+false:** `TD-B34` is **not** resolved, because **priority B**
+(`DC-API-CORE-AR-DEP-005`) has had **no** candidate review at all and **is not
+started**; gates **G1**, **G2** and **G6** are **not passed**; `PT08` is **not**
+frozen and **not** run-eligible; its manifest is `status=review` and its hidden
+functional acceptance is **`draft_unvalidated`**; **no power simulation has run and
+no power value is frozen**; and **no result, violation value or treatment-effect
+estimate exists**.
 
 ### Functional acceptance observation boundary check for `PT08` (`TD-B39`)
 
@@ -1367,16 +1399,24 @@ about internal persistence**.
 
 ### `PT08` private-evaluator consequences (nothing private was touched)
 
-- **`PT08` has no private evaluator package, no manifest and no architecture
-  opportunity**, and the public registries record a not-yet-authored placeholder for
-  it rather than `stored_in_private_evaluator_repo`. That placeholder is the honest
-  state, not an omission.
+- **`PT08` had no private evaluator package, no manifest and no architecture
+  opportunity when this addendum was written**, and the public registries recorded a
+  not-yet-authored placeholder for it rather than `stored_in_private_evaluator_repo`.
+  That placeholder was the honest state then, not an omission. **Superseded on this
+  point only:** a private evaluator package, a manifest and an admitted architecture
+  opportunity now exist for `PT08`, so the registries carry
+  `stored_in_private_evaluator_repo` — which withholds the answers exactly as it
+  does for every other packaged candidate.
 - **The private repository is unchanged by this package.** It was inspected
   **read-only** for reconciliation; **no private file was created or modified**, and
   no private commit accompanies this one.
-- **The active private state is unchanged**: **5** active E1 opportunities over
-  **3** decision clusters at depths **3 / 1 / 1**, every manifest still
-  `status=review` and unfrozen, and no manifest for `PT08` in existence.
+- **The active private state was unchanged by this package**: *as recorded then*,
+  **5** active E1 opportunities over **3** decision clusters at depths
+  **3 / 1 / 1**, every manifest `status=review` and unfrozen, and no manifest for
+  `PT08` in existence. **Current state:** **6** active E1 opportunities over **3**
+  decision clusters at depths **3 / 2 / 1**, moved by a **separately recorded
+  admission** and by nothing this package did; every manifest, `PT08`'s included, is
+  still `status=review` and **unfrozen**.
 - **The staleness of the existing private packages is unchanged by this package.**
   Adding `PT08` changes no other public task's bytes, so no existing private package
   needs re-linking on account of it; `PT06`'s package remains the one that must be

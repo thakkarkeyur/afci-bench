@@ -67,9 +67,10 @@ ORACLE_SRC = REPO / "experiments" / "v2" / "oracle" / "src"
 #: ``PT07`` and then ``PT08`` were authored later, under DECISION B (``TD-B34``),
 #: and are ``scored`` like ``PT01``-``PT04``. They are listed apart in
 #: :data:`AUTHORED_UNDER_DECISION_B` wherever a check is specifically about the
-#: classification package, which predates both. ``PT08``'s ``scored`` value records
-#: intent only: its public-authoring review is pending and it has no private
-#: evaluator package, so it contributes to no denominator.
+#: classification package, which predates both. ``PT08``'s ``scored`` value still
+#: records intent, never a demonstrated denominator: its public-authoring review has
+#: passed and its private evaluator package is authored and approved, but its
+#: manifest is ``status=review``, ``G1`` is not passed and it is not run-eligible.
 CLASSIFICATION_SCORED = ["PT01", "PT02", "PT03", "PT04"]
 AUTHORED_UNDER_DECISION_B = ["PT07", "PT08"]
 SCORED = CLASSIFICATION_SCORED + AUTHORED_UNDER_DECISION_B
@@ -104,7 +105,12 @@ ELIGIBILITY_VOCABULARY = {"scored", "functional-only", "inactive-reserve"}
 #: placeholder rather than `stored_in_private_evaluator_repo`. Being on this list is
 #: a statement about the private side only: it is never a licence to treat the task
 #: as frozen, reviewed or E1-active.
-NO_PRIVATE_PACKAGE_YET = {"PT08"}
+#:
+#: EMPTY as of PT08-PUB-P2-2: every authored candidate now has a private evaluator
+#: package (PT07's was authored earlier, PT08's after its public-authoring review
+#: passed). The set is kept rather than deleted because the placeholder distinction
+#: it encodes is permanent policy and applies to every future task.
+NO_PRIVATE_PACKAGE_YET: set = set()
 
 #: Dimensions E1 must never be claimed to measure directly.
 NOT_DIRECTLY_MEASURED = (
