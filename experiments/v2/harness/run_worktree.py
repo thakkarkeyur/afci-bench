@@ -243,10 +243,18 @@ def verify_architecture_delivery(
                 f"{condition} carries a persistent architecture file "
                 f"{manifest['architecture_persistent_path']!r}",
             )
-        if manifest.get("generic_guidance_sha256") is not None:
+        # C2's architecture delivery is also "none", but C2 is the one condition
+        # that legitimately carries a token-matched generic-guidance payload. The
+        # permitted condition is named in run_governance and asserted against the
+        # preparer, so this cannot become a blanket refusal again.
+        if (
+            manifest.get("generic_guidance_sha256") is not None
+            and condition != gov.GENERIC_GUIDANCE_CONDITION
+        ):
             raise gov.RunnerRefusal(
                 gov.ARCHITECTURE_DELIVERY_VIOLATION,
-                f"{condition} carries a generic-guidance payload; only C2 may",
+                f"{condition} carries a generic-guidance payload; only "
+                f"{gov.GENERIC_GUIDANCE_CONDITION} may",
             )
 
     allow_persistent: List[str] = []

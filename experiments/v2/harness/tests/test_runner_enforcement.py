@@ -248,6 +248,76 @@ def test_an_architecture_file_injected_into_c1_is_caught_at_runner_time(prepared
 
 
 # --------------------------------------------------------------------------- #
+# Per-condition delegation: the enforcement layer is general, not C1-shaped
+# --------------------------------------------------------------------------- #
+def _prepare_condition(tmp_path, condition, **kwargs):
+    return pmw.prepare_model_worktree(
+        pmw.PreparationRequest(
+            condition=condition, source_root=REPO,
+            dest_root=tmp_path / condition.lower(),
+            task_path=PT08, task_id="PT08", **kwargs,
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    "condition,kwargs,expected_delivery",
+    [
+        ("C1", {}, "none"),
+        ("C2", {"generic_guidance_text": "Keep functions small.\n"}, "none"),
+        ("C3", {"architecture_text": None}, "persistent_instruction_file"),
+        ("C4", {"architecture_text": None}, "prompt_injection"),
+    ],
+)
+def test_the_enforcement_layer_accepts_each_condition_own_governed_delivery(
+    tmp_path, condition, kwargs, expected_delivery
+):
+    """The runner enforces every condition's *own* rule, not C1's rule everywhere.
+
+    A guard that refused a legitimate C2 guidance payload — because C2's
+    architecture delivery is also ``none`` — would fail closed on a condition
+    that is allowed to carry one. Asserted for all four arms so the general
+    delegation cannot regress into a C1-shaped special case.
+    """
+    if "architecture_text" in kwargs and kwargs["architecture_text"] is None:
+        kwargs = dict(kwargs)
+        kwargs["architecture_text"] = (
+            REPO / "docs" / "v2" / "ARCHITECTURE_CONTEXT.md"
+        ).read_text(encoding="utf-8")
+    prepared = _prepare_condition(tmp_path, condition, **kwargs)
+    enforcement = _enforce(prepared, root=prepared.snapshot_root,
+                           manifest=prepared.manifest, condition=condition)
+    assert enforcement.architecture_delivery == expected_delivery
+    assert all(c["result"] == "PASS" for c in enforcement.checks)
+
+
+def test_the_permitted_guidance_condition_agrees_with_the_approved_preparer():
+    """The named condition is checked against the rule the preparer enforces."""
+    permitted = gov.GENERIC_GUIDANCE_CONDITION
+    for condition in pmw.CONDITIONS:
+        request = pmw.PreparationRequest(
+            condition=condition, source_root=REPO, dest_root=Path("unused"),
+            generic_guidance_text="x",
+            architecture_text=("y" if condition in ("C3", "C4") else None),
+        )
+        if condition == permitted:
+            pmw._validate_condition_payloads(request)  # must not raise
+        else:
+            with pytest.raises(pmw.WorktreePreparationError) as exc:
+                pmw._validate_condition_payloads(request)
+            assert exc.value.code == "GUIDANCE_PAYLOAD_NOT_ALLOWED", condition
+
+
+def test_guidance_supplied_to_a_condition_that_may_not_carry_it_is_refused(tmp_path):
+    prepared = _prepare_condition(tmp_path, "C1")
+    manifest = copy.deepcopy(prepared.manifest)
+    manifest["generic_guidance_sha256"] = "b" * 64
+    with pytest.raises(gov.RunnerRefusal) as exc:
+        wt.verify_architecture_delivery(prepared.snapshot_root, manifest, "C1")
+    assert exc.value.code == gov.ARCHITECTURE_DELIVERY_VIOLATION
+
+
+# --------------------------------------------------------------------------- #
 # Fresh process / session enforcement
 # --------------------------------------------------------------------------- #
 def _launch(**kwargs):

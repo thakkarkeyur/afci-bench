@@ -292,6 +292,15 @@ def governed_firewall_from_record(path: Path = DIAGNOSTIC_RECORD) -> Dict[str, o
 # --------------------------------------------------------------------------- #
 # Condition delivery (reused, never re-specified)
 # --------------------------------------------------------------------------- #
+#: The one condition that legitimately carries a token-matched generic-guidance
+#: payload (CONDITION_MATRIX.csv row C2). Every other condition must carry none,
+#: exactly as :func:`prepare_model_worktree._validate_condition_payloads`
+#: enforces at preparation time. It is named here because the approved rule is
+#: expressed in the preparer's code rather than in a data file; a test asserts
+#: the two agree, so this constant can never quietly diverge from it.
+GENERIC_GUIDANCE_CONDITION = "C2"
+
+
 def architecture_delivery_for(condition: str) -> str:
     """Delegate to the approved condition definition; never restate it here."""
     try:
