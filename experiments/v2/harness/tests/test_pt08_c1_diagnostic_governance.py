@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import csv
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -514,17 +515,110 @@ def test_recording_the_decision_confers_no_readiness():
     assert "gate g1 is not passed" in prohibitions
 
 
-def test_no_runner_has_appeared_in_the_public_repository():
-    """The prerequisite is a fact about the tree, not only about the prose."""
+#: The harness as it stood when `SL-PT08-01` was adjudicated. None of these may
+#: disappear, and the two the private linkage byte-pins may not be edited at all.
+PRE_EXISTING_HARNESS_MODULES = [
+    "context_audit.py",
+    "evaluator_mount.py",
+    "governance_text.py",
+    "prepare_model_worktree.py",
+    "substrate_identity.py",
+]
+
+#: The runner authorised by the runner-construction package, named exhaustively.
+#: §7.1 of the record required "a real runner / execution harness" and recorded
+#: that none existed *then*; these modules are that runner and nothing else.
+AUTHORISED_RUNNER_MODULES = [
+    "model_adapter.py",
+    "run_artifacts.py",
+    "run_evaluation.py",
+    "run_governance.py",
+    "run_v2.py",
+    "run_worktree.py",
+]
+
+
+def test_the_harness_gained_exactly_the_authorised_runner_and_nothing_else():
+    """Replaces the earlier `no runner has appeared` check, and is stricter.
+
+    That check asserted the harness held exactly five modules, which was the
+    right assertion while §7.1 was outstanding. §7.1 has since been satisfied by
+    an authorised runner-construction package, so the fact about the tree
+    changed. What must still be pinned — and now is — is that the harness gained
+    *only* the enumerated runner, lost nothing, and that the runner still cannot
+    execute the diagnostic (asserted separately below).
+    """
     harness = REPO / "experiments" / "v2" / "harness"
     present = sorted(p.name for p in harness.glob("*.py"))
-    assert present == [
-        "context_audit.py",
-        "evaluator_mount.py",
-        "governance_text.py",
-        "prepare_model_worktree.py",
-        "substrate_identity.py",
-    ], f"the harness gained or lost a module; a runner may have appeared: {present}"
+    assert present == sorted(
+        PRE_EXISTING_HARNESS_MODULES + AUTHORISED_RUNNER_MODULES
+    ), f"the harness gained or lost an unenumerated module: {present}"
+    for module in PRE_EXISTING_HARNESS_MODULES:
+        assert (harness / module).is_file(), f"{module} disappeared"
+
+
+def test_the_records_no_runner_statements_are_now_historical_and_nothing_else_moved():
+    """The adjudication record is not edited; its scope is recorded instead.
+
+    `SL-PT08-01` §7.1 and §12 state that no runner exists. Those sentences were
+    accurate when the Study Lead adjudicated, and this package does not rewrite
+    a Study-Lead record — the repository's convention is to preserve such text
+    and mark its scope (compare §11's `Superseded on this point only`). What is
+    asserted here is exactly what changed and what did not: a runner now exists,
+    so §7.1's *existence* prerequisite is met, and **every other** §7
+    prerequisite is still outstanding.
+    """
+    not_waived = _section(RECORD_PATH, S_NOT_WAIVED)
+    assert "none exists in this repository today" in not_waived, (
+        "the record's own wording must survive unedited"
+    )
+    assert "no runner exists" in _section(RECORD_PATH, S_PROHIBITIONS)
+    # ... and the runner really does exist now, which is what makes them historical
+    harness = REPO / "experiments" / "v2" / "harness"
+    assert (harness / "run_v2.py").is_file()
+    # ... while nothing else in §7 was discharged by building it.
+    for still_open in (
+        "primary-model selection by the study lead",
+        "pt08 hidden functional acceptance fixture authoring",
+        "pt08's required manifest freeze under the existing lifecycle rules",
+        "a clean context audit, failing closed on contaminated",
+        "an isolated container / vm as governed",
+        "exact model-id input with runtime readback validation",
+        "invalid-model-id rejection",
+    ):
+        assert still_open in not_waived, still_open
+
+
+def test_the_runner_that_appeared_still_cannot_execute_the_diagnostic():
+    """Building the runner conferred no readiness, which is the whole point."""
+    sys.path.insert(0, str(REPO / "experiments" / "v2" / "harness"))
+    import run_governance as gov  # noqa: PLC0415 - path set above
+
+    report = gov.check_readiness("PT08", "C1", "PT08_DIFFICULTY_DIAGNOSTIC")
+    assert report.run_eligible is False
+    blocked = {p.item for p in report.blocked}
+    for required in (
+        "model_selection",
+        "clean_isolated_context",
+        "hidden_acceptance_validation",
+        "manifest_freeze",
+        "private_sync_propagation_before_freeze",
+        "q1_q8_live_runtime_validation",
+    ):
+        assert required in blocked, required
+
+
+def test_the_runner_does_not_relist_the_non_prerequisites_as_blockers():
+    """§8's non-prerequisites must not be re-imposed by the runner's report."""
+    sys.path.insert(0, str(REPO / "experiments" / "v2" / "harness"))
+    import run_governance as gov  # noqa: PLC0415 - path set above
+
+    report = gov.check_readiness("PT08", "C1", "PT08_DIFFICULTY_DIAGNOSTIC")
+    blob = " ".join(
+        f"{p.item} {p.code or ''} {p.detail}" for p in report.blocked
+    ).lower()
+    for never in ("td-b34", "td-b39", "priority b", "priority-b"):
+        assert never not in blob, f"the runner re-imposed a non-prerequisite: {never}"
 
 
 # --------------------------------------------------------------------------- 9

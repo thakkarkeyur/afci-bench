@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://afci-bench/experiments/v2/harness/run_record.schema.json",
+  "title": "AFCI-Bench v2 Runner Run Record",
+  "description": "Self-describing record of ONE runner execution, dry-run included. It is deliberately NOT experiments/v2/schemas/run_manifest.schema.json: that schema sets additionalProperties:false, carries none of SL-PT08-01 section 9's six quarantine fields, and lives in a directory byte-pinned by the private evaluator's public linkage, so adding the fields there is a linkage-relevant change this package is not authorised to make. A run record is not a result: producing one freezes nothing, passes no gate, and enters no dataset. The run_purpose block is mandatory and an unmarked record is invalid, never confirmatory.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_kind",
+    "run_id",
+    "run_purpose",
+    "task_id",
+    "task_sha256",
+    "condition",
+    "mode",
+    "state_log",
+    "model",
+    "environment",
+    "protocol_versions",
+    "worktree",
+    "context_audit",
+    "fresh_launch",
+    "invocation",
+    "model_identity",
+    "post_run_capture",
+    "evaluation",
+    "manifest_freeze",
+    "artifacts",
+    "prerequisite_blockers",
+    "outcome"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "record_kind": { "type": "string", "enum": ["runner_run_record"] },
+    "run_id": { "type": "string" },
+    "generated_at": { "type": "string" },
+    "run_purpose": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "SL-PT08-01 section 9. The five eligibility flags are derived from the purpose and never accepted from a caller; a record whose flags disagree with the purpose is refused rather than written.",
+      "required": [
+        "name",
+        "decision_id",
+        "confirmatory",
+        "confirmatory_eligible",
+        "enters_confirmatory_dataset",
+        "enters_confirmatory_e1_analysis",
+        "enters_treatment_effect_analysis",
+        "enters_power_estimation"
+      ],
+      "properties": {
+        "name": { "type": "string", "enum": ["PT08_DIFFICULTY_DIAGNOSTIC"] },
+        "decision_id": { "type": "string" },
+        "confirmatory": { "type": "boolean", "enum": [false] },
+        "confirmatory_eligible": { "type": "boolean", "enum": [false] },
+        "enters_confirmatory_dataset": { "type": "boolean", "enum": [false] },
+        "enters_confirmatory_e1_analysis": { "type": "boolean", "enum": [false] },
+        "enters_treatment_effect_analysis": { "type": "boolean", "enum": [false] },
+        "enters_power_estimation": { "type": "boolean", "enum": [false] }
+      }
+    },
+    "task_id": { "type": "string" },
+    "task_sha256": { "type": "string" },
+    "condition": { "type": "string", "enum": ["C1", "C2", "C3", "C4"] },
+    "mode": { "type": "string", "enum": ["dry-run", "real"] },
+    "state_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["state", "result"],
+        "properties": {
+          "state": { "type": "string" },
+          "result": { "type": "string", "enum": ["ENTERED", "PASS", "SKIPPED", "REFUSED"] },
+          "code": { "type": ["string", "null"] },
+          "detail": { "type": "string" }
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requested_model_id", "resolved_model_id", "effort_input", "selection_status"],
+      "properties": {
+        "requested_model_id": { "type": ["string", "null"] },
+        "resolved_model_id": { "type": ["string", "null"] },
+        "effort_input": { "type": ["string", "null"] },
+        "selection_status": { "type": "string" }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os", "governed_cli_version", "observed_cli_version", "governed_agent_sdk_version", "python_version"],
+      "properties": {
+        "os": { "type": "string" },
+        "governed_cli_version": { "type": ["string", "null"] },
+        "observed_cli_version": { "type": ["string", "null"] },
+        "governed_agent_sdk_version": { "type": ["string", "null"] },
+        "python_version": { "type": "string" },
+        "isolated_environment_verified": { "type": "boolean" }
+      }
+    },
+    "protocol_versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "condition_spec",
+        "oracle_spec",
+        "acceptance_spec",
+        "reset_protocol",
+        "model_execution_config",
+        "guard_spec",
+        "worktree_policy",
+        "diagnostic_decision"
+      ],
+      "properties": {
+        "condition_spec": { "type": "string" },
+        "oracle_spec": { "type": "string" },
+        "acceptance_spec": { "type": "string" },
+        "reset_protocol": { "type": "string" },
+        "model_execution_config": { "type": "string" },
+        "guard_spec": { "type": "string" },
+        "worktree_policy": { "type": "string" },
+        "diagnostic_decision": { "type": "string" }
+      }
+    },
+    "worktree": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enforcement", "prepared_root", "prepared_manifest_path", "content_hash"],
+      "properties": {
+        "enforcement": { "type": "object" },
+        "prepared_root": { "type": "string" },
+        "prepared_manifest_path": { "type": "string" },
+        "content_hash": { "type": "string" }
+      }
+    },
+    "context_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "report_path", "report_sha256", "reason_count"],
+      "properties": {
+        "verdict": { "type": "string", "enum": ["CLEAN", "CONTAMINATED", "UNKNOWN", "ERROR"] },
+        "report_path": { "type": ["string", "null"] },
+        "report_sha256": { "type": ["string", "null"] },
+        "reason_count": { "type": "integer" },
+        "reasons_sample": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "fresh_launch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["argv", "executable", "session_handling", "manifest_path"],
+      "properties": {
+        "argv": { "type": "array", "items": { "type": "string" } },
+        "env_keys": { "type": "array", "items": { "type": "string" } },
+        "executable": { "type": "boolean" },
+        "requested_model_id": { "type": ["string", "null"] },
+        "model_status": { "type": "string" },
+        "effort_input": { "type": ["string", "null"] },
+        "session_handling": { "type": "string" },
+        "manifest_path": { "type": ["string", "null"] }
+      }
+    },
+    "invocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invoked", "status", "exit_status", "runtime_evidence_path"],
+      "properties": {
+        "invoked": { "type": "boolean" },
+        "status": { "type": "string" },
+        "exit_status": { "type": ["integer", "null"] },
+        "runtime_evidence_path": { "type": ["string", "null"] },
+        "detail": { "type": "string" },
+        "started_at": { "type": ["string", "null"] },
+        "ended_at": { "type": ["string", "null"] },
+        "wall_clock_seconds": { "type": ["number", "null"] }
+      }
+    },
+    "model_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "requested_model_id", "resolved_model_id"],
+      "properties": {
+        "status": { "type": "string" },
+        "requested_model_id": { "type": ["string", "null"] },
+        "resolved_model_id": { "type": ["string", "null"] },
+        "evidence_sources": { "type": "array", "items": { "type": "string" } },
+        "detail": { "type": "string" }
+      }
+    },
+    "post_run_capture": {
+      "type": ["object", "null"],
+      "additionalProperties": true
+    },
+    "evaluation": { "type": "object" },
+    "manifest_freeze": { "type": "object" },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "prerequisite_blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "detail"],
+        "properties": {
+          "code": { "type": "string" },
+          "detail": { "type": "string" }
+        }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "code", "detail", "is_result", "scored"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["DRY_RUN_COMPLETE", "DRY_RUN_REFUSED", "COMPLETE", "REFUSED"]
+        },
+        "code": { "type": ["string", "null"] },
+        "detail": { "type": "string" },
+        "is_result": { "type": "boolean", "enum": [false] },
+        "scored": { "type": "boolean", "enum": [false] }
+      }
+    }
+  }
+}
