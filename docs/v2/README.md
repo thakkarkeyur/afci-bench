@@ -736,9 +736,15 @@ simulation; and froze **nothing**. The canonical substrate is still `630d3180` /
   opportunity. **Current post-admission state:** active E1 opportunities **6**,
   decision clusters **3**, cluster depths **3 / 2 / 1**. **Unchanged either way:**
   gate **`G1`** is **not passed**; `PT08` is **not** frozen and **not** run-ready;
-  its manifest is `status=review`; its hidden functional acceptance is still
-  **`draft_unvalidated`**; **no result exists**; and its `scored` eligibility
-  records **intent**, never a demonstrated denominator.
+  its manifest is `status=review`; **no result exists**; and its `scored`
+  eligibility records **intent**, never a demonstrated denominator. **What has
+  since changed:** its hidden functional acceptance is no longer an unvalidated
+  draft — the runtime is authored, its reference and mutation validation is
+  complete, and both have been **independently reviewed and APPROVED**, so
+  [`TASK_ACCEPTANCE_MATRIX.csv`](TASK_ACCEPTANCE_MATRIX.csv) records `PT08` as
+  `status=validated`. **That is hidden-acceptance validation, not a freeze:** the
+  **`PT08`-specific** hidden-acceptance requirement of `TD-B32` is **satisfied**,
+  while the **global `TD-B32` row stays open** and `TD-B12`/`G6` are unchanged.
 - **`TD-B34` stays open and blocking.** The priority-A cluster now stands at
   **two** — replication depth over **one** shared decision, with `PT04` and `PT08`
   remaining **pseudo-replicates** and **no new cluster** created — but **priority

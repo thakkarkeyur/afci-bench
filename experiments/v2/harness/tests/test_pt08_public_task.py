@@ -33,14 +33,24 @@ recorded governance step. So the active accounting is **6** opportunities over
 **3** decision clusters at depths **3 / 2 / 1**, and the priority-A cluster carries
 **two** observations — which stay **pseudo-replicates** of one shared decision.
 
+Its **hidden acceptance is now validated**: the runtime is authored, the reference
+and mutation validation is complete, and both have been **independently reviewed
+and APPROVED**, so `TASK_ACCEPTANCE_MATRIX.csv` records `PT08` as
+`status=validated`. That satisfies the **`PT08`-specific** hidden-acceptance
+requirement of `TD-B32` and **nothing else**.
+
 WHAT MUST STAY FALSE
 --------------------
 `PT08` is **not** frozen, **not** run-ready and **not** E1 run-eligible; its
-manifest is `status=review`; its hidden functional acceptance is
-**`draft_unvalidated`** and has never been runtime-validated; `TD-B34` stays open
-and blocking; priority B is **not started**; `G1` is not passed; **no** result,
-violation value or power value exists; and the protocol is still PRE-FREEZE. The
-nine bodies authored before it are byte-identical.
+manifest is `status=review`; the **global `TD-B32` row is still open** and
+`TD-B12`/`G6` are unchanged; `TD-B34` stays open and blocking; priority B is **not
+started**; `G1` is not passed; **no** result, violation value or power value
+exists; and the protocol is still PRE-FREEZE. The nine bodies authored before it
+are byte-identical, and their hidden acceptance is still `draft_unvalidated`.
+
+`status=validated` is the **hidden-acceptance validation** state. It is not
+`status=frozen`, and the guards at the end of this module exist precisely so the
+two can never be confused.
 
 No `PT08` implementation is written or tested here, and no hidden acceptance is
 implemented. Pure file and ``git`` inspection; no model is invoked and no benchmark
@@ -295,9 +305,20 @@ def test_pt08_is_not_frozen_and_pins_no_manifest_hash():
         "publish private content and would also imply a frozen package"
     )
     assert not re.fullmatch(r"[0-9a-f]{16,}", matrix["hidden_evaluator_manifest_hash"])
+    #: `TASK_ACCEPTANCE_MATRIX.csv` carries the HIDDEN-ACCEPTANCE VALIDATION
+    #: lifecycle and now reads `validated`; the layer and rule matrices carry the
+    #: TASK/MANIFEST lifecycle and stay `candidate-not-frozen`. The two are
+    #: different lifecycles and neither may be read off the other — which is
+    #: exactly why `validated` here is not, and never becomes, `frozen`.
+    expected_status = {
+        ACCEPTANCE_MATRIX: "validated",
+        LAYER_MATRIX: "candidate-not-frozen",
+        RULE_MATRIX: "candidate-not-frozen",
+    }
     for path in (ACCEPTANCE_MATRIX, LAYER_MATRIX, RULE_MATRIX):
         row = _by_id(path)["PT08"]
-        assert row["status"] == "candidate-not-frozen", path.name
+        assert row["status"] == expected_status[path], path.name
+        assert row["status"] != "frozen", path.name
         values = ",".join(row.values())
         assert "stored_in_private_evaluator_repo" in values, path.name
         assert "not_yet_authored" not in values, (
@@ -316,14 +337,20 @@ def test_pt08_is_not_presented_as_run_ready_frozen_or_validated():
     reason = _by_id(MATRIX_PATH)["PT08"]["e1_eligibility_reason"].lower()
     assert "not run-ready" in reason
     assert "not frozen" in reason
-    assert "draft_unvalidated" in reason
     assert "gate g1 is not passed" in reason
     assert "records intent only and never a demonstrated denominator" in reason
+    # hidden acceptance IS validated now, and the row must say so WITH the
+    # qualifier that keeps it apart from a freeze
+    assert "status=validated" in reason
+    assert "hidden-acceptance validation only, never a freeze" in reason
+    assert "the global td-b32 row stays open" in reason
     for overclaim in ("run-ready:", "frozen opportunity set is demonstrated",
-                      "hidden acceptance is validated", "g1 is passed"):
+                      "g1 is passed", "td-b32 closed", "is frozen and",
+                      "run-eligible;"):
         assert overclaim not in reason, f"PT08's reason over-claims: {overclaim!r}"
     for stale in ("public-authoring review of this body is pending",
-                  "no private evaluator package and no manifest exists for it"):
+                  "no private evaluator package and no manifest exists for it",
+                  "draft_unvalidated"):
         assert stale not in reason, f"PT08's reason is stale: {stale!r}"
 
 
@@ -784,8 +811,11 @@ def test_pt08_is_listed_as_a_scored_candidate_with_its_caveats():
     assert "one active applicable opportunity" in notes
     assert "never a violation a success or a result" in notes
     assert "status=review and not frozen" in notes
-    assert "draft_unvalidated" in notes
     assert "gate g1 is not passed" in notes
+    # the hidden acceptance is validated, and validation is not the freeze
+    assert "draft_unvalidated" not in notes
+    assert "status=validated" in notes
+    assert "never the freeze itself" in notes
 
 
 def test_the_new_error_value_is_recorded_in_the_binding_vocabulary():
@@ -967,3 +997,130 @@ def test_pt08_does_not_restate_another_task_in_its_own_words():
                     "volume discount", "10% discount", "0.90", "notfounderror",
                     "conflicterror", "/orders/preview", "cancel"):
         assert foreign not in flat, f"PT08 restates another candidate's surface: {foreign!r}"
+
+
+# =========================================================================== #
+# HIDDEN-ACCEPTANCE VALIDATION PROPAGATION.
+#
+# PT08's hidden acceptance runtime, its reference/mutation validation, and the
+# independent review of both are now complete, so the public authority the runner
+# reads records PT08 as `status=validated`.
+#
+# EVERY GUARD BELOW EXISTS TO KEEP TWO THINGS APART: hidden-acceptance
+# VALIDATION, which is now true, and the MANIFEST FREEZE, which is not. The
+# runner reads both from the same CSV column family, so a single careless word
+# here would make an unfrozen package look run-eligible.
+# =========================================================================== #
+def _gov():
+    sys.path.insert(0, str(REPO / "experiments" / "v2" / "harness"))
+    import run_governance
+    return run_governance
+
+
+def test_the_pt08_acceptance_row_carries_no_current_state_draft_token():
+    """1. `draft_unvalidated` anywhere in the row makes the helper return False.
+
+    The runner's check is a whole-row substring scan, not a status-column read,
+    so the token has to be absent from every cell — including the prose ones.
+    """
+    row = _by_id(ACCEPTANCE_MATRIX)["PT08"]
+    blob = " ".join(str(v) for v in row.values())
+    assert "draft_unvalidated" not in blob, (
+        "PT08's acceptance row still carries the draft_unvalidated token; the "
+        "runner scans the WHOLE ROW and would read the package as unvalidated"
+    )
+    # the other nine rows still carry their own unvalidated lifecycle untouched
+    for tid in ("PT01", "PT02", "PT03", "PT04", "PT05", "PT06", "PT07",
+                "PR01", "PR02"):
+        assert _by_id(ACCEPTANCE_MATRIX)[tid]["status"] == "candidate-not-frozen", tid
+
+
+def test_the_pt08_acceptance_status_is_exactly_validated_and_never_frozen():
+    """2 + 4. `validated` is the acceptance state; `frozen` is a different one."""
+    assert _by_id(ACCEPTANCE_MATRIX)["PT08"]["status"] == "validated"
+    assert _by_id(ACCEPTANCE_MATRIX)["PT08"]["status"] != "frozen"
+
+
+def test_the_runner_helpers_read_validated_but_not_frozen():
+    """3 + 4. The two public helpers, run against the real committed authority."""
+    gov = _gov()
+    assert gov.hidden_acceptance_is_validated("PT08") is True
+    assert gov.manifest_is_frozen("PT08") is False
+    # and nothing else moved with it
+    for tid in ("PT01", "PT04", "PT07", "PR02"):
+        assert gov.hidden_acceptance_is_validated(tid) is False, tid
+        assert gov.manifest_is_frozen(tid) is False, tid
+
+
+def test_the_runner_reports_hidden_acceptance_pass_and_manifest_freeze_blocked():
+    """5 + 7. Validation passes its prerequisite; the run stays ineligible."""
+    gov = _gov()
+    report = gov.check_readiness("PT08", "C1", "PT08_DIFFICULTY_DIAGNOSTIC")
+    items = {p.item: p for p in report.prerequisites}
+    assert items["hidden_acceptance_validation"].status == gov.PASS
+    assert items["manifest_freeze"].status == gov.BLOCKED
+    assert items["manifest_freeze"].code == gov.MANIFEST_NOT_FROZEN
+    assert report.run_eligible is False, (
+        "validated hidden acceptance must not make PT08 run eligible"
+    )
+    codes = {p.code for p in report.blocked}
+    assert gov.hidden_acceptance_refusal_code("PT08") not in codes
+    assert gov.MANIFEST_NOT_FROZEN in codes
+
+
+def test_no_public_surface_says_pt08_is_frozen_g1_passed_or_run_eligible():
+    """5 + 6 + 7. The three over-claims validation must never be read as."""
+    for path in sorted(DOCS_V2.glob("*.csv")) + sorted(DOCS_V2.glob("*.md")) + [
+        REPORT_PATH, INDEX_PATH,
+    ]:
+        flat = _flat(path)
+        for claim in ("pt08 is frozen", "pt08 is now frozen",
+                      "pt08 is run eligible", "pt08 is run-eligible",
+                      "pt08 is e1 run-eligible", "g1 is passed for pt08",
+                      "pt08 passes g1"):
+            assert claim not in flat, f"{path.name} claims {claim!r}"
+
+
+def test_the_global_td_b32_row_is_still_open_and_never_called_closed():
+    """8 + 9. The PT08-specific condition and the GLOBAL row are distinct."""
+    row = _by_id(DECISIONS_CSV, key="decision_id")["TD-B32"]
+    assert row["status"] == "open", "the GLOBAL TD-B32 row must stay open"
+    assert row["blocking"] == "yes"
+    decision = row["decision"].lower()
+    assert "pt08-specific" in decision and "satisfied" in decision
+    assert "the row is not closed" in decision
+    # the row still governs the other nine, whose scaffolds are untouched
+    assert "draft_unvalidated" in decision
+    for path in sorted(DOCS_V2.glob("*.csv")) + sorted(DOCS_V2.glob("*.md")):
+        flat = _flat(path)
+        for match in re.finditer(r"td-b32 (?:is )?(?:now )?closed", flat):
+            window = flat[max(0, match.start() - 300):match.end() + 300]
+            assert "pt08-specific" in window or "must never" in window, (
+                f"{path.name} calls TD-B32 closed without the PT08 qualifier"
+            )
+
+
+def test_global_td_b12_and_g6_are_unchanged_by_the_validation():
+    """10. A different row, a different gate, and this package touched neither."""
+    rows = _by_id(DECISIONS_CSV, key="decision_id")
+    assert rows["TD-B12"]["status"] == "open"
+    assert rows["TD-B12"]["blocking"] == "yes"
+
+
+def test_no_pt08_result_exists_anywhere():
+    """11. Validation produces no outcome value of any kind."""
+    results = REPO / "experiments" / "v2" / "results"
+    stray = [p.name for p in results.iterdir() if p.name != "README.md"]
+    assert stray == [], f"a result appeared under experiments/v2/results: {stray}"
+    row = _by_id(ACCEPTANCE_MATRIX)["PT08"]
+    assert row["evidence_location"] == (
+        "experiments/v2/results/<run_id>/acceptance_result.json"
+    ), "the evidence location must stay a template, not a real run id"
+
+
+def test_the_four_review_p2_findings_are_recorded_as_remaining_before_freeze():
+    """12. Non-blocking, carried forward, and explicitly not repaired here."""
+    notes = _by_id(ACCEPTANCE_MATRIX)["PT08"]["notes"].lower()
+    assert "p2=4" in notes
+    assert "carried forward to pre-freeze" in notes
+    assert "non-blocking" in notes

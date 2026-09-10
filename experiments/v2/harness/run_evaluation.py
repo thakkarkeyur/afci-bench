@@ -9,9 +9,12 @@ input to the other, and neither runs inside the model's workspace.
 This module is an **orchestration boundary only**:
 
 * it does **not** author or contain a hidden acceptance fixture, and it refuses
-  to accept or score a run whose hidden acceptance is not validated —
-  ``PT08``'s remains ``draft_unvalidated`` (``TD-B05``/``TD-B32``), so a real
-  ``PT08`` diagnostic fails with ``PT08_HIDDEN_ACCEPTANCE_NOT_VALIDATED``;
+  to accept or score a run whose hidden acceptance is not validated. Every
+  package except ``PT08`` remains ``draft_unvalidated`` (``TD-B05``/``TD-B32``)
+  and fails with ``<task>_HIDDEN_ACCEPTANCE_NOT_VALIDATED``. ``PT08``'s hidden
+  acceptance is now recorded ``status=validated``, so that one channel is READY
+  — which is **not** a freeze and **not** run eligibility: the manifest-freeze
+  gate below is a separate, still-blocking check;
 * it does **not** reimplement the architecture oracle. It builds the command for
   the governed out-of-band CLI at ``experiments/v2/oracle/src/cli.ts``, which
   already refuses a non-frozen manifest, and it refuses first, on the public

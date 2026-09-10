@@ -510,7 +510,14 @@ def test_recording_the_decision_confers_no_readiness():
     assert "the diagnostic cannot run now" in prohibitions
     assert "no runner exists" in prohibitions
     assert "isolation is not asserted to be clean" in prohibitions
-    assert "pt08 hidden acceptance is not validated" in prohibitions
+    # PT08's hidden acceptance IS validated now; the prohibition list records
+    # that, with the history it supersedes and the licence it does not grant
+    assert "pt08 hidden acceptance is validated" in prohibitions
+    assert "as recorded then: not validated" in prohibitions
+    assert (
+        "it is not a freeze and confers nothing else on this list" in prohibitions
+    )
+    assert "pt08 hidden acceptance is not validated." not in prohibitions
     assert "pt08 is not frozen" in prohibitions
     assert "gate g1 is not passed" in prohibitions
 
@@ -600,12 +607,16 @@ def test_the_runner_that_appeared_still_cannot_execute_the_diagnostic():
     for required in (
         "model_selection",
         "clean_isolated_context",
-        "hidden_acceptance_validation",
         "manifest_freeze",
         "private_sync_propagation_before_freeze",
         "q1_q8_live_runtime_validation",
     ):
         assert required in blocked, required
+    # hidden acceptance is the one prerequisite that has since been discharged,
+    # and discharging it made the run no more eligible than before
+    passed = {p.item for p in report.passed}
+    assert "hidden_acceptance_validation" in passed
+    assert "hidden_acceptance_validation" not in blocked
 
 
 def test_the_runner_does_not_relist_the_non_prerequisites_as_blockers():

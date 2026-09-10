@@ -77,9 +77,14 @@ Stated first so it cannot be quoted without it. Closing `PT08-PUB-P2-2`:
 - **passes no gate**, `G1` included, and `G2`/`G6` stay blocking;
 - **makes `PT08` no more run-eligible** — the public oracle still refuses a
   non-frozen manifest;
-- **validates no hidden acceptance** — `PT08`'s hidden functional acceptance
-  scaffold stays **`draft_unvalidated`** and has never been runtime-validated
-  (`TD-B32`);
+- **validates no hidden acceptance** — closing `PT08-PUB-P2-2` performed no
+  validation of any kind. *(`PT08`'s hidden acceptance has since been validated by
+  separate later work — runtime authored, reference and mutation validation
+  complete, both **independently reviewed and APPROVED**, recorded as
+  `status=validated` in [`TASK_ACCEPTANCE_MATRIX.csv`](TASK_ACCEPTANCE_MATRIX.csv).
+  **None of that was done by this closure**, and it is still **not** a freeze: it
+  satisfies the **`PT08`-specific** hidden-acceptance requirement of `TD-B32` while
+  the **global `TD-B32` row stays open**.)*;
 - **creates no result**, no violation value, no success value and no
   treatment-effect estimate;
 - **runs no power simulation** and freezes no power value (`TD-B37`, `TD-B41`);

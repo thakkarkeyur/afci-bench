@@ -37,9 +37,13 @@ guards the *bounds* of that lifecycle rather than its absence:
   ``DC-FEATURES-API-AR-DEP-006`` at **two** observations that stay
   **pseudo-replicates**;
 * and everything admission did **not** confer stays denied — nothing is frozen,
-  ``G1`` is not passed, ``PT08`` is not run-eligible, its hidden functional
-  acceptance is ``draft_unvalidated``, ``TD-B34`` stays open and blocking, priority
-  B is not started, and **no** result or power value exists.
+  ``G1`` is not passed, ``PT08`` is not run-eligible, ``TD-B34`` stays open and
+  blocking, priority B is not started, and **no** result or power value exists.
+
+``PT08``'s hidden functional acceptance has since been **validated and
+independently approved**, which satisfies the ``PT08``-specific hidden-acceptance
+requirement of ``TD-B32`` and changes none of the denials above: the global
+``TD-B32`` row stays open and nothing is frozen.
 
 HOW IT ASSERTS
 --------------
@@ -996,7 +1000,17 @@ def test_td_b34_stays_open_and_records_the_admission_as_progress_only():
     # and everything admission does not confer
     assert "gate g1 is not passed" in text
     assert "not frozen" in text and "not e1 run-eligible" in text
-    assert "draft_unvalidated" in text
+    # the hidden acceptance is validated now, and the row must carry the bounds
+    # rather than the superseded draft claim
+    assert (
+        "is now runtime-validated and that validation is independently approved"
+        in text
+    )
+    assert (
+        "satisfies the pt08-specific hidden-acceptance requirement of td-b32" in text
+    )
+    assert "freezes nothing" in text
+    assert "leaves the global td-b32 row open" in text
     # the superseded pre-authoring and post-authoring claims survive as history only
     assert "no pt08 identifier was assigned" in text
     assert "as originally recorded" in text

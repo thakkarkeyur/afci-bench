@@ -213,10 +213,20 @@ current mechanical state is **NO-GO** until they are completed:
    ([`MODEL_EXECUTION_CONTROLS.md`](MODEL_EXECUTION_CONTROLS.md) §7 **Q1**,
    `TD-B21`);
 10. **invalid-model-id rejection**, validated (§7 **Q8**, `TD-B21`);
-11. **`PT08` hidden functional acceptance fixture authoring** (`TD-B05`);
-12. **`PT08` reference-pass / reference-fail / mutation validation**;
+11. **`PT08` hidden functional acceptance fixture authoring** (`TD-B05`) — now
+    **COMPLETE**: the hidden acceptance runtime is authored;
+12. **`PT08` reference-pass / reference-fail / mutation validation** — now
+    **COMPLETE**: a conforming reference passes and 10 of 10 valid reference-fail
+    mutants are rejected, 0 escaped;
 13. the **required independent review of that hidden-acceptance validation**
-    (`TD-B32`);
+    (`TD-B32`) — now **COMPLETE**: an external read-only review returned
+    **`APPROVE`** (`P0=0`, `P1=0`, `P2=4` non-blocking findings carried forward to
+    pre-freeze), so [`TASK_ACCEPTANCE_MATRIX.csv`](TASK_ACCEPTANCE_MATRIX.csv)
+    records `PT08` as `status=validated`. **This discharges items 11–13 and
+    nothing else here**: the **`PT08`-specific** hidden-acceptance requirement of
+    `TD-B32` is satisfied, the **global `TD-B32` row stays open**, `TD-B12`/`G6`
+    are unchanged, and **item 14 (the manifest freeze) is untouched and still
+    outstanding**;
 14. **`PT08`'s required manifest freeze** under the existing lifecycle rules
     (`TD-B05`/`TD-B14`/`TD-B32`, gate `G1`);
 15. **public `PT08-PUB-P2-2` synchronization before that freeze** — the **one**
@@ -359,10 +369,17 @@ private state is owned by that synchronization and is not resolved here.
 
 Stated so no later reader can extract a licence this record does not grant.
 
-- **The diagnostic cannot run now.** Every item in §7 is outstanding.
+- **The diagnostic cannot run now.** *(As recorded then: every item in §7 was
+  outstanding.)* Items **11–13** (fixture authoring, reference/mutation
+  validation, and the independent review of that validation) and item **15**
+  (`PT08-PUB-P2-2`) are now **complete**; **every other item in §7 remains
+  outstanding**, item **14** — `PT08`'s manifest freeze — among them.
 - **No runner exists.**
 - **Isolation is not asserted to be clean**; it must be demonstrated per run.
-- **`PT08` hidden acceptance is not validated.**
+- **`PT08` hidden acceptance is validated** — runtime authored, reference and
+  mutation validation complete, both **independently reviewed and APPROVED**
+  (§7 items 11–13). *(As recorded then: not validated.)* **It is not a freeze and
+  confers nothing else on this list.**
 - **`PT08` is not frozen.**
 - **Gate `G1` is not passed**, and no gate is passed.
 - **`TD-B34` is not closed** and is not weakened.

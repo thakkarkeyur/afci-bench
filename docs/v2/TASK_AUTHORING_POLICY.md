@@ -702,10 +702,20 @@ frozen.
   now read **6** opportunities over **3** decision clusters at depths
   **3 / 2 / 1**, and the priority-A cluster carries **two** observations. **What is
   still not conferred:** gate **`G1`** is **not passed**; the manifest is
-  `status=review` and **not frozen**; the hidden functional acceptance scaffold is
-  still **`draft_unvalidated`**; `PT08` is **not run-eligible**; **no** result,
+  `status=review` and **not frozen**; `PT08` is **not run-eligible**; **no** result,
   violation value or treatment-effect estimate exists; and its public eligibility
   of `scored` still records **intent**, never a demonstrated denominator.
+- **A fourth lifecycle step has since occurred: hidden-acceptance validation.**
+  `PT08`'s hidden acceptance runtime is **authored**, its reference and mutation
+  validation is **complete**, and both have been **independently reviewed and
+  APPROVED** in a separate external read-only review, so
+  [`TASK_ACCEPTANCE_MATRIX.csv`](TASK_ACCEPTANCE_MATRIX.csv) records `PT08` as
+  `status=validated`. **`status=validated` is the hidden-acceptance validation
+  state and nothing else.** It is **not** `status=frozen`, it does **not** move the
+  manifest off `status=review`, and it passes **no** gate. It satisfies the
+  **`PT08`-specific** hidden-acceptance requirement of `TD-B32`; the **global
+  `TD-B32` row remains open** because no other package's hidden acceptance has been
+  validated at all, and `TD-B12`/`G6` are unchanged.
 - **Its forcing class is unchanged and must not be upgraded.** It is a
   **natural-path / opportunity-creating** instrument (§12.2d), never to be
   represented as carrying `features → infra` forcing strength; its discriminative

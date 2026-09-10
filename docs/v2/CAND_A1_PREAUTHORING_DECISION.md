@@ -26,8 +26,14 @@ admission step** admitted its single fixed architecture opportunity to the activ
 `E1` denominator and the active decision-cluster register. **None of that was done by this record**, and
 none of it confers a freeze, a gate pass, run eligibility, a result or a power
 value: nothing is frozen, `G1` is **not** passed, `PT08` is **not** run-eligible,
-its hidden functional acceptance is still **`draft_unvalidated`**, no reserve is
-activated, no model is selected, and the protocol remains **PRE-FREEZE**.
+no reserve is activated, no model is selected, and the protocol remains
+**PRE-FREEZE**. A **fourth** step has since occurred as well — `PT08`'s hidden
+functional acceptance is now **runtime-validated and independently approved**
+(`status=validated` in
+[`TASK_ACCEPTANCE_MATRIX.csv`](TASK_ACCEPTANCE_MATRIX.csv)) — and it changes none
+of the preceding sentence: validated hidden acceptance is **not** a freeze, it
+satisfies the **`PT08`-specific** hidden-acceptance requirement of `TD-B32` while
+the **global `TD-B32` row stays open**, and `TD-B12`/`G6` are unchanged.
 
 Decision: **`TD-B34`** (re-scoped to replication depth), priority **A**.
 Feasibility and forcing strength:
@@ -117,7 +123,8 @@ carries are the one thing that has moved, and both readings are kept below.
 | **Private evaluator package review** | **APPROVED on a discharged conditional independent review** |
 | **Private manifest** | **authored, `status=review`, not frozen** (*as recorded then*: absent) |
 | **Private architecture opportunity** | **authored and ADMITTED** — one fixed opportunity, identifier withheld (*as recorded then*: absent) |
-| **Hidden functional acceptance** | **`draft_unvalidated`** — authored, **not** runtime-validated |
+| **Hidden functional acceptance** | **`validated`** — runtime authored, reference + mutation validation complete, **independently reviewed and APPROVED**; hidden-acceptance validation only, **not** a freeze (*as recorded then*: `draft_unvalidated`, authored but not runtime-validated) |
+| **`TD-B32`** | **`PT08`-specific hidden-acceptance condition satisfied**; **global row still open** |
 | **Frozen** | **no** |
 | **Gate `G1`** | **not passed** |
 | **`E1` run eligible** | **no** |
@@ -163,9 +170,11 @@ carries are the one thing that has moved, and both readings are kept below.
   candidate review at all and is **not started**.
 - **Nothing is frozen, no gate is passed, and no experiment is run-ready.** `PT08`
   is a `candidate`, exactly like the nine bodies authored before it: its manifest is
-  `status=review`, its hidden functional acceptance is `draft_unvalidated`, gate
-  `G1` is not passed, it is not `E1` run-eligible, and **no result, violation value
-  or treatment-effect estimate exists**.
+  `status=review`, gate `G1` is not passed, it is not `E1` run-eligible, and **no
+  result, violation value or treatment-effect estimate exists**. Its hidden
+  functional acceptance is now `validated` — runtime authored, reference and
+  mutation validation complete, both independently reviewed and **approved** —
+  which is **one input** to a freeze and never the freeze itself.
 
 ---
 

@@ -81,13 +81,19 @@ BREADTH_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.md",
         heading="added by the pre-authoring opportunity reassessment — td-b34 – td-b37",
-        anchor="95d23b3704e3e8c2",
+        anchor="5eda9dedcfdf79c1",
         why="the re-scoped TD-B34 registry row quotes the original breadth objective; "
-            "re-anchored again when PT08's opportunity was ADMITTED (PT08-PUB-P2-2). "
-            "Admission is progress toward REPLICATION DEPTH and must never be read as "
-            "reviving the breadth objective, as closing TD-B34, or as an outcome: the "
-            "row has to carry the admitted counts, the pre-admission counts as history, "
-            "and every denial that bounds them, in the same field a machine reader "
+            "re-anchored again when PT08's opportunity was ADMITTED (PT08-PUB-P2-2), "
+            "and re-anchored once more when PT08's HIDDEN ACCEPTANCE VALIDATION was "
+            "independently approved and propagated. The row's PT08 denial list had "
+            "said the hidden acceptance stays draft_unvalidated, which is no longer "
+            "true; the clause now records the validation together with the fact that "
+            "it satisfies only the PT08-SPECIFIC TD-B32 condition, freezes nothing, "
+            "and leaves the global row open. Admission and validation are both "
+            "progress toward REPLICATION DEPTH and neither may be read as reviving "
+            "the breadth objective, as closing TD-B34, or as an outcome: the row has "
+            "to carry the admitted counts, the pre-admission counts as history, and "
+            "every denial that bounds them, in the same field a machine reader "
             "consumes",
         required=(MARKER, "is superseded and structurally unattainable",
                   "replication depth",
@@ -108,7 +114,14 @@ BREADTH_REGISTER = (
                   "priority b is not started",
                   # and the pre-admission reading survives as explicit history
                   "at that point the active set held 5 opportunities over 3 decision "
-                  "clusters at depths 3 / 1 / 1"),
+                  "clusters at depths 3 / 1 / 1",
+                  # the hidden-acceptance validation, and the bounds on it
+                  "is now runtime-validated and that validation is independently "
+                  "approved",
+                  "satisfies the pt08-specific hidden-acceptance requirement of "
+                  "td-b32",
+                  "freezes nothing",
+                  "leaves the global td-b32 row open"),
         forbidden=("the breadth objective is restored",
                    "breadth is again required",
                    # the superseded live claims, in the exact form they had
@@ -197,16 +210,22 @@ BREADTH_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.csv",
         heading="row TD-B34 / column decision",
-        anchor="628b1d29542db58b",
+        anchor="3d279f1b5712ea34",
         why="the machine-readable TD-B34 row quotes the original breadth objective; "
-            "re-anchored again when PT08's opportunity was ADMITTED (PT08-PUB-P2-2). "
-            "The row records progress toward REPLICATION DEPTH, which must never be "
-            "read as reviving the breadth objective; it must not inherit a residual "
-            "that belongs to a decision now resolved; and, because a CSV field is "
-            "consumed as current machine-readable state, the admitted counts, the "
-            "pre-admission counts as history, and every denial that bounds them "
-            "(nothing frozen, G1 not passed, priority B not started) must all live in "
-            "this one field",
+            "re-anchored again when PT08's opportunity was ADMITTED (PT08-PUB-P2-2), "
+            "and re-anchored once more when PT08's HIDDEN ACCEPTANCE VALIDATION was "
+            "independently approved and propagated. The row's PT08 denial list had "
+            "said the hidden acceptance stays draft_unvalidated, which is no longer "
+            "true; because a CSV field is consumed as CURRENT machine-readable "
+            "state, a stale denial here is a wrong fact rather than merely stale "
+            "prose, so the clause now records the validation together with its "
+            "bounds: it satisfies only the PT08-SPECIFIC TD-B32 condition, freezes "
+            "nothing, and leaves the global row open. The row records progress "
+            "toward REPLICATION DEPTH, which must never be read as reviving the "
+            "breadth objective; it must not inherit a residual that belongs to a "
+            "decision now resolved; and the admitted counts, the pre-admission "
+            "counts as history, and every denial that bounds them (nothing frozen, "
+            "G1 not passed, priority B not started) must all live in this one field",
         required=(MARKER, "as originally recorded",
                   "breadth objective is superseded and structurally unattainable",
                   "priority-a pre-authoring progress, not resolution",
@@ -230,7 +249,14 @@ BREADTH_REGISTER = (
                   "priority b is not started",
                   # and the pre-admission reading survives as explicit history
                   "at that point the active set held 5 opportunities over 3 decision "
-                  "clusters at depths 3/1/1"),
+                  "clusters at depths 3/1/1",
+                  # the hidden-acceptance validation, and the bounds on it
+                  "is now runtime-validated and that validation is independently "
+                  "approved",
+                  "satisfies the pt08-specific hidden-acceptance requirement of "
+                  "td-b32",
+                  "freezes nothing",
+                  "leaves the global td-b32 row open"),
         forbidden=("the breadth objective is restored",
                    "breadth is again required",
                    "re-approval remains outstanding",

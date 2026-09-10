@@ -551,10 +551,21 @@ def test_q8_treats_a_silent_substitution_as_a_failure_of_the_control():
 # --------------------------------------------------------------------------- #
 # Evaluation boundary and the freeze gate
 # --------------------------------------------------------------------------- #
-def test_pt08_hidden_acceptance_blocks_the_functional_channel():
+def test_pt08_hidden_acceptance_no_longer_blocks_the_functional_channel():
+    """PT08's hidden acceptance is validated, so this one channel is READY.
+
+    Ready is not run-eligible: the freeze gate below is a separate check and it
+    still refuses. The nine other packages keep the refusal unchanged, which is
+    what shows the gate still works rather than having been switched off.
+    """
     channel = ev.functional_acceptance_channel("PT08")
-    assert channel.ready is False
-    assert channel.code == "PT08_HIDDEN_ACCEPTANCE_NOT_VALIDATED"
+    assert channel.ready is True
+    assert channel.code is None
+    assert "validated" in channel.detail
+    for tid in ("PT01", "PT04", "PT07", "PR02"):
+        other = ev.functional_acceptance_channel(tid)
+        assert other.ready is False, tid
+        assert other.code == f"{tid}_HIDDEN_ACCEPTANCE_NOT_VALIDATED", tid
 
 
 def test_pt08_manifest_freeze_blocks_the_architecture_channel():
@@ -565,9 +576,20 @@ def test_pt08_manifest_freeze_blocks_the_architecture_channel():
 
 
 def test_a_scored_run_is_refused_before_execution():
+    """Still refused — now on the NEXT gate, the manifest freeze.
+
+    The refusal moved from hidden acceptance to the freeze because the first
+    prerequisite was genuinely discharged. What matters is that a scored run is
+    refused at all, and that the reason reported is the real one.
+    """
     with pytest.raises(gov.RunnerRefusal) as exc:
         ev.assert_scoring_prerequisites("PT08")
-    assert exc.value.code == "PT08_HIDDEN_ACCEPTANCE_NOT_VALIDATED"
+    assert exc.value.code == gov.MANIFEST_NOT_FROZEN
+    assert exc.value.code != "PT08_HIDDEN_ACCEPTANCE_NOT_VALIDATED"
+    # a package whose hidden acceptance is still unvalidated refuses earlier
+    with pytest.raises(gov.RunnerRefusal) as other:
+        ev.assert_scoring_prerequisites("PT07")
+    assert other.value.code == "PT07_HIDDEN_ACCEPTANCE_NOT_VALIDATED"
 
 
 def test_the_freeze_status_is_reported_and_never_changed():

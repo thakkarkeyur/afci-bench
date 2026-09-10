@@ -226,12 +226,68 @@ def case_readback_missing_gate(scratch: Path) -> str:
     return refusing(ma.validate_model_identity, "claude-sonnet-5", [])
 
 
+#: The hidden-acceptance gate is probed on a task whose acceptance is still
+#: UNVALIDATED. It used to be probed on PT08, but PT08's hidden acceptance is now
+#: validated, so PT08 answers True under the real harness AND under a mutation
+#: that removes the guard - the probe would agree with itself and the mutation
+#: test would pass while proving nothing. PT07 is still draft_unvalidated, so it
+#: still discriminates. This preserves the guard's power; it does not weaken it.
+UNVALIDATED_PROBE_TASK = "PT07"
+
+
 def case_hidden_acceptance_gate(scratch: Path) -> str:
+    return f"VALIDATED={gov.hidden_acceptance_is_validated(UNVALIDATED_PROBE_TASK)}"
+
+
+def case_hidden_acceptance_gate_pt08_validated(scratch: Path) -> str:
+    """The other direction: PT08's acceptance IS validated, and stays so."""
     return f"VALIDATED={gov.hidden_acceptance_is_validated('PT08')}"
 
 
 def case_manifest_freeze_gate(scratch: Path) -> str:
     return f"FROZEN={gov.manifest_is_frozen('PT08')}"
+
+
+def _synthetic_matrix(scratch: Path, name: str, status: str, notes: str) -> Path:
+    """A one-row acceptance authority, written into disposable scratch.
+
+    Both public helpers take the matrix path, so a redundancy claim about the
+    guard PAIR can be exercised on a row built to exercise it - rather than
+    depending on whichever real row happens to hit both guards today.
+    """
+    scratch.mkdir(parents=True, exist_ok=True)
+    path = scratch / name
+    path.write_text(
+        "task_id,status,notes\n" f"PT08,{status},{notes}\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return path
+
+
+def case_hidden_acceptance_denylist_guard(scratch: Path) -> str:
+    """The DENY half alone: a `validated` status that still says draft_unvalidated.
+
+    The allow-list would pass this row. Only the `draft_unvalidated` substring
+    guard rejects it, so mutating the allow-list must not turn it True.
+    """
+    matrix = _synthetic_matrix(
+        scratch, "denylist.csv", "validated", "scaffold is draft_unvalidated"
+    )
+    return f"VALIDATED={gov.hidden_acceptance_is_validated('PT08', matrix)}"
+
+
+def case_manifest_freeze_denylist_guard(scratch: Path) -> str:
+    """The DENY half alone: an explicit not-frozen lifecycle status.
+
+    The `status == "frozen"` allow-list would already answer False, so mutating
+    it to `return True` leaves the `not-frozen` substring guard as the only
+    defence - which is exactly the redundancy under test.
+    """
+    matrix = _synthetic_matrix(
+        scratch, "freeze.csv", "candidate-not-frozen", "unfrozen lifecycle"
+    )
+    return f"FROZEN={gov.manifest_is_frozen('PT08', matrix)}"
 
 
 def case_record_validation_gate(scratch: Path) -> str:

@@ -277,7 +277,7 @@ def test_case_15_a_real_invocation_with_no_selected_primary_model_fails_closed(t
     # It fails even earlier than the model gate: a real run needs a validated
     # oracle first. Both refusals are correct; neither is a model being chosen.
     assert result.refusal_code in {
-        "PT08_HIDDEN_ACCEPTANCE_NOT_VALIDATED",
+        gov.MANIFEST_NOT_FROZEN,
         gov.PRIMARY_MODEL_NOT_SELECTED,
         gov.ISOLATED_ENVIRONMENT_NOT_VERIFIED,
     }
@@ -322,14 +322,25 @@ def test_case_17b_a_dry_run_never_fabricates_a_readback(tmp_path):
 # 18-19. Oracle lifecycle
 # --------------------------------------------------------------------------- #
 def test_case_18_an_unvalidated_hidden_acceptance_fails_closed():
+    """The gate still fires — on a package whose acceptance is unvalidated.
+
+    PT08's acceptance is now validated, so PT08 is the wrong probe for this
+    gate and would test the freeze gate instead. PT07 is the right one: its
+    scaffold is still `draft_unvalidated`.
+    """
     with pytest.raises(gov.RunnerRefusal) as exc:
-        ev.assert_scoring_prerequisites("PT08")
-    assert exc.value.code == "PT08_HIDDEN_ACCEPTANCE_NOT_VALIDATED"
+        ev.assert_scoring_prerequisites("PT07")
+    assert exc.value.code == "PT07_HIDDEN_ACCEPTANCE_NOT_VALIDATED"
 
 
 def test_case_18b_a_scored_run_is_refused_before_any_worktree_is_prepared(tmp_path):
+    """Still refused in PRECHECK, now on the manifest freeze rather than earlier.
+
+    What this case guards is that the refusal happens BEFORE any worktree is
+    prepared, not which of the precheck gates fires first.
+    """
     result = _run(tmp_path, scored=True)
-    assert result.refusal_code == "PT08_HIDDEN_ACCEPTANCE_NOT_VALIDATED"
+    assert result.refusal_code == gov.MANIFEST_NOT_FROZEN
     assert {e["state"] for e in result.machine.log} == {"PRECHECK"}
 
 

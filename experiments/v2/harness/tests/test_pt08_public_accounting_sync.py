@@ -24,10 +24,13 @@ AND IN THE OTHER DIRECTION
 --------------------------
 Synchronizing an accounting row is the single most tempting place to over-claim, so
 every denial the admission did **not** discharge is asserted here too: nothing is
-frozen, `G1` is not passed, `PT08` is not run-eligible, its hidden functional
-acceptance stays `draft_unvalidated`, `TD-B34` stays open and blocking, priority B
-is not started, `SL-PT08-01` stays the one bounded diagnostic exception, and no
-result and no power value exist anywhere.
+frozen, `G1` is not passed, `PT08` is not run-eligible, `TD-B34` stays open and
+blocking, priority B is not started, `SL-PT08-01` stays the one bounded diagnostic
+exception, and no result and no power value exist anywhere.
+
+`PT08`'s hidden acceptance has since been **validated and independently approved**
+by separate later work. This module's denial is therefore scoped to what *this
+closure* did — it validated nothing — rather than asserted as a standing fact.
 
 Pure text and file inspection. No model is invoked, no benchmark runs, no power
 simulation runs, and nothing is frozen.
@@ -432,24 +435,45 @@ def test_the_diagnostic_remains_mechanically_no_go_and_closure_discharges_one_it
 # M.12 - M.17 — everything the synchronization did NOT confer.
 
 
-def test_the_hidden_acceptance_scaffold_remains_draft_unvalidated():
-    assert "draft_unvalidated" in _flat(CLOSURE_PATH)
-    assert "never been runtime-validated" in _flat(CLOSURE_PATH)
+def test_the_closure_itself_validated_no_hidden_acceptance():
+    """The claim under test is about THIS CLOSURE, not about PT08's whole history.
+
+    Closing `PT08-PUB-P2-2` validated nothing. `PT08`'s hidden acceptance has
+    since been validated by separate, later work — so the denial must be scoped
+    to the closure rather than asserted as a standing fact about the package,
+    which is what the old wording did.
+    """
+    closure = _flat(CLOSURE_PATH)
+    assert "validates no hidden acceptance" in closure
+    assert "performed no validation of any kind" in closure
+    assert "none of that was done by this closure" in closure
+    # and the later validation is recorded WITH the qualifier that is not a freeze
+    assert "independently reviewed and approved" in closure
+    assert "global td-b32 row stays open" in closure
     row = _by_id(ACCEPTANCE_MATRIX)["PT08"]
     joined = G.norm(",".join(v or "" for v in row.values()))
-    assert "draft_unvalidated" in joined
-    assert row["status"] == "candidate-not-frozen"
-    for overclaim in ("hidden acceptance validated", "runtime-validated and approved",
-                      "reference pass/fail validated"):
+    assert "draft_unvalidated" not in joined, (
+        "the runner scans the whole row; the token would read as unvalidated"
+    )
+    assert row["status"] == "validated"
+    assert row["status"] != "frozen"
+    for overclaim in ("pt08 is frozen", "manifest is frozen", "g1 is passed",
+                      "run-eligible;", "td-b32 closed"):
         assert overclaim not in joined, f"the row over-claims: {overclaim!r}"
+    # the GLOBAL row is untouched by the PT08-specific satisfaction
     assert G.norm(_decision("TD-B32")["status"]) == "open"
 
 
 def test_pt08_remains_unfrozen():
     assert _by_id(INDEX_PATH)["PT08"]["task_status"] == "candidate"
     assert _by_id(MATRIX_PATH)["PT08"]["task_status"] == "candidate"
-    for path in (ACCEPTANCE_MATRIX, LAYER_MATRIX, RULE_MATRIX):
+    # the manifest/task lifecycle stays candidate-not-frozen; the acceptance
+    # matrix carries the separate hidden-acceptance lifecycle, now `validated`
+    for path in (LAYER_MATRIX, RULE_MATRIX):
         assert _by_id(path)["PT08"]["status"] == "candidate-not-frozen", path.name
+    assert _by_id(ACCEPTANCE_MATRIX)["PT08"]["status"] == "validated"
+    for path in (ACCEPTANCE_MATRIX, LAYER_MATRIX, RULE_MATRIX):
+        assert _by_id(path)["PT08"]["status"] != "frozen", path.name
     closure = _flat(CLOSURE_PATH)
     assert "freezes nothing" in closure
     assert "stays status=review" in closure

@@ -192,11 +192,14 @@ def test_the_synthetic_clean_dry_run_reports_every_downstream_blocker(tmp_path):
     result = run_v2.run(_request(tmp_path, audit_provider=fx.synthetic_clean_audit))
     codes = {b["code"] for b in result.record["prerequisite_blockers"]}
     assert gov.PRIMARY_MODEL_NOT_SELECTED in codes
-    assert gov.hidden_acceptance_refusal_code("PT08") in codes
     assert gov.MANIFEST_NOT_FROZEN in codes
     assert gov.PRIVATE_PUBLIC_SYNC_PROPAGATION_REQUIRED_BEFORE_FREEZE in codes
+    # hidden acceptance is validated, so its refusal code is gone from BOTH the
+    # prerequisite list and the evaluation channels - and the run is still not
+    # eligible, which is what a discharged prerequisite is supposed to look like
+    assert gov.hidden_acceptance_refusal_code("PT08") not in codes
     evaluation_codes = {c["code"] for c in result.record["evaluation"]["channels"]}
-    assert gov.hidden_acceptance_refusal_code("PT08") in evaluation_codes
+    assert gov.hidden_acceptance_refusal_code("PT08") not in evaluation_codes
     assert gov.MANIFEST_NOT_FROZEN in evaluation_codes
 
 
@@ -258,10 +261,12 @@ def test_the_cli_readiness_command_reports_the_authorised_run():
     for passing in (
         "public_body_identity", "c1_worktree_preparation", "diagnostic_governance",
         "public_private_linkage", "architecture_corpus_availability",
+        # discharged by the independently approved hidden-acceptance validation
+        "hidden_acceptance_validation",
     ):
         assert items[passing]["status"] == gov.PASS, items[passing]
     for blocked in (
-        "model_selection", "clean_isolated_context", "hidden_acceptance_validation",
+        "model_selection", "clean_isolated_context",
         "manifest_freeze", "private_sync_propagation_before_freeze",
         "q1_q8_live_runtime_validation",
     ):

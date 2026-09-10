@@ -1252,10 +1252,15 @@ therefore holds **6** opportunities over **3** decision clusters at depths
 false:** `TD-B34` is **not** resolved, because **priority B**
 (`DC-API-CORE-AR-DEP-005`) has had **no** candidate review at all and **is not
 started**; gates **G1**, **G2** and **G6** are **not passed**; `PT08` is **not**
-frozen and **not** run-eligible; its manifest is `status=review` and its hidden
-functional acceptance is **`draft_unvalidated`**; **no power simulation has run and
-no power value is frozen**; and **no result, violation value or treatment-effect
-estimate exists**.
+frozen and **not** run-eligible; its manifest is `status=review`; **no power
+simulation has run and no power value is frozen**; and **no result, violation value
+or treatment-effect estimate exists**. **What has since changed:** `PT08`'s hidden
+functional acceptance is now **`validated`** — the runtime is authored, its
+reference and mutation validation is complete, and both have been **independently
+reviewed and APPROVED**. That satisfies the **`PT08`-specific** hidden-acceptance
+requirement of **`TD-B32`** and **freezes nothing**: the **global `TD-B32` row
+stays open**, `TD-B12`/`G6` are unchanged, and every "not" in the preceding
+sentence still holds.
 
 ### Functional acceptance observation boundary check for `PT08` (`TD-B39`)
 

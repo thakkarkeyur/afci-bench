@@ -378,18 +378,24 @@ REDUNDANT_MUTATIONS: List[Tuple[str, List[Edit], str, str]] = [
         "canonical_repo_gate",
         "REFUSED:CANONICAL_REPOSITORY_EXECUTION_REFUSED",
     ),
+    # R5/R6 are probed against SYNTHETIC one-row authorities rather than a live
+    # row. Each isolates the DENY half of a guard pair, which is the half the
+    # mutation leaves standing. Probing a live row instead would make the claim
+    # depend on which real row happens to trip both guards: PT08's row used to,
+    # and no longer does, because its `draft_unvalidated` token is gone and its
+    # status no longer contains `not-frozen`.
     (
         "R5-hidden-acceptance-status-check-only",
         [("run_governance.py",
           '    return row.get("status", "").strip().lower() in {"validated", "frozen"}',
           "    return True")],
-        "hidden_acceptance_gate",
+        "hidden_acceptance_denylist_guard",
         "VALIDATED=False",
     ),
     (
         "R6-manifest-freeze-status-check-only",
         [("run_governance.py", '    return status == "frozen"', "    return True")],
-        "manifest_freeze_gate",
+        "manifest_freeze_denylist_guard",
         "FROZEN=False",
     ),
 ]
