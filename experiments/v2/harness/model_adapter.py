@@ -33,7 +33,12 @@ No model is invoked and no benchmark task is executed by this module.
 from __future__ import annotations
 
 import json
+import os
+import re
+import subprocess
+import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import context_audit as ca
@@ -65,6 +70,43 @@ GOVERNED_ENV: Dict[str, str] = {
     "CLAUDE_CODE_DISABLE_WORKFLOWS": "1",
 }
 
+#: Flags that make the launched process load NOTHING local, verified against the
+#: installed CLI rather than assumed:
+#:
+#: * ``--safe-mode`` disables CLAUDE.md discovery, skills, plugins, hooks, MCP
+#:   servers, custom commands, agents, output styles and workflows, while leaving
+#:   authentication, model selection and permissions working normally. It is
+#:   chosen over ``--bare`` deliberately: ``--bare`` also strips customisation but
+#:   forces authentication to ``ANTHROPIC_API_KEY``/``apiKeyHelper`` and never
+#:   reads OAuth, which would make subscription authentication impossible.
+#: * ``--setting-sources`` with an empty value loads no user, project or local
+#:   settings file.
+#: * ``--strict-mcp-config`` ignores every MCP configuration not passed
+#:   explicitly — and none is passed.
+#: * ``--disable-slash-commands`` disables skills.
+#:
+#: Verified on Claude Code 2.1.229: with these flags the runtime's own
+#: ``system.init`` reports ``skills: []``, ``slash_commands: []``, ``plugins: []``
+#: and ``mcp_servers: []``.
+STERILE_LAUNCH_FLAGS: Tuple[str, ...] = (
+    "--safe-mode",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--disable-slash-commands",
+)
+
+#: The one permission mode used for every repetition (Part F / SL-PT08-04).
+#: ``acceptEdits`` lets the model edit non-interactively; confinement comes from
+#: the process's working directory, because nothing outside it is granted.
+DIAGNOSTIC_PERMISSION_MODE = "acceptEdits"
+
+#: The built-in tools a coding repetition may use. Fixed across all repetitions.
+#: ``Task`` is excluded so one repetition is ONE model rather than a fan-out, and
+#: ``WebSearch``/``WebFetch`` are excluded so no repetition can retrieve an
+#: answer from outside the governed substrate.
+DIAGNOSTIC_TOOLS: Tuple[str, ...] = ("Read", "Edit", "Write", "Glob", "Grep", "Bash")
+
 
 @dataclass(frozen=True)
 class LaunchPlan:
@@ -77,6 +119,11 @@ class LaunchPlan:
     model_status: str
     effort_input: Optional[str]
     session_handling: str
+    permission_mode: Optional[str] = None
+    tools: Tuple[str, ...] = ()
+    sterile: bool = False
+    prompt_delivery: str = "argv-mention"
+    prompt_path: Optional[str] = None
 
     def environment(self) -> Dict[str, str]:
         return dict(self.env)
@@ -132,6 +179,9 @@ def build_fresh_launch(
     sterile_env: Optional[Dict[str, str]] = None,
     extra: Sequence[str] = (),
     require_model: bool = True,
+    sterile: bool = False,
+    permission_mode: Optional[str] = None,
+    tools: Sequence[str] = (),
 ) -> LaunchPlan:
     """Build the fresh-process launch for one run, failing closed.
 
@@ -151,6 +201,8 @@ def build_fresh_launch(
         )
 
     argv: List[str] = ["claude", "-p", "--no-session-persistence"]
+    if sterile:
+        argv += list(STERILE_LAUNCH_FLAGS)
     model_status = "PINNED"
     if model_id:
         argv += ["--model", model_id]
@@ -170,10 +222,27 @@ def build_fresh_launch(
     # requested as an input, never treated as evidence that a readback exists.
     argv += ["--output-format", "stream-json", "--verbose"]
     argv += ["--add-dir", workspace]
+    if permission_mode:
+        argv += ["--permission-mode", permission_mode]
     if session_id is not None:
         argv += ["--session-id", session_id]
     argv += list(extra)
-    argv += ["--", f"@{prompt_path}"]
+    if tools:
+        # Last before the terminator: --tools is variadic, so it must not be
+        # able to swallow a following flag.
+        argv += ["--tools", ",".join(tools)]
+    if sterile:
+        # The task body is written to the process's STDIN rather than named on
+        # the command line. An `@path` mention would depend on the runtime
+        # choosing to expand it and on that path being readable from the model's
+        # granted directories — two assumptions, either of which would silently
+        # deliver the literal string "@C:\...\task_prompt.md" as the whole task.
+        # stdin has neither failure mode and no length limit, and it keeps the
+        # prompt out of argv, where the audit would otherwise have to record it.
+        prompt_delivery = "stdin"
+    else:
+        prompt_delivery = "argv-mention"
+        argv += ["--", f"@{prompt_path}"]
 
     # Independent second gate: the frozen guard the reset protocol names.
     violations = ca.check_session_flags(argv, previous)
@@ -199,6 +268,11 @@ def build_fresh_launch(
             "fresh process; --no-session-persistence; no --resume/--continue/"
             "--from-pr; " + ("fresh --session-id" if session_id else "no session id")
         ),
+        permission_mode=permission_mode,
+        tools=tuple(tools),
+        sterile=sterile,
+        prompt_delivery=prompt_delivery,
+        prompt_path=str(prompt_path),
     )
 
 
@@ -211,6 +285,44 @@ def _refusing_launcher(plan: LaunchPlan) -> "ModelInvocationOutcome":  # pragma:
         "no process launcher is configured; this repository ships no path that "
         "can start a paid model run, and one must be supplied deliberately",
     )
+
+
+#: Shapes that must never reach an artifact. The credential file is never read
+#: by this harness, but a runtime error string could still echo a token, so
+#: every captured stream is filtered before it is written anywhere.
+_SECRET_PATTERNS: Tuple[str, ...] = (
+    r"sk-ant-[A-Za-z0-9_\-]{8,}",
+    r"sk-[A-Za-z0-9_\-]{20,}",
+    r"Bearer\s+[A-Za-z0-9._\-]{8,}",
+    r'"access_?[Tt]oken"\s*:\s*"[^"]*"',
+    r'"refresh_?[Tt]oken"\s*:\s*"[^"]*"',
+    r"eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}",
+)
+
+_SECRET_RE = re.compile("|".join(_SECRET_PATTERNS))
+
+
+def redact(text: str) -> str:
+    """Mask credential-shaped material in anything captured from a process."""
+    if not text:
+        return text
+    return _SECRET_RE.sub("[REDACTED]", text)
+
+
+def first_init_event(events) -> Optional[dict]:
+    """The headless ``system.init`` event, which reports what the runtime loaded."""
+    if isinstance(events, dict):
+        events = [events]
+    if not isinstance(events, list):
+        return None
+    for event in events:
+        if (
+            isinstance(event, dict)
+            and event.get("type") == "system"
+            and event.get("subtype") == "init"
+        ):
+            return event
+    return None
 
 
 @dataclass
@@ -232,6 +344,179 @@ class ModelInvocationOutcome:
             "runtime_evidence_path": self.runtime_evidence_path,
             "detail": self.detail,
         }
+
+
+@dataclass
+class RealClaudeCodeLauncher:
+    """Start a genuinely fresh Claude Code process and capture its own report.
+
+    This is the production launcher the runner was missing. Everything it does
+    before ``subprocess.run`` is a refusal opportunity: a launcher that only
+    fails *after* spending a paid run would be no safer than no launcher at all.
+
+    It refuses to start a process unless, all at once:
+
+    * the plan pins an exact model and carries no fallback or restoration flag;
+    * the working directory is the governed disposable worktree — never the
+      canonical repository, never outside the governed root;
+    * the environment is sterile: the isolation variables point at the run's own
+      HOME and config dir, and no ``CLAUDE_*``/``ANTHROPIC_*`` variable has been
+      inherited from the session that started it;
+    * the sterile profile itself holds nothing but authentication material and
+      adjudicated account metadata — no skills, plugins, instruction-bearing
+      settings or prior sessions.
+
+    Invocation is by argument list with ``shell=False``. Captured streams are
+    redacted before they are written. Structured output is required: a run whose
+    ``system.init`` cannot be read back is INVALID, never assumed good.
+    """
+
+    executable: str
+    cwd: Path
+    env: Dict[str, str]
+    evidence_path: Path
+    governed_root: Optional[Path] = None
+    canonical_repo: Optional[Path] = None
+    config_dir: Optional[Path] = None
+    timeout_seconds: int = 1800
+
+    # -- refusals --------------------------------------------------------- #
+    def _assert_launchable(self, plan: LaunchPlan) -> None:
+        if not plan.model_id or not plan.executable:
+            raise gov.RunnerRefusal(
+                gov.MODEL_SELECTION_REQUIRED,
+                "the launch plan pins no exact model id; this launcher never "
+                "selects one and has no fallback",
+            )
+        _assert_no_restoration(plan.argv)
+
+        cwd = Path(self.cwd).resolve()
+        if not cwd.is_dir():
+            raise gov.RunnerRefusal(
+                gov.MODEL_WORKTREE_NOT_LAUNCHABLE,
+                f"the model working directory {cwd} does not exist",
+            )
+        repo = Path(self.canonical_repo or gov.REPO).resolve()
+        if cwd == repo or repo in cwd.parents:
+            raise gov.RunnerRefusal(
+                gov.CANONICAL_REPOSITORY_EXECUTION_REFUSED,
+                f"the model working directory {cwd} is the canonical repository "
+                f"{repo} or inside it; a run edits a disposable worktree only",
+            )
+        if self.governed_root is not None:
+            root = Path(self.governed_root).resolve()
+            if root != cwd and root not in cwd.parents:
+                raise gov.RunnerRefusal(
+                    gov.CANONICAL_REPOSITORY_EXECUTION_REFUSED,
+                    f"the model working directory {cwd} is outside the governed "
+                    f"run root {root}",
+                )
+
+        home = self.env.get("HOME") or self.env.get("USERPROFILE")
+        cfg = self.env.get("CLAUDE_CONFIG_DIR")
+        if not home or not cfg:
+            raise gov.RunnerRefusal(
+                gov.ISOLATED_ENVIRONMENT_NOT_VERIFIED,
+                "the launch environment does not pin a sterile HOME and "
+                "CLAUDE_CONFIG_DIR; a process started from it could read the "
+                "developer profile",
+            )
+        if Path(home).resolve() == Path(os.path.expanduser("~")).resolve():
+            raise gov.RunnerRefusal(
+                gov.ISOLATED_ENVIRONMENT_NOT_VERIFIED,
+                "the launch environment points HOME at the real user profile",
+            )
+        leaked = ca.inherited_env_violations(self.env)
+        if leaked:
+            raise gov.RunnerRefusal(
+                gov.ISOLATED_ENVIRONMENT_NOT_VERIFIED,
+                f"the launch environment inherited {leaked} from the calling "
+                "session; a sterile launch is built by allowlist",
+            )
+
+        findings = ca.verify_sterile_profile(
+            Path(self.config_dir or cfg), expect_credential=True
+        )
+        if findings:
+            raise gov.RunnerRefusal(
+                gov.CONTEXT_AUDIT_CONTAMINATED,
+                "the sterile profile is not clean: " + "; ".join(findings[:4]),
+            )
+
+    # -- invocation ------------------------------------------------------- #
+    def __call__(self, plan: LaunchPlan) -> ModelInvocationOutcome:
+        self._assert_launchable(plan)
+
+        argv = [self.executable, *list(plan.argv)[1:]]
+        stdin_text: Optional[str] = None
+        if plan.prompt_delivery == "stdin":
+            if not plan.prompt_path or not Path(plan.prompt_path).is_file():
+                raise gov.RunnerRefusal(
+                    gov.MODEL_WORKTREE_NOT_LAUNCHABLE,
+                    "the launch delivers the task over stdin but no prompt file "
+                    "exists; a run must never be started with an empty task",
+                )
+            stdin_text = Path(plan.prompt_path).read_text(encoding="utf-8")
+            if not stdin_text.strip():
+                raise gov.RunnerRefusal(
+                    gov.MODEL_WORKTREE_NOT_LAUNCHABLE,
+                    "the task prompt is empty; refusing to spend a run on it",
+                )
+        started = time.time()
+        try:
+            proc = subprocess.run(  # noqa: S603 - argv list, shell=False by construction
+                argv,
+                cwd=str(Path(self.cwd).resolve()),
+                env=dict(self.env),
+                input=stdin_text,
+                capture_output=True,
+                text=True,
+                timeout=self.timeout_seconds,
+                shell=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise gov.RunnerRefusal(
+                gov.MODEL_PROCESS_FAILED,
+                f"the model process exceeded {self.timeout_seconds}s and was "
+                "killed; the repetition is invalid rather than partial",
+            ) from exc
+        elapsed = time.time() - started
+
+        stdout = redact(proc.stdout or "")
+        stderr = redact(proc.stderr or "")
+        events: List[dict] = []
+        for line in stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                events.append(json.loads(line))
+            except ValueError:
+                continue
+
+        evidence = Path(self.evidence_path)
+        evidence.parent.mkdir(parents=True, exist_ok=True)
+        evidence.write_text(
+            "\n".join(json.dumps(e, sort_keys=True) for e in events),
+            encoding="utf-8",
+        )
+        stderr_path = evidence.with_suffix(".stderr.txt")
+        stderr_path.write_text(stderr, encoding="utf-8")
+
+        init = first_init_event(events)
+        return ModelInvocationOutcome(
+            invoked=True,
+            status="PROCESS_COMPLETED" if proc.returncode == 0 else "PROCESS_FAILED",
+            exit_status=proc.returncode,
+            runtime_evidence_path=str(evidence),
+            runtime_evidence=events,
+            detail=(
+                f"exit={proc.returncode}; {len(events)} structured event(s) in "
+                f"{elapsed:.1f}s; runtime "
+                f"{(init or {}).get('claude_code_version', 'unreported')}; "
+                f"stderr {len(stderr)} char(s)"
+            ),
+        )
 
 
 @dataclass

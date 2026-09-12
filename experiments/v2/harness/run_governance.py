@@ -173,6 +173,12 @@ PRIVATE_LINKAGE_NOT_VERIFIABLE = "PRIVATE_LINKAGE_NOT_VERIFIABLE"
 ARCHITECTURE_CORPUS_NOT_AVAILABLE = "ARCHITECTURE_CORPUS_NOT_AVAILABLE"
 ISOLATED_ENVIRONMENT_NOT_VERIFIED = "ISOLATED_ENVIRONMENT_NOT_VERIFIED"
 
+# Real-process launch outcomes. A launch that cannot be started, cannot be
+# completed, or cannot be read back is INVALID; none of these is ever a partial
+# success that a repetition could still be scored from.
+MODEL_PROCESS_FAILED = "MODEL_PROCESS_FAILED"
+MODEL_WORKTREE_NOT_LAUNCHABLE = "MODEL_WORKTREE_NOT_LAUNCHABLE"
+
 #: The pinned run-manifest schema (``experiments/v2/schemas``) is byte-pinned by
 #: the private evaluator's public linkage and sets ``additionalProperties:false``,
 #: so it cannot carry SL-PT08-01 §9's six quarantine fields without a linkage
@@ -598,6 +604,42 @@ def primary_model(path: Path = MODEL_REGISTRY) -> Optional[str]:
             GOVERNANCE_RECORD_UNREADABLE, f"{path} declares no primary_model key"
         )
     value = match.group(1).strip().strip('"').strip("'")
+    return None if value in {"null", "~", "None"} else value
+
+
+def diagnostic_primary_model(
+    run_purpose: Optional[str], path: Path = MODEL_REGISTRY
+) -> Optional[str]:
+    """The model pinned for ONE non-confirmatory run purpose, or ``None``.
+
+    Deliberately separate from :func:`primary_model`. ``TD-B03`` governs the
+    selection of *the primary benchmark model* for the confirmatory study — the
+    one screened across conditions and subject to the anti-selection rule — and
+    that decision stays open with ``primary_model: null``. Pinning a model so a
+    quarantined difficulty probe can be executed is a different act, it is
+    scoped to the purpose named here, and it confers nothing on the confirmatory
+    study. A caller that asks for a purpose the registry does not name gets
+    ``None`` and is refused, which is why this can never become a default.
+    """
+    if not run_purpose:
+        return None
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except OSError as exc:
+        raise RunnerRefusal(
+            GOVERNANCE_RECORD_UNREADABLE, f"cannot read {path}: {exc}"
+        ) from exc
+    block = re.search(
+        rf"^\s*{re.escape(run_purpose)}:\s*$(.*?)(?=^\S|\Z)",
+        text,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not block:
+        return None
+    match = re.search(r"^\s*exact_model_id:\s*(\S+)", block.group(1), re.MULTILINE)
+    if not match:
+        return None
+    value = match.group(1).split("#")[0].strip().strip('"').strip("'")
     return None if value in {"null", "~", "None"} else value
 
 

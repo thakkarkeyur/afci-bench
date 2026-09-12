@@ -31,6 +31,7 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
 import sys
 import tempfile
 from dataclasses import dataclass, field
@@ -51,6 +52,63 @@ SESSION_ID_FLAGS = {"--session-id"}
 
 # Component kinds tracked in the component_status block.
 COMPONENT_KINDS = ("mcp", "plugins", "hooks", "skills", "agents", "commands")
+
+#: AUTHENTICATION MATERIAL, which is NOT experiment-relevant context.
+#:
+#: ``SL-PT08-04`` draws the line this constant encodes: isolation is defined by
+#: the effective MODEL-VISIBLE EXECUTION CONTEXT, not by billing identity. A
+#: credential answers "may this account call the API at all"; it carries no
+#: instruction, no skill, no tool and no task guidance, so its presence can
+#: never change what the model is told. It is therefore permitted in a sterile
+#: profile — and, because permitting it silently would be indistinguishable from
+#: failing to look, it is RECORDED as authentication material rather than
+#: ignored. Its CONTENTS are never read, hashed into a report, or logged.
+AUTHENTICATION_FILES = frozenset({".credentials.json"})
+
+#: Account-tied metadata the runtime RE-CREATES for itself after a successful
+#: subscription authentication. These files are not copied into a sterile
+#: profile; they appear anyway, which is why a filesystem-only audit that treats
+#: every non-empty config file as contamination can never return CLEAN for a
+#: subscription-authenticated run. Under ``SL-PT08-04`` they are adjudicated on
+#: CONTENT (see :func:`account_policy_injects_context`) and only count as
+#: contamination when they demonstrably inject model-visible context.
+ACCOUNT_POLICY_FILES = frozenset(
+    {"policy-limits.json", "remote-settings.json", ".claude.json", "claude.json"}
+)
+
+#: Directories the runtime creates for its own bookkeeping inside a sterile
+#: config dir. They carry no instruction; ``sessions`` must additionally be
+#: EMPTY, because a populated one would be exactly the prior-session state the
+#: reset protocol forbids.
+RUNTIME_CREATED_DIRS = frozenset({"backups", "sessions", "statsig", "telemetry"})
+
+#: Environment variables a sterile launch pins beyond :data:`REQUIRED_ENV`.
+#: ``DISABLE_NON_ESSENTIAL_MODEL_CALLS`` is load-bearing for the model-identity
+#: contract, not a tidiness control: without it the runtime makes auxiliary
+#: calls to a DIFFERENT model for its own housekeeping, those calls appear in
+#: ``modelUsage``, and the Q1 readback then reports two distinct resolved model
+#: ids and fails as AMBIGUOUS. Pinning it is what makes the readback single-valued.
+STERILE_DETERMINISM_ENV: Dict[str, str] = {
+    "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "DISABLE_TELEMETRY": "1",
+    "DISABLE_ERROR_REPORTING": "1",
+    "DISABLE_BUG_COMMAND": "1",
+}
+
+#: The ONLY host environment variables inherited by a sterile launch. Everything
+#: else — notably every ``CLAUDE_*``/``ANTHROPIC_*`` variable belonging to the
+#: developer session that starts the run — is dropped. This is an allowlist
+#: because a denylist cannot be proved complete.
+ENV_ALLOWLIST: Tuple[str, ...] = (
+    "SystemRoot", "windir", "COMSPEC", "ComSpec", "PATHEXT", "OS",
+    "NUMBER_OF_PROCESSORS", "PROCESSOR_ARCHITECTURE", "PROCESSOR_IDENTIFIER",
+    "SystemDrive", "ProgramData", "ProgramFiles", "ProgramFiles(x86)",
+    "PATH", "LANG", "LC_ALL", "TZ",
+)
+
+#: Variable-name prefixes that may never survive into a sterile launch.
+FORBIDDEN_ENV_PREFIXES: Tuple[str, ...] = ("CLAUDE", "ANTHROPIC", "AWS_", "GOOGLE_")
 
 
 # --------------------------------------------------------------------------- #
@@ -140,9 +198,13 @@ class DetectedSource:
     sha256: Optional[str]
     detail: str
     approved: bool = False
+    #: What this source IS, under ``SL-PT08-04``. ``context`` is the default and
+    #: the strict reading: experiment-relevant unless adjudicated otherwise.
+    #: ``account_policy`` is generic account metadata proved non-instructional.
+    classification: str = "context"
 
     def to_dict(self) -> dict:
-        return {
+        payload: Dict[str, object] = {
             "kind": self.kind,
             "scope": self.scope,
             "path": self.path,
@@ -151,6 +213,11 @@ class DetectedSource:
             "detail": self.detail,
             "approved": self.approved,
         }
+        # Emitted only when it carries information, so a default audit stays
+        # byte-compatible with the pinned context_audit schema.
+        if self.classification != "context":
+            payload["classification"] = self.classification
+        return payload
 
 
 @dataclass
@@ -198,6 +265,10 @@ class SterileEnv:
     temp_home: Path
     config_dir: Path
     env: Dict[str, str]
+    #: Where the provisioned credential was placed, when subscription
+    #: authentication was requested. The path is recorded; the contents are not
+    #: read, hashed or logged anywhere in this module.
+    credential_path: Optional[str] = None
 
 
 @dataclass
@@ -222,13 +293,26 @@ class AuditResult:
     component_status: Dict[str, str]
     verdict: str
     reasons: List[str]
+    #: SL-PT08-04 dimensions. Defaulted so every existing constructor call and
+    #: every existing consumer of this dataclass keeps working unchanged.
+    account_policy: List[Dict[str, str]] = field(default_factory=list)
+    authentication: Dict[str, object] = field(default_factory=dict)
+    runtime_context: Dict[str, object] = field(default_factory=dict)
+    profile_findings: List[str] = field(default_factory=list)
+    env_violations: List[str] = field(default_factory=list)
+    #: True only when a caller asked for an SL-PT08-04 dimension. The extra
+    #: report blocks are emitted ONLY then, so a default audit stays byte-
+    #: compatible with the PINNED experiments/v2/schemas/context_audit.schema.json
+    #: and recording this clarification moves no pinned path and forces no
+    #: private re-link.
+    diagnostic_mode: bool = False
 
     @property
     def is_clean(self) -> bool:
         return self.verdict == "CLEAN"
 
     def to_dict(self) -> dict:
-        return {
+        payload: Dict[str, object] = {
             "schema_version": SCHEMA_VERSION,
             "run_id": self.run_id,
             "condition": self.condition,
@@ -262,6 +346,23 @@ class AuditResult:
             "component_status": dict(self.component_status),
             "contamination": {"verdict": self.verdict, "reasons": list(self.reasons)},
         }
+        if not self.diagnostic_mode:
+            return payload
+        payload.update({
+            "account_policy_metadata": {
+                "present": bool(self.account_policy),
+                "adjudicated": list(self.account_policy),
+                "experiment_relevant_context_detected": any(
+                    f.get("injects_experiment_relevant_context")
+                    for f in self.account_policy
+                ),
+            },
+            "authentication": dict(self.authentication),
+            "runtime_reported_context": dict(self.runtime_context),
+            "sterile_profile_findings": list(self.profile_findings),
+            "inherited_env_violations": list(self.env_violations),
+        })
+        return payload
 
 
 # --------------------------------------------------------------------------- #
@@ -324,11 +425,28 @@ def _settings_mcp_count(path: Path) -> int:
 # --------------------------------------------------------------------------- #
 # Sterile environment preparation
 # --------------------------------------------------------------------------- #
-def make_sterile_env(run_id: str, base_dir: Optional[Path] = None) -> SterileEnv:
+def make_sterile_env(
+    run_id: str,
+    base_dir: Optional[Path] = None,
+    *,
+    credential_source: Optional[Path] = None,
+    launchable: bool = False,
+) -> SterileEnv:
     """Create a unique temporary HOME and CLAUDE_CONFIG_DIR for a run and return
     the environment overrides required for isolation.
 
     Two calls with different ``run_id`` values always yield distinct directories.
+
+    ``launchable=True`` additionally builds the environment a real process can
+    actually start in: the OS/runtime allowlist, redirected scratch directories,
+    and the determinism controls. The default stays the audit-only view so every
+    existing caller keeps the environment it already had.
+
+    ``credential_source`` provisions subscription authentication by copying
+    **exactly one file** — the credential — into the sterile config directory.
+    Nothing else is copied from the host profile: no settings, no skills, no
+    plugins, no commands, no MCP configuration, no memory, no session history.
+    The file's CONTENTS are never read by this module.
     """
     root = Path(base_dir) if base_dir else Path(tempfile.gettempdir())
     root.mkdir(parents=True, exist_ok=True)
@@ -343,11 +461,319 @@ def make_sterile_env(run_id: str, base_dir: Optional[Path] = None) -> SterileEnv
         "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
         "DISABLE_AUTOUPDATER": "1",
     }
-    return SterileEnv(run_id=run_id, temp_home=home, config_dir=config_dir, env=env)
+
+    credential_path: Optional[Path] = None
+    if credential_source is not None:
+        source = Path(credential_source)
+        if source.name not in AUTHENTICATION_FILES:
+            raise ValueError(
+                f"{source.name!r} is not authentication material; only "
+                f"{sorted(AUTHENTICATION_FILES)} may be provisioned into a "
+                "sterile profile, and no other host Claude configuration may be "
+                "copied under any circumstances"
+            )
+        if not source.is_file():
+            raise FileNotFoundError(f"no credential file at {source}")
+        credential_path = config_dir / source.name
+        shutil.copyfile(source, credential_path)
+
+    if launchable:
+        scratch = home / "scratch"
+        for sub in (scratch, home / "AppData" / "Roaming", home / "AppData" / "Local"):
+            sub.mkdir(parents=True, exist_ok=True)
+        env.update(build_allowlisted_env())
+        env.update(STERILE_DETERMINISM_ENV)
+        env.update(
+            {
+                "HOMEDRIVE": os.path.splitdrive(str(home))[0] or "",
+                "HOMEPATH": os.path.splitdrive(str(home))[1],
+                "APPDATA": str(home / "AppData" / "Roaming"),
+                "LOCALAPPDATA": str(home / "AppData" / "Local"),
+                "TEMP": str(scratch),
+                "TMP": str(scratch),
+            }
+        )
+        # Re-pin the isolation variables last: an allowlisted host value must
+        # never be able to overwrite the sterile ones.
+        env["HOME"] = str(home)
+        env["USERPROFILE"] = str(home)
+        env["CLAUDE_CONFIG_DIR"] = str(config_dir)
+
+    return SterileEnv(
+        run_id=run_id,
+        temp_home=home,
+        config_dir=config_dir,
+        env=env,
+        credential_path=str(credential_path) if credential_path else None,
+    )
+
+
+def build_allowlisted_env(source: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+    """Return only the OS/runtime variables a sterile launch is allowed to keep.
+
+    Built by allowlist, never by subtraction: the developer session that starts a
+    run exports its own ``CLAUDE_*`` variables (session id, entrypoint, messaging
+    socket and token), and a denylist that missed one would silently hand the
+    experimental process a handle back into this session.
+    """
+    src = dict(os.environ if source is None else source)
+    return {name: src[name] for name in ENV_ALLOWLIST if name in src}
+
+
+def inherited_env_violations(env: Dict[str, str]) -> List[str]:
+    """Names in ``env`` that a sterile launch may not carry.
+
+    ``CLAUDE_CONFIG_DIR`` and the governed determinism controls are pinned BY the
+    runner, so they are permitted by identity; any other ``CLAUDE_*`` /
+    ``ANTHROPIC_*`` variable is inheritance from the calling session.
+    """
+    governed = (
+        set(STERILE_DETERMINISM_ENV)
+        | set(REQUIRED_ENV)
+        | {"CLAUDE_CONFIG_DIR"}
+    )
+    return sorted(
+        name
+        for name in env
+        if name not in governed
+        and name.upper().startswith(FORBIDDEN_ENV_PREFIXES)
+    )
 
 
 def _safe(text: str) -> str:
     return "".join(c if c.isalnum() or c in "-_" else "-" for c in text)[:40]
+
+
+# --------------------------------------------------------------------------- #
+# SL-PT08-04 — authentication material vs experiment-relevant context
+#
+# The distinction this section implements is the whole of the clarification, so
+# it is implemented as an adjudication over CONTENT rather than as a filename
+# exemption. A filename exemption would pass a policy file that had been made to
+# carry a system prompt; reading the shape catches that, and fails closed on
+# anything it cannot parse or does not recognise.
+# --------------------------------------------------------------------------- #
+
+#: Keys that would make an account-tied file instruction-bearing. ``projects``
+#: is on this list because that is where per-project history, allowed-tool
+#: decisions and directory trust live: prior-session state by another name.
+INSTRUCTION_BEARING_KEYS = frozenset(
+    {
+        "mcpServers", "hooks", "skills", "agents", "commands", "plugins",
+        "outputStyle", "systemPrompt", "appendSystemPrompt", "projects",
+        "rules", "memory", "customInstructions", "statusLine", "env",
+    }
+)
+
+
+def _non_empty(value: object) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, (str, bytes)):
+        return bool(str(value).strip())
+    if isinstance(value, (dict, list, tuple, set)):
+        return len(value) > 0
+    return True
+
+
+def _string_leaves(value: object) -> List[str]:
+    """Every non-empty string leaf, wherever it sits in the structure."""
+    out: List[str] = []
+    if isinstance(value, str):
+        if value.strip():
+            out.append(value)
+    elif isinstance(value, dict):
+        for nested in value.values():
+            out.extend(_string_leaves(nested))
+    elif isinstance(value, (list, tuple)):
+        for nested in value:
+            out.extend(_string_leaves(nested))
+    return out
+
+
+def account_policy_injects_context(path: Path) -> Tuple[bool, str]:
+    """Does this account-tied file inject model-visible context? Fail closed.
+
+    Returns ``(injects, reason)``. ``injects=False`` means the file was read and
+    positively shown to carry only generic, non-instructional account metadata —
+    never merely that it was skipped.
+    """
+    path = Path(path)
+    name = path.name
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return True, f"{name} could not be read or parsed ({exc.__class__.__name__}); fail closed"
+
+    if not isinstance(data, (dict, list)):
+        return True, f"{name} is not a JSON object or array"
+
+    if name == "remote-settings.json":
+        if _non_empty(data):
+            return True, f"{name} carries remote settings content: {sorted(data)[:6]}"
+        return False, f"{name} is empty; it carries no remote setting"
+
+    if name == "policy-limits.json":
+        present = [k for k in INSTRUCTION_BEARING_KEYS if _non_empty(data.get(k))]
+        if present:
+            return True, f"{name} carries instruction-bearing keys {present}"
+        leaves = _string_leaves(data)
+        if leaves:
+            return True, (
+                f"{name} carries {len(leaves)} non-empty text value(s); text in an "
+                "account policy can reach the model, so it is treated as injected "
+                f"context (first: {leaves[0][:60]!r})"
+            )
+        return False, (
+            f"{name} carries only non-textual account limits "
+            f"({', '.join(sorted(data)) or 'no keys'}); generic restrictions and "
+            "defaults, no instruction, no skill, no tool, no task guidance"
+        )
+
+    if name in {".claude.json", "claude.json"}:
+        present = [k for k in INSTRUCTION_BEARING_KEYS if _non_empty(data.get(k))]
+        if present:
+            return True, f"{name} carries instruction-bearing keys {present}"
+        return False, (
+            f"{name} carries only account/machine bookkeeping "
+            f"({len(data)} key(s)); no MCP server, no hook, no skill, no command, "
+            "no project history"
+        )
+
+    return True, f"{name} is not a recognised account-policy file"
+
+
+def verify_sterile_profile(
+    config_dir: Path, *, expect_credential: bool = True
+) -> List[str]:
+    """Enumerate the WHOLE sterile config directory and report anything unexpected.
+
+    Stronger than :func:`scan_context_sources`, which looks only where context is
+    normally found. This walks every entry and requires each to be the
+    provisioned credential, an adjudicated account-policy file, or an empty
+    runtime-created bookkeeping directory. A file nobody anticipated is a finding
+    rather than a silence.
+    """
+    config_dir = Path(config_dir)
+    findings: List[str] = []
+    if not config_dir.is_dir():
+        return [f"sterile config dir {config_dir} does not exist"]
+
+    credential_seen = False
+    for entry in sorted(config_dir.rglob("*")):
+        rel = entry.relative_to(config_dir)
+        top = rel.parts[0]
+        if entry.is_dir():
+            if top not in RUNTIME_CREATED_DIRS:
+                findings.append(f"unexpected directory in sterile profile: {rel}")
+            elif top == "sessions" and _dir_has_entries(entry):
+                findings.append(
+                    f"sessions/ is populated ({rel}); a sterile profile carries no "
+                    "prior-session state"
+                )
+            continue
+        if entry.name in AUTHENTICATION_FILES and len(rel.parts) == 1:
+            credential_seen = True
+            continue
+        if top in RUNTIME_CREATED_DIRS:
+            continue
+        if entry.name in ACCOUNT_POLICY_FILES and len(rel.parts) == 1:
+            injects, reason = account_policy_injects_context(entry)
+            if injects:
+                findings.append(f"account-tied file injects context: {reason}")
+            continue
+        findings.append(f"unexpected file in sterile profile: {rel}")
+
+    if expect_credential and not credential_seen:
+        findings.append(
+            "no credential was provisioned; the launch could not authenticate"
+        )
+    if not expect_credential and credential_seen:
+        findings.append("a credential is present but none was provisioned")
+    return findings
+
+
+# --------------------------------------------------------------------------- #
+# Runtime-reported context (the audit of what the model actually saw)
+# --------------------------------------------------------------------------- #
+#: Fields of the headless ``system.init`` event that enumerate model-visible
+#: context. Each must be EMPTY for a sterile run. This is the evidence that
+#: makes the audit an observation rather than an attestation: the filesystem
+#: scan proves nothing was placed, and this proves nothing was loaded.
+RUNTIME_CONTEXT_FIELDS = ("skills", "slash_commands", "plugins", "mcp_servers")
+
+
+@dataclass
+class RuntimeContextEvidence:
+    """What the runtime itself reported as loaded, read back from its own event."""
+
+    supplied: bool
+    fields: Dict[str, object] = field(default_factory=dict)
+    api_key_source: Optional[str] = None
+    runtime_version: Optional[str] = None
+    permission_mode: Optional[str] = None
+    output_style: Optional[str] = None
+    session_id: Optional[str] = None
+    violations: List[str] = field(default_factory=list)
+
+    @property
+    def clean(self) -> bool:
+        return self.supplied and not self.violations
+
+    def to_dict(self) -> dict:
+        return {
+            "supplied": self.supplied,
+            "loaded_context": dict(self.fields),
+            "api_key_source": self.api_key_source,
+            "runtime_version": self.runtime_version,
+            "permission_mode": self.permission_mode,
+            "output_style": self.output_style,
+            "session_id": self.session_id,
+            "violations": list(self.violations),
+            "verdict": "CLEAN" if self.clean else "NOT_DEMONSTRATED",
+        }
+
+
+def audit_runtime_context(init_event: Optional[dict]) -> RuntimeContextEvidence:
+    """Judge the runtime's own ``system.init`` report of what it loaded.
+
+    No event means NOT DEMONSTRATED, never clean: an absent readback is the one
+    case where assuming sterility would be assuming the thing under test.
+    """
+    if not isinstance(init_event, dict):
+        return RuntimeContextEvidence(
+            supplied=False,
+            violations=[
+                "no system.init event was captured, so what the runtime loaded "
+                "cannot be read back and sterility is not demonstrated"
+            ],
+        )
+
+    fields: Dict[str, object] = {}
+    violations: List[str] = []
+    for name in RUNTIME_CONTEXT_FIELDS:
+        value = init_event.get(name)
+        fields[name] = value
+        if _non_empty(value):
+            violations.append(
+                f"the runtime loaded {name}={value!r}; a sterile execution context "
+                "loads none"
+            )
+
+    style = init_event.get("output_style")
+    if style not in (None, "", "default"):
+        violations.append(f"a non-default output style was loaded: {style!r}")
+
+    return RuntimeContextEvidence(
+        supplied=True,
+        fields=fields,
+        api_key_source=init_event.get("apiKeySource"),
+        runtime_version=init_event.get("claude_code_version"),
+        permission_mode=init_event.get("permissionMode"),
+        output_style=style,
+        session_id=init_event.get("session_id"),
+        violations=violations,
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -599,6 +1025,10 @@ def audit(
     previous_session_ids: Iterable[str] = (),
     run_id: str,
     generated_at: str = "unspecified",
+    account_policy_adjudication: bool = False,
+    credential_path: Optional[str] = None,
+    runtime_init_event: Optional[dict] = None,
+    verify_profile: bool = False,
 ) -> AuditResult:
     """Produce a fail-closed context-isolation audit for one run.
 
@@ -613,9 +1043,40 @@ def audit(
 
     detected = scan_context_sources(roots)
     reasons: List[str] = []
+    account_policy_findings: List[Dict[str, str]] = []
+
+    # --- SL-PT08-04 account-policy adjudication (opt-in, diagnostic-scoped) ---
+    #
+    # OFF by default, so every caller that has not been granted the clarification
+    # keeps the strict reading in which any account-tied file is contamination.
+    # ON, each such file is READ and judged: generic limits pass, anything
+    # instruction-bearing still fails. Enterprise managed settings at the OS path
+    # (scope="managed") are never adjudicated — TD-B19 requires their absence and
+    # this clarification does not touch that.
+    if account_policy_adjudication:
+        for src in detected:
+            if src.scope not in {"config", "user"} or src.is_dir:
+                continue
+            if Path(src.path).name not in ACCOUNT_POLICY_FILES:
+                continue
+            injects, reason = account_policy_injects_context(Path(src.path))
+            account_policy_findings.append(
+                {
+                    "path": src.path,
+                    "injects_experiment_relevant_context": injects,
+                    "detail": reason,
+                }
+            )
+            if not injects:
+                src.classification = "account_policy"
+                src.detail = f"{src.detail}; adjudicated non-instructional: {reason}"
 
     # --- context-source allowlist check ---
     for src in detected:
+        if src.classification == "account_policy":
+            # Recorded in the report, and deliberately not a contamination
+            # reason: it was read and shown to carry no model-visible context.
+            continue
         real = os.path.realpath(src.path)
         art = approved_by_real.get(real)
         if art is None:
@@ -686,9 +1147,56 @@ def audit(
     else:
         session_status = "unknown"
 
+    # --- inherited-environment guard ---
+    # A sterile HOME is worth nothing if the process still carries the calling
+    # session's CLAUDE_* variables, so the environment is checked by allowlist.
+    env_violations = inherited_env_violations(env)
+    for name in env_violations:
+        reasons.append(
+            f"inherited environment variable {name} is not in the sterile allowlist"
+        )
+
+    # --- authentication material (permitted, and therefore recorded) ---
+    credential_present = bool(credential_path) and Path(credential_path).is_file()
+    authentication = {
+        "mechanism": "claude-code-subscription-oauth",
+        "api_key_required": False,
+        "api_key_env_var_present": any(
+            n.upper() == "ANTHROPIC_API_KEY" for n in env
+        ),
+        "credential_provisioned": credential_present,
+        "credential_path": str(credential_path) if credential_path else None,
+        "credential_contents_read": False,
+        "classification": (
+            "authentication material: permitted under SL-PT08-04 because it "
+            "carries no instruction, skill, tool or task guidance and therefore "
+            "cannot change what the model is told"
+        ),
+    }
+    if authentication["api_key_env_var_present"]:
+        reasons.append(
+            "ANTHROPIC_API_KEY is present in the sterile environment; this "
+            "diagnostic authenticates by subscription and requires no API key"
+        )
+
+    # --- whole-profile verification ---
+    profile_findings: List[str] = []
+    if verify_profile:
+        profile_findings = verify_sterile_profile(
+            roots.config_dir, expect_credential=credential_present
+        )
+        reasons.extend(profile_findings)
+
+    # --- what the runtime itself reported loading ---
+    runtime_context = audit_runtime_context(runtime_init_event)
+    if runtime_init_event is not None:
+        reasons.extend(runtime_context.violations)
+
     # --- per-component status ---
     component_status = {k: "none" for k in COMPONENT_KINDS}
     for src in detected:
+        if src.classification == "account_policy":
+            continue
         if src.kind in component_status:
             if src.approved:
                 if component_status[src.kind] != "present-unapproved":
@@ -719,6 +1227,17 @@ def audit(
         component_status=component_status,
         verdict=verdict,
         reasons=reasons,
+        account_policy=account_policy_findings,
+        authentication=authentication,
+        runtime_context=runtime_context.to_dict(),
+        profile_findings=profile_findings,
+        env_violations=env_violations,
+        diagnostic_mode=bool(
+            account_policy_adjudication
+            or verify_profile
+            or credential_path
+            or runtime_init_event is not None
+        ),
     )
 
 

@@ -201,6 +201,15 @@ class RunRequest:
     audit_provider: Optional[Callable[..., ca.AuditResult]] = None
     process_launcher: Optional[Callable[[ma.LaunchPlan], ma.ModelInvocationOutcome]] = None
     keep_worktree: bool = True
+    #: SL-PT08-04 sterile-execution inputs. All default to the pre-existing
+    #: behaviour, so a caller that supplies none of them gets exactly the run it
+    #: got before this package.
+    sterile_base: Optional[Path] = None
+    credential_source: Optional[Path] = None
+    launcher_executable: Optional[str] = None
+    permission_mode: Optional[str] = None
+    tools: Sequence[str] = ()
+    launch_timeout_seconds: int = 1800
 
 
 @dataclass
@@ -222,14 +231,23 @@ def real_context_audit(
     *, condition: str, run_id: str, workspace: Path, generated_at: str,
     launch: ca.LaunchCommand, previous_session_ids: Sequence[str],
     base_tmp: Optional[Path] = None,
+    sterile: Optional[ca.SterileEnv] = None,
+    runtime_init_event: Optional[dict] = None,
 ) -> ca.AuditResult:
-    """The real, unweakened audit. This is the default and only production path."""
-    sterile = ca.make_sterile_env(run_id, base_dir=base_tmp)
+    """The real, unweakened audit. This is the default and only production path.
+
+    ``sterile`` is the environment the run will ACTUALLY launch in. Passing it is
+    what makes the audit an observation of the real launch rather than of a
+    look-alike built for the occasion: the same HOME, the same configuration
+    directory and the same variables are scanned, judged and then used.
+    """
+    sterile = sterile or ca.make_sterile_env(run_id, base_dir=base_tmp)
     roots = ca.ScanRoots.discover(
         workspace=Path(workspace),
         home=sterile.temp_home,
         config_dir=sterile.config_dir,
     )
+    diagnostic = sterile.credential_path is not None
     return ca.audit(
         condition=ca.CONDITIONS[condition],
         roots=roots,
@@ -239,6 +257,10 @@ def real_context_audit(
         previous_session_ids=previous_session_ids,
         run_id=run_id,
         generated_at=generated_at,
+        account_policy_adjudication=diagnostic,
+        credential_path=sterile.credential_path,
+        verify_profile=diagnostic,
+        runtime_init_event=runtime_init_event,
     )
 
 
@@ -274,6 +296,25 @@ def run(request: RunRequest) -> RunResult:
     evaluation: Optional[ev.EvaluationPlan] = None
     repo_state_before: Dict[str, str] = {}
     prompt_path: Optional[Path] = None
+    sterile: Optional[ca.SterileEnv] = None
+
+    def build_plan() -> ma.LaunchPlan:
+        """The launch, built from one place so the audited and used argv cannot
+        drift apart through a forgotten argument."""
+        return ma.build_fresh_launch(
+            prompt_path=str(prompt_path),
+            workspace=str(directory.worktree),
+            model_id=request.model_id,
+            effort=request.effort,
+            session_id=request.session_id,
+            previous_session_ids=request.previous_session_ids,
+            sterile_env=sterile.env if sterile else None,
+            extra=request.extra_launch_args,
+            require_model=(request.mode == "real"),
+            sterile=request.credential_source is not None,
+            permission_mode=request.permission_mode,
+            tools=request.tools,
+        )
 
     try:
         # ---------------- PRECHECK -------------------------------------- #
@@ -321,6 +362,17 @@ def run(request: RunRequest) -> RunResult:
         result.run_dir = directory.run_dir
 
         repo_state_before = gov.repository_state(request.repo)
+
+        # ONE sterile environment per run, built here and then used for every
+        # later step: it is what the audit inspects AND what the process is
+        # started in. Building a second one for the launch would make the audit
+        # a description of something that never ran.
+        sterile = ca.make_sterile_env(
+            run_id,
+            base_dir=request.sterile_base,
+            credential_source=request.credential_source,
+            launchable=request.credential_source is not None,
+        )
 
         # The prompt is delivered out of band and is never written into the
         # model-visible worktree (CONDITION_MATRIX.csv: task_delivery=prompt).
@@ -375,26 +427,22 @@ def run(request: RunRequest) -> RunResult:
 
         # ---------------- CONTEXT_AUDIT --------------------------------- #
         machine.enter("CONTEXT_AUDIT")
-        plan = ma.build_fresh_launch(
-            prompt_path=str(prompt_path),
-            workspace=str(directory.worktree),
-            model_id=request.model_id,
-            effort=request.effort,
-            session_id=request.session_id,
-            previous_session_ids=request.previous_session_ids,
-            extra=request.extra_launch_args,
-            require_model=(request.mode == "real"),
-        )
+        plan = build_plan()
         audit_provider = request.audit_provider or real_context_audit
+        audit_kwargs = dict(
+            condition=request.condition,
+            run_id=run_id,
+            workspace=directory.worktree,
+            generated_at=request.generated_at,
+            launch=plan.launch_command(),
+            previous_session_ids=tuple(request.previous_session_ids),
+        )
+        if request.audit_provider is None:
+            # Only the production auditor understands the sterile environment;
+            # an injected test provider keeps its original signature.
+            audit_kwargs["sterile"] = sterile
         try:
-            audit_result = audit_provider(
-                condition=request.condition,
-                run_id=run_id,
-                workspace=directory.worktree,
-                generated_at=request.generated_at,
-                launch=plan.launch_command(),
-                previous_session_ids=tuple(request.previous_session_ids),
-            )
+            audit_result = audit_provider(**audit_kwargs)
         except gov.RunnerRefusal:
             raise
         except Exception as exc:  # fail closed on any audit failure
@@ -441,16 +489,7 @@ def run(request: RunRequest) -> RunResult:
 
         # ---------------- BUILD_FRESH_LAUNCH ---------------------------- #
         machine.enter("BUILD_FRESH_LAUNCH")
-        final_plan = ma.build_fresh_launch(
-            prompt_path=str(prompt_path),
-            workspace=str(directory.worktree),
-            model_id=request.model_id,
-            effort=request.effort,
-            session_id=request.session_id,
-            previous_session_ids=request.previous_session_ids,
-            extra=request.extra_launch_args,
-            require_model=(request.mode == "real"),
-        )
+        final_plan = build_plan()
         if tuple(final_plan.argv) != tuple(audited_argv or ()):
             raise gov.RunnerRefusal(
                 gov.LAUNCH_COMMAND_DIVERGED_FROM_AUDIT,
@@ -466,10 +505,27 @@ def run(request: RunRequest) -> RunResult:
 
         # ---------------- MODEL_INVOCATION ------------------------------ #
         machine.enter("MODEL_INVOCATION")
+        launcher = request.process_launcher
+        if launcher is None and request.mode == "real" and request.launcher_executable:
+            launcher = ma.RealClaudeCodeLauncher(
+                executable=request.launcher_executable,
+                cwd=directory.worktree,
+                env=plan.environment(),
+                evidence_path=directory.path("runtime_evidence.jsonl"),
+                governed_root=directory.run_dir,
+                canonical_repo=request.repo,
+                config_dir=sterile.config_dir if sterile else None,
+                timeout_seconds=request.launch_timeout_seconds,
+            )
         adapter = ma.ModelInvocationAdapter(
             mode=request.mode,
-            process_launcher=request.process_launcher or ma._refusing_launcher,
-            registry_primary_model=gov.primary_model(),
+            process_launcher=launcher or ma._refusing_launcher,
+            # A diagnostic-scoped selection satisfies this slot without touching
+            # the global registry: primary_model stays null and TD-B03 stays open.
+            registry_primary_model=(
+                gov.primary_model()
+                or gov.diagnostic_primary_model(purpose.name if purpose else None)
+            ),
             governed_ids=tuple(gov.governed_model_ids()),
         )
         invocation = adapter.invoke(plan)
