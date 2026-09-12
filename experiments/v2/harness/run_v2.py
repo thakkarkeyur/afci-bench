@@ -779,12 +779,15 @@ def _build_parser() -> argparse.ArgumentParser:
 def _print_readiness(report: gov.ReadinessReport) -> None:
     print(f"readiness — {report.purpose} / {report.task_id} / {report.condition}")
     for item in report.prerequisites:
-        mark = "PASS   " if item.status == gov.PASS else "BLOCKED"
+        mark = {gov.PASS: "PASS   ", gov.NOT_APPLICABLE: "N/A    "}.get(
+            item.status, "BLOCKED"
+        )
         print(f"  [{mark}] {item.item}" + (f"  <{item.code}>" if item.code else ""))
         print(f"           {item.detail}")
     print(
         f"  => run_eligible={report.run_eligible} "
-        f"({len(report.passed)} pass, {len(report.blocked)} blocked)"
+        f"({len(report.passed)} pass, {len(report.blocked)} blocked, "
+        f"{len(report.not_applicable)} n/a)"
     )
 
 

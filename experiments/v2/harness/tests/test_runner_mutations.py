@@ -334,15 +334,78 @@ MUTATIONS: List[Tuple[str, List[Edit], str, str, str]] = [
         "REFUSED:UNEXPECTED_MODEL_VISIBLE_FILE",
         "REFUSED:PREPARED_WORKTREE_DIRTY",
     ),
-    # 20. allow a diagnostic artifact into the confirmatory dataset area
+    # 20. allow a diagnostic artifact into the confirmatory dataset area.
+    # TWO sites, because SL-PT08-02's artifact firewall is two independent
+    # refusals: the confirmatory areas by name, and the canonical repository as a
+    # whole. Removing only the first is survived (R7), so only the two-site
+    # mutation actually lets a diagnostic artifact reach experiments/v2/results.
     (
         "20-allow-diagnostic-artifact-into-confirmatory-area",
         [("run_governance.py",
           "        if resolved == area_resolved or area_resolved in resolved.parents:",
-          "        if False:")],
+          "        if False:"),
+         ("run_governance.py",
+          "    if resolved == canonical or canonical in resolved.parents:",
+          "    if False:")],
         "confirmatory_area",
         "REFUSED:DIAGNOSTIC_ARTIFACT_IN_CONFIRMATORY_AREA",
         "ACCEPTED",
+    ),
+    # 21. bind the diagnostic back to the canonical RESULT-manifest schema.
+    # SL-PT08-02 makes the harness record schema authoritative for this NON-RESULT
+    # purpose precisely because it carries the firewall; the canonical schema does
+    # not, so re-pointing the purpose at it must be caught rather than silently
+    # dropping the quarantine.
+    (
+        "21-diagnostic-uses-canonical-result-schema",
+        [("run_governance.py",
+          '        artifact_schema="experiments/v2/harness/run_record.schema.json",',
+          '        artifact_schema="experiments/v2/schemas/run_manifest.schema.json",')],
+        "artifact_schema_firewall",
+        "FIREWALL_OK",
+        "FIREWALL_PROBLEMS",
+    ),
+    # 22. claim the canonical result-manifest gap is globally resolved
+    (
+        "22-claim-canonical-schema-globally-resolved",
+        [("run_governance.py", "        result_bearing=False,", "        result_bearing=True,")],
+        "canonical_gap_scope",
+        "NOT_APPLICABLE:RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL",
+        "BLOCKED:RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL",
+    ),
+    # 23. shrink the diagnostic repetition count
+    (
+        "23-repetitions-3-to-1",
+        [("run_governance.py", "        repetitions=3,", "        repetitions=1,")],
+        "repetition_decision",
+        "PASS:3",
+        "BLOCKED:DIAGNOSTIC_REPETITION_DECISION_INCONSISTENT",
+    ),
+    # 24. grow the diagnostic repetition count
+    (
+        "24-repetitions-3-to-4",
+        [("run_governance.py", "        repetitions=3,", "        repetitions=4,")],
+        "repetition_decision",
+        "PASS:3",
+        "BLOCKED:DIAGNOSTIC_REPETITION_DECISION_INCONSISTENT",
+    ),
+    # 25. accept an OPEN private pre-freeze sync record as satisfied
+    (
+        "25-accept-open-private-sync-record",
+        [("run_governance.py",
+          '    if not state.upper().startswith("SATISFIED"):',
+          "    if False:")],
+        "private_sync_open",
+        "BLOCKED",
+        "PASS",
+    ),
+    # 26. accept a sync record citing a public commit this repository never had
+    (
+        "26-accept-wrong-verified-public-sha",
+        [("run_governance.py", "    if proc.returncode != 0:", "    if False:")],
+        "private_sync_wrong_sha",
+        "BLOCKED",
+        "PASS",
     ),
 ]
 
@@ -397,6 +460,26 @@ REDUNDANT_MUTATIONS: List[Tuple[str, List[Edit], str, str]] = [
         [("run_governance.py", '    return status == "frozen"', "    return True")],
         "manifest_freeze_denylist_guard",
         "FROZEN=False",
+    ),
+    # The artifact firewall is two independent refusals. Removing the named
+    # confirmatory areas alone still cannot put a diagnostic artifact into
+    # experiments/v2/results, because that path is inside the canonical
+    # repository and the second guard refuses it under its own code.
+    (
+        "R7-confirmatory-area-check-only",
+        [("run_governance.py",
+          "        if resolved == area_resolved or area_resolved in resolved.parents:",
+          "        if False:")],
+        "confirmatory_area",
+        "REFUSED:ARTIFACT_ROOT_INSIDE_CANONICAL_REPOSITORY",
+    ),
+    (
+        "R8-canonical-repository-check-only",
+        [("run_governance.py",
+          "    if resolved == canonical or canonical in resolved.parents:",
+          "    if False:")],
+        "confirmatory_area",
+        "REFUSED:DIAGNOSTIC_ARTIFACT_IN_CONFIRMATORY_AREA",
     ),
 ]
 
@@ -485,11 +568,16 @@ def test_the_matrix_covers_every_required_mutation():
         "permit-unfrozen-manifest", "omit-run-purpose-from-artifacts",
         "permit-canonical-repo-execution", "allow-unexpected-model-visible-file",
         "allow-diagnostic-artifact-into-confirmatory-area",
+        # SL-PT08-02 / SL-PT08-03 and the pre-freeze private sync propagation
+        "diagnostic-uses-canonical-result-schema",
+        "claim-canonical-schema-globally-resolved",
+        "repetitions-3-to-1", "repetitions-3-to-4",
+        "accept-open-private-sync-record", "accept-wrong-verified-public-sha",
     }
     ids = " ".join(m[0] for m in MUTATIONS)
     missing = [name for name in sorted(required) if name not in ids]
     assert missing == [], missing
-    assert len(MUTATIONS) >= 20
+    assert len(MUTATIONS) >= 26
 
 
 def test_no_mutant_or_probe_touched_either_repository():

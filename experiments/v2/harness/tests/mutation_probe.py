@@ -16,6 +16,7 @@ Every case is read-only with respect to both repositories and invokes no model.
 from __future__ import annotations
 
 import copy
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -306,6 +307,81 @@ def case_canonical_repo_gate(scratch: Path) -> str:
 
 def case_scoring_prerequisites_gate(scratch: Path) -> str:
     return refusing(ev.assert_scoring_prerequisites, "PT08")
+
+
+# --------------------------------------------------------------------------- #
+# SL-PT08-02 / SL-PT08-03 and the pre-freeze private sync propagation
+# --------------------------------------------------------------------------- #
+def case_artifact_schema_firewall(scratch: Path) -> str:
+    """Does the schema THIS purpose's artifacts use actually pin the quarantine?"""
+    problems = gov.artifact_schema_problems(purpose())
+    return "FIREWALL_OK" if not problems else "FIREWALL_PROBLEMS"
+
+
+def _readiness_item(name: str, scratch: Path):
+    report = gov.check_readiness(
+        "PT08", "C1", PURPOSE_NAME, context_verdict=None,
+    )
+    for item in report.prerequisites:
+        if item.item == name:
+            return item
+    return None
+
+
+def case_canonical_gap_scope(scratch: Path) -> str:
+    """N/A for a non-result purpose; BLOCKED for a result-bearing one. Never PASS."""
+    item = _readiness_item("canonical_confirmatory_run_manifest_firewall", scratch)
+    if item is None:
+        return "ABSENT"
+    return f"{'NOT_APPLICABLE' if item.status == gov.NOT_APPLICABLE else item.status}:{item.code}"
+
+
+def case_repetition_decision(scratch: Path) -> str:
+    item = _readiness_item("diagnostic_repetition_decision", scratch)
+    if item is None:
+        return "ABSENT"
+    if item.status != gov.PASS:
+        return f"BLOCKED:{item.code}"
+    return f"PASS:{purpose().repetitions}"
+
+
+def _sync_probe(root: Path, state: str, sha: str) -> str:
+    """Build a disposable private tree carrying one sync record and read it back."""
+    record_dir = root / "tasks" / "PT08"
+    record_dir.mkdir(parents=True, exist_ok=True)
+    (record_dir / "pt08_package_record.json").write_text(
+        json.dumps(
+            {
+                "public_synchronisation_required_before_freeze": {
+                    "record_id": "PROBE-SYNC",
+                    "state": state,
+                    "verified_public_sha": sha,
+                }
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    ok, _detail = gov.private_sync_prefreeze_state("PT08", root)
+    return "PASS" if ok else "BLOCKED"
+
+
+def case_private_sync_open(scratch: Path) -> str:
+    """An OPEN record must never discharge the pre-freeze blocker."""
+    return _sync_probe(
+        scratch / "private-open",
+        "OPEN - REQUIRED BEFORE FREEZE",
+        "8b67c4aa88f9ce5b7195bd8f1527aafec8434ced",
+    )
+
+
+def case_private_sync_wrong_sha(scratch: Path) -> str:
+    """A SATISFIED record citing a commit this repository never had must not pass."""
+    return _sync_probe(
+        scratch / "private-wrong-sha",
+        "SATISFIED",
+        "0" * 40,
+    )
 
 
 CASES = {

@@ -62,11 +62,26 @@ PILOT_TASK_MATRIX = DOCS_V2 / "PILOT_PUBLIC_TASK_MATRIX.csv"
 MODEL_REGISTRY = DOCS_V2 / "MODEL_REGISTRY.yml"
 OPEN_DECISIONS = DOCS_V2 / "OPEN_DECISIONS.csv"
 DIAGNOSTIC_RECORD = DOCS_V2 / "PT08_C1_DIFFICULTY_DIAGNOSTIC_DECISION.md"
+EXECUTION_DECISIONS_RECORD = DOCS_V2 / "PT08_DIAGNOSTIC_EXECUTION_DECISIONS.md"
 SYNC_RECORD = DOCS_V2 / "PT08_PUBLIC_ACCOUNTING_SYNCHRONIZATION.md"
 SUBSTRATE_IDENTITY_DOC = DOCS_V2 / "SOURCE_SUBSTRATE_IDENTITY.md"
 
+#: The harness-local execution-record schema. ``SL-PT08-02`` makes this the
+#: authoritative schema for ``PT08_DIFFICULTY_DIAGNOSTIC`` and for that purpose
+#: only, because it already mechanically requires every quarantine field.
+DIAGNOSTIC_RECORD_SCHEMA = HARNESS / "run_record.schema.json"
+
+#: The pinned canonical result-manifest schema. It is the governed schema for
+#: future confirmatory / result-bearing runs, it carries none of the quarantine
+#: fields, and ``SL-PT08-02`` leaves it UNCHANGED and its gap UNRESOLVED.
+CANONICAL_RUN_MANIFEST_SCHEMA = (
+    REPO / "experiments" / "v2" / "schemas" / "run_manifest.schema.json"
+)
+
 #: Confirmatory artifact areas. A non-confirmatory run artifact may never be
-#: written into either of them (SL-PT08-01 §9; RUN_ARTIFACT_MATRIX.csv).
+#: written into either of them (SL-PT08-01 §9; RUN_ARTIFACT_MATRIX.csv, whose
+#: every result-bearing row templates to ``experiments/v2/results/<run_id>/``
+#: and names ``analysis`` as the consumer).
 CONFIRMATORY_ARTIFACT_DIRS: Tuple[Path, ...] = (
     REPO / "experiments" / "v2" / "results",
     REPO / "experiments" / "v2" / "analysis",
@@ -101,6 +116,18 @@ CONDITION_NOT_PERMITTED_FOR_PURPOSE = "CONDITION_NOT_PERMITTED_FOR_PURPOSE"
 DIAGNOSTIC_FIREWALL_INCONSISTENT = "DIAGNOSTIC_FIREWALL_INCONSISTENT"
 RUN_ARTIFACT_PURPOSE_MISSING = "RUN_ARTIFACT_PURPOSE_MISSING"
 DIAGNOSTIC_ARTIFACT_IN_CONFIRMATORY_AREA = "DIAGNOSTIC_ARTIFACT_IN_CONFIRMATORY_AREA"
+ARTIFACT_ROOT_INSIDE_CANONICAL_REPOSITORY = (
+    "ARTIFACT_ROOT_INSIDE_CANONICAL_REPOSITORY"
+)
+DIAGNOSTIC_ARTIFACT_SCHEMA_LACKS_FIREWALL = (
+    "DIAGNOSTIC_ARTIFACT_SCHEMA_LACKS_FIREWALL"
+)
+DIAGNOSTIC_SCHEMA_APPLICABILITY_INCONSISTENT = (
+    "DIAGNOSTIC_SCHEMA_APPLICABILITY_INCONSISTENT"
+)
+DIAGNOSTIC_REPETITION_DECISION_INCONSISTENT = (
+    "DIAGNOSTIC_REPETITION_DECISION_INCONSISTENT"
+)
 GOVERNANCE_RECORD_UNREADABLE = "GOVERNANCE_RECORD_UNREADABLE"
 
 # Worktree (TD-B22)
@@ -152,6 +179,13 @@ ISOLATED_ENVIRONMENT_NOT_VERIFIED = "ISOLATED_ENVIRONMENT_NOT_VERIFIED"
 #: re-approval this package is not authorised to perform. The runner therefore
 #: emits its own harness-local ``run_record.json`` and reports this code rather
 #: than editing a pinned payload or silently dropping the firewall.
+#:
+#: ``SL-PT08-02`` adjudicates the APPLICABILITY of this gap and nothing else: the
+#: canonical schema is the governed result-manifest schema for future
+#: confirmatory / result-bearing runs, it is UNCHANGED, and its gap stays
+#: **UNRESOLVED**. It is simply not the schema a non-result diagnostic artifact
+#: validates against, so it is NOT_APPLICABLE — never "fixed" — for that purpose.
+#: The code is retained so the open global issue keeps a name.
 RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL = (
     "RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL"
 )
@@ -170,6 +204,15 @@ FIREWALL_FIELDS: Tuple[str, ...] = (
     "enters_power_estimation",
 )
 
+#: The two outcome flags that say an artifact is not a result. SL-PT08-02 pins
+#: both to false for the diagnostic; together with FIREWALL_FIELDS they are the
+#: eight fields the authoritative execution-record schema must mechanically
+#: require and pin, and the whole set is checked as a set.
+NON_RESULT_FIELDS: Tuple[str, ...] = ("is_result", "scored")
+
+#: Everything a non-result execution-record schema must pin to ``false``.
+QUARANTINE_FIELDS: Tuple[str, ...] = FIREWALL_FIELDS + NON_RESULT_FIELDS
+
 
 @dataclass(frozen=True)
 class RunPurpose:
@@ -182,9 +225,28 @@ class RunPurpose:
     permitted_tasks: Tuple[str, ...]
     permitted_conditions: Tuple[str, ...]
     firewall: Tuple[Tuple[str, bool], ...]
+    #: SL-PT08-02: the authoritative execution-record schema for THIS purpose,
+    #: repository-relative. A result-bearing purpose names the canonical
+    #: result-manifest schema instead; a non-result one names the harness record
+    #: schema that already carries the firewall.
+    artifact_schema: str = "experiments/v2/harness/run_record.schema.json"
+    #: SL-PT08-02 again: True only for a purpose whose artifacts ARE results.
+    #: The canonical result-manifest firewall requirement applies to exactly
+    #: these purposes, and is never waived for them.
+    result_bearing: bool = False
+    #: SL-PT08-03: the governed repetition count, or ``None`` when no sample
+    #: size is pinned for the purpose. Never defaulted to a number.
+    repetitions: Optional[int] = None
+    #: The Study-Lead decisions that pin the schema applicability and the
+    #: repetition count, recorded so a report can cite them rather than assert.
+    schema_decision_id: str = "SL-PT08-02"
+    repetition_decision_id: str = "SL-PT08-03"
 
     def firewall_flags(self) -> Dict[str, bool]:
         return dict(self.firewall)
+
+    def artifact_schema_path(self, repo: Path = REPO) -> Path:
+        return Path(repo) / self.artifact_schema
 
 
 #: The ONLY run purpose this repository currently authorises. No confirmatory
@@ -202,6 +264,15 @@ RUN_PURPOSES: Dict[str, RunPurpose] = {
         permitted_tasks=("PT08",),
         permitted_conditions=("C1",),
         firewall=tuple((f, False) for f in FIREWALL_FIELDS),
+        # SL-PT08-02. The harness record schema is authoritative for THIS
+        # purpose because it already requires every quarantine field; the
+        # canonical result-manifest schema is untouched and stays governed for
+        # result-bearing runs, whose gap remains unresolved.
+        artifact_schema="experiments/v2/harness/run_record.schema.json",
+        result_bearing=False,
+        # SL-PT08-03. Three repeated difficulty probes of one instrument under
+        # one condition. No power calculation justifies it and none is implied.
+        repetitions=3,
     ),
 }
 
@@ -287,6 +358,113 @@ def governed_firewall_from_record(path: Path = DIAGNOSTIC_RECORD) -> Dict[str, o
         elif key in FIREWALL_FIELDS:
             values[key] = {"true": True, "false": False}.get(val.lower(), val)
     return values
+
+
+def governed_execution_decisions(
+    path: Path = EXECUTION_DECISIONS_RECORD,
+) -> Dict[str, object]:
+    """Re-derive ``SL-PT08-02``/``SL-PT08-03``'s tables from the record itself.
+
+    Same discipline as :func:`governed_firewall_from_record`: the runner's
+    constants are not trusted on their own, so a drift between the code and the
+    adjudication is a mechanical failure rather than a reading.
+    """
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except OSError as exc:
+        raise RunnerRefusal(
+            GOVERNANCE_RECORD_UNREADABLE, f"cannot read {path}: {exc}"
+        ) from exc
+    values: Dict[str, object] = {}
+    for row in re.finditer(r"^\|(.+?)\|(.+?)\|\s*$", text, re.MULTILINE):
+        key = row.group(1).strip().strip("`").strip()
+        val = row.group(2).strip().strip("`").strip()
+        if not key or key.lower() == "field":
+            continue
+        low = val.lower()
+        values[key] = (
+            True if low == "true" else False if low == "false"
+            else int(val) if val.isdigit() else val
+        )
+    return values
+
+
+# --------------------------------------------------------------------------- #
+# SL-PT08-02 — does a schema actually enforce the quarantine?
+# --------------------------------------------------------------------------- #
+def _object_schemas(node) -> List[dict]:
+    """Every subschema that declares a ``properties`` map, at any depth."""
+    out: List[dict] = []
+    if isinstance(node, dict):
+        if isinstance(node.get("properties"), dict):
+            out.append(node)
+        for value in node.values():
+            out.extend(_object_schemas(value))
+    elif isinstance(node, list):
+        for value in node:
+            out.extend(_object_schemas(value))
+    return out
+
+
+def schema_firewall_problems(schema: dict) -> List[str]:
+    """Report why ``schema`` fails to enforce the SL-PT08-02 quarantine.
+
+    An empty list means the schema mechanically REQUIRES a ``run_purpose`` block
+    and pins every one of :data:`QUARANTINE_FIELDS` to ``false`` — not merely
+    permits them. A schema that only *allows* the fields is reported as failing,
+    because an artifact could then omit the firewall and still validate.
+    """
+    problems: List[str] = []
+    if "run_purpose" not in (schema.get("required") or []):
+        problems.append(
+            "run_purpose is not a top-level REQUIRED property, so an unmarked "
+            "artifact could validate"
+        )
+    for field in QUARANTINE_FIELDS:
+        declared = False
+        for obj in _object_schemas(schema):
+            spec = obj["properties"].get(field)
+            if spec is None:
+                continue
+            declared = True
+            if field not in (obj.get("required") or []):
+                problems.append(f"{field} is declared but not REQUIRED")
+            if spec.get("type") != "boolean" or spec.get("enum") != [False]:
+                problems.append(
+                    f"{field} is not pinned to boolean enum [false] "
+                    f"(got type={spec.get('type')!r} enum={spec.get('enum')!r})"
+                )
+        if not declared:
+            problems.append(f"{field} is absent from the schema")
+    return problems
+
+
+def load_json_schema(path: Path) -> dict:
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise RunnerRefusal(
+            GOVERNANCE_RECORD_UNREADABLE, f"cannot read schema {path}: {exc}"
+        ) from exc
+
+
+def artifact_schema_problems(purpose: RunPurpose, repo: Path = REPO) -> List[str]:
+    """Problems with the schema THIS purpose's artifacts actually validate against."""
+    return schema_firewall_problems(load_json_schema(purpose.artifact_schema_path(repo)))
+
+
+def canonical_run_manifest_carries_firewall(repo: Path = REPO) -> bool:
+    """True only if the pinned canonical result-manifest schema enforces the firewall.
+
+    It does not today, and this package does not change that. The check exists so
+    the report states a verified fact rather than a remembered one, in both
+    directions: if the canonical gap is ever genuinely remediated by an
+    authorised package, this stops reporting it as open.
+    """
+    return not schema_firewall_problems(
+        load_json_schema(Path(repo) / "experiments" / "v2" / "schemas"
+                         / "run_manifest.schema.json")
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -548,6 +726,64 @@ def private_linkage_records_task_sha(
     )
 
 
+def private_sync_prefreeze_state(
+    task_id: str, private_root: Optional[Path] = None, repo: Path = REPO
+) -> Tuple[bool, str]:
+    """Read-only: has the private pre-freeze public-sync record been SATISFIED?
+
+    The record is ``PRIVATE-PUBLIC-SYNC-PREFREEZE-001``, rendered into the
+    private per-task package record. Two independent conditions must hold, and
+    an absent or unreadable private repository is *not verifiable* rather than a
+    pass:
+
+    * the record's own ``state`` must read ``SATISFIED``; and
+    * the public commit it claims to have verified must actually be an ancestor
+      of (or equal to) this repository's ``HEAD``, so a record citing a commit
+      this repository has never contained cannot discharge the blocker.
+
+    Never writes, never imports private code, and decides nothing: the private
+    adjudication is the authority and this only reports it.
+    """
+    root = Path(private_root) if private_root else default_private_root()
+    record = root / "tasks" / task_id / f"{task_id.lower()}_package_record.json"
+    if not record.is_file():
+        return False, f"private package record not available at {record}"
+    try:
+        data = json.loads(record.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return False, f"private package record unreadable: {exc}"
+    block = data.get("public_synchronisation_required_before_freeze")
+    if not isinstance(block, dict):
+        return False, (
+            f"{record.name} carries no public_synchronisation_required_before_"
+            f"freeze record"
+        )
+    record_id = block.get("record_id", "<unnamed>")
+    state = str(block.get("state", "")).strip()
+    if not state.upper().startswith("SATISFIED"):
+        return False, f"{record_id} state is {state!r}, not SATISFIED"
+
+    claimed = str(block.get("verified_public_sha", "")).strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", claimed):
+        return False, (
+            f"{record_id} is SATISFIED but records no well-formed "
+            f"verified_public_sha (got {claimed!r})"
+        )
+    proc = subprocess.run(
+        ["git", "-C", str(Path(repo)), "merge-base", "--is-ancestor", claimed, "HEAD"],
+        capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        return False, (
+            f"{record_id} cites verified_public_sha {claimed[:16]}..., which is "
+            f"not an ancestor of this repository's HEAD"
+        )
+    return True, (
+        f"{record_id} is {state} against verified_public_sha {claimed[:16]}..., "
+        f"which is an ancestor of (or equal to) public HEAD"
+    )
+
+
 def private_architecture_corpus_available(
     task_id: str, private_root: Optional[Path] = None
 ) -> Tuple[bool, str]:
@@ -566,8 +802,23 @@ def private_architecture_corpus_available(
 # --------------------------------------------------------------------------- #
 # Artifact-area governance
 # --------------------------------------------------------------------------- #
-def assert_artifact_area_permitted(out_root: Path, purpose: RunPurpose) -> Path:
-    """Refuse to write a non-confirmatory artifact into a confirmatory area."""
+def assert_artifact_area_permitted(
+    out_root: Path, purpose: RunPurpose, repo: Path = REPO
+) -> Path:
+    """Refuse to write a non-confirmatory artifact into a result-bearing location.
+
+    Two independent refusals, narrowest first so the reported code names the
+    actual problem (SL-PT08-01 §9; SL-PT08-02):
+
+    1. the two confirmatory artifact areas themselves — ``experiments/v2/results``
+       and ``experiments/v2/analysis``, the directories every result-bearing row
+       of ``RUN_ARTIFACT_MATRIX.csv`` templates into or consumes from;
+    2. **anywhere inside the canonical repository at all.** A diagnostic artifact
+       root that merely avoids those two directories would still deposit run
+       output into the governed tree, where a later reader has no structural
+       reason to treat it as non-confirmatory. The governed root is a scratch
+       directory outside the repository (:func:`default_artifact_root`).
+    """
     resolved = Path(out_root).resolve()
     if purpose.confirmatory:
         return resolved
@@ -582,6 +833,14 @@ def assert_artifact_area_permitted(out_root: Path, purpose: RunPurpose) -> Path:
                 f"{purpose.name} is non-confirmatory and may not write into "
                 f"{area_resolved}; use a scratch/tmp artifact root",
             )
+    canonical = Path(repo).resolve()
+    if resolved == canonical or canonical in resolved.parents:
+        raise RunnerRefusal(
+            ARTIFACT_ROOT_INSIDE_CANONICAL_REPOSITORY,
+            f"{purpose.name} is non-confirmatory and may not write anywhere "
+            f"inside the canonical repository {canonical}; its artifacts belong "
+            f"in a scratch root outside it (got {resolved})",
+        )
     return resolved
 
 
@@ -643,6 +902,12 @@ def assert_canonical_repository_unchanged(
 PASS = "PASS"
 BLOCKED = "BLOCKED"
 
+#: A prerequisite that does not apply to THIS run purpose, while the underlying
+#: issue stays open for the purposes it does apply to. It is deliberately not
+#: PASS: PASS would read as "resolved", and the canonical result-manifest
+#: firewall gap SL-PT08-02 scopes out of this diagnostic is **unresolved**.
+NOT_APPLICABLE = "N/A"
+
 
 @dataclass
 class Prerequisite:
@@ -676,6 +941,10 @@ class ReadinessReport:
         return [p for p in self.prerequisites if p.status == PASS]
 
     @property
+    def not_applicable(self) -> List[Prerequisite]:
+        return [p for p in self.prerequisites if p.status == NOT_APPLICABLE]
+
+    @property
     def run_eligible(self) -> bool:
         return not self.blocked
 
@@ -688,6 +957,7 @@ class ReadinessReport:
             "run_eligible": self.run_eligible,
             "pass_count": len(self.passed),
             "blocked_count": len(self.blocked),
+            "not_applicable_count": len(self.not_applicable),
             "prerequisites": [p.to_dict() for p in self.prerequisites],
         }
 
@@ -727,6 +997,72 @@ def _worktree_preparation_probe(task_id: str, condition: str) -> Prerequisite:
         )
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+#: SL-PT08-03's fresh-execution requirements, as the record's table spells them.
+#: Each must be present and must carry the recorded value, so relaxing one in the
+#: record is a mechanical failure rather than a wording change.
+REPETITION_PINS: Tuple[Tuple[str, object], ...] = (
+    ("condition", "C1"),
+    ("task", "PT08"),
+    ("process_per_repetition", "fresh"),
+    ("session_per_repetition", "fresh"),
+    ("resume_permitted", False),
+    ("continuation_permitted", False),
+    ("session_reuse_permitted", False),
+    ("power_claim", "none"),
+    ("precision_claim", "none"),
+    ("treatment_effect_claim", "none"),
+)
+
+
+def _repetition_decision_probe(purpose: RunPurpose) -> Prerequisite:
+    """Check the runner's repetition constant against the governance record.
+
+    Reports BLOCKED on any disagreement rather than preferring either side: a
+    sample size the code and the adjudication do not agree on is not a governed
+    sample size at all.
+    """
+    try:
+        governed = governed_execution_decisions()
+    except RunnerRefusal as exc:
+        return Prerequisite(
+            "diagnostic_repetition_decision", BLOCKED, exc.message, exc.code
+        )
+
+    problems: List[str] = []
+    recorded = governed.get("diagnostic_repetitions")
+    if recorded != purpose.repetitions:
+        problems.append(
+            f"the record pins diagnostic_repetitions={recorded!r} but the runner "
+            f"carries {purpose.repetitions!r}"
+        )
+    for key, expected in REPETITION_PINS:
+        if governed.get(key) != expected:
+            problems.append(f"{key} is {governed.get(key)!r}, not {expected!r}")
+    if governed.get("condition") not in purpose.permitted_conditions:
+        problems.append(
+            f"the record's condition {governed.get('condition')!r} is outside the "
+            f"purpose's permitted conditions {list(purpose.permitted_conditions)}"
+        )
+
+    if problems:
+        return Prerequisite(
+            "diagnostic_repetition_decision",
+            BLOCKED,
+            "; ".join(problems[:6]),
+            DIAGNOSTIC_REPETITION_DECISION_INCONSISTENT,
+        )
+    return Prerequisite(
+        "diagnostic_repetition_decision",
+        PASS,
+        f"{purpose.repetition_decision_id} pins {purpose.repetitions} independent "
+        f"repetitions of {governed.get('task')} under {governed.get('condition')} "
+        "only, each on a fresh process and a fresh session with no resume, no "
+        "continuation and no session reuse. No power, precision or "
+        "treatment-effect claim attaches to the count, and no power calculation "
+        "justifies it",
+    )
 
 
 def check_readiness(
@@ -890,15 +1226,21 @@ def check_readiness(
         )
     )
 
+    synced, sync_detail = private_sync_prefreeze_state(task_id, private_root, repo)
     items.append(
         Prerequisite(
             "private_sync_propagation_before_freeze",
-            BLOCKED,
-            "the now-closed public accounting synchronization (PT08-PUB-P2-2) "
-            "still requires a separate private propagation before PT08's freeze. "
-            "Runner construction does not require it and this runner performs it "
-            "not at all: the private repository is read-only here",
-            PRIVATE_PUBLIC_SYNC_PROPAGATION_REQUIRED_BEFORE_FREEZE,
+            PASS if synced else BLOCKED,
+            sync_detail
+            if synced
+            else (
+                "the now-closed public accounting synchronization (PT08-PUB-P2-2) "
+                "still requires a separate private propagation before PT08's "
+                "freeze, and the private record does not yet record it as "
+                f"satisfied: {sync_detail}. The private repository is read-only "
+                "here and this runner propagates nothing"
+            ),
+            None if synced else PRIVATE_PUBLIC_SYNC_PROPAGATION_REQUIRED_BEFORE_FREEZE,
         )
     )
 
@@ -914,21 +1256,85 @@ def check_readiness(
         )
     )
 
+    # ---- SL-PT08-02: the schema this purpose's artifacts actually use ----- #
+    schema_problems = artifact_schema_problems(purpose, repo)
     items.append(
         Prerequisite(
-            "run_manifest_schema_firewall_fields",
-            BLOCKED,
-            "experiments/v2/schemas/run_manifest.schema.json sets "
-            "additionalProperties:false and carries none of SL-PT08-01 §9's six "
-            "quarantine fields. That schema directory is byte-pinned by the "
-            "private evaluator's public linkage, so adding them is a "
-            "linkage-relevant change requiring re-approval this package is not "
-            "authorised to make. The runner emits its own harness-local "
-            "run_record.json carrying the firewall, and refuses to emit a "
-            "run_manifest.json that would drop it",
-            RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL,
+            "diagnostic_artifact_firewall",
+            PASS if not schema_problems else BLOCKED,
+            (
+                f"{purpose.schema_decision_id} makes {purpose.artifact_schema} "
+                f"the authoritative execution-record schema for "
+                f"{purpose.name}, and that schema mechanically REQUIRES a "
+                f"run_purpose block and pins all "
+                f"{len(QUARANTINE_FIELDS)} quarantine fields "
+                f"({', '.join(QUARANTINE_FIELDS)}) to false. An artifact that "
+                "dropped the firewall could not validate"
+            )
+            if not schema_problems
+            else (
+                f"{purpose.artifact_schema} does not enforce the "
+                f"{purpose.schema_decision_id} quarantine: "
+                + "; ".join(schema_problems[:6])
+            ),
+            None if not schema_problems else DIAGNOSTIC_ARTIFACT_SCHEMA_LACKS_FIREWALL,
         )
     )
+
+    # ---- the canonical gap: scoped out, never claimed resolved ------------- #
+    canonical_ok = canonical_run_manifest_carries_firewall(repo)
+    if purpose.result_bearing:
+        # A result-bearing purpose is governed by the canonical schema in full,
+        # and SL-PT08-02 waives nothing for it.
+        items.append(
+            Prerequisite(
+                "canonical_confirmatory_run_manifest_firewall",
+                PASS if canonical_ok else BLOCKED,
+                "experiments/v2/schemas/run_manifest.schema.json enforces the "
+                "quarantine fields"
+                if canonical_ok
+                else (
+                    f"{purpose.name} is RESULT-BEARING, so the canonical "
+                    "result-manifest schema governs its artifacts in full. "
+                    "experiments/v2/schemas/run_manifest.schema.json sets "
+                    "additionalProperties:false and carries none of the "
+                    "quarantine fields, and SL-PT08-02 waives that for no "
+                    "confirmatory or result-bearing run"
+                ),
+                None if canonical_ok else RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL,
+            )
+        )
+    else:
+        items.append(
+            Prerequisite(
+                "canonical_confirmatory_run_manifest_firewall",
+                NOT_APPLICABLE,
+                (
+                    "UNRESOLVED, and NOT APPLICABLE TO THIS DIAGNOSTIC. "
+                    "experiments/v2/schemas/run_manifest.schema.json still sets "
+                    "additionalProperties:false and still carries none of the "
+                    "quarantine fields; that directory is byte-pinned by the "
+                    "private evaluator's public linkage, so remediating it is a "
+                    "linkage-relevant change no package here is authorised to "
+                    f"make. {purpose.schema_decision_id} adjudicates only that "
+                    f"{purpose.name} is a NON-RESULT purpose whose artifacts do "
+                    "not validate against that schema, so the gap does not "
+                    "apply to it. The gap is NOT fixed, NOT waived and NOT "
+                    "reduced in scope, and it remains REQUIRED in full for "
+                    "every future confirmatory / result-bearing run"
+                )
+                if not canonical_ok
+                else (
+                    "the canonical result-manifest schema now enforces the "
+                    "quarantine fields; this diagnostic still does not validate "
+                    "against it"
+                ),
+                RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL if not canonical_ok else None,
+            )
+        )
+
+    # ---- SL-PT08-03: the repetition count, re-derived from the record ------ #
+    items.append(_repetition_decision_probe(purpose))
 
     return ReadinessReport(
         purpose=purpose.name,
