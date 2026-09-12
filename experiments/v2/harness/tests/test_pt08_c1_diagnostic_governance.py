@@ -608,15 +608,24 @@ def test_the_runner_that_appeared_still_cannot_execute_the_diagnostic():
         "model_selection",
         "clean_isolated_context",
         "manifest_freeze",
-        "private_sync_propagation_before_freeze",
         "q1_q8_live_runtime_validation",
     ):
         assert required in blocked, required
-    # hidden acceptance is the one prerequisite that has since been discharged,
-    # and discharging it made the run no more eligible than before
+    # Three prerequisites have since been discharged - hidden-acceptance
+    # validation, the pre-freeze public sync propagation, and the diagnostic's
+    # own artifact schema under SL-PT08-02 - and discharging them made the run no
+    # more eligible than before, which is what a discharged prerequisite looks
+    # like when the remaining ones still stand.
     passed = {p.item for p in report.passed}
-    assert "hidden_acceptance_validation" in passed
-    assert "hidden_acceptance_validation" not in blocked
+    for discharged in (
+        "hidden_acceptance_validation",
+        "private_sync_propagation_before_freeze",
+        "diagnostic_artifact_firewall",
+    ):
+        assert discharged in passed, discharged
+        assert discharged not in blocked, discharged
+    # §7.14's manifest freeze is untouched by every one of them
+    assert "manifest_freeze" in blocked
 
 
 def test_the_runner_does_not_relist_the_non_prerequisites_as_blockers():

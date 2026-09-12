@@ -193,11 +193,16 @@ def test_the_synthetic_clean_dry_run_reports_every_downstream_blocker(tmp_path):
     codes = {b["code"] for b in result.record["prerequisite_blockers"]}
     assert gov.PRIMARY_MODEL_NOT_SELECTED in codes
     assert gov.MANIFEST_NOT_FROZEN in codes
-    assert gov.PRIVATE_PUBLIC_SYNC_PROPAGATION_REQUIRED_BEFORE_FREEZE in codes
     # hidden acceptance is validated, so its refusal code is gone from BOTH the
     # prerequisite list and the evaluation channels - and the run is still not
     # eligible, which is what a discharged prerequisite is supposed to look like
     assert gov.hidden_acceptance_refusal_code("PT08") not in codes
+    # likewise the pre-freeze public sync: the private record now reads
+    # SATISFIED, so its code is discharged rather than merely unreported
+    assert gov.PRIVATE_PUBLIC_SYNC_PROPAGATION_REQUIRED_BEFORE_FREEZE not in codes
+    # and the canonical result-manifest gap no longer blocks THIS non-result
+    # diagnostic, while staying unresolved for result-bearing purposes
+    assert gov.RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL not in codes
     evaluation_codes = {c["code"] for c in result.record["evaluation"]["channels"]}
     assert gov.hidden_acceptance_refusal_code("PT08") not in evaluation_codes
     assert gov.MANIFEST_NOT_FROZEN in evaluation_codes
@@ -263,14 +268,27 @@ def test_the_cli_readiness_command_reports_the_authorised_run():
         "public_private_linkage", "architecture_corpus_availability",
         # discharged by the independently approved hidden-acceptance validation
         "hidden_acceptance_validation",
+        # discharged by the private record reading SATISFIED
+        "private_sync_propagation_before_freeze",
+        # SL-PT08-02: the schema this diagnostic's artifacts actually use
+        "diagnostic_artifact_firewall",
+        # SL-PT08-03
+        "diagnostic_repetition_decision",
     ):
         assert items[passing]["status"] == gov.PASS, items[passing]
     for blocked in (
         "model_selection", "clean_isolated_context",
-        "manifest_freeze", "private_sync_propagation_before_freeze",
-        "q1_q8_live_runtime_validation",
+        "manifest_freeze", "q1_q8_live_runtime_validation",
     ):
         assert items[blocked]["status"] == gov.BLOCKED, items[blocked]
+    # the canonical result-manifest gap is scoped out of this non-result
+    # diagnostic, and must be reported N/A rather than PASS: PASS would read as
+    # remediated, and it is not
+    canonical = items["canonical_confirmatory_run_manifest_firewall"]
+    assert canonical["status"] == gov.NOT_APPLICABLE, canonical
+    assert canonical["code"] == gov.RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL
+    # exactly four blockers remain for the diagnostic
+    assert report["blocked_count"] == 4, report["blocked_count"]
 
 
 def test_the_cli_dry_run_exits_non_zero_when_it_refuses(tmp_path):
