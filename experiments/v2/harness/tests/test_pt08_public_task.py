@@ -39,6 +39,18 @@ and APPROVED**, so `TASK_ACCEPTANCE_MATRIX.csv` records `PT08` as
 `status=validated`. That satisfies the **`PT08`-specific** hidden-acceptance
 requirement of `TD-B32` and **nothing else**.
 
+The measured mutant evidence is **11 of 11** valid reference-fail mutants rejected
+with **0 escaped** and **0 invalid**, and **semantic mutation pressure 14 of 14** —
+the one non-semantic closed-assertion-surface guard case is **excluded** from that
+denominator, and its identity stays private. The four non-blocking `P2` findings
+that review raised are
+now **`CLOSED`**, and the **focused independent post-`P2` review** their remediation
+required before freeze **has since been performed** — external, read-only, verdict
+`APPROVE`, all four verified closed — so that pre-freeze requirement is
+**`SATISFIED`**. It raised one new **bookkeeping `P2`**, resolved by this
+synchronization, and one **observation-only `P3`**. That review event **precedes**
+this synchronization, which **records** it rather than performing it.
+
 WHAT MUST STAY FALSE
 --------------------
 `PT08` is **not** frozen, **not** run-ready and **not** E1 run-eligible; its
@@ -1118,9 +1130,181 @@ def test_no_pt08_result_exists_anywhere():
     ), "the evidence location must stay a template, not a real run id"
 
 
-def test_the_four_review_p2_findings_are_recorded_as_remaining_before_freeze():
-    """12. Non-blocking, carried forward, and explicitly not repaired here."""
-    notes = _by_id(ACCEPTANCE_MATRIX)["PT08"]["notes"].lower()
+def test_the_four_review_p2_findings_are_recorded_closed_and_never_pending():
+    """12. They were non-blocking; they are now CLOSED.
+
+    The row used to say `carried forward to pre-freeze`. The remediation that
+    closed them has since been independently reviewed, so the current-state
+    wording must say CLOSED and must not leave them looking outstanding.
+
+    Read over the WHOLE ROW, not just `notes`: the row states this fact in more
+    than one cell, and a guard that watched only one of them would let the
+    others drift back to the superseded wording.
+    """
+    row = _by_id(ACCEPTANCE_MATRIX)["PT08"]
+    notes = row["notes"].lower()
     assert "p2=4" in notes
-    assert "carried forward to pre-freeze" in notes
     assert "non-blocking" in notes
+    assert "closed" in notes
+    blob = " ".join(str(v) for v in row.values()).lower()
+    assert "closed" in blob
+    for stale in ("carried forward to pre-freeze", "carried forward",
+                  "p2 findings pending", "p2 findings remain",
+                  "p2 findings outstanding", "p2 remains open"):
+        assert stale not in blob, (
+            f"PT08's acceptance row still says {stale!r}; the four P2 findings "
+            "are CLOSED and no cell may still present them as outstanding"
+        )
+
+
+# =========================================================================== #
+# THE FOCUSED POST-P2 REVIEW, AND THE MUTANT EVIDENCE IT CONFIRMED.
+#
+# The remediation that closed those four findings changed the recorded mutation
+# evidence — an eleventh mutant, and a stricter liveness bar — so the earlier
+# review could not be quoted for it and a FOCUSED review was required before
+# freeze. That review has since happened.
+#
+# WHAT THESE GUARDS ARE FOR. The public surfaces now have to state the CURRENT
+# figures, and must not state the superseded ones as current. And satisfying a
+# pre-freeze review requirement must not read anywhere as a freeze.
+# =========================================================================== #
+
+#: The CURRENT measured mutant evidence.
+VALID_MUTANTS = 11
+SEMANTIC_PRESSURE = "14 of 14"
+
+#: The excluded case is named by its NATURE, never by its hidden case id: the
+#: private separation invariant forbids any hidden acceptance case identifier in
+#: the public tree, and a public surface that spelled one would leak hidden
+#: evaluator structure to get a fact across that reads perfectly well without it.
+NON_SEMANTIC_GUARD_DESCRIPTION = "non-semantic closed-assertion-surface guard"
+
+#: The SUPERSEDED figure. Kept as its own constant so the guard below can look
+#: for it by name without any test asserting it as current.
+SUPERSEDED_MUTANT_WORDING = "10 of 10"
+
+
+def _pt08_evidence_surfaces():
+    """The public surfaces that state PT08's current mutation evidence."""
+    return (ACCEPTANCE_MATRIX, DOCS_V2 / "PT08_C1_DIFFICULTY_DIAGNOSTIC_DECISION.md")
+
+
+def test_the_public_mutant_evidence_says_eleven_of_eleven_with_none_escaped():
+    """1 + 2. The measured matrix, on every surface that states it."""
+    for path in _pt08_evidence_surfaces():
+        flat = _flat(path)
+        assert f"{VALID_MUTANTS} of {VALID_MUTANTS}" in flat, path.name
+        assert "0 escaped" in flat, path.name
+        assert "0 invalid" in flat, path.name
+
+
+def test_the_public_semantic_mutation_pressure_is_fourteen_of_fourteen():
+    """3 + 4. Fourteen semantic cases, and the guard case excluded by name."""
+    for path in _pt08_evidence_surfaces():
+        flat = _flat(path)
+        assert SEMANTIC_PRESSURE in flat, path.name
+        assert "semantic mutation pressure" in flat, path.name
+        assert NON_SEMANTIC_GUARD_DESCRIPTION in flat, path.name
+        assert "excluded" in flat, path.name
+        # and the exclusion is stated WITHOUT leaking the hidden case id
+        assert "pt08-ac-" not in flat, (
+            f"{path.name} names a hidden acceptance case id; the excluded case "
+            "must be identified by its nature, not by its private identifier"
+        )
+
+
+def test_no_public_surface_names_a_hidden_acceptance_case_id():
+    """The separation invariant, asserted publicly as well as privately."""
+    for path in sorted(DOCS_V2.glob("*.csv")) + sorted(DOCS_V2.glob("*.md")) + [
+        INDEX_PATH, REPORT_PATH,
+    ]:
+        assert "pt08-ac-" not in _flat(path), (
+            f"{path.name} leaks a PT08 hidden acceptance case id into the public "
+            "repository"
+        )
+
+
+def test_no_current_pt08_evidence_states_the_superseded_ten_of_ten_figure():
+    """5. The superseded figure must not survive as a current-state claim."""
+    for path in sorted(DOCS_V2.glob("*.csv")) + sorted(DOCS_V2.glob("*.md")):
+        flat = _flat(path)
+        for match in re.finditer(re.escape(SUPERSEDED_MUTANT_WORDING), flat):
+            window = flat[max(0, match.start() - 400):match.end() + 400]
+            if "mutant" not in window:
+                continue  # an unrelated "10 of 10"
+            assert "superseded" in window or "historical" in window, (
+                f"{path.name} states the superseded {SUPERSEDED_MUTANT_WORDING} "
+                "mutant figure as current PT08 evidence"
+            )
+
+
+def test_the_focused_post_p2_review_is_recorded_satisfied_on_every_surface():
+    """6 + 7. It happened, it was external and read-only, and it is not a freeze."""
+    surfaces = (
+        ACCEPTANCE_MATRIX,
+        DOCS_V2 / "PT08_C1_DIFFICULTY_DIAGNOSTIC_DECISION.md",
+        DOCS_V2 / "OPEN_DECISIONS.csv",
+        DOCS_V2 / "OPEN_DECISIONS.md",
+    )
+    for path in surfaces:
+        flat = _flat(path)
+        assert "focused independent post-p2 review" in flat, path.name
+        assert "satisfied" in flat, path.name
+        assert "read-only" in flat, path.name
+        for pending in ("focused independent post-p2 review is pending",
+                        "post-p2 review is pending",
+                        "focused review is pending"):
+            assert pending not in flat, f"{path.name} still says {pending!r}"
+
+
+def test_the_focused_review_is_recorded_not_claimed_as_performed_publicly():
+    """The provenance line the private record holds, held publicly too."""
+    notes = _flat(ACCEPTANCE_MATRIX)
+    assert "precedes this synchronization" in notes
+    assert "records it rather than performing it" in notes
+    assert "none was supplied" in notes
+    for fabricated in ("reviewed by this synchronization", "self-reviewed",
+                       "reviewed by the study lead on"):
+        assert fabricated not in notes, f"the matrix claims {fabricated!r}"
+
+
+def test_satisfying_the_focused_review_requirement_is_not_a_freeze():
+    """8 .. 11 + 15, re-asserted against the surfaces this package edited."""
+    assert _by_id(ACCEPTANCE_MATRIX)["PT08"]["status"] == "validated"
+    assert _by_id(ACCEPTANCE_MATRIX)["PT08"]["status"] != "frozen"
+    gov = _gov()
+    assert gov.hidden_acceptance_is_validated("PT08") is True
+    assert gov.manifest_is_frozen("PT08") is False
+    report = gov.check_readiness("PT08", "C1", "PT08_DIFFICULTY_DIAGNOSTIC")
+    assert report.run_eligible is False
+    assert gov.MANIFEST_NOT_FROZEN in {p.code for p in report.blocked}
+    for path in _pt08_evidence_surfaces() + (DOCS_V2 / "OPEN_DECISIONS.md",):
+        flat = _flat(path)
+        for claim in ("pt08 is frozen", "pt08 is now frozen", "g1 is passed",
+                      "pt08 is run eligible", "pt08 is run-eligible",
+                      "focused review approved the freeze"):
+            assert claim not in flat, f"{path.name} claims {claim!r}"
+
+
+def test_the_global_rows_did_not_move_with_the_focused_review():
+    """12 + 13 + 14 + 16. Nothing global escalated, and nothing global closed."""
+    rows = _by_id(DECISIONS_CSV, key="decision_id")
+    for decision_id in ("TD-B32", "TD-B12", "TD-B34"):
+        assert rows[decision_id]["status"] == "open", decision_id
+        assert rows[decision_id]["blocking"] == "yes", decision_id
+    # the accounting the PRIOR synchronization set is PRESERVED, not redone
+    feasibility = _flat(FEASIBILITY_PATH)
+    assert f"active e1 opportunities: {ACTIVE_OPPORTUNITIES}" in feasibility
+    assert f"decision clusters: {ACTIVE_CLUSTERS}" in feasibility
+    assert (
+        f"{ACTIVE_OPPORTUNITIES} active e1 opportunities over {ACTIVE_CLUSTERS} "
+        f"decision clusters at depths {CLUSTER_DEPTHS}" in _flat(REPORT_PATH)
+    )
+    # and the superseded 5 / 3-1-1 history keeps its historical marking
+    assert f"active e1 opportunities remain {PRE_ADMISSION_OPPORTUNITIES}" in (
+        _flat(RECORD_PATH)
+    )
+    # and no result appeared with any of it
+    results = REPO / "experiments" / "v2" / "results"
+    assert [p.name for p in results.iterdir() if p.name != "README.md"] == []

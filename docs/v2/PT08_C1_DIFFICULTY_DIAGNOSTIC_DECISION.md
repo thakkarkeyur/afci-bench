@@ -216,16 +216,26 @@ current mechanical state is **NO-GO** until they are completed:
 11. **`PT08` hidden functional acceptance fixture authoring** (`TD-B05`) — now
     **COMPLETE**: the hidden acceptance runtime is authored;
 12. **`PT08` reference-pass / reference-fail / mutation validation** — now
-    **COMPLETE**: a conforming reference passes and 10 of 10 valid reference-fail
-    mutants are rejected, 0 escaped;
+    **COMPLETE**: a conforming reference passes and **11 of 11** valid
+    reference-fail mutants are rejected, **0 escaped**, **0 invalid**, with
+    **semantic mutation pressure at 14 of 14** over the fourteen semantic
+    acceptance cases — the one non-semantic closed-assertion-surface guard case
+    is **excluded** from that denominator and from the mutant liveness bar, and
+    its identity stays in the private evaluator repository;
 13. the **required independent review of that hidden-acceptance validation**
     (`TD-B32`) — now **COMPLETE**: an external read-only review returned
-    **`APPROVE`** (`P0=0`, `P1=0`, `P2=4` non-blocking findings carried forward to
-    pre-freeze), so [`TASK_ACCEPTANCE_MATRIX.csv`](TASK_ACCEPTANCE_MATRIX.csv)
-    records `PT08` as `status=validated`. **This discharges items 11–13 and
-    nothing else here**: the **`PT08`-specific** hidden-acceptance requirement of
-    `TD-B32` is satisfied, the **global `TD-B32` row stays open**, `TD-B12`/`G6`
-    are unchanged, and **item 14 (the manifest freeze) is untouched and still
+    **`APPROVE`** (`P0=0`, `P1=0`, `P2=4` non-blocking findings), so
+    [`TASK_ACCEPTANCE_MATRIX.csv`](TASK_ACCEPTANCE_MATRIX.csv) records `PT08` as
+    `status=validated`. Those **four `P2` findings are `CLOSED`** by a later
+    private remediation, and the **focused independent post-`P2` review** that
+    remediation required before freeze has since been performed — external,
+    read-only, verdict **`APPROVE`**, `P0=0`, `P1=0`, all four verified closed —
+    so that pre-freeze review requirement is **`SATISFIED`**. It raised one new
+    bookkeeping `P2`, resolved by this synchronization and non-blocking, and one
+    observation-only `P3`. **This discharges items 11–13 and nothing else here**:
+    the **`PT08`-specific** hidden-acceptance requirement of `TD-B32` is
+    satisfied, the **global `TD-B32` row stays open**, `TD-B12`/`G6` are
+    unchanged, and **item 14 (the manifest freeze) is untouched and still
     outstanding**;
 14. **`PT08`'s required manifest freeze** under the existing lifecycle rules
     (`TD-B05`/`TD-B14`/`TD-B32`, gate `G1`);
