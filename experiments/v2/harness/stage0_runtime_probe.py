@@ -172,6 +172,7 @@ def probe_audit(
         credential_path=sterile.credential_path,
         verify_profile=True,
         runtime_init_event=live["init"],
+        require_runtime_readback=True,
     )
     payload = result.to_dict()
     init = live["init"] or {}

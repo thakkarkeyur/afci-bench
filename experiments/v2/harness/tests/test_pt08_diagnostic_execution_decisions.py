@@ -526,19 +526,57 @@ def test_no_result_exists_and_none_is_claimed():
     assert "no power simulation was run" in flat
 
 
-def test_no_model_is_selected_and_isolation_is_not_asserted(readiness):
-    assert gov.primary_model() is None
-    assert _item(readiness, "model_selection").status == gov.BLOCKED
-    assert _item(readiness, "clean_isolated_context").status == gov.BLOCKED
+def test_the_record_still_states_what_it_stated_about_model_and_isolation():
+    """These remain accurate statements about what THIS record did.
+
+    `SL-PT08-02`/`SL-PT08-03` selected no model, established no isolated
+    environment and live-validated nothing, and that stays true of them. Later
+    records did those things; this one is not rewritten to claim them, exactly
+    as the repository keeps every superseded reading as marked history.
+    """
     flat = _flat(RECORD)
     assert "no model is selected" in flat
     assert "no isolated execution environment has been established" in flat
     assert "q1 and q8 are not live-validated" in flat
 
 
-def test_q1_q8_live_validation_is_still_blocked(readiness):
+def test_no_confirmatory_primary_model_is_selected(readiness):
+    """The global selection `TD-B03` governs is still open.
+
+    `SL-PT08-05` pins a model for ONE non-confirmatory purpose. That is not the
+    primary-model selection, and the guard that matters is the one below:
+    `primary_model` is still null.
+    """
+    assert gov.primary_model() is None
+    item = _item(readiness, "model_selection")
+    assert item.status == gov.PASS
+    assert "PT08_DIFFICULTY_DIAGNOSTIC only" in item.detail
+    assert "TD-B03 stays open" in item.detail
+    assert "no confirmatory selection" in item.detail
+
+
+def test_q1_q8_are_now_live_validated_for_this_purpose(readiness):
+    """`TD-B21`'s two controls have been exercised against a live runtime."""
     item = _item(readiness, "q1_q8_live_runtime_validation")
-    assert item.status == gov.BLOCKED
+    assert item.status == gov.PASS
+    assert item.code is None
+    q1, q8, cli = gov.live_runtime_validation("PT08_DIFFICULTY_DIAGNOSTIC")
+    assert q1 == "PASS" and q8 == "PASS"
+    assert cli == "2.1.229", "the version recorded must be the one validated"
+
+
+def test_isolation_is_still_never_asserted_in_advance(readiness):
+    """A verdict is demonstrated per run; absent one, the item fails closed."""
+    assert _item(readiness, "clean_isolated_context").status == gov.BLOCKED
+    assert _item(readiness, "clean_isolated_context").code == gov.CONTEXT_AUDIT_UNKNOWN
+
+
+def test_the_diagnostic_is_still_not_run_eligible(readiness):
+    """The point of all of the above: one prerequisite still blocks it."""
+    assert readiness.run_eligible is False
+    assert [p.item for p in readiness.blocked if p.item != "clean_isolated_context"] == [
+        "manifest_freeze"
+    ]
 
 
 def test_the_record_closes_no_other_blocker():

@@ -110,6 +110,18 @@ ENV_ALLOWLIST: Tuple[str, ...] = (
 #: Variable-name prefixes that may never survive into a sterile launch.
 FORBIDDEN_ENV_PREFIXES: Tuple[str, ...] = ("CLAUDE", "ANTHROPIC", "AWS_", "GOOGLE_")
 
+#: ``CLAUDE_*`` names the runner PINS deliberately, as opposed to inheriting.
+#: Listed by name so the distinction is explicit: a governed control is one this
+#: harness sets on purpose, and everything else with the same prefix came from
+#: the session that started the run and must not survive into it.
+GOVERNED_CLAUDE_ENV: Tuple[str, ...] = (
+    "CLAUDE_CONFIG_DIR",
+    "CLAUDE_CODE_DISABLE_AUTO_MEMORY",
+    "CLAUDE_CODE_DISABLE_WORKFLOWS",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+    "CLAUDE_CODE_DISABLE_TERMINAL_TITLE",
+)
+
 
 # --------------------------------------------------------------------------- #
 # Data model
@@ -515,9 +527,21 @@ def build_allowlisted_env(source: Optional[Dict[str, str]] = None) -> Dict[str, 
     run exports its own ``CLAUDE_*`` variables (session id, entrypoint, messaging
     socket and token), and a denylist that missed one would silently hand the
     experimental process a handle back into this session.
+
+    The lookup is deliberately case-insensitive. Windows environment names are
+    case-insensitive, and ``dict(os.environ)`` upper-cases every key — so an
+    exact-match allowlist silently drops ``SystemRoot``, ``ComSpec``,
+    ``ProgramFiles`` and the rest. A launch missing ``SystemRoot`` does not
+    degrade politely: the process dies at startup with a stack-buffer-overrun
+    status and writes nothing at all to stderr.
     """
     src = dict(os.environ if source is None else source)
-    return {name: src[name] for name in ENV_ALLOWLIST if name in src}
+    folded = {name.upper(): value for name, value in src.items()}
+    return {
+        name: folded[name.upper()]
+        for name in ENV_ALLOWLIST
+        if name.upper() in folded
+    }
 
 
 def inherited_env_violations(env: Dict[str, str]) -> List[str]:
@@ -530,7 +554,7 @@ def inherited_env_violations(env: Dict[str, str]) -> List[str]:
     governed = (
         set(STERILE_DETERMINISM_ENV)
         | set(REQUIRED_ENV)
-        | {"CLAUDE_CONFIG_DIR"}
+        | set(GOVERNED_CLAUDE_ENV)
     )
     return sorted(
         name
@@ -1029,6 +1053,7 @@ def audit(
     credential_path: Optional[str] = None,
     runtime_init_event: Optional[dict] = None,
     verify_profile: bool = False,
+    require_runtime_readback: bool = False,
 ) -> AuditResult:
     """Produce a fail-closed context-isolation audit for one run.
 
@@ -1188,8 +1213,14 @@ def audit(
         reasons.extend(profile_findings)
 
     # --- what the runtime itself reported loading ---
+    #
+    # A pre-launch audit legitimately has no readback yet, so an absent event is
+    # only a finding when the caller says the readback is required — which the
+    # post-launch audit does. Without that distinction an absent readback would
+    # be indistinguishable from a clean one, and the audit would fail OPEN on
+    # exactly the run whose process never started.
     runtime_context = audit_runtime_context(runtime_init_event)
-    if runtime_init_event is not None:
+    if runtime_init_event is not None or require_runtime_readback:
         reasons.extend(runtime_context.violations)
 
     # --- per-component status ---
@@ -1236,6 +1267,7 @@ def audit(
             account_policy_adjudication
             or verify_profile
             or credential_path
+            or require_runtime_readback
             or runtime_init_event is not None
         ),
     )

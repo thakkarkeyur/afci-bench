@@ -191,8 +191,15 @@ def test_the_synthetic_clean_dry_run_still_invokes_nothing(tmp_path):
 def test_the_synthetic_clean_dry_run_reports_every_downstream_blocker(tmp_path):
     result = run_v2.run(_request(tmp_path, audit_provider=fx.synthetic_clean_audit))
     codes = {b["code"] for b in result.record["prerequisite_blockers"]}
-    assert gov.PRIMARY_MODEL_NOT_SELECTED in codes
     assert gov.MANIFEST_NOT_FROZEN in codes
+    # the diagnostic-scoped pin under SL-PT08-05 discharges this one WITHOUT
+    # selecting a confirmatory primary model, so the code is gone while the
+    # global registry entry TD-B03 governs is still null
+    assert gov.PRIMARY_MODEL_NOT_SELECTED not in codes
+    assert gov.primary_model() is None
+    # and the two live runtime controls are no longer outstanding either
+    assert gov.Q1_READBACK_NOT_VALIDATED_LIVE not in codes
+    assert gov.Q8_INVALID_MODEL_ID_NOT_VALIDATED_LIVE not in codes
     # hidden acceptance is validated, so its refusal code is gone from BOTH the
     # prerequisite list and the evaluation channels - and the run is still not
     # eligible, which is what a discharged prerequisite is supposed to look like
@@ -274,12 +281,13 @@ def test_the_cli_readiness_command_reports_the_authorised_run():
         "diagnostic_artifact_firewall",
         # SL-PT08-03
         "diagnostic_repetition_decision",
+        # SL-PT08-05: a model pinned for this purpose only, and the two
+        # MODEL_EXECUTION_CONTROLS §7 probes validated against a live runtime
+        "model_selection",
+        "q1_q8_live_runtime_validation",
     ):
         assert items[passing]["status"] == gov.PASS, items[passing]
-    for blocked in (
-        "model_selection", "clean_isolated_context",
-        "manifest_freeze", "q1_q8_live_runtime_validation",
-    ):
+    for blocked in ("clean_isolated_context", "manifest_freeze"):
         assert items[blocked]["status"] == gov.BLOCKED, items[blocked]
     # the canonical result-manifest gap is scoped out of this non-result
     # diagnostic, and must be reported N/A rather than PASS: PASS would read as
@@ -287,8 +295,10 @@ def test_the_cli_readiness_command_reports_the_authorised_run():
     canonical = items["canonical_confirmatory_run_manifest_firewall"]
     assert canonical["status"] == gov.NOT_APPLICABLE, canonical
     assert canonical["code"] == gov.RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL
-    # exactly four blockers remain for the diagnostic
-    assert report["blocked_count"] == 4, report["blocked_count"]
+    # exactly two blockers remain for the diagnostic, and one of them is the
+    # per-run isolation verdict this command does not supply. The substantive
+    # remainder is the manifest freeze.
+    assert report["blocked_count"] == 2, report["blocked_count"]
 
 
 def test_the_cli_dry_run_exits_non_zero_when_it_refuses(tmp_path):

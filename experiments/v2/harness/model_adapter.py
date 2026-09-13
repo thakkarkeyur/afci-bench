@@ -641,6 +641,33 @@ def extract_resolved_model_ids(evidence) -> List[Tuple[str, str]]:
     return found
 
 
+def model_usage_ids(evidence) -> List[str]:
+    """Model ids that ACTUALLY RAN, taken from ``modelUsage`` only.
+
+    Deliberately narrower than :func:`extract_resolved_model_ids`. The headless
+    ``system.init`` event reports the model the session was STARTED with, which
+    for an unrecognised id is the request echoed back before anything has been
+    resolved; ``modelUsage`` is only written for a model that actually served
+    tokens. Telling the two apart is the whole of the ``Q8`` judgement: an echo
+    is not a substitution, and an empty ``modelUsage`` is positive evidence that
+    no model answered.
+    """
+    found: List[str] = []
+    events: List[dict] = []
+    if isinstance(evidence, dict):
+        events = [evidence]
+    elif isinstance(evidence, list):
+        events = [e for e in evidence if isinstance(e, dict)]
+    for event in events:
+        usage = event.get("modelUsage")
+        if isinstance(usage, dict):
+            found.extend(k for k in usage if isinstance(k, str) and k)
+        nested = event.get("result")
+        if isinstance(nested, dict):
+            found.extend(model_usage_ids(nested))
+    return sorted(set(found))
+
+
 def load_runtime_evidence(path) -> object:
     """Load ``stream-json``/``json`` runtime output; JSONL is read line by line."""
     text = str(path)
@@ -802,27 +829,44 @@ def validate_invalid_model_id_rejection(
                 "a dry-run blocker under TD-B21 and is not asserted here"
             ),
         )
-    resolved = sorted({m for _, m in extract_resolved_model_ids(evidence or [])})
+    announced = sorted({m for _, m in extract_resolved_model_ids(evidence or [])})
+    used = model_usage_ids(evidence or [])
+    # Any id OTHER than the one we deliberately made up means something else
+    # answered; the requested id echoed back means only that the CLI does not
+    # validate ids locally, which is not a substitution.
+    substituted = sorted((set(announced) | set(used)) - {invalid_model_id})
+
     if exit_status == 0:
         return InvalidModelIdProbe(
             invalid_model_id=invalid_model_id,
             status="Q8_NOT_REJECTED",
             exit_status=exit_status,
-            resolved_model_id=resolved[0] if resolved else None,
+            resolved_model_id=announced[0] if announced else None,
             detail=(
                 "the runtime accepted an unrecognised model id; it did not fail "
                 "closed, so the model control is unsound"
             ),
         )
-    if resolved:
+    if substituted:
         return InvalidModelIdProbe(
             invalid_model_id=invalid_model_id,
             status="Q8_SILENTLY_DEGRADED",
             exit_status=exit_status,
-            resolved_model_id=resolved[0],
+            resolved_model_id=substituted[0],
             detail=(
-                f"the runtime reported resolved model {resolved[0]!r} for an "
+                f"the runtime reported model {substituted[0]!r} for an "
                 "unrecognised request: the id was substituted rather than rejected"
+            ),
+        )
+    if used:
+        return InvalidModelIdProbe(
+            invalid_model_id=invalid_model_id,
+            status="Q8_SILENTLY_DEGRADED",
+            exit_status=exit_status,
+            resolved_model_id=used[0],
+            detail=(
+                f"a model served tokens for the unrecognised id {invalid_model_id!r} "
+                f"(modelUsage={used}); the request was answered rather than rejected"
             ),
         )
     return InvalidModelIdProbe(
@@ -831,6 +875,7 @@ def validate_invalid_model_id_rejection(
         exit_status=exit_status,
         detail=(
             f"the runtime rejected {invalid_model_id!r} with exit status "
-            f"{exit_status} and reported no resolved model"
+            f"{exit_status}; no other model was reported and modelUsage is empty, "
+            "so no model served the request and nothing was substituted"
         ),
     )

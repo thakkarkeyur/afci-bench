@@ -580,6 +580,71 @@ def test_a_non_default_output_style_fails_the_runtime_audit():
 
 
 # --------------------------------------------------------------------------- #
+# Q8 — an echoed request is not a substitution, and modelUsage settles it
+# --------------------------------------------------------------------------- #
+BOGUS = "claude-nonexistent-model-9x7q-not-a-real-id"
+
+
+def _q8_observed():
+    """The shape Claude Code 2.1.229 actually produces for an unknown id.
+
+    system.init echoes the REQUESTED id because the CLI does not validate ids
+    locally; the assistant turn is a synthetic CLI error rather than a model
+    answer; modelUsage is empty because nothing served the request.
+    """
+    return [
+        {"type": "system", "subtype": "init", "model": BOGUS,
+         "claude_code_version": "2.1.229"},
+        {"type": "assistant", "message": {"model": "<synthetic>", "content": [
+            {"type": "text", "text": "There's an issue with the selected model"}]}},
+        {"type": "result", "subtype": "success", "is_error": True, "modelUsage": {}},
+    ]
+
+
+def test_q8_an_echoed_request_with_no_model_usage_is_a_rejection():
+    probe = ma.validate_invalid_model_id_rejection(
+        BOGUS, exit_status=1, evidence=_q8_observed()
+    )
+    assert probe.status == "Q8_REJECTED"
+    assert ma.model_usage_ids(_q8_observed()) == [], (
+        "modelUsage is the evidence that no model served the request"
+    )
+
+
+def test_q8_a_different_model_answering_is_still_a_substitution():
+    evidence = _q8_observed()
+    evidence[2]["modelUsage"] = {"claude-sonnet-5": {}}
+    probe = ma.validate_invalid_model_id_rejection(
+        BOGUS, exit_status=1, evidence=evidence
+    )
+    assert probe.status == "Q8_SILENTLY_DEGRADED"
+    assert probe.resolved_model_id == "claude-sonnet-5"
+
+
+def test_q8_a_model_serving_the_invalid_id_is_a_substitution():
+    """If tokens were served under the made-up id, it was answered, not rejected."""
+    evidence = _q8_observed()
+    evidence[2]["modelUsage"] = {BOGUS: {}}
+    probe = ma.validate_invalid_model_id_rejection(
+        BOGUS, exit_status=1, evidence=evidence
+    )
+    assert probe.status == "Q8_SILENTLY_DEGRADED"
+
+
+def test_q8_a_zero_exit_is_never_a_rejection():
+    probe = ma.validate_invalid_model_id_rejection(
+        BOGUS, exit_status=0, evidence=_q8_observed()
+    )
+    assert probe.status == "Q8_NOT_REJECTED"
+
+
+def test_model_usage_ids_ignores_the_system_init_echo():
+    assert ma.model_usage_ids(
+        [{"type": "system", "subtype": "init", "model": "claude-sonnet-5"}]
+    ) == []
+
+
+# --------------------------------------------------------------------------- #
 # The launch command itself
 # --------------------------------------------------------------------------- #
 def test_the_sterile_launch_carries_every_verified_isolation_flag(tmp_path):

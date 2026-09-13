@@ -25,13 +25,72 @@ REQUIRED_CSV_COLUMNS = [
 ]
 
 
+def _yaml():
+    return yaml.safe_load((DOCS_V2 / "MODEL_REGISTRY.yml").read_text(encoding="utf-8"))
+
+
 def test_registry_yaml_parses_and_has_no_primary():
-    y = yaml.safe_load((DOCS_V2 / "MODEL_REGISTRY.yml").read_text(encoding="utf-8"))
+    y = _yaml()
     assert y["primary_model"] is None, "primary model must NOT be selected yet"
     assert "not selected" in y["primary_model_selection_status"].lower()
-    assert y["no_paid_run"] is True
     ids = {m["exact_model_id"] for m in y["models"]}
     assert ids == VERIFIED_IDS, ids
+
+
+def test_the_paid_activity_flag_is_an_honest_statement_of_what_has_run():
+    """``no_paid_run`` WAS true and is now false, because live probes have run.
+
+    Q1, Q8 and the context audit each start a real process against a real
+    account. Leaving the flag true would have made the registry assert something
+    the artifacts on disk contradict. What must stay true is the narrower claim:
+    a runtime CONTROL is not a benchmark run.
+    """
+    y = _yaml()
+    assert y["no_paid_run"] is False
+    activity = y["paid_activity_to_date"].lower()
+    assert "runtime control" in activity
+    assert "no benchmark condition executed" in activity
+    assert "no result" in activity
+
+
+def test_the_diagnostic_pin_is_not_a_primary_selection():
+    """SL-PT08-05 pins a model for one purpose and confers nothing wider."""
+    y = _yaml()
+    block = y["diagnostic_model_selection"]["PT08_DIFFICULTY_DIAGNOSTIC"]
+    assert block["decision_id"] == "SL-PT08-05"
+    assert block["exact_model_id"] in VERIFIED_IDS
+    # the exact id, never the alias, is what the repetitions request
+    assert block["selector_used_for_repetitions"] == block["exact_model_id"]
+    assert block["selector_used_for_repetitions"] != block["requested_selector"]
+    for flag in ("confers_no_primary_selection", "confers_no_confirmatory_eligibility"):
+        assert block[flag] is True, flag
+    assert block["td_b03_status"].startswith("open")
+    assert y["primary_model"] is None, "a diagnostic pin must never select a primary"
+
+
+def test_the_validated_runtime_version_is_not_reconciled_with_the_governed_one():
+    """The installed runtime is 2.1.229; the governed toolchain value is 2.1.209.
+
+    No version match is manufactured. The diagnostic records what it actually
+    validated, the governed value is left alone, and the difference is carried
+    explicitly as unresolved so no reader can mistake one for the other.
+    """
+    y = _yaml()
+    block = y["diagnostic_model_selection"]["PT08_DIFFICULTY_DIAGNOSTIC"]
+    assert block["validated_claude_code_cli_version"] == "2.1.229"
+    assert block["governed_toolchain_cli_version"] == y["toolchain"]["claude_code_cli_version"]
+    assert block["validated_claude_code_cli_version"] != block["governed_toolchain_cli_version"]
+    assert "UNRESOLVED" in block["cli_version_discrepancy"]
+
+
+def test_the_live_runtime_controls_are_recorded_as_passed():
+    block = _yaml()["diagnostic_model_selection"]["PT08_DIFFICULTY_DIAGNOSTIC"]
+    assert block["q1_readback"] == "PASS" and block["q1_unambiguous"] is True
+    assert set(block["q1_readback_sources"]) == {"system.init.model", "modelUsage"}
+    assert block["q8_invalid_model_id_rejection"] == "PASS"
+    assert block["q8_invalid_model_id"] not in VERIFIED_IDS
+    assert block["api_key_used"] is False
+    assert block["repetitions"] == 3
 
 
 def test_registry_csv_matches_yaml_and_columns():
@@ -52,5 +111,12 @@ def test_no_model_selected_as_primary_in_csv():
         assert "not selected" in r["model_selection_status"].lower(), (
             f"{r['exact_model_id']} must not be selected as primary yet"
         )
-        # dry-run validation must still be pending (no paid run performed)
-        assert "pending" in r["dry_run_validation_status"].lower()
+        # The confirmatory dry-run validation is still pending for every model.
+        # The one model whose runtime controls have been validated says so
+        # explicitly, and says for which purpose, so a diagnostic-scoped
+        # validation can never be read as the confirmatory one.
+        status = r["dry_run_validation_status"].lower()
+        assert "pending" in status, r["exact_model_id"]
+        if "q1/q8 validated" in status:
+            assert "pt08_difficulty_diagnostic only" in status
+            assert "no benchmark condition executed" in status

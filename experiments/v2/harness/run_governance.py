@@ -643,6 +643,42 @@ def diagnostic_primary_model(
     return None if value in {"null", "~", "None"} else value
 
 
+def live_runtime_validation(
+    run_purpose: Optional[str], path: Path = MODEL_REGISTRY
+) -> Tuple[str, str, str]:
+    """``(q1, q8, validated_cli_version)`` as recorded for one run purpose.
+
+    Reports what was recorded; it does not re-perform the probes. The probes
+    themselves live in ``stage0_runtime_probe.py`` and write their evidence
+    outside both repositories.
+    """
+    blank = ("NOT_VALIDATED", "NOT_VALIDATED", "unrecorded")
+    if not run_purpose:
+        return blank
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except OSError:
+        return blank
+    block = re.search(
+        rf"^\s*{re.escape(run_purpose)}:\s*$(.*?)(?=^\S|\Z)",
+        text,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not block:
+        return blank
+    body = block.group(1)
+
+    def _field(name: str, default: str) -> str:
+        m = re.search(rf"^\s*{name}:\s*(\S+)", body, re.MULTILINE)
+        return m.group(1).strip().strip('"').strip("'") if m else default
+
+    return (
+        _field("q1_readback", "NOT_VALIDATED"),
+        _field("q8_invalid_model_id_rejection", "NOT_VALIDATED"),
+        _field("validated_claude_code_cli_version", "unrecorded"),
+    )
+
+
 def governed_model_ids(path: Path = MODEL_REGISTRY) -> List[str]:
     """Every exact model id the registry records, including context variants."""
     try:
@@ -1201,16 +1237,23 @@ def check_readiness(
 
     # ---- BLOCKED items ---------------------------------------------------- #
     selected = primary_model()
+    pinned = diagnostic_primary_model(purpose.name)
     items.append(
         Prerequisite(
             "model_selection",
-            PASS if selected else BLOCKED,
+            PASS if (selected or pinned) else BLOCKED,
             f"MODEL_REGISTRY.yml primary_model is {selected!r}"
             if selected
+            else (
+                f"SL-PT08-05 pins {pinned!r} for {purpose.name} only; the global "
+                "primary_model stays null and TD-B03 stays open, so this confers "
+                "no confirmatory selection"
+            )
+            if pinned
             else "MODEL_REGISTRY.yml records primary_model: null; selection is a "
             "separate Study-Lead decision (TD-B03) and the runner never chooses "
             "a model or falls back to one",
-            None if selected else PRIMARY_MODEL_NOT_SELECTED,
+            None if (selected or pinned) else PRIMARY_MODEL_NOT_SELECTED,
         )
     )
 
@@ -1286,15 +1329,35 @@ def check_readiness(
         )
     )
 
+    q1, q8, validated_cli = live_runtime_validation(purpose.name)
+    live_ok = q1 == "PASS" and q8 == "PASS"
+    missing = "+".join(
+        code
+        for code, ok in (
+            (Q1_READBACK_NOT_VALIDATED_LIVE, q1 == "PASS"),
+            (Q8_INVALID_MODEL_ID_NOT_VALIDATED_LIVE, q8 == "PASS"),
+        )
+        if not ok
+    )
     items.append(
         Prerequisite(
             "q1_q8_live_runtime_validation",
-            BLOCKED,
-            "MODEL_EXECUTION_CONTROLS §7 Q1 (resolved-model-id readback) and Q8 "
-            "(invalid-model-id rejection) are dry-run blockers under TD-B21. The "
-            "runner implements both validation paths and neither has been "
-            "exercised against a live runtime",
-            f"{Q1_READBACK_NOT_VALIDATED_LIVE}+{Q8_INVALID_MODEL_ID_NOT_VALIDATED_LIVE}",
+            PASS if live_ok else BLOCKED,
+            (
+                "MODEL_EXECUTION_CONTROLS §7 Q1 and Q8 have both been exercised "
+                f"against a LIVE runtime (CLI {validated_cli}) under SL-PT08-05: "
+                "the readback resolved exactly one model id from system.init and "
+                "modelUsage, and an unrecognised id was rejected with no model "
+                "serving the request and nothing substituted"
+            )
+            if live_ok
+            else (
+                "MODEL_EXECUTION_CONTROLS §7 Q1 (resolved-model-id readback) and "
+                "Q8 (invalid-model-id rejection) are dry-run blockers under "
+                "TD-B21. The runner implements both validation paths and they "
+                "have not both been exercised against a live runtime"
+            ),
+            None if live_ok else (missing or Q1_READBACK_NOT_VALIDATED_LIVE),
         )
     )
 

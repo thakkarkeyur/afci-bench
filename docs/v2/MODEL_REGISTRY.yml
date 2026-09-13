@@ -16,9 +16,18 @@
 # asserts the two agree). Control details: MODEL_EXECUTION_CONTROLS.md +
 # MODEL_CONFIGURATION_MATRIX.csv.
 
-registry_version: "1.0.0"
+registry_version: "1.1.0"
 status: development
-no_paid_run: true
+
+# WAS true. Live runtime CONTROL probes have since been executed under
+# SL-PT08-04/SL-PT08-05: the Q1 resolved-model-id readback, the Q8
+# invalid-model-id rejection, and the context audit that authenticates in order
+# to observe what the runtime loads. Those are runtime controls, not benchmark
+# runs: no benchmark condition was executed, nothing was scored, and no result,
+# violation value or success value exists. The flag is corrected rather than
+# reinterpreted, because "no paid run" is now a false statement.
+no_paid_run: false
+paid_activity_to_date: "runtime control probes only (Q1, Q8, context audit); no benchmark condition executed; no result produced"
 
 toolchain:
   claude_code_cli_version: "2.1.209"          # CLI-verified (claude --version)
@@ -29,6 +38,53 @@ toolchain:
 # The primary benchmark model is DELIBERATELY NOT SELECTED in this work package.
 primary_model: null                            # OPEN DECISION TD-B03 (blocking)
 primary_model_selection_status: "not selected - blocked on dry-run validation (TD-B03); do not select Sonnet or Opus yet"
+
+# ---------------------------------------------------------------------------
+# SL-PT08-05 - model and runtime pinned for ONE non-confirmatory run purpose.
+#
+# This is NOT the primary-model selection TD-B03 governs. TD-B03 selects the
+# model of the CONFIRMATORY study, after screening across C1/C3/C4 and subject
+# to the rule that the choice is never made on the largest favourable effect;
+# that decision stays OPEN and primary_model stays null above.
+#
+# TD-B03 also says "do not select Sonnet or Opus yet". That instruction is about
+# the confirmatory selection, and it is NOT discharged, weakened or pre-empted
+# here: pinning a model so a quarantined difficulty probe can execute at all
+# creates no screening evidence, no comparison and no precedent, and the
+# confirmatory selection remains entirely open. The tension is recorded rather
+# than resolved, because resolving it is not this record's to make.
+#
+# The runner reads this block ONLY for the run purpose named in it.
+# ---------------------------------------------------------------------------
+diagnostic_model_selection:
+  PT08_DIFFICULTY_DIAGNOSTIC:
+    decision_id: "SL-PT08-05"
+    primary_model_family: "Claude Sonnet"
+    requested_selector: "sonnet"                # what Q1 asked for
+    exact_model_id: "claude-sonnet-5"           # what the runtime resolved
+    selector_used_for_repetitions: "claude-sonnet-5"   # the exact id, never the alias
+    q1_readback: "PASS"
+    q1_readback_sources: ["system.init.model", "modelUsage"]
+    q1_unambiguous: true
+    q8_invalid_model_id_rejection: "PASS"
+    q8_invalid_model_id: "claude-nonexistent-model-9x7q-not-a-real-id"
+    q8_evidence: "exit status 1; modelUsage empty; no other model reported; assistant turn synthetic"
+    sterile_context_validation: "PASS"
+    api_key_used: false
+    authentication: "claude-code-subscription-oauth (apiKeySource=none)"
+    fallback_model: "none; --fallback-model is refused by the launcher"
+    permission_mode: "acceptEdits"
+    tools: ["Read", "Edit", "Write", "Glob", "Grep", "Bash"]
+    repetitions: 3
+    # The runtime version actually validated on this machine. It is NOT the
+    # governed toolchain value above, and the difference is recorded rather
+    # than reconciled: see SL-PT08-05 for the discrepancy.
+    validated_claude_code_cli_version: "2.1.229"
+    governed_toolchain_cli_version: "2.1.209"
+    cli_version_discrepancy: "UNRESOLVED - the governed toolchain value predates this machine's installed runtime; no version match is claimed"
+    confers_no_primary_selection: true
+    confers_no_confirmatory_eligibility: true
+    td_b03_status: "open; unchanged by this pin"
 
 # Model screening (CRITICAL_DESIGN_DECISIONS D10; TD-B03).
 screening:
@@ -93,8 +149,8 @@ models:
     effort_input: "--effort flag (log as input metadata); not recordable from output (dry-run-required Q4)"
     thinking_control_status: "not pinnable/recordable; not a factor"
     workflow_control_status: "disable via CLAUDE_CODE_DISABLE_WORKFLOWS=1"
-    evidence_classification: "id doc-derived; CLI CLI-verified; SDK env-observed"
-    dry_run_validation_status: "pending - no paid run executed"
+    evidence_classification: "id doc-derived; CLI CLI-verified; SDK env-observed; exact id now RUNTIME-VERIFIED by Q1 readback on CLI 2.1.229"
+    dry_run_validation_status: "pending for the confirmatory pilot - Q1/Q8 validated live on CLI 2.1.229 for PT08_DIFFICULTY_DIAGNOSTIC only (SL-PT08-05); no benchmark condition executed and no result produced"
 
   - model_label: "Haiku 4.5"
     exact_model_id: "claude-haiku-4-5-20251001"

@@ -544,6 +544,13 @@ AUTHORISED_RUNNER_MODULES = [
     "run_worktree.py",
 ]
 
+#: The Stage-0 runtime CONTROLS authorised by SL-PT08-04/SL-PT08-05. Enumerated
+#: separately from the runner because they are not part of it and execute no
+#: benchmark condition: they perform the context audit against the real launch
+#: environment and the two MODEL_EXECUTION_CONTROLS §7 probes. Neither Q1 nor Q8
+#: is a diagnostic repetition, and neither is scored.
+AUTHORISED_STAGE0_MODULES = ["stage0_runtime_probe.py"]
+
 
 def test_the_harness_gained_exactly_the_authorised_runner_and_nothing_else():
     """Replaces the earlier `no runner has appeared` check, and is stricter.
@@ -558,7 +565,9 @@ def test_the_harness_gained_exactly_the_authorised_runner_and_nothing_else():
     harness = REPO / "experiments" / "v2" / "harness"
     present = sorted(p.name for p in harness.glob("*.py"))
     assert present == sorted(
-        PRE_EXISTING_HARNESS_MODULES + AUTHORISED_RUNNER_MODULES
+        PRE_EXISTING_HARNESS_MODULES
+        + AUTHORISED_RUNNER_MODULES
+        + AUTHORISED_STAGE0_MODULES
     ), f"the harness gained or lost an unenumerated module: {present}"
     for module in PRE_EXISTING_HARNESS_MODULES:
         assert (harness / module).is_file(), f"{module} disappeared"
@@ -604,28 +613,36 @@ def test_the_runner_that_appeared_still_cannot_execute_the_diagnostic():
     report = gov.check_readiness("PT08", "C1", "PT08_DIFFICULTY_DIAGNOSTIC")
     assert report.run_eligible is False
     blocked = {p.item for p in report.blocked}
-    for required in (
-        "model_selection",
-        "clean_isolated_context",
-        "manifest_freeze",
-        "q1_q8_live_runtime_validation",
-    ):
+    for required in ("clean_isolated_context", "manifest_freeze"):
         assert required in blocked, required
-    # Three prerequisites have since been discharged - hidden-acceptance
-    # validation, the pre-freeze public sync propagation, and the diagnostic's
-    # own artifact schema under SL-PT08-02 - and discharging them made the run no
-    # more eligible than before, which is what a discharged prerequisite looks
-    # like when the remaining ones still stand.
+    # Six prerequisites have since been discharged - hidden-acceptance
+    # validation, the pre-freeze public sync propagation, the diagnostic's own
+    # artifact schema under SL-PT08-02, and now the diagnostic-scoped model pin
+    # and the two live runtime controls under SL-PT08-05 - and discharging every
+    # one of them made the run no more eligible than before, which is what a
+    # discharged prerequisite looks like while a remaining one still stands.
     passed = {p.item for p in report.passed}
     for discharged in (
         "hidden_acceptance_validation",
         "private_sync_propagation_before_freeze",
         "diagnostic_artifact_firewall",
+        "model_selection",
+        "q1_q8_live_runtime_validation",
     ):
         assert discharged in passed, discharged
         assert discharged not in blocked, discharged
-    # §7.14's manifest freeze is untouched by every one of them
+    # §7.14's manifest freeze is untouched by every one of them, and is now the
+    # ONLY prerequisite standing between this diagnostic and execution: the
+    # isolation item above is BLOCKED only because no verdict was supplied to
+    # this call, and is demonstrated per run rather than asserted in advance.
     assert "manifest_freeze" in blocked
+    with_verdict = gov.check_readiness(
+        "PT08", "C1", "PT08_DIFFICULTY_DIAGNOSTIC", context_verdict="CLEAN"
+    )
+    assert with_verdict.run_eligible is False
+    assert [p.item for p in with_verdict.blocked] == ["manifest_freeze"]
+    # and the global selection TD-B03 governs is untouched by the scoped pin
+    assert gov.primary_model() is None
 
 
 def test_the_runner_does_not_relist_the_non_prerequisites_as_blockers():
