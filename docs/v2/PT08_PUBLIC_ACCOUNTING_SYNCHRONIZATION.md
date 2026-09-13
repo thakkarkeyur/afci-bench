@@ -91,7 +91,7 @@ Stated first so it cannot be quoted without it. Closing `PT08-PUB-P2-2`:
 - **selects no model** (`primary_model` stays null, `TD-B03` open) and **no sample
   size**;
 - **resolves no blocker** — `TD-B34` stays **OPEN and BLOCKING**;
-- **starts no priority-B work**;
+- **starts no priority-B work** (the later `SL-QUAL-01` package did that; this synchronization did not);
 - **activates no reserve** and opens or closes no other blocker;
 - **builds no runner** — none exists in this repository.
 

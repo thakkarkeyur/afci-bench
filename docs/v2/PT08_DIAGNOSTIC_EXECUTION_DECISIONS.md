@@ -232,7 +232,7 @@ Stated so no later reader can extract a licence these records do not grant.
   and no treatment-effect estimate.
 - **No power simulation was run, no power calculation was performed, and no
   power value is produced.**
-- **`TD-B34` is not closed** and is not weakened; **priority B is not started**.
+- **`TD-B34` is not closed** and is not weakened. *As recorded then* **priority B was not started**; the later `SL-QUAL-01` package authored `PT10`, so **priority b is started and is not complete**, and **this diagnostic neither started nor completed it**.
 - **The global `TD-B32` row stays open**; **`TD-B12`/`G6` are unchanged**.
 - **No private-linkage baseline is advanced** and **no re-link is performed**.
 - **No accounting synchronization is performed here.**

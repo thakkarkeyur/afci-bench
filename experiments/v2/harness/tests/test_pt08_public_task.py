@@ -215,18 +215,35 @@ def _git(*args) -> str:
 # PART Q.1/Q.2/Q.4 — the body exists, is indexed once, and hashes correctly.
 
 
+#: Authored after `PT08`, by the later qualification-candidate package. Declared
+#: here so "PT08 was the only body ITS package added" stays a checkable claim
+#: about the state at that package while the current set is still asserted exactly.
+AUTHORED_AFTER_PT08 = {
+    "PT09": "bac32dc0e7163c9ab1816ac6eea6c98738092cca5cf56715e280f1ec1c0ac44c",
+    "PT10": "1b1fe29881b3c9f309939df042272b03164fb3baae878c64345e75edddf36b86",
+}
+
+
 def test_pt08_exists_and_is_the_only_new_body():
     assert PT08_PATH.is_file(), "PT08.md was not authored"
     stems = {p.stem for p in _task_files()}
-    assert stems == set(PRE_EXISTING_HASHES) | {"PT08"}, (
-        f"exactly one new task body is expected, found {sorted(stems)}"
+    assert stems == set(PRE_EXISTING_HASHES) | {"PT08"} | set(AUTHORED_AFTER_PT08), (
+        f"the public task set drifted from the recorded one, found {sorted(stems)}"
     )
+
+
+def test_bodies_authored_after_pt08_are_declared_and_left_pt08_untouched():
+    """A later package may add bodies; it may never edit an existing one."""
+    for task_id, digest in AUTHORED_AFTER_PT08.items():
+        assert _sha256(PUBLIC_TASKS_DIR / f"{task_id}.md") == digest, task_id
+        assert _by_id(INDEX_PATH)[task_id]["public_task_sha256"] == digest
+    assert _sha256(PT08_PATH) == PT08_SHA256, "PT08's bytes must not change"
 
 
 def test_pt08_is_in_the_task_index_exactly_once():
     ids = [r["task_id"] for r in _rows(INDEX_PATH)]
     assert ids.count("PT08") == 1, f"PT08 appears {ids.count('PT08')} times in TASK_INDEX.csv"
-    assert len(ids) == len(PRE_EXISTING_HASHES) + 1 == 10
+    assert len(ids) == len(PRE_EXISTING_HASHES) + 1 + len(AUTHORED_AFTER_PT08) == 12
 
 
 def test_pt08_hash_is_correct_in_the_file_and_in_both_public_csvs():
@@ -908,7 +925,11 @@ def test_td_b34_remains_open_and_blocking():
     assert "the independent public-authoring review of pt08 has since passed" in text
     assert "the independent public-authoring review of pt08 is pending" not in text
     assert "td-b34 therefore remains open and blocking" in text
-    assert "priority b is not started" in text
+    # SL-QUAL-01 started priority B; the blunt claim survives as history and the
+    # sharper one that still holds replaces it as the current statement.
+    assert "priority b was not started" in text
+    assert "priority b is started and is not complete" in text
+    assert "has had no independent candidate review" in text
     report = _flat(REPORT_PATH)
     assert "td-b34 is not resolved by this package" in report
     assert "replication depth is created by an active observation" in report

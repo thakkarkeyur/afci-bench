@@ -34,8 +34,9 @@ REPO = Path(__file__).resolve().parents[4]
 TASKS_DIR = REPO / "experiments" / "v2" / "tasks"
 INDEX_PATH = TASKS_DIR / "public" / "TASK_INDEX.csv"
 #: PT01-PT06 + PR01/PR02 are the repaired pilot suite; PT07 and then PT08 were
-#: authored later under DECISION B (TD-B34).
-EXPECTED_TASKS = {f"PT0{i}.md" for i in range(1, 9)} | {"PR01.md", "PR02.md"}
+#: authored later under DECISION B (TD-B34), and PT09/PT10 later still as the two
+#: qualification candidates.
+EXPECTED_TASKS = {f"PT{i:02d}.md" for i in range(1, 11)} | {"PR01.md", "PR02.md"}
 
 
 def check(text: str) -> v.TaskValidation:
@@ -578,7 +579,7 @@ def test_authored_suite_reconciles_with_the_task_index():
 def test_authoring_report_is_not_counted_as_a_task():
     names = {p.name for p in v.discover(TASKS_DIR).tasks}
     assert "TASK_AUTHORING_REPORT.md" not in names
-    assert len(names) == len(EXPECTED_TASKS) == 10
+    assert len(names) == len(EXPECTED_TASKS) == 12
 
 
 def test_cli_exit_code_is_zero_for_the_authored_suite():

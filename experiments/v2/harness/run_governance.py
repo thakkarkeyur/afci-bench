@@ -119,6 +119,10 @@ TASK_NOT_PERMITTED_FOR_PURPOSE = "TASK_NOT_PERMITTED_FOR_PURPOSE"
 CONDITION_NOT_PERMITTED_FOR_PURPOSE = "CONDITION_NOT_PERMITTED_FOR_PURPOSE"
 DIAGNOSTIC_FIREWALL_INCONSISTENT = "DIAGNOSTIC_FIREWALL_INCONSISTENT"
 RUN_ARTIFACT_PURPOSE_MISSING = "RUN_ARTIFACT_PURPOSE_MISSING"
+#: SL-RUNID-01. A declared repetition index that is not a governed one. Artifact
+#: identity is never silently repaired: an out-of-range or non-integer index
+#: refuses rather than being coerced to a neighbouring run's identity.
+RUN_REPETITION_INVALID = "RUN_REPETITION_INVALID"
 DIAGNOSTIC_ARTIFACT_IN_CONFIRMATORY_AREA = "DIAGNOSTIC_ARTIFACT_IN_CONFIRMATORY_AREA"
 ARTIFACT_ROOT_INSIDE_CANONICAL_REPOSITORY = (
     "ARTIFACT_ROOT_INSIDE_CANONICAL_REPOSITORY"
@@ -2009,5 +2013,5 @@ def check_readiness(
 
 #: Decisions that are explicitly NOT prerequisites for SL-PT08-01 (§8). Kept as
 #: data so a test can prove none of them ever reaches the blocker list.
-NON_PREREQUISITE_DECISIONS: Tuple[str, ...] = ("TD-B34", "TD-B39", "TD-B37", "TD-B41")
+NON_PREREQUISITE_DECISIONS: Tuple[str, ...] = ("TD-B34", "TD-B39", "TD-B37", "SL-RUNID-01")
 NON_PREREQUISITE_PHRASES: Tuple[str, ...] = ("priority b", "priority-b")

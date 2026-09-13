@@ -544,7 +544,7 @@ def test_e9_cand_a1_is_publicly_authored_and_its_history_is_preserved():
     assert "approve — public authoring may begin" in record
     with open(TASK_INDEX, newline="", encoding="utf-8") as fh:
         ids = [r["task_id"] for r in csv.DictReader(fh)]
-    assert len(ids) == 10, f"the index must hold ten tasks, not {len(ids)}"
+    assert len(ids) == 12, f"the index must hold twelve tasks, not {len(ids)}"
     assert "CAND-A1" not in ",".join(ids), (
         "the provisional candidate identifier is not a task id"
     )
@@ -594,7 +594,7 @@ def test_e10_pt08_exists_and_no_governed_document_over_states_it():
     assert ids.count("PT08") == 1
     assert (TASK_INDEX.parent / "PT08.md").is_file()
     bodies = sorted(p.stem for p in TASK_INDEX.parent.glob("PT*.md"))
-    assert bodies == [f"PT0{i}" for i in range(1, 9)], (
+    assert bodies == [f"PT{i:02d}" for i in range(1, 11)], (
         f"the public task bodies changed: {bodies}"
     )
     pt08 = next(r for r in rows if r["task_id"] == "PT08")

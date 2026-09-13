@@ -81,7 +81,7 @@ BREADTH_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.md",
         heading="added by the pre-authoring opportunity reassessment — td-b34 – td-b37",
-        anchor="5eda9dedcfdf79c1",
+        anchor="3f606680287ef165",
         why="the re-scoped TD-B34 registry row quotes the original breadth objective; "
             "re-anchored again when PT08's opportunity was ADMITTED (PT08-PUB-P2-2), "
             "and re-anchored once more when PT08's HIDDEN ACCEPTANCE VALIDATION was "
@@ -111,7 +111,14 @@ BREADTH_REGISTER = (
                   "clusters at depths 3 / 2 / 1",
                   # admission confers nothing beyond the accounting
                   "gate g1 is not passed",
-                  "priority b is not started",
+                  # SL-QUAL-01: the blunt claim survives only in the past tense
+                  "priority b was not started",
+                  "priority b is started and is not complete",
+                  "no independent candidate review",
+                  # SL-PT08-07: the exclusion, and its bound
+                  "revise",
+                  "excludes unchanged pt08 from the confirmatory-candidate set",
+                  "3 / 2 / 2",
                   # and the pre-admission reading survives as explicit history
                   "at that point the active set held 5 opportunities over 3 decision "
                   "clusters at depths 3 / 1 / 1",
@@ -210,7 +217,7 @@ BREADTH_REGISTER = (
     RC(
         rel="docs/v2/OPEN_DECISIONS.csv",
         heading="row TD-B34 / column decision",
-        anchor="3d279f1b5712ea34",
+        anchor="00a9d65a98fabf1f",
         why="the machine-readable TD-B34 row quotes the original breadth objective; "
             "re-anchored again when PT08's opportunity was ADMITTED (PT08-PUB-P2-2), "
             "and re-anchored once more when PT08's HIDDEN ACCEPTANCE VALIDATION was "
@@ -225,7 +232,18 @@ BREADTH_REGISTER = (
             "breadth objective; it must not inherit a residual that belongs to a "
             "decision now resolved; and the admitted counts, the pre-admission "
             "counts as history, and every denial that bounds them (nothing frozen, "
-            "G1 not passed, priority B not started) must all live in this one field",
+            "G1 not passed, priority B not started) must all live in this one "
+            "field. RE-ANCHORED AGAIN by SL-QUAL-01: authoring PT10 genuinely "
+            "STARTS priority B, so the blunt current claim 'priority B is not "
+            "started' became false. It is kept only in the past tense and "
+            "replaced by the sharper claim that still holds - no INDEPENDENT "
+            "candidate review has happened. The same re-anchor carries "
+            "SL-PT08-07: the executed C1 diagnostic put PT08 at the architecture "
+            "floor, so unchanged PT08 is EXCLUDED from the "
+            "confirmatory-candidate set while being preserved entirely and while "
+            "its admitted active-register row STANDS. The row must therefore "
+            "carry BOTH registers and must never let either be read off the "
+            "other",
         required=(MARKER, "as originally recorded",
                   "breadth objective is superseded and structurally unattainable",
                   "priority-a pre-authoring progress, not resolution",
@@ -246,7 +264,17 @@ BREADTH_REGISTER = (
                   "at depths 3/2/1",
                   # admission confers nothing beyond the accounting
                   "gate g1 is not passed",
-                  "priority b is not started",
+                  # SL-QUAL-01: the blunt claim survives only in the past tense,
+                  # and the sharper one that still holds replaces it
+                  "priority b was not started",
+                  "priority b is started and is not complete",
+                  "has had no independent candidate review",
+                  # SL-PT08-07: the two registers, and the bound on the exclusion
+                  "pt08 = revise",
+                  "pt08 is not invalid and is not retired",
+                  "unchanged pt08 is excluded from the confirmatory-candidate set",
+                  "the admitted active e1 register is unchanged",
+                  "3 / 2 / 2",
                   # and the pre-admission reading survives as explicit history
                   "at that point the active set held 5 opportunities over 3 decision "
                   "clusters at depths 3/1/1",
@@ -503,14 +531,17 @@ FOURTH_CLUSTER_REGISTER = (
     RC(
         rel="docs/v2/TASK_AUTHORING_POLICY.md",
         heading="12.2d forcing strength, and the priority-a candidate's pre-authoring state",
-        anchor="400e6b1c7451ec58",
+        anchor="042e10089b064334",
         why="§12.2d's 'nothing is authored' paragraph states the counts CAND-A1 must "
             "not move. It names the active counts, so it is registered here to stop a "
             "pre-counted second observation being smuggled into it. Re-anchored by "
             "PT08-PUB-P2-2, which added the historical marker the paragraph's own "
             "text was missing: the counts it names are now history, and a passage "
             "stating superseded counts must say so in its own text rather than rely "
-            "on the supersession blockquote that follows it",
+            "on the supersession blockquote that follows it. Re-anchored again by "
+            "SL-QUAL-01, which put the paragraph's priority-B clause into the past "
+            "tense: authoring PT10 started priority B, so a paragraph recording "
+            "the pre-authoring state must say it is recording history",
         required=("as originally recorded",
                   "superseded on the authoring state, the review state and the "
                   "active counts",

@@ -25,9 +25,10 @@ artifact roots for a non-confirmatory purpose; the default root is a scratch
 directory outside the repository.
 
 **Records are deterministic.** ``run_id`` is derived from the run's own identity
-(purpose, task, condition, task hash, substrate hash, mode) and timestamps are
-caller-supplied, matching ``context_audit.py``'s ``--generated-at`` convention.
-Two identical runs produce identical records.
+(purpose, task, condition, task hash, substrate hash, mode, **repetition index**)
+and timestamps are caller-supplied, matching ``context_audit.py``'s
+``--generated-at`` convention. Two identical runs produce identical records, and
+two *repetitions* of one run identity produce different ones (``SL-RUNID-01``).
 
 A run record is not a result. The schema pins ``is_result: false`` and
 ``scored: false``, so no record this runner can currently emit is expressible as
@@ -105,15 +106,77 @@ def governed_toolchain(path: Path = gov.MODEL_REGISTRY) -> Dict[str, Optional[st
     }
 
 
+#: The repetition index a run carries when the caller declares none.
+#:
+#: Chosen as 1 rather than 0 so the recorded index reads as "repetition R1" in
+#: the same vocabulary the protocol uses (R1/R2/R3), and so a single run's
+#: record is interpretable without knowing whether the caller passed the flag.
+DEFAULT_REPETITION = 1
+
+#: The inclusive ceiling on a declared repetition index. A run beyond it is far
+#: likelier to be a typo or a loop variable than a governed repetition, and the
+#: identity of an artifact is not the place to be permissive.
+MAX_REPETITION = 999
+
+
+def normalise_repetition(repetition: Optional[int]) -> int:
+    """Validate a declared repetition index, or supply the governed default.
+
+    Fails closed: a non-integer, a zero, a negative index or one beyond
+    :data:`MAX_REPETITION` is refused rather than coerced, because an artifact
+    whose identity was silently repaired is an artifact nobody can reconcile
+    against the protocol that asked for it.
+    """
+    if repetition is None:
+        return DEFAULT_REPETITION
+    if isinstance(repetition, bool) or not isinstance(repetition, int):
+        raise gov.RunnerRefusal(
+            gov.RUN_REPETITION_INVALID,
+            f"the repetition index must be an integer, got {repetition!r}",
+        )
+    if repetition < 1 or repetition > MAX_REPETITION:
+        raise gov.RunnerRefusal(
+            gov.RUN_REPETITION_INVALID,
+            f"the repetition index must be between 1 and {MAX_REPETITION}, "
+            f"got {repetition}",
+        )
+    return repetition
+
+
 def derive_run_id(
     *, purpose: str, task_id: str, condition: str, task_sha: str,
-    substrate_hash: str, mode: str,
+    substrate_hash: str, mode: str, repetition: Optional[int] = None,
 ) -> str:
-    """A deterministic, collision-resistant run id carrying its own provenance."""
-    seed = "|".join([purpose, task_id, condition, task_sha, substrate_hash, mode])
+    """A deterministic, collision-resistant run id carrying its own provenance.
+
+    **Repetition identity (`SL-RUNID-01`).** The seed carries the repetition index as
+    well as the run's content identity. Before this, every repetition of one
+    (purpose, task, condition, task hash, substrate hash, mode) hashed to the
+    SAME id, so `R1`/`R2`/`R3` of the `PT08` diagnostic collided and stayed
+    separable only because each was handed its own ``--artifact-root``. A
+    multi-repetition run writing into one root would have overwritten itself.
+
+    Determinism is unchanged: the same inputs, including the same repetition
+    index, still produce the same id. The index also appears in the id's readable
+    prefix, so two repetitions are distinguishable without hashing anything.
+
+    **Backward compatibility.** ``repetition=1`` is the default, and its seed and
+    readable prefix both differ from the pre-`SL-RUNID-01` form, so ids minted before
+    this change do NOT collide with ids minted after it and are not silently
+    re-derived. Existing artifacts are never rewritten: an already-written record
+    keeps the id it was written with, and the identity of the `PT08` diagnostic
+    artifacts is untouched.
+    """
+    index = normalise_repetition(repetition)
+    seed = "|".join([
+        purpose, task_id, condition, task_sha, substrate_hash, mode,
+        f"r{index}",
+    ])
     digest = sha256_bytes(seed.encode("utf-8"))[:12]
     slug = purpose.lower().replace("_", "-")
-    return f"{slug}-{task_id.lower()}-{condition.lower()}-{mode}-{digest}"
+    return (
+        f"{slug}-{task_id.lower()}-{condition.lower()}-{mode}-r{index}-{digest}"
+    )
 
 
 class ArtifactDirectory:
@@ -166,6 +229,7 @@ def build_run_record(
     task_sha256: str,
     condition: str,
     mode: str,
+    repetition: Optional[int] = None,
     state_log: Sequence[Dict[str, object]],
     model: Dict[str, object],
     environment: Dict[str, object],
@@ -207,6 +271,11 @@ def build_run_record(
         "task_sha256": task_sha256,
         "condition": condition,
         "mode": mode,
+        # SL-RUNID-01: always emitted, so every record written from here on carries the
+        # repetition that produced it. The schema keeps the field OPTIONAL so a
+        # record written before SL-RUNID-01 still validates and is never rewritten.
+        "repetition": normalise_repetition(repetition),
+        "repetition_declared": repetition is not None,
         "state_log": list(state_log),
         "model": model,
         "environment": environment,

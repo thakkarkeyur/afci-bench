@@ -261,7 +261,7 @@ current mechanical state is **NO-GO** until they are completed:
 The following are **not** required before the diagnostic, and **none of their
 statuses is changed by this record**:
 
-- priority-B candidate authoring or review;
+- priority-B candidate authoring or review (this diagnostic needed none, and the later `SL-QUAL-01` package - not this one - is what started priority B);
 - `TD-B34` closure;
 - migration of the eight legacy `TD-B39` packages;
 - `PT03` repair;
@@ -371,7 +371,7 @@ private state is owned by that synchronization and is not resolved here.
 > count and **no** observation depth, and it still confirms and updates none. That
 > closure freezes nothing, passes no gate, validates no hidden acceptance, makes
 > nothing run-eligible, produces no result and no power value, and leaves `TD-B34`
-> **open and blocking** and priority B **not started**.
+> **open and blocking**, and *as recorded then* priority B **not started**. Since `SL-QUAL-01` authored `PT10`, **priority b is started and is not complete**, and **this diagnostic neither started nor completed it**: priority b is not complete and is not started **by this diagnostic**, which remains true unchanged.
 
 ---
 
@@ -393,7 +393,9 @@ Stated so no later reader can extract a licence this record does not grant.
 - **`PT08` is not frozen.**
 - **Gate `G1` is not passed**, and no gate is passed.
 - **`TD-B34` is not closed** and is not weakened.
-- **Priority B is not complete** and is not started.
+- **Priority B is not complete** and is not started **by this diagnostic**. *As
+  recorded then* it was not started at all; the later `SL-QUAL-01` package — not
+  this one — is what started it, and **this diagnostic discharges none of it**.
 - **`TD-B12` is not discharged** and **`G6` is not passed**.
 - **No model is selected** and no sample size is selected.
 - **No experiment has been run and no result exists**, here or anywhere in this

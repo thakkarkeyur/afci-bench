@@ -523,6 +523,8 @@ E1 are specified in
 | PT06 | primary | error-handling | medium | `3e0f84cfef1f9fbf...` | functional-only |
 | PT07 | primary | pricing-endpoint | medium | `557caed09420354e...` | scored |
 | PT08 | primary | write-endpoint | medium | `a31bb515b79cc1e2...` | scored |
+| PT09 | primary | write-endpoint | medium | `bac32dc0e7163c9a...` | scored |
+| PT10 | primary | error-handling | medium | `1b1fe29881b3c9f3...` | scored |
 | PR01 | reserve | calculation | small | `0e1527bce4149883...` | inactive-reserve |
 | PR02 | reserve | write-endpoint | medium | `e89a4aab236813c0...` | inactive-reserve |
 
@@ -539,6 +541,14 @@ denominator: *as recorded then* its independent public-authoring review was pend
 and it had no private evaluator package; that review has since passed and the
 package has since been authored and approved, but the manifest is `status=review`,
 `G1` is not passed and `PT08` is not run-eligible.
+
+`PT09` and `PT10` are **new** in the same sense — both are authored by the
+qualification-candidate package recorded in the final addendum, both have no
+earlier bytes, and no other task body or hash changed when they were added. Their
+`scored` eligibility records **intent only** and nothing stronger: neither
+opportunity has been admitted to the active E1 denominator, neither private package
+has been independently reviewed or frozen, no `C1` qualification diagnostic has
+been run for either, and neither is E1 run-eligible.
 
 ## Private evaluator package staleness (mandatory)
 
@@ -1452,3 +1462,121 @@ about internal persistence**.
 - It did **not** freeze a task count, an opportunity count, an endpoint, a manifest
   or the protocol, and it did **not** run a power simulation or produce a power
   value.
+
+## Addendum: `PT09` and `PT10` authored — the two qualification candidates (public authoring only, pre-run)
+
+**Authority:** Study Lead decision `SL-QUAL-01`. Full construction record:
+[`QUALIFICATION_CANDIDATE_CONSTRUCTION.md`](../../../docs/v2/QUALIFICATION_CANDIDATE_CONSTRUCTION.md).
+
+**Disclosure convention.** Nothing below binds a task identifier to a rule
+identifier, an opportunity identifier, a decision-cluster identifier or a named
+boundary. The two candidates are referred to by their **governance slots** — the
+**priority-A replication slot** and the **priority-B slot** — as the public
+`TD-B34` record already names them.
+
+### Why this package exists
+
+The priority-A `C1` difficulty diagnostic was executed and observed the
+**architecture floor**: 3 of 3 functional completion, and **1 applicable
+opportunity with 0 violated on every repetition**. Study Lead decision
+`SL-PT08-07` therefore records `PT08` = **REVISE** / benchmark investment =
+**CONTINUE**
+([`PT08_DIAGNOSTIC_OUTCOME_AND_DISPOSITION.md`](../../../docs/v2/PT08_DIAGNOSTIC_OUTCOME_AND_DISPOSITION.md)).
+
+`PT08` is **not invalid** and **not retired**. Its public body, its private
+package, its freeze record and its diagnostic artifacts are **preserved unchanged**,
+and its admitted active-register row **stands**. What `SL-PT08-07` records is
+forward-looking only: **unchanged `PT08` is excluded from the
+confirmatory-candidate set**, because a baseline at the floor cannot discriminate.
+
+That exclusion left two slots at **one** confirmatory-candidate observation each,
+so two instruments were authored: a replacement in the **priority-A replication
+slot** and the **priority-B** instrument.
+
+### What was authored
+
+| Task | Title | Category | Public task SHA-256 |
+| --- | --- | --- | --- |
+| `PT09` | Create an order from the line items the service accepts | write-endpoint | `bac32dc0e7163c9a...` |
+| `PT10` | Answer whether a proposed order would be accepted | error-handling | `1b1fe29881b3c9f3...` |
+
+Both are `primary`, both are `task_status=candidate`, both carry
+`e1_analysis_eligibility=scored` as a record of **intent only**, and both pass the
+unmodified leakage validator with **no reviewed exception**.
+
+### Order of work (recorded so the record cannot be misread later)
+
+1. The diagnostic outcome was adjudicated and `PT08`'s disposition recorded.
+2. Candidate concepts were evaluated for each slot, and one per slot was selected.
+3. The public bodies were authored, functional-only, and hashed.
+4. The bodies were **validated by execution** before any registry carried them:
+   conforming reference, deliberately violating reference, escape hatches and
+   mutants were built and run against the real hidden suite and the **real public
+   architecture oracle**.
+5. The registries, matrices and governance records were synchronized to the
+   hashes that validation had already exercised.
+
+No model was invoked at any step. There are **zero new model observations** in
+this package.
+
+### What validation established, and what it did not
+
+- A conforming reference **passes** hidden functional acceptance for both tasks.
+- A **deliberately violating** reference **also passes** hidden functional
+  acceptance in full for both tasks, while the architecture oracle reports the
+  violation. That separation is the point: functional acceptance never enforces
+  placement, and a functional oracle that rejected a violating implementation
+  would make the architecture measurement circular.
+- On the **unimplemented** substrate, 9 of 13 semantic cases fail for `PT09` and
+  5 of 7 for `PT10`, so hidden acceptance discriminates implemented from
+  unimplemented behaviour.
+- Mutation pressure: **13 of 13** valid mutants rejected for `PT09` and **12 of
+  12** for `PT10`, with **0 escaped**. One `PT10` mutation is classified `NOT
+  VALID MUTANT` because it is equivalent under the public contract, and that is
+  recorded rather than repaired with a hidden requirement the public task never
+  stated.
+- `npm run ci:agent` exits `0` on both conforming and both violating references,
+  and names no boundary, scope or placement constraint.
+
+**None of that is a review, a freeze or a gate pass.** Neither package has been
+independently reviewed, both manifests are `status=review` and `not_yet_frozen`,
+gate `G1` is not passed, and neither task is E1 run-eligible.
+
+### `DECISION B` / `TD-B34` remains OPEN after `PT09` and `PT10`
+
+- **Priority b is started and is not complete.** Authoring a priority-B candidate
+  starts priority B; it does not discharge it. Priority B still has **no
+  independent candidate review**.
+- **Neither opportunity is admitted.** Both are **staged**, exactly as the
+  priority-A one was before its own separately recorded admission step. The
+  **admitted active E1 register is unchanged** at **6** opportunities over **3**
+  decision clusters at depths **3 / 2 / 1**.
+- **The confirmatory-candidate set** reads **7** opportunities over the **same 3**
+  clusters at depths **3 / 2 / 2**. Per-cluster depths are published; the
+  task-to-cluster mapping is not.
+- **No new decision cluster is created** and the substrate feasibility ceiling is
+  unchanged. Within-cluster observations remain **pseudo-replicates**.
+- **`TD-B34` is not resolved by this package.** Candidate construction is not
+  qualification: no `C1` qualification diagnostic has been run for either task.
+
+### What the `PT09`/`PT10` package deliberately did NOT do
+
+- It did **not** invoke a model, run a repetition, or produce any observation,
+  result, violation value, success value or treatment-effect estimate.
+- It did **not** freeze a task, a manifest, an opportunity set or the protocol.
+- It did **not** admit an opportunity to the active E1 denominator or raise any
+  cluster's **admitted** observation depth.
+- It did **not** obtain, claim or imply an independent review of anything.
+- It did **not** modify, overwrite, repurpose or delete `PT08`'s public body, its
+  private package, its freeze record or its diagnostic artifacts, and it did
+  **not** call `PT08` invalid or retired.
+- It did **not** promote any diagnostic observation to confirmatory status.
+- It did **not** rewrite, re-hash or reclassify any existing task, and it did
+  **not** activate `PR01` or `PR02`.
+- It did **not** add a seam, a failure-injection hook, a test-only route, a
+  special header or an environment flag to the source substrate; `apps/` and
+  `libs/` are byte-identical to the canonical substrate.
+- It did **not** close a blocker. `TD-B34` stays open and blocking, and so do the
+  global `TD-B32`, `TD-B12`, `TD-B39`, `TD-B26`, `TD-B31`, `TD-B22`, `TD-B05`,
+  `TD-B14` and `TD-B03`.
+- It did **not** run a power simulation or produce a power value.

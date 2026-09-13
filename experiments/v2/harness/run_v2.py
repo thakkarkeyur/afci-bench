@@ -187,6 +187,12 @@ class RunRequest:
     condition: str
     run_purpose: Optional[str]
     mode: str = "dry-run"
+    #: SL-RUNID-01. The 1-based repetition index. ``None`` means "not declared" and
+    #: resolves to the governed default of 1; the record says which it was. Two
+    #: repetitions of one (purpose, task, condition, task sha, substrate, mode)
+    #: now derive DIFFERENT run ids, so a multi-repetition run no longer depends
+    #: on the caller handing each repetition its own --artifact-root.
+    repetition: Optional[int] = None
     artifact_root: Optional[Path] = None
     model_id: Optional[str] = None
     effort: Optional[str] = None
@@ -372,6 +378,7 @@ def run(request: RunRequest) -> RunResult:
             task_sha=expected_sha,
             substrate_hash=str(substrate["content_hash"]),
             mode=request.mode,
+            repetition=request.repetition,
         )
         root = request.artifact_root or gov.default_artifact_root()
         directory = art.ArtifactDirectory(Path(root), run_id, purpose).create()
@@ -779,6 +786,7 @@ def _build_record(
         task_sha256=expected_sha,
         condition=request.condition,
         mode=request.mode,
+        repetition=request.repetition,
         state_log=machine.log,
         model={
             "requested_model_id": request.model_id,
@@ -853,6 +861,15 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--model", default=None, help="Exact governed model id (real runs).")
     p.add_argument("--effort", default=None, help="--effort value, recorded as input.")
     p.add_argument("--artifact-root", default=None, help="Artifact root (scratch/tmp).")
+    p.add_argument(
+        "--repetition", type=int, default=None,
+        help=(
+            "SL-RUNID-01: the 1-based repetition index (R1/R2/R3...). It enters the "
+            "run id, so repetitions of one task/condition no longer collide and "
+            "no longer need a separate --artifact-root each. Omitted means 1, "
+            "recorded as not declared."
+        ),
+    )
     p.add_argument("--generated-at", default="unspecified", help="Caller-supplied stamp.")
     p.add_argument("--private-root", default=None, help="Private evaluator repo (READ ONLY).")
     p.add_argument("--session-id", default=None, help="A fresh, previously unused id.")
@@ -963,6 +980,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             condition=args.condition,
             run_purpose=args.run_purpose,
             mode="dry-run" if args.dry_run else "real",
+            repetition=args.repetition,
             artifact_root=Path(args.artifact_root) if args.artifact_root else None,
             model_id=args.model,
             effort=args.effort,

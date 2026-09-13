@@ -64,6 +64,16 @@
     "task_sha256": { "type": "string" },
     "condition": { "type": "string", "enum": ["C1", "C2", "C3", "C4"] },
     "mode": { "type": "string", "enum": ["dry-run", "real"] },
+    "repetition": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "SL-RUNID-01. The 1-based repetition index this run carries, and the value that separates R1/R2/R3 of one (purpose, task, condition, task hash, substrate hash, mode) in run_id. OPTIONAL in the schema ON PURPOSE: records written before SL-RUNID-01 carry no index and must stay readable and validatable rather than being rewritten. Every record the runner writes from SL-RUNID-01 onwards carries it."
+    },
+    "repetition_declared": {
+      "type": "boolean",
+      "description": "SL-RUNID-01. true when the caller declared the repetition index explicitly; false when the governed default of 1 was supplied. Recorded so a single run's record says which it was, instead of leaving a reader to guess whether an index of 1 was chosen or defaulted."
+    },
     "state_log": {
       "type": "array",
       "items": {

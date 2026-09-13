@@ -45,7 +45,7 @@ TASKS_ROOT = REPO / "experiments" / "v2" / "tasks"
 #: PT07 and then PT08, both authored later under DECISION B (TD-B34). The count is
 #: pinned so a stray or duplicated body is caught; changing it must be a deliberate
 #: authoring act.
-EXPECTED_PUBLIC_TASK_COUNT = 10
+EXPECTED_PUBLIC_TASK_COUNT = 12
 
 
 @pytest.fixture(scope="module")

@@ -281,8 +281,47 @@ register.
   opportunity is an **instrument count**, never a violation, a success, an outcome
   or a result. Nothing is frozen, gate `G1` is **not** passed, no task is E1
   run-eligible, and **no result, violation value or treatment-effect estimate
-  exists**. `TD-B34` stays **open and blocking** (§7), because priority B
-  (`DC-API-CORE-AR-DEP-005`) has had **no** candidate review at all.
+  exists**. `TD-B34` stays **open and blocking** (§7), because *as recorded
+  then* priority B (`DC-API-CORE-AR-DEP-005`) had had **no** candidate review at
+  all.
+
+### 3.1 Two later events, and the two registers they act on
+
+Both are recorded here because a reader comparing occupancy tables must not read
+either off the other.
+
+**(a) The priority-A instrument was diagnosed at the architecture floor.** The
+`C1` difficulty diagnostic was executed and observed **1 applicable opportunity
+and 0 violated on every repetition**, so Study Lead decision `SL-PT08-07` records
+`PT08` = **REVISE** / benchmark investment = **CONTINUE**
+([`PT08_DIAGNOSTIC_OUTCOME_AND_DISPOSITION.md`](PT08_DIAGNOSTIC_OUTCOME_AND_DISPOSITION.md)).
+`PT08` is **not** invalid and **not** retired; its body, package, freeze record
+and diagnostic artifacts are all preserved, and its **admitted active-register
+row stands**. What changes is forward-looking only: **unchanged `PT08` is
+excluded from the confirmatory-candidate set**, because a baseline at the floor
+cannot discriminate.
+
+**(b) Two qualification candidates were authored under `SL-QUAL-01`.** One fills
+the **priority-A replication slot** whose confirmatory role the diagnosed
+instrument was intended to fill, and one is the **priority-B** instrument
+([`QUALIFICATION_CANDIDATE_CONSTRUCTION.md`](QUALIFICATION_CANDIDATE_CONSTRUCTION.md)).
+**Priority b is started and is not complete**: neither candidate has had an
+independent candidate review, neither package is frozen, neither opportunity is
+admitted, and no `C1` qualification diagnostic has been run for either.
+
+| Register | Opportunities | Clusters | Depths |
+| --- | --- | --- | --- |
+| **Admitted active E1 register** — *unchanged by (a) and (b)* | **6** | **3** | **3 / 2 / 1** |
+| **Confirmatory-candidate set** — recorded by `SL-QUAL-01` | **7** | **3** | **3 / 2 / 2** |
+
+The confirmatory-candidate set is the admitted active set **minus the excluded
+instrument, plus the two new candidates**. Per-cluster **depths** are published,
+as §3 already publishes them; the task-to-cluster mapping is **not**, and no
+public artifact states one.
+
+**No new decision cluster is created, and the ceiling in §2 is untouched.**
+Within-cluster observations remain **pseudo-replicates**. `TD-B34` stays **open
+and blocking**: candidate construction is not qualification.
 
 ---
 
@@ -505,3 +544,11 @@ to expand the substrate, and nothing here authorizes one.
   records **two** observations in that cluster. Admission moved a **depth** and the
   active opportunity count and nothing else: it froze no manifest, passed no gate,
   made nothing run-eligible and produced no result.
+- **The diagnosed floor and the two qualification candidates are recorded in
+  §3.1.** `SL-PT08-07` excludes unchanged `PT08` from the
+  **confirmatory-candidate set** while preserving it entirely and leaving its
+  admitted active-register row standing; `SL-QUAL-01` authors `PT09` and `PT10`
+  as **staged** candidates. The confirmatory-candidate set therefore reads **7 /
+  3 / 3-2-2** while the admitted active register is **unchanged at 6 / 3 /
+  3-2-1**. Neither may be read off the other, **priority b is started and is not
+  complete**, and `TD-B34` stays open and blocking.

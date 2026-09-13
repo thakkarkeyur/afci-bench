@@ -7,5 +7,7 @@ PT05,Apply an order-level volume discount to the total,calculation,primary,funct
 PT06,Return a consistent validation-error envelope for order creation,error-handling,primary,functional-only,candidate,3e0f84cfef1f9fbf97e3cd31b6704c3a0fb172b04b5e7bc33ea39927b1c8e0f2,npm run ci:agent,medium,pass,EM-PT06
 PT07,Price a proposed order before it is placed,pricing-endpoint,primary,scored,candidate,557caed09420354efbc823c8b72e54b0760ac72847aba0d9c07d99e37ff7d2d7,npm run ci:agent,medium,pass,EM-PT07
 PT08,Apply a caller-declared maximum total to order creation,write-endpoint,primary,scored,candidate,a31bb515b79cc1e211a662de2a8761c97082dd8bf266ee5b4f660981435badf2,npm run ci:agent,medium,pass,EM-PT08
+PT09,Create an order from the line items the service accepts,write-endpoint,primary,scored,candidate,bac32dc0e7163c9ab1816ac6eea6c98738092cca5cf56715e280f1ec1c0ac44c,npm run ci:agent,medium,pass,EM-PT09
+PT10,Answer whether a proposed order would be accepted,error-handling,primary,scored,candidate,1b1fe29881b3c9f309939df042272b03164fb3baae878c64345e75edddf36b86,npm run ci:agent,medium,pass,EM-PT10
 PR01,Guarantee cent-exact order totals for fractional unit prices,calculation,reserve,inactive-reserve,candidate,0e1527bce41498836bb57b802d4566251d6fcfed4cca13fe59e6a97330f02302,npm run ci:agent,small,pass,EM-PR01
 PR02,Cancel an order with terminal-state guards,write-endpoint,reserve,inactive-reserve,candidate,e89a4aab236813c082f9152db779b8bbfb298148a51a8435a1e2bf38330caa83,npm run ci:agent,medium,pass,EM-PR02

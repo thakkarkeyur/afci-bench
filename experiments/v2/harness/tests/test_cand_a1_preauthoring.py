@@ -279,7 +279,7 @@ def test_the_pt08_identifier_was_assigned_only_at_public_authoring():
     with open(TASK_INDEX, newline="", encoding="utf-8") as fh:
         ids = [r["task_id"] for r in csv.DictReader(fh)]
     assert ids.count("PT08") == 1, "PT08 must appear in the index exactly once"
-    assert len(ids) == 10, f"the index must hold ten tasks, not {len(ids)}"
+    assert len(ids) == 12, f"the index must hold twelve tasks, not {len(ids)}"
     assert (PUBLIC_TASKS / "PT08.md").is_file(), "PT08.md is missing"
 
     cells = _row_cells(RECORD_PATH, "2. candidate identity", "task identifier assigned")
@@ -1030,4 +1030,9 @@ def test_td_b34_stays_open_and_records_the_admission_as_progress_only():
     # TD-B34 itself, and priority B, are untouched by all of it
     assert "td-b34 therefore remains open and blocking" in text
     assert "priority b" in text and "no candidate review at all" in text
-    assert "priority b is not started" in text
+    # SL-QUAL-01 authored PT10, which genuinely STARTS priority B. The blunt
+    # claim survives only in the past tense; the sharper one that still holds -
+    # no INDEPENDENT candidate review - replaces it as the current statement.
+    assert "priority b was not started" in text
+    assert "priority b is started and is not complete" in text
+    assert "has had no independent candidate review" in text

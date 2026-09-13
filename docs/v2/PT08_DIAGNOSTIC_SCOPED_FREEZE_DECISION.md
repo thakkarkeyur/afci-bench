@@ -341,7 +341,7 @@ existing pseudo-replication governance is unchanged in every respect.
 - **The suite is NOT frozen** and the protocol remains **PRE-FREEZE**.
 - **The global manifest freeze is NOT granted**; the public lifecycle row is
   unchanged at `status=validated` and the private manifest stays `status=review`.
-- **`TD-B34` is NOT closed** and is not weakened; **priority B is NOT started**.
+- **`TD-B34` is NOT closed** and is not weakened. *As recorded then* **priority B was NOT started**; the later `SL-QUAL-01` package authored `PT10`, so **priority b is started and is not complete**, and **this freeze neither started nor completed it**.
 - **The global `TD-B32` row stays OPEN**; **`TD-B12`/`G6` are unchanged**.
 - **`TD-B03` stays OPEN** and `primary_model` stays `null`.
 - **No confirmatory run is authorised**, and no result-bearing purpose exists.

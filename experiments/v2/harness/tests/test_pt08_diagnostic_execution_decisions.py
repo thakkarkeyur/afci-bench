@@ -606,7 +606,10 @@ def test_the_diagnostic_is_not_run_eligible_without_a_live_clean_context(readine
 def test_the_record_closes_no_other_blocker():
     flat = _flat(RECORD)
     assert "td-b34 is not closed" in flat
-    assert "priority b is not started" in flat
+    # SL-QUAL-01 later started priority B; what this record must still say is
+    # that THIS diagnostic neither started nor completed it.
+    assert "priority b was not started" in flat
+    assert "this diagnostic neither started nor completed it" in flat
     assert "the global td-b32 row stays open" in flat
     assert "td-b12/g6 are unchanged" in flat
 

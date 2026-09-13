@@ -148,6 +148,11 @@ EXPECTED_ELIGIBILITY = {
     # intent only - its public-authoring review is pending, it has no private
     # evaluator package, and it contributes to no denominator
     "PT08": "scored",
+    # authored later still as the two qualification candidates; `scored` records
+    # intent only - neither has been independently reviewed, neither private
+    # package is frozen, and neither contributes to any denominator
+    "PT09": "scored",
+    "PT10": "scored",
     "PR01": "inactive-reserve",
     "PR02": "inactive-reserve",
 }
@@ -868,7 +873,12 @@ def test_the_stage_0_gate_does_not_assume_replication_candidates_exist():
     )
     assert "separate pre-authoring review" in flat
     assert "for priority b that review has still not happened" in flat
-    assert "priority b is not started" in flat
+    # SL-QUAL-01 authored a priority-B candidate, so the gate records the state
+    # change: started, not complete, and still without an independent review.
+    assert "priority b was not started" in flat
+    assert "priority b is started and is not complete" in flat
+    assert "no independent candidate review" in flat
+    assert "no c1 qualification diagnostic" in flat
     # and priority A's review is recorded as having happened without closing TD-B34
     assert "the priority-a review has since happened" in flat
     assert "did not close td-b34" in flat

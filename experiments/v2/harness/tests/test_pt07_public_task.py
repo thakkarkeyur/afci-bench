@@ -74,6 +74,8 @@ PT07_SHA256 = "557caed09420354efbc823c8b72e54b0760ac72847aba0d9c07d99e37ff7d2d7"
 #: the state at that package, while the current task set is still asserted exactly.
 AUTHORED_AFTER_PT07 = {
     "PT08": "a31bb515b79cc1e211a662de2a8761c97082dd8bf266ee5b4f660981435badf2",
+    "PT09": "bac32dc0e7163c9ab1816ac6eea6c98738092cca5cf56715e280f1ec1c0ac44c",
+    "PT10": "1b1fe29881b3c9f309939df042272b03164fb3baae878c64345e75edddf36b86",
 }
 
 #: The eight bodies that existed before `PT07`. Authoring a task may not touch one.
@@ -159,7 +161,7 @@ def test_pt07_exists_and_the_task_set_is_exactly_the_recorded_one():
 
     A new task file that nobody recorded is drift, so the set is asserted exactly:
     the eight that predate `PT07`, `PT07` itself, and the bodies authored after it
-    (`PT08`).
+    (`PT08`, then the two qualification candidates `PT09` and `PT10`).
     """
     assert PT07_PATH.is_file(), "PT07.md was not authored"
     stems = {p.stem for p in _task_files()}
@@ -458,7 +460,7 @@ def test_authoring_pt07_raised_the_count_by_one_and_every_later_body_is_declared
     """
     expected = len(PRE_EXISTING_HASHES) + 1 + len(AUTHORED_AFTER_PT07)
     assert len(PRE_EXISTING_HASHES) + 1 == 9, "PT07 was the ninth body"
-    assert len(_task_files()) == expected == 10
+    assert len(_task_files()) == expected == 12
     assert len(_rows(INDEX_PATH)) == expected
     assert len({r["task_id"] for r in _rows(MATRIX_PATH)}) == expected
     for task_id, digest in AUTHORED_AFTER_PT07.items():

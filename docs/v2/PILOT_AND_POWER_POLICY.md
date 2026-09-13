@@ -80,7 +80,7 @@ balance over the complete demonstrated task-creatable decision space**:
   *As recorded then*, no such review had happened for either cluster; the
   **priority-A review has since happened** and its instrument is admitted, which
   did **not** close `TD-B34`, and for **priority B that review has still not
-  happened** — **priority B is not started**;
+  happened** — *as recorded then* **priority B was not started**, and since `SL-QUAL-01` authored `PT10` **priority b is started and is not complete**, with **no independent candidate review** yet performed for it and **no `C1` qualification diagnostic** yet run for it;
 - the residual breadth ceiling is carried as a **construct-validity limitation** of
   the study, not as a Stage-0 deliverable.
 

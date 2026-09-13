@@ -627,7 +627,7 @@ evaluator package, **no** manifest, **no** `PT08` identifier, **no** eligibility
 status and **no** denominator row; the active set stays **5** opportunities over
 **3** clusters at depths **3 / 1 / 1**; and `DC-FEATURES-API-AR-DEP-006` stays at
 **one** observation. **The candidate is not finally approved** — one **focused
-independent remediation re-review** is still required, and **priority B has had no
+independent remediation re-review** is still required, and *as recorded then* **priority B had had no
 candidate review at all**. `TD-B34` stays **open and blocking**.
 
 > **Superseded on the authoring state, the review state and the active counts**

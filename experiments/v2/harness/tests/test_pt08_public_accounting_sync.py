@@ -77,6 +77,12 @@ CLUSTER_DEPTHS = {
 DEPTHS_RENDERED = "3 / 2 / 1"
 ACTIVE_SCORED = ("PT01", "PT02", "PT03", "PT04", "PT07", "PT08")
 
+#: Authored later as qualification candidates. Their public `scored` value records
+#: INTENT only: neither opportunity has been admitted to the active E1 denominator
+#: and neither deepens the active decision-cluster register, exactly as `PT08`'s
+#: did not until its own separately recorded admission step.
+SCORED_BY_INTENT_ONLY = ("PT09", "PT10")
+
 #: The pre-admission accounting. Not the current state, and never assertable as it.
 PRE_ADMISSION_OPPORTUNITIES = 5
 PRE_ADMISSION_DEPTHS_RENDERED = "3 / 1 / 1"
@@ -184,8 +190,13 @@ def test_the_current_active_scored_set_includes_pt08():
     for task_id in ACTIVE_SCORED:
         assert index[task_id]["e1_analysis_eligibility"] == "scored", task_id
         assert matrix[task_id]["e1_analysis_eligibility"] == "scored", task_id
+    for task_id in SCORED_BY_INTENT_ONLY:
+        assert index[task_id]["e1_analysis_eligibility"] == "scored", task_id
+        assert matrix[task_id]["e1_analysis_eligibility"] == "scored", task_id
     scored = {t for t, r in index.items() if r["e1_analysis_eligibility"] == "scored"}
-    assert scored == set(ACTIVE_SCORED), f"the scored set drifted: {sorted(scored)}"
+    assert scored == set(ACTIVE_SCORED) | set(SCORED_BY_INTENT_ONLY), (
+        f"the scored set drifted: {sorted(scored)}"
+    )
 
     trace = {r["oracle_id"]: r for r in _rows(ORACLE_TRACE)}
     for oracle_id in ("OT-AC-VIOL", "OT-AC-SAT", "OT-TASKS-PRIVATE-SCORED"):
@@ -371,20 +382,32 @@ def test_no_governed_document_reports_td_b34_as_closed():
 
 
 def test_priority_b_remains_not_started():
-    """The exact thing that keeps TD-B34 open, asserted at four surfaces."""
-    assert "priority b is not started" in G.norm(_decision("TD-B34")["decision"])
+    """What keeps TD-B34 open, asserted at four surfaces.
+
+    `SL-QUAL-01` has since STARTED priority B by authoring a candidate, so the
+    current claim is "started and not complete" and the blunt one survives only
+    in the past tense. THIS package's own claim is unchanged and still asserted:
+    the accounting synchronization started no priority-B work, and its closure
+    record must never be readable as having completed any.
+    """
+    row = G.norm(_decision("TD-B34")["decision"])
+    assert "priority b was not started" in row
+    assert "priority b is started and is not complete" in row
+    assert "has had no independent candidate review" in row
     for path in (CLOSURE_PATH, POWER_POLICY_PATH, REPORT_PATH, CAND_A1_PATH):
         flat = _flat(path)
         assert "priority b" in flat, path.name
         assert (
-            "not started" in flat or "no candidate review at all" in flat
-        ), f"{path.name} does not record priority B as unstarted"
+            "not started" in flat or "no candidate review" in flat
+        ), f"{path.name} does not record priority B's unstarted state as history"
     closure = _flat(CLOSURE_PATH)
     assert "priority-b candidate review: not started" in closure
     assert "starts no priority-b work" in closure
     for overclaim in ("priority b is complete", "priority b is started",
                       "priority-b candidate review: complete"):
         assert overclaim not in closure, f"the closure record over-claims: {overclaim!r}"
+    # and nowhere may priority B be reported as finished
+    assert "priority b is complete" not in row
 
 
 def test_the_replication_depth_objective_is_not_reported_as_satisfied():

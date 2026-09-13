@@ -72,7 +72,7 @@ ORACLE_SRC = REPO / "experiments" / "v2" / "oracle" / "src"
 #: passed and its private evaluator package is authored and approved, but its
 #: manifest is ``status=review``, ``G1`` is not passed and it is not run-eligible.
 CLASSIFICATION_SCORED = ["PT01", "PT02", "PT03", "PT04"]
-AUTHORED_UNDER_DECISION_B = ["PT07", "PT08"]
+AUTHORED_UNDER_DECISION_B = ["PT07", "PT08", "PT09", "PT10"]
 SCORED = CLASSIFICATION_SCORED + AUTHORED_UNDER_DECISION_B
 FUNCTIONAL_ONLY = ["PT05", "PT06"]
 INACTIVE_RESERVE = ["PR01", "PR02"]
@@ -96,6 +96,8 @@ FROZEN_HASHES = {
     # authored later, under DECISION B; each pinned the moment it was authored
     "PT07": "557caed09420354efbc823c8b72e54b0760ac72847aba0d9c07d99e37ff7d2d7",
     "PT08": "a31bb515b79cc1e211a662de2a8761c97082dd8bf266ee5b4f660981435badf2",
+    "PT09": "bac32dc0e7163c9ab1816ac6eea6c98738092cca5cf56715e280f1ec1c0ac44c",
+    "PT10": "1b1fe29881b3c9f309939df042272b03164fb3baae878c64345e75edddf36b86",
 }
 
 ELIGIBILITY_VOCABULARY = {"scored", "functional-only", "inactive-reserve"}
@@ -172,9 +174,10 @@ def test_both_public_csvs_still_record_the_unchanged_hash(task_id):
 def test_exactly_the_recorded_tasks_are_present_and_no_extra_appeared():
     assert sorted(INDEX_BY_ID) == sorted(ALL_TASKS)
     assert sorted(MATRIX_BY_ID) == sorted(ALL_TASKS)
-    assert len(ALL_TASKS) == 10, (
-        "the eight classified candidates plus PT07 and PT08; a change here must be a "
-        "deliberate authoring decision, never drift"
+    assert len(ALL_TASKS) == 12, (
+        "the eight classified candidates plus PT07, PT08 and the two qualification "
+        "candidates PT09/PT10; a change here must be a deliberate authoring "
+        "decision, never drift"
     )
 
 
@@ -224,16 +227,16 @@ def test_pr01_and_pr02_are_inactive_reserves():
 
 
 def test_exactly_six_of_the_eight_primary_candidates_are_scored():
-    """Four from the classification decision, plus PT07 and PT08 under DECISION B.
+    """Four from the classification decision, plus the DECISION B candidates.
 
     ``PT05``/``PT06`` stay structurally excluded; nothing about authoring a new
     candidate may readmit them.
     """
     primary = [t for t in ALL_TASKS if INDEX_BY_ID[t]["primary_or_reserve"] == "primary"]
-    assert len(primary) == 8, primary
+    assert len(primary) == 10, primary
     scored = [t for t in primary if INDEX_BY_ID[t]["e1_analysis_eligibility"] == "scored"]
     assert sorted(scored) == sorted(SCORED), (
-        f"six of eight primary candidates may contribute to E1, got {scored}"
+        f"eight of ten primary candidates may contribute to E1, got {scored}"
     )
     assert set(FUNCTIONAL_ONLY).isdisjoint(scored)
 

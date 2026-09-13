@@ -674,10 +674,10 @@ simulation, and froze **nothing**. The canonical substrate is still `630d3180` /
 - **`CAND-A1` is not finally approved.** Closing the four P1 findings is
   remediation, not approval: *as recorded then*, **one focused independent
   remediation re-review was still required** before authoring could begin, and
-  **priority B** (`DC-API-CORE-AR-DEP-005`) has had **no** candidate review at all.
+  *as recorded then* **priority B** (`DC-API-CORE-AR-DEP-005`) had had **no** candidate review at all. *As recorded then* **priority B was not started**. Since `SL-QUAL-01` authored `PT10`, **priority b is started and is not complete**: it has had **no independent candidate review**, its package is `status=review` and unfrozen, its opportunity is **staged** and enters no active denominator, and no `C1` qualification diagnostic has been run for it.
   **`TD-B34` stays open and blocking.** That re-review has since **passed**
   (**APPROVE — public authoring may begin**), which is the basis on which `PT08` was
-  authored; **priority B still has had no candidate review**, and the passed
+  authored; *as recorded then* **priority B still had had no candidate review**, and it has since had **no independent candidate review** either although `PT10` is now authored, and the passed
   re-review approved no private package, replaced no review of the authored body,
   and froze nothing.
 - **No blocker was opened; one was closed.** The registry still holds **41 blocking

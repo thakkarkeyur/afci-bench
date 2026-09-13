@@ -312,13 +312,21 @@ def test_the_td_b34_exception_discharges_and_changes_nothing_else():
 
 
 def test_priority_b_is_not_started_and_stays_required_on_the_normal_path():
+    """The diagnostic neither started nor completed priority B.
+
+    `SL-QUAL-01` has since started it by authoring a candidate, so the CURRENT
+    state is "started and not complete". What this record must still say is the
+    claim it was always making: **this diagnostic** discharged none of it, and
+    priority B still has no independent candidate review.
+    """
     registry = _decision("TD-B34")["decision"].lower()
-    assert "priority b (dc-api-core-ar-dep-005) has had no candidate review at all" in registry
+    assert "priority b (dc-api-core-ar-dep-005) has had no independent candidate review" in registry
+    assert "priority b is started and is not complete" in registry
     not_needed = _section(RECORD_PATH, S_NOT_NEEDED)
     assert "priority-b candidate authoring or review" in not_needed
     assert "unstarted where it was unstarted" in not_needed
     prohibitions = _section(RECORD_PATH, S_PROHIBITIONS)
-    assert "priority b is not complete and is not started" in prohibitions
+    assert "priority b is not complete and is not started by this diagnostic" in prohibitions
 
 
 # --------------------------------------------------------------------------- 5
