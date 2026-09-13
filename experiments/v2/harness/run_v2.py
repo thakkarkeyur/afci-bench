@@ -337,8 +337,24 @@ def run(request: RunRequest) -> RunResult:
 
         if request.mode == "real":
             # A real run fails BEFORE execution, not after: the earliest safe
-            # failure point is the only defensible one for a paid run.
-            ev.assert_scoring_prerequisites(request.task_id)
+            # failure point is the only defensible one for a paid run. Under a
+            # diagnostic-scoped freeze the per-repetition conditions it does NOT
+            # waive are required here too, so an unsupplied model id or runtime
+            # version refuses before a process could be created.
+            ev.assert_scoring_prerequisites(
+                request.task_id,
+                condition=request.condition,
+                run_purpose=purpose.name,
+                model_id=request.model_id,
+                cli_version=gov.live_runtime_validation(purpose.name)[2],
+                session_id=request.session_id,
+                previous_session_ids=request.previous_session_ids,
+                require_execution_evidence=True,
+                # The audit has not run yet. CONTEXT_AUDIT runs next and refuses
+                # on anything but CLEAN before a process could be created, and
+                # POST_RUN_EVALUATION re-asserts with the observed verdict.
+                require_context_verdict=False,
+            )
             if not request.isolated_environment_attested:
                 raise gov.RunnerRefusal(
                     gov.ISOLATED_ENVIRONMENT_NOT_VERIFIED,
@@ -586,9 +602,29 @@ def run(request: RunRequest) -> RunResult:
             snapshot=Path(capture.capture_root) if capture else None,
             coding_worktree=directory.worktree,
             repo=request.repo,
+            condition=request.condition,
+            run_purpose=purpose.name,
         )
         if request.scored or request.mode == "real":
-            ev.assert_scoring_prerequisites(request.task_id)
+            # Re-asserted against what was actually OBSERVED, not against what
+            # was requested: the runtime's own reported version and the audit
+            # verdict the run really got.
+            observed_cli = None
+            init = ma.first_init_event(invocation.runtime_evidence)
+            if init:
+                observed_cli = init.get("claude_code_version")
+            ev.assert_scoring_prerequisites(
+                request.task_id,
+                condition=request.condition,
+                run_purpose=purpose.name,
+                model_id=identity.resolved or request.model_id,
+                cli_version=observed_cli,
+                context_verdict=audit_block.get("verdict"),
+                session_id=request.session_id,
+                previous_session_ids=request.previous_session_ids,
+                launch_argv=plan.argv if plan else (),
+                require_execution_evidence=True,
+            )
             machine.passed("evaluation channels ready")
         else:
             machine.skipped(
@@ -767,7 +803,11 @@ def _build_record(
         model_identity=identity.to_dict(),
         post_run_capture=capture.to_dict() if capture else None,
         evaluation=evaluation.to_dict() if evaluation else {},
-        manifest_freeze=ev.freeze_status_report(request.task_id),
+        manifest_freeze=ev.freeze_status_report(
+            request.task_id,
+            condition=request.condition,
+            run_purpose=purpose.name,
+        ),
         artifacts=artifacts,
         prerequisite_blockers=blockers,
         outcome=outcome,
@@ -828,8 +868,59 @@ def _build_parser() -> argparse.ArgumentParser:
         "--isolated-environment-attested", action="store_true",
         help="Attest the governed isolated container/identity (TD-B19).",
     )
+    p.add_argument(
+        "--live-context-audit", action="store_true",
+        help=(
+            "Readiness only: PERFORM the real context audit and use the verdict "
+            "it actually returns. It is never an assertion flag - the audit is "
+            "run, and a CONTAMINATED or UNKNOWN verdict blocks exactly as it "
+            "would in a run. No model process is started."
+        ),
+    )
+    p.add_argument("--credential", default=None, help="Subscription credential file.")
+    p.add_argument("--claude-executable", default=None, help="Claude Code executable.")
+    p.add_argument("--sterile-base", default=None, help="Base dir for sterile profiles.")
+    p.add_argument(
+        "--permission-mode", default=None,
+        help="Permission mode; the frozen diagnostic value when omitted.",
+    )
+    p.add_argument(
+        "--tool", action="append", default=[],
+        help="Allowed tool (repeatable); the frozen diagnostic set when omitted.",
+    )
+    p.add_argument(
+        "--launch-timeout-seconds", type=int, default=1800,
+        help="Wall-clock ceiling for one repetition.",
+    )
     p.add_argument("--json", action="store_true", help="Emit machine-readable output.")
     return p
+
+
+def live_context_verdict(args) -> str:
+    """Run the REAL pre-launch audit and report the verdict it returned.
+
+    Implemented as a dry run so the audited environment is the one a repetition
+    would actually launch in — the same prepared worktree, the same sterile
+    profile, the same launch command — rather than a look-alike built for the
+    readiness report. No model process is started.
+    """
+    root = Path(args.artifact_root) if args.artifact_root else gov.default_artifact_root()
+    probe = run(
+        RunRequest(
+            task_id=args.task,
+            condition=args.condition,
+            run_purpose=args.run_purpose,
+            mode="dry-run",
+            artifact_root=root / "readiness-context-audit",
+            private_root=Path(args.private_root) if args.private_root else None,
+            sterile_base=Path(args.sterile_base) if args.sterile_base else None,
+            credential_source=Path(args.credential) if args.credential else None,
+            keep_worktree=False,
+        )
+    )
+    if probe.record and probe.record.get("context_audit"):
+        return str(probe.record["context_audit"].get("verdict", "UNKNOWN"))
+    return "UNKNOWN"
 
 
 def _print_readiness(report: gov.ReadinessReport) -> None:
@@ -857,6 +948,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 args.condition,
                 args.run_purpose,
                 private_root=Path(args.private_root) if args.private_root else None,
+                context_verdict=(
+                    live_context_verdict(args) if args.live_context_audit else None
+                ),
             )
             if args.json:
                 print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
@@ -878,6 +972,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             private_root=Path(args.private_root) if args.private_root else None,
             scored=args.scored,
             isolated_environment_attested=args.isolated_environment_attested,
+            sterile_base=Path(args.sterile_base) if args.sterile_base else None,
+            credential_source=Path(args.credential) if args.credential else None,
+            launcher_executable=args.claude_executable,
+            permission_mode=args.permission_mode or ma.DIAGNOSTIC_PERMISSION_MODE,
+            tools=tuple(args.tool) or ma.DIAGNOSTIC_TOOLS,
+            launch_timeout_seconds=args.launch_timeout_seconds,
         )
         outcome = run(request)
     except gov.RunnerRefusal as refusal:

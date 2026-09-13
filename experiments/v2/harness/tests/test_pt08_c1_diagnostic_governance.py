@@ -605,22 +605,27 @@ def test_the_records_no_runner_statements_are_now_historical_and_nothing_else_mo
         assert still_open in not_waived, still_open
 
 
-def test_the_runner_that_appeared_still_cannot_execute_the_diagnostic():
-    """Building the runner conferred no readiness, which is the whole point."""
+def test_the_runner_cannot_execute_the_diagnostic_without_a_live_clean_context():
+    """Every §7 prerequisite is discharged EXCEPT the one demonstrated per run.
+
+    This test used to assert that building the runner conferred no readiness. It
+    now asserts the narrower, still load-bearing thing: readiness is conferred by
+    discharging prerequisites one at a time, and the LAST one standing is
+    isolation, which is never asserted in advance and must be demonstrated live
+    for every repetition.
+    """
     sys.path.insert(0, str(REPO / "experiments" / "v2" / "harness"))
     import run_governance as gov  # noqa: PLC0415 - path set above
 
     report = gov.check_readiness("PT08", "C1", "PT08_DIFFICULTY_DIAGNOSTIC")
     assert report.run_eligible is False
     blocked = {p.item for p in report.blocked}
-    for required in ("clean_isolated_context", "manifest_freeze"):
-        assert required in blocked, required
-    # Six prerequisites have since been discharged - hidden-acceptance
+    assert "clean_isolated_context" in blocked
+    # Seven prerequisites have since been discharged - hidden-acceptance
     # validation, the pre-freeze public sync propagation, the diagnostic's own
-    # artifact schema under SL-PT08-02, and now the diagnostic-scoped model pin
-    # and the two live runtime controls under SL-PT08-05 - and discharging every
-    # one of them made the run no more eligible than before, which is what a
-    # discharged prerequisite looks like while a remaining one still stands.
+    # artifact schema under SL-PT08-02, the diagnostic-scoped model pin and the
+    # two live runtime controls under SL-PT08-05, and now §7.14's manifest
+    # freeze, through the diagnostic-scoped exception SL-PT08-06 grants.
     passed = {p.item for p in report.passed}
     for discharged in (
         "hidden_acceptance_validation",
@@ -628,20 +633,29 @@ def test_the_runner_that_appeared_still_cannot_execute_the_diagnostic():
         "diagnostic_artifact_firewall",
         "model_selection",
         "q1_q8_live_runtime_validation",
+        "manifest_freeze",
     ):
         assert discharged in passed, discharged
         assert discharged not in blocked, discharged
-    # §7.14's manifest freeze is untouched by every one of them, and is now the
-    # ONLY prerequisite standing between this diagnostic and execution: the
-    # isolation item above is BLOCKED only because no verdict was supplied to
-    # this call, and is demonstrated per run rather than asserted in advance.
-    assert "manifest_freeze" in blocked
+    # With a live CLEAN verdict supplied, nothing is blocked. Everything below
+    # is what discharging §7.14 did NOT do.
     with_verdict = gov.check_readiness(
         "PT08", "C1", "PT08_DIFFICULTY_DIAGNOSTIC", context_verdict="CLEAN"
     )
-    assert with_verdict.run_eligible is False
-    assert [p.item for p in with_verdict.blocked] == ["manifest_freeze"]
-    # and the global selection TD-B03 governs is untouched by the scoped pin
+    assert with_verdict.run_eligible is True
+    assert with_verdict.blocked == []
+    # The scoped freeze is exactly that: scoped. The suite-wide lifecycle, the
+    # gate and the global model selection are all untouched.
+    assert gov.manifest_is_frozen("PT08") is False
+    state = gov.manifest_freeze_state(
+        "PT08", condition="C1", run_purpose="PT08_DIFFICULTY_DIAGNOSTIC"
+    )
+    assert state["global_frozen"] is False
+    assert state["suite_frozen"] is False
+    assert state["global_gate_g1_passed"] is False
+    assert state["diagnostic_freeze_authority"] == "SL-PT08-06"
+    g1 = next(p for p in with_verdict.prerequisites if p.item == "suite_wide_gate_g1")
+    assert g1.status == gov.NOT_APPLICABLE
     assert gov.primary_model() is None
 
 

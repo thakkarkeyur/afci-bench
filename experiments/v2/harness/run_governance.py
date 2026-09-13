@@ -66,6 +66,10 @@ EXECUTION_DECISIONS_RECORD = DOCS_V2 / "PT08_DIAGNOSTIC_EXECUTION_DECISIONS.md"
 SYNC_RECORD = DOCS_V2 / "PT08_PUBLIC_ACCOUNTING_SYNCHRONIZATION.md"
 SUBSTRATE_IDENTITY_DOC = DOCS_V2 / "SOURCE_SUBSTRATE_IDENTITY.md"
 
+#: ``SL-PT08-06``: the diagnostic-scoped freeze exception. The runner re-derives
+#: its applicability table from this record rather than trusting a constant.
+DIAGNOSTIC_FREEZE_RECORD = DOCS_V2 / "PT08_DIAGNOSTIC_SCOPED_FREEZE_DECISION.md"
+
 #: The harness-local execution-record schema. ``SL-PT08-02`` makes this the
 #: authoritative schema for ``PT08_DIFFICULTY_DIAGNOSTIC`` and for that purpose
 #: only, because it already mechanically requires every quarantine field.
@@ -166,6 +170,19 @@ Q8_INVALID_MODEL_ID_NOT_VALIDATED_LIVE = "Q8_INVALID_MODEL_ID_NOT_VALIDATED_LIVE
 # Evaluation / lifecycle
 HIDDEN_ACCEPTANCE_NOT_VALIDATED = "HIDDEN_ACCEPTANCE_NOT_VALIDATED"
 MANIFEST_NOT_FROZEN = "MANIFEST_NOT_FROZEN"
+
+# SL-PT08-06 — the diagnostic-scoped freeze exception. Every one of these is a
+# refusal: the exception narrows the APPLICABILITY of one suite-wide gate for one
+# (purpose, task, condition) triple, and anything outside that triple, or any
+# record that disagrees with the runner, fails closed.
+DIAGNOSTIC_FREEZE_NOT_AUTHORISED = "DIAGNOSTIC_FREEZE_NOT_AUTHORISED"
+DIAGNOSTIC_FREEZE_RECORD_INCONSISTENT = "DIAGNOSTIC_FREEZE_RECORD_INCONSISTENT"
+DIAGNOSTIC_FREEZE_SCOPE_EXCEEDED = "DIAGNOSTIC_FREEZE_SCOPE_EXCEEDED"
+DIAGNOSTIC_FREEZE_AUTHORITY_MISMATCH = "DIAGNOSTIC_FREEZE_AUTHORITY_MISMATCH"
+DIAGNOSTIC_FREEZE_MISSING = "DIAGNOSTIC_FREEZE_MISSING"
+SUITE_WIDE_G1_MUST_NOT_BE_CLAIMED = "SUITE_WIDE_G1_MUST_NOT_BE_CLAIMED"
+DIAGNOSTIC_MODEL_ID_MISMATCH = "DIAGNOSTIC_MODEL_ID_MISMATCH"
+DIAGNOSTIC_RUNTIME_VERSION_MISMATCH = "DIAGNOSTIC_RUNTIME_VERSION_MISMATCH"
 PRIVATE_PUBLIC_SYNC_PROPAGATION_REQUIRED_BEFORE_FREEZE = (
     "PRIVATE_PUBLIC_SYNC_PROPAGATION_REQUIRED_BEFORE_FREEZE"
 )
@@ -247,6 +264,11 @@ class RunPurpose:
     #: repetition count, recorded so a report can cite them rather than assert.
     schema_decision_id: str = "SL-PT08-02"
     repetition_decision_id: str = "SL-PT08-03"
+    #: ``SL-PT08-06``: the Study-Lead decision that grants THIS purpose a
+    #: diagnostic-scoped freeze, or ``None`` when no such exception exists for it.
+    #: ``None`` is the fail-closed default: a purpose that names no authority can
+    #: never acquire a scoped freeze, and the suite-wide gate governs it in full.
+    diagnostic_freeze_authority: Optional[str] = None
 
     def firewall_flags(self) -> Dict[str, bool]:
         return dict(self.firewall)
@@ -279,6 +301,11 @@ RUN_PURPOSES: Dict[str, RunPurpose] = {
         # SL-PT08-03. Three repeated difficulty probes of one instrument under
         # one condition. No power calculation justifies it and none is implied.
         repetitions=3,
+        # SL-PT08-06. The one purpose that carries a diagnostic-scoped freeze.
+        # It narrows the APPLICABILITY of the suite-wide G1 freeze prerequisite
+        # for this triple and passes no gate; every other purpose leaves this
+        # None and stays governed by the suite-wide rule in full.
+        diagnostic_freeze_authority="SL-PT08-06",
     ),
 }
 
@@ -710,6 +737,485 @@ def open_decision(decision_id: str, path: Path = OPEN_DECISIONS) -> Dict[str, st
 def decision_is_open(decision_id: str, path: Path = OPEN_DECISIONS) -> bool:
     row = open_decision(decision_id, path)
     return list(row.values())[-1].strip().lower() == "open"
+
+
+# --------------------------------------------------------------------------- #
+# SL-PT08-06 — the diagnostic-scoped freeze exception
+# --------------------------------------------------------------------------- #
+#: The one section of the freeze record whose table the runner re-derives. The
+#: record carries other two-column tables for human readers, and parsing the
+#: whole file would let a prose table silently redefine a governed value, so the
+#: parse is scoped to the named section rather than to the document.
+DIAGNOSTIC_FREEZE_TABLE_HEADING = "### 2.1 The applicability table"
+
+#: The section that pins the frozen execution configuration (SL-PT08-06 §5).
+DIAGNOSTIC_FREEZE_CONFIG_HEADING = "## 5. The frozen execution configuration"
+
+#: Values the record must carry for the scoped freeze to exist at all. Kept as
+#: data so a relaxation in the record is a mechanical failure, never a reading.
+DIAGNOSTIC_FREEZE_PINS: Tuple[Tuple[str, object], ...] = (
+    ("diagnostic_freeze_frozen", True),
+    ("diagnostic_freeze_model_selector_is_alias", False),
+    ("diagnostic_freeze_api_key_used", False),
+    ("diagnostic_freeze_fallback_model_permitted", False),
+    ("diagnostic_freeze_process_per_repetition", "fresh"),
+    ("diagnostic_freeze_session_per_repetition", "fresh"),
+    ("diagnostic_freeze_resume_permitted", False),
+    ("diagnostic_freeze_continuation_permitted", False),
+    ("diagnostic_freeze_session_reuse_permitted", False),
+    ("diagnostic_freeze_sterile_context_required", True),
+    ("diagnostic_freeze_context_audit_required_every_repetition", True),
+    ("diagnostic_freeze_architecture_delivery", "none"),
+    ("diagnostic_freeze_is_result", False),
+    ("diagnostic_freeze_scored", False),
+)
+
+#: The suite-wide facts the record must continue to report as NOT granted. If a
+#: freeze record ever claimed one of them, the exception would have stopped being
+#: an applicability narrowing and become a gate pass, so it is refused outright.
+DIAGNOSTIC_FREEZE_GLOBAL_PINS: Tuple[Tuple[str, object], ...] = (
+    ("global_g1", False),
+    ("global_g1_passed_by_this_record", False),
+    ("suite_frozen", False),
+    ("global_manifest_frozen", False),
+    ("global_td_b32_status", "open"),
+    ("td_b12_g6_status", "open"),
+    ("td_b34_status", "open"),
+    ("priority_b_state", "not started"),
+    ("td_b03_status", "open"),
+)
+
+
+@dataclass(frozen=True)
+class DiagnosticFreeze:
+    """One authorised diagnostic-scoped freeze, and the execution it pins.
+
+    It is deliberately a *narrow* object: a triple plus the configuration the
+    authority froze. It carries no suite-wide state, so nothing that consumes it
+    can accidentally read a global freeze or a passed gate out of it.
+    """
+
+    authority: str
+    run_purpose: str
+    task_id: str
+    condition: str
+    task_sha256: str
+    exact_model_id: str
+    cli_version: str
+    repetitions: int
+    permission_mode: str
+    authentication: str
+    #: Always false. Present so a consumer reads the fact rather than assumes it.
+    global_g1: bool = False
+    suite_frozen: bool = False
+    global_manifest_frozen: bool = False
+
+    def covers(self, run_purpose: str, task_id: str, condition: str) -> bool:
+        return (
+            run_purpose == self.run_purpose
+            and task_id == self.task_id
+            and condition == self.condition
+        )
+
+    def to_dict(self) -> dict:
+        return {
+            "authority": self.authority,
+            "run_purpose": self.run_purpose,
+            "task": self.task_id,
+            "condition": self.condition,
+            "frozen": True,
+            "task_sha256": self.task_sha256,
+            "exact_model_id": self.exact_model_id,
+            "cli_version": self.cli_version,
+            "repetitions": self.repetitions,
+            "permission_mode": self.permission_mode,
+            "authentication": self.authentication,
+            "global_g1": self.global_g1,
+            "suite_frozen": self.suite_frozen,
+            "global_manifest_frozen": self.global_manifest_frozen,
+        }
+
+
+def _section(text: str, heading: str) -> str:
+    """The body of one markdown section: the heading line to the next heading."""
+    start = text.find(heading)
+    if start < 0:
+        return ""
+    body = text[start + len(heading):]
+    nxt = re.search(r"^#", body, re.MULTILINE)
+    return body[: nxt.start()] if nxt else body
+
+
+def _table_values(section: str) -> Dict[str, object]:
+    """Two-column markdown rows, coerced, with headers and separators dropped."""
+    values: Dict[str, object] = {}
+    for row in re.finditer(r"^\|(.+?)\|(.+?)\|\s*$", section, re.MULTILINE):
+        key = row.group(1).strip().strip("`").strip()
+        val = row.group(2).strip().strip("`").strip()
+        if not key or key.lower() in {"field", "state"} or set(key) <= {"-", ":"}:
+            continue
+        low = val.lower()
+        values[key] = (
+            True if low == "true" else False if low == "false"
+            else int(val) if val.isdigit() else val
+        )
+    return values
+
+
+def governed_diagnostic_freeze(
+    path: Path = DIAGNOSTIC_FREEZE_RECORD,
+) -> Dict[str, object]:
+    """Re-derive ``SL-PT08-06``'s applicability table from the record itself.
+
+    Same discipline as :func:`governed_firewall_from_record`: the runner's
+    constants are not trusted on their own, so a drift between the code and the
+    adjudication is a mechanical failure rather than a reading. An unreadable
+    record is a refusal, never an empty permission.
+    """
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except OSError as exc:
+        raise RunnerRefusal(
+            GOVERNANCE_RECORD_UNREADABLE, f"cannot read {path}: {exc}"
+        ) from exc
+    return _table_values(_section(text, DIAGNOSTIC_FREEZE_TABLE_HEADING))
+
+
+def governed_diagnostic_freeze_configuration(
+    path: Path = DIAGNOSTIC_FREEZE_RECORD,
+) -> Dict[str, object]:
+    """``SL-PT08-06`` §5's frozen execution configuration, from the record."""
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except OSError as exc:
+        raise RunnerRefusal(
+            GOVERNANCE_RECORD_UNREADABLE, f"cannot read {path}: {exc}"
+        ) from exc
+    return _table_values(_section(text, DIAGNOSTIC_FREEZE_CONFIG_HEADING))
+
+
+def diagnostic_freeze_problems(
+    purpose: RunPurpose,
+    task_id: str,
+    condition: str,
+    *,
+    record: Optional[Path] = None,
+    registry: Optional[Path] = None,
+    task_index: Optional[Path] = None,
+) -> List[Tuple[str, str]]:
+    """Every reason ``(purpose, task_id, condition)`` has no scoped freeze.
+
+    An empty list means the exception applies. Anything else is a coded refusal,
+    and the FIRST code is the one a caller reports: the list is ordered so the
+    narrowest, most specific failure is named rather than a generic one.
+
+    The checks are deliberately redundant with the record. The runner does not
+    take the record's word for the task hash, the model id, the runtime version
+    or the repetition count — it re-derives each from its own authority and
+    refuses on disagreement, so a record could not widen the exception by
+    editing a value the rest of the repository disagrees with.
+    """
+    problems: List[Tuple[str, str]] = []
+    authority = purpose.diagnostic_freeze_authority
+    if not authority:
+        return [(
+            DIAGNOSTIC_FREEZE_NOT_AUTHORISED,
+            f"{purpose.name} carries no diagnostic-scoped freeze authority; the "
+            "suite-wide freeze prerequisite governs it in full",
+        )]
+
+    # Scope first: an out-of-scope triple is refused before the record is read,
+    # so a scope error can never be reported as a record inconsistency.
+    if task_id not in purpose.permitted_tasks or condition not in purpose.permitted_conditions:
+        return [(
+            DIAGNOSTIC_FREEZE_SCOPE_EXCEEDED,
+            f"{authority} scopes the freeze to "
+            f"{list(purpose.permitted_tasks)}/{list(purpose.permitted_conditions)} "
+            f"under {purpose.name}; got {task_id!r}/{condition!r}",
+        )]
+
+    governed = governed_diagnostic_freeze(record or DIAGNOSTIC_FREEZE_RECORD)
+    if not governed:
+        return [(
+            DIAGNOSTIC_FREEZE_MISSING,
+            f"{authority}'s applicability table is absent or unparseable; a "
+            "scoped freeze is never assumed",
+        )]
+
+    # ---- authority ------------------------------------------------------- #
+    for key in ("decision_id", "diagnostic_freeze_authority"):
+        if governed.get(key) != authority:
+            problems.append((
+                DIAGNOSTIC_FREEZE_AUTHORITY_MISMATCH,
+                f"the record's {key} is {governed.get(key)!r}, not {authority!r}",
+            ))
+
+    # ---- the triple the record itself claims ----------------------------- #
+    for key, expected in (
+        ("run_purpose", purpose.name),
+        ("diagnostic_freeze_task", task_id),
+        ("diagnostic_freeze_condition", condition),
+    ):
+        if governed.get(key) != expected:
+            problems.append((
+                DIAGNOSTIC_FREEZE_SCOPE_EXCEEDED,
+                f"the record's {key} is {governed.get(key)!r}, not {expected!r}",
+            ))
+
+    # ---- the suite-wide facts the record must NOT claim ------------------ #
+    for key, expected in DIAGNOSTIC_FREEZE_GLOBAL_PINS:
+        if governed.get(key) != expected:
+            problems.append((
+                SUITE_WIDE_G1_MUST_NOT_BE_CLAIMED,
+                f"the record's {key} is {governed.get(key)!r}, not {expected!r}; "
+                "a scoped freeze may never report a suite-wide gate as granted",
+            ))
+
+    # ---- the execution pins ---------------------------------------------- #
+    for key, expected in DIAGNOSTIC_FREEZE_PINS:
+        if governed.get(key) != expected:
+            problems.append((
+                DIAGNOSTIC_FREEZE_RECORD_INCONSISTENT,
+                f"the record's {key} is {governed.get(key)!r}, not {expected!r}",
+            ))
+
+    # ---- re-derived from the other authorities, never taken on trust ----- #
+    try:
+        expected_sha = expected_task_sha256(task_id, task_index or TASK_INDEX)
+    except RunnerRefusal as exc:
+        problems.append((exc.code, exc.message))
+    else:
+        if governed.get("diagnostic_freeze_task_sha256") != expected_sha:
+            problems.append((
+                TASK_SHA_MISMATCH,
+                f"the record pins task sha256 "
+                f"{governed.get('diagnostic_freeze_task_sha256')!r}; the approved "
+                f"index pins {expected_sha}",
+            ))
+
+    registry_path = registry or MODEL_REGISTRY
+    pinned_model = diagnostic_primary_model(purpose.name, registry_path)
+    if not pinned_model or governed.get("diagnostic_freeze_exact_model_id") != pinned_model:
+        problems.append((
+            DIAGNOSTIC_MODEL_ID_MISMATCH,
+            f"the record pins exact model "
+            f"{governed.get('diagnostic_freeze_exact_model_id')!r}; the registry "
+            f"pins {pinned_model!r} for {purpose.name}",
+        ))
+
+    q1, q8, validated_cli = live_runtime_validation(purpose.name, registry_path)
+    if governed.get("diagnostic_freeze_cli_version") != validated_cli:
+        problems.append((
+            DIAGNOSTIC_RUNTIME_VERSION_MISMATCH,
+            f"the record pins runtime {governed.get('diagnostic_freeze_cli_version')!r}; "
+            f"the registry records {validated_cli!r} as live-validated",
+        ))
+    if q1 != "PASS":
+        problems.append((
+            Q1_READBACK_NOT_VALIDATED_LIVE,
+            f"Q1 is {q1!r}, not PASS; the scoped freeze waives neither control",
+        ))
+    if q8 != "PASS":
+        problems.append((
+            Q8_INVALID_MODEL_ID_NOT_VALIDATED_LIVE,
+            f"Q8 is {q8!r}, not PASS; the scoped freeze waives neither control",
+        ))
+
+    if governed.get("diagnostic_freeze_repetitions") != purpose.repetitions:
+        problems.append((
+            DIAGNOSTIC_REPETITION_DECISION_INCONSISTENT,
+            f"the record pins {governed.get('diagnostic_freeze_repetitions')!r} "
+            f"repetitions; {purpose.repetition_decision_id} pins "
+            f"{purpose.repetitions!r}",
+        ))
+
+    delivery = architecture_delivery_for(condition)
+    if delivery != governed.get("diagnostic_freeze_architecture_delivery"):
+        problems.append((
+            ARCHITECTURE_DELIVERY_VIOLATION,
+            f"{condition} architecture_delivery is {delivery!r}; the record pins "
+            f"{governed.get('diagnostic_freeze_architecture_delivery')!r}",
+        ))
+
+    return problems
+
+
+def diagnostic_freeze_for(
+    purpose: RunPurpose,
+    task_id: str,
+    condition: str,
+    **kwargs,
+) -> Optional[DiagnosticFreeze]:
+    """The scoped freeze for this triple, or ``None``. Never raises for absence.
+
+    ``None`` is the fail-closed answer: a caller that gets it must fall back to
+    the suite-wide rule, which is what every other purpose, task and condition
+    already does.
+    """
+    if diagnostic_freeze_problems(purpose, task_id, condition, **kwargs):
+        return None
+    governed = governed_diagnostic_freeze(
+        kwargs.get("record") or DIAGNOSTIC_FREEZE_RECORD
+    )
+    return DiagnosticFreeze(
+        authority=str(governed["diagnostic_freeze_authority"]),
+        run_purpose=str(governed["run_purpose"]),
+        task_id=str(governed["diagnostic_freeze_task"]),
+        condition=str(governed["diagnostic_freeze_condition"]),
+        task_sha256=str(governed["diagnostic_freeze_task_sha256"]),
+        exact_model_id=str(governed["diagnostic_freeze_exact_model_id"]),
+        cli_version=str(governed["diagnostic_freeze_cli_version"]),
+        repetitions=int(governed["diagnostic_freeze_repetitions"]),
+        permission_mode=str(governed["diagnostic_freeze_permission_mode"]),
+        authentication=str(governed["diagnostic_freeze_authentication"]),
+    )
+
+
+def diagnostic_freeze_execution_problems(
+    freeze: DiagnosticFreeze,
+    *,
+    model_id: Optional[str] = None,
+    cli_version: Optional[str] = None,
+    context_verdict: Optional[str] = None,
+    session_id: Optional[str] = None,
+    previous_session_ids: Sequence[str] = (),
+    launch_argv: Sequence[str] = (),
+    require_all: bool = False,
+    require_context_verdict: Optional[bool] = None,
+) -> List[Tuple[str, str]]:
+    """Per-repetition conditions the scoped freeze does NOT waive.
+
+    ``require_all`` is what makes this fail closed at the point that matters. A
+    readiness report legitimately has no model id, no runtime version and no
+    context verdict yet, so it passes ``False`` and only the values it actually
+    supplies are checked. A real run passes ``True``, before any process is
+    started, and an unsupplied value is then a refusal rather than a silence.
+
+    ``require_context_verdict`` is separated out because the audit genuinely has
+    not run yet at the pre-launch check: the state machine runs it next and
+    refuses on anything but ``CLEAN`` before a process could be created, and the
+    post-run check then re-asserts with the verdict it actually observed.
+    Defaulting it to ``require_all`` keeps every other caller fail-closed.
+    """
+    problems: List[Tuple[str, str]] = []
+    require_context = (
+        require_all if require_context_verdict is None else require_context_verdict
+    )
+
+    def _missing(name: str, code: str, required: bool = None) -> None:
+        if require_all if required is None else required:
+            problems.append((
+                code,
+                f"{freeze.authority} requires {name} to be demonstrated for every "
+                "repetition; none was supplied and the runner assumes none",
+            ))
+
+    if model_id is None:
+        _missing("the exact model id", DIAGNOSTIC_MODEL_ID_MISMATCH)
+    elif model_id != freeze.exact_model_id:
+        problems.append((
+            DIAGNOSTIC_MODEL_ID_MISMATCH,
+            f"the repetition requests {model_id!r}; {freeze.authority} pins the "
+            f"exact id {freeze.exact_model_id!r} and forbids the alias",
+        ))
+
+    if cli_version is None:
+        _missing("the runtime version", DIAGNOSTIC_RUNTIME_VERSION_MISMATCH)
+    elif str(cli_version) != freeze.cli_version:
+        problems.append((
+            DIAGNOSTIC_RUNTIME_VERSION_MISMATCH,
+            f"the runtime reports {cli_version!r}; {freeze.authority} pins the "
+            f"live-validated {freeze.cli_version!r}",
+        ))
+
+    if context_verdict is None:
+        _missing("a CLEAN context audit", CONTEXT_AUDIT_UNKNOWN, require_context)
+    elif str(context_verdict).upper() != "CLEAN":
+        problems.append((
+            CONTEXT_AUDIT_CONTAMINATED
+            if str(context_verdict).upper() == "CONTAMINATED"
+            else CONTEXT_AUDIT_UNKNOWN,
+            f"the context-isolation verdict is {context_verdict!r}; the scoped "
+            "freeze waives neither the isolation requirement nor the audit",
+        ))
+
+    argv = [str(a) for a in launch_argv]
+    for flag, code in (
+        ("--resume", SESSION_RESUME_REJECTED),
+        ("--continue", SESSION_CONTINUE_REJECTED),
+        ("-c", SESSION_CONTINUE_REJECTED),
+        ("-r", SESSION_RESUME_REJECTED),
+    ):
+        if flag in argv:
+            problems.append((
+                code,
+                f"{flag} appears in the launch; every repetition is a fresh "
+                "process and a fresh session, and the scoped freeze waives neither",
+            ))
+
+    if session_id is not None and session_id in {str(s) for s in previous_session_ids}:
+        problems.append((
+            SESSION_ID_REUSED,
+            f"session id {session_id!r} has already been used; session reuse is "
+            "forbidden for every repetition",
+        ))
+
+    return problems
+
+
+def manifest_freeze_state(
+    task_id: str,
+    *,
+    condition: Optional[str] = None,
+    run_purpose: Optional[str] = None,
+    acceptance_matrix: Path = ACCEPTANCE_MATRIX,
+    **kwargs,
+) -> Dict[str, object]:
+    """The two freeze states, reported separately and never merged.
+
+    ``global_frozen`` is the suite-wide lifecycle answer and is exactly what
+    :func:`manifest_is_frozen` has always returned — this function never changes
+    it and never writes it. ``diagnostic_frozen`` is the ``SL-PT08-06`` scoped
+    state, which exists only for the one authorised triple.
+
+    ``effective_for_this_purpose`` is the only value an eligibility check should
+    read, and it is true when *either* state holds. A caller that supplies no
+    condition and no run purpose gets the suite-wide answer alone, which is the
+    fail-closed reading for every existing call site.
+    """
+    global_frozen = manifest_is_frozen(task_id, acceptance_matrix)
+    freeze: Optional[DiagnosticFreeze] = None
+    problems: List[Tuple[str, str]] = []
+    if condition and run_purpose:
+        try:
+            purpose = resolve_run_purpose(run_purpose)
+            assert_task_and_condition_permitted(purpose, task_id, condition)
+        except RunnerRefusal as exc:
+            problems = [(exc.code, exc.message)]
+        else:
+            problems = diagnostic_freeze_problems(
+                purpose, task_id, condition, **kwargs
+            )
+            if not problems:
+                freeze = diagnostic_freeze_for(purpose, task_id, condition, **kwargs)
+    return {
+        "task_id": task_id,
+        "condition": condition,
+        "run_purpose": run_purpose,
+        # The suite-wide lifecycle answer. Unchanged, never written here.
+        "global_frozen": global_frozen,
+        "suite_frozen": False,
+        "global_gate_g1_passed": False,
+        # The SL-PT08-06 scoped answer.
+        "diagnostic_frozen": freeze is not None,
+        "diagnostic_freeze_authority": freeze.authority if freeze else None,
+        "diagnostic_freeze": freeze.to_dict() if freeze else None,
+        "diagnostic_freeze_problems": [
+            {"code": c, "detail": d} for c, d in problems
+        ],
+        "effective_for_this_purpose": global_frozen or freeze is not None,
+        "changed_by_this_runner": False,
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -1296,18 +1802,70 @@ def check_readiness(
         )
     )
 
-    frozen = manifest_is_frozen(task_id)
+    freeze_state = manifest_freeze_state(
+        task_id, condition=condition, run_purpose=purpose.name
+    )
+    frozen = bool(freeze_state["effective_for_this_purpose"])
+    scoped = bool(freeze_state["diagnostic_frozen"])
+    freeze_problems = freeze_state["diagnostic_freeze_problems"]
     items.append(
         Prerequisite(
             "manifest_freeze",
             PASS if frozen else BLOCKED,
-            f"{task_id}'s manifest is frozen"
+            (
+                f"{task_id}'s manifest is frozen suite-wide"
+                if freeze_state["global_frozen"]
+                else (
+                    f"{freeze_state['diagnostic_freeze_authority']} grants "
+                    f"{task_id}/{condition}/{purpose.name} a DIAGNOSTIC-SCOPED "
+                    "freeze: the execution configuration is frozen for this "
+                    "triple only. The suite-wide lifecycle freeze is NOT "
+                    "granted, gate G1 is NOT passed, the suite is NOT frozen, "
+                    f"and the public lifecycle row is unchanged. The runner "
+                    "freezes nothing and writes no lifecycle state"
+                )
+            )
             if frozen
-            else f"{task_id}'s evaluator manifest is status=review and NOT frozen; "
-            "a scored run requires the applicable manifest frozen under the "
-            "existing lifecycle rules (TD-B05/TD-B14/TD-B32, gate G1). The "
-            "runner reports this and freezes nothing",
-            None if frozen else MANIFEST_NOT_FROZEN,
+            else (
+                f"{task_id}'s evaluator manifest is status=review and NOT frozen; "
+                "a scored run requires the applicable manifest frozen under the "
+                "existing lifecycle rules (TD-B05/TD-B14/TD-B32, gate G1), and "
+                "no diagnostic-scoped freeze applies: "
+                + "; ".join(f"<{p['code']}> {p['detail']}" for p in freeze_problems[:4])
+                if freeze_problems
+                else f"{task_id}'s evaluator manifest is status=review and NOT "
+                "frozen, and no diagnostic-scoped freeze applies"
+            ),
+            None
+            if frozen
+            else (str(freeze_problems[0]["code"]) if freeze_problems else MANIFEST_NOT_FROZEN),
+        )
+    )
+
+    # The suite-wide gate, reported explicitly so it can never be read as passed
+    # by inference from the scoped freeze above. NOT_APPLICABLE, never PASS: the
+    # gate is open, and SL-PT08-06 narrows its applicability rather than its bar.
+    items.append(
+        Prerequisite(
+            "suite_wide_gate_g1",
+            NOT_APPLICABLE if (scoped or freeze_state["global_frozen"]) else BLOCKED,
+            (
+                "the suite-wide lifecycle freeze is in force for this task, so "
+                "the ordinary G1-governed path applies and no exception is used"
+                if freeze_state["global_frozen"]
+                else "NOT PASSED, and NOT APPLICABLE TO THIS DIAGNOSTIC. Gate G1 is a "
+                "suite-wide oracle-validity gate over TD-B04/TD-B05/TD-B12 and "
+                "remains open and blocking for every confirmatory purpose. "
+                f"{freeze_state['diagnostic_freeze_authority']} narrows the "
+                "APPLICABILITY of the G1 freeze prerequisite for "
+                f"{task_id}/{condition}/{purpose.name} only. It does NOT pass "
+                "G1, NOT close G1, NOT close TD-B34, NOT start priority B, NOT "
+                "close the global TD-B32 row and NOT change TD-B12/G6. "
+                "global_gate_g1_passed is false and suite_frozen is false"
+                if scoped
+                else "gate G1 is not passed and no diagnostic-scoped exception applies"
+            ),
+            SUITE_WIDE_G1_MUST_NOT_BE_CLAIMED if not scoped else None,
         )
     )
 

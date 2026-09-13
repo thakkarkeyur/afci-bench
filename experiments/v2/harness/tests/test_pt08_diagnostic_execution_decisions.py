@@ -500,11 +500,31 @@ def test_a_satisfied_sync_record_must_cite_a_reachable_public_commit(tmp_path):
 # What is STILL blocked, and what is still not claimed. (I.19–I.23)
 
 
-def test_the_manifest_is_still_review_and_not_frozen(readiness):
+def test_the_manifest_is_still_review_and_not_frozen_suite_wide(readiness):
+    """`SL-PT08-02`/`SL-PT08-03` froze nothing, and that is still true.
+
+    `SL-PT08-06` has since granted a DIAGNOSTIC-SCOPED freeze for one triple, so
+    the readiness item now passes on that narrow route. The suite-wide lifecycle
+    is what these two records were about, and it is unchanged: the manifest is
+    not frozen, the suite is not frozen and gate `G1` is not passed.
+    """
     assert gov.manifest_is_frozen("PT08") is False
+    state = gov.manifest_freeze_state(
+        "PT08", condition="C1", run_purpose=PURPOSE_NAME
+    )
+    assert state["global_frozen"] is False
+    assert state["suite_frozen"] is False
+    assert state["global_gate_g1_passed"] is False
+    assert state["diagnostic_frozen"] is True
+    assert state["diagnostic_freeze_authority"] == "SL-PT08-06"
+
     item = _item(readiness, "manifest_freeze")
-    assert item.status == gov.BLOCKED
-    assert item.code == gov.MANIFEST_NOT_FROZEN
+    assert item.status == gov.PASS
+    assert item.code is None
+    assert "SL-PT08-06" in item.detail
+    assert "gate G1 is NOT passed" in item.detail
+    g1 = _item(readiness, "suite_wide_gate_g1")
+    assert g1.status == gov.NOT_APPLICABLE
 
 
 def test_gate_g1_is_not_passed_and_nothing_here_freezes_anything():
@@ -571,12 +591,16 @@ def test_isolation_is_still_never_asserted_in_advance(readiness):
     assert _item(readiness, "clean_isolated_context").code == gov.CONTEXT_AUDIT_UNKNOWN
 
 
-def test_the_diagnostic_is_still_not_run_eligible(readiness):
-    """The point of all of the above: one prerequisite still blocks it."""
+def test_the_diagnostic_is_not_run_eligible_without_a_live_clean_context(readiness):
+    """Neither of these two records made it eligible, and neither claims to.
+
+    `SL-PT08-06` has since discharged the manifest-freeze prerequisite on a
+    narrow scoped route. What remains is isolation, which is demonstrated per
+    repetition and never asserted in advance — so a readiness call that supplies
+    no verdict still reports the diagnostic as not eligible.
+    """
     assert readiness.run_eligible is False
-    assert [p.item for p in readiness.blocked if p.item != "clean_isolated_context"] == [
-        "manifest_freeze"
-    ]
+    assert [p.item for p in readiness.blocked] == ["clean_isolated_context"]
 
 
 def test_the_record_closes_no_other_blocker():

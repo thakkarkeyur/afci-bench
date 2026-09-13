@@ -191,7 +191,17 @@ def test_the_synthetic_clean_dry_run_still_invokes_nothing(tmp_path):
 def test_the_synthetic_clean_dry_run_reports_every_downstream_blocker(tmp_path):
     result = run_v2.run(_request(tmp_path, audit_provider=fx.synthetic_clean_audit))
     codes = {b["code"] for b in result.record["prerequisite_blockers"]}
-    assert gov.MANIFEST_NOT_FROZEN in codes
+    # SL-PT08-06 discharges the freeze prerequisite for THIS triple only, and it
+    # is a scoped state rather than a suite-wide one: the record still reports
+    # the suite-wide lifecycle as unfrozen and gate G1 as not passed.
+    assert gov.MANIFEST_NOT_FROZEN not in codes
+    freeze = result.record["manifest_freeze"]
+    assert freeze["manifest_frozen"] is False
+    assert freeze["suite_frozen"] is False
+    assert freeze["global_gate_g1_passed"] is False
+    assert freeze["diagnostic_scoped_frozen"] is True
+    assert freeze["diagnostic_freeze_authority"] == "SL-PT08-06"
+    assert freeze["changed_by_this_runner"] is False
     # the diagnostic-scoped pin under SL-PT08-05 discharges this one WITHOUT
     # selecting a confirmatory primary model, so the code is gone while the
     # global registry entry TD-B03 governs is still null
@@ -210,9 +220,14 @@ def test_the_synthetic_clean_dry_run_reports_every_downstream_blocker(tmp_path):
     # and the canonical result-manifest gap no longer blocks THIS non-result
     # diagnostic, while staying unresolved for result-bearing purposes
     assert gov.RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL not in codes
-    evaluation_codes = {c["code"] for c in result.record["evaluation"]["channels"]}
+    channels = {c["channel"]: c for c in result.record["evaluation"]["channels"]}
+    evaluation_codes = {c["code"] for c in channels.values()}
     assert gov.hidden_acceptance_refusal_code("PT08") not in evaluation_codes
-    assert gov.MANIFEST_NOT_FROZEN in evaluation_codes
+    # The architecture channel is still BLOCKED, but no longer on the freeze: a
+    # dry run captures no post-run snapshot, so there is nothing to score.
+    scoring = channels["architecture_opportunity_scoring"]
+    assert scoring["status"] == "BLOCKED"
+    assert "no post-run snapshot" in scoring["detail"]
 
 
 def test_a_synthetic_contaminated_audit_still_refuses(tmp_path):
@@ -285,20 +300,30 @@ def test_the_cli_readiness_command_reports_the_authorised_run():
         # MODEL_EXECUTION_CONTROLS §7 probes validated against a live runtime
         "model_selection",
         "q1_q8_live_runtime_validation",
+        # SL-PT08-06: a DIAGNOSTIC-SCOPED freeze for this triple only
+        "manifest_freeze",
     ):
         assert items[passing]["status"] == gov.PASS, items[passing]
-    for blocked in ("clean_isolated_context", "manifest_freeze"):
+    for blocked in ("clean_isolated_context",):
         assert items[blocked]["status"] == gov.BLOCKED, items[blocked]
+    # and the suite-wide gate the exception narrows is reported N/A, never PASS:
+    # PASS would read as "G1 granted", which is exactly what it is not
+    assert items["suite_wide_gate_g1"]["status"] == gov.NOT_APPLICABLE
+    assert "NOT PASSED" in items["suite_wide_gate_g1"]["detail"]
     # the canonical result-manifest gap is scoped out of this non-result
     # diagnostic, and must be reported N/A rather than PASS: PASS would read as
     # remediated, and it is not
     canonical = items["canonical_confirmatory_run_manifest_firewall"]
     assert canonical["status"] == gov.NOT_APPLICABLE, canonical
     assert canonical["code"] == gov.RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL
-    # exactly two blockers remain for the diagnostic, and one of them is the
-    # per-run isolation verdict this command does not supply. The substantive
-    # remainder is the manifest freeze.
-    assert report["blocked_count"] == 2, report["blocked_count"]
+    # exactly ONE blocker remains, and it is the per-run isolation verdict this
+    # command does not supply. It is demonstrated live for every repetition and
+    # is never asserted in advance, so a readiness call without one is correct
+    # to report it as not demonstrated.
+    assert report["blocked_count"] == 1, report["blocked_count"]
+    assert [p["item"] for p in report["prerequisites"] if p["status"] == gov.BLOCKED] == [
+        "clean_isolated_context"
+    ]
 
 
 def test_the_cli_dry_run_exits_non_zero_when_it_refuses(tmp_path):

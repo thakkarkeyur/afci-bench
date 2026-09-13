@@ -1064,20 +1064,34 @@ def test_the_runner_helpers_read_validated_but_not_frozen():
         assert gov.manifest_is_frozen(tid) is False, tid
 
 
-def test_the_runner_reports_hidden_acceptance_pass_and_manifest_freeze_blocked():
-    """5 + 7. Validation passes its prerequisite; the run stays ineligible."""
+def test_the_runner_reports_hidden_acceptance_pass_and_a_scoped_freeze_only():
+    """5 + 7. Validation passes its prerequisite; the SUITE-WIDE freeze does not.
+
+    The manifest-freeze prerequisite is now discharged for one triple by the
+    diagnostic-scoped exception, and for that triple only. What validation must
+    still never do is make PT08 frozen suite-wide, pass gate G1, or make the
+    task E1 run-eligible — and none of those has happened.
+    """
     gov = _gov()
     report = gov.check_readiness("PT08", "C1", "PT08_DIFFICULTY_DIAGNOSTIC")
     items = {p.item: p for p in report.prerequisites}
     assert items["hidden_acceptance_validation"].status == gov.PASS
-    assert items["manifest_freeze"].status == gov.BLOCKED
-    assert items["manifest_freeze"].code == gov.MANIFEST_NOT_FROZEN
+    assert items["manifest_freeze"].status == gov.PASS
+    assert "SL-PT08-06" in items["manifest_freeze"].detail
+    assert items["suite_wide_gate_g1"].status == gov.NOT_APPLICABLE
+    # Validated hidden acceptance is not, and never became, a suite-wide freeze.
+    assert gov.manifest_is_frozen("PT08") is False
+    state = gov.manifest_freeze_state(
+        "PT08", condition="C1", run_purpose="PT08_DIFFICULTY_DIAGNOSTIC"
+    )
+    assert state["global_frozen"] is False
+    assert state["global_gate_g1_passed"] is False
     assert report.run_eligible is False, (
-        "validated hidden acceptance must not make PT08 run eligible"
+        "isolation is demonstrated per run and is not asserted in advance"
     )
     codes = {p.code for p in report.blocked}
     assert gov.hidden_acceptance_refusal_code("PT08") not in codes
-    assert gov.MANIFEST_NOT_FROZEN in codes
+    assert [p.item for p in report.blocked] == ["clean_isolated_context"]
 
 
 def test_no_public_surface_says_pt08_is_frozen_g1_passed_or_run_eligible():
@@ -1278,7 +1292,15 @@ def test_satisfying_the_focused_review_requirement_is_not_a_freeze():
     assert gov.manifest_is_frozen("PT08") is False
     report = gov.check_readiness("PT08", "C1", "PT08_DIFFICULTY_DIAGNOSTIC")
     assert report.run_eligible is False
-    assert gov.MANIFEST_NOT_FROZEN in {p.code for p in report.blocked}
+    # The focused review did not freeze anything, and neither did the scoped
+    # exception that later discharged the freeze prerequisite for one triple:
+    # the suite-wide lifecycle row and gate are exactly where they were.
+    state = gov.manifest_freeze_state(
+        "PT08", condition="C1", run_purpose="PT08_DIFFICULTY_DIAGNOSTIC"
+    )
+    assert state["global_frozen"] is False
+    assert state["suite_frozen"] is False
+    assert state["global_gate_g1_passed"] is False
     for path in _pt08_evidence_surfaces() + (DOCS_V2 / "OPEN_DECISIONS.md",):
         flat = _flat(path)
         for claim in ("pt08 is frozen", "pt08 is now frozen", "g1 is passed",
