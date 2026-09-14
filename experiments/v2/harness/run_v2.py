@@ -940,6 +940,37 @@ def live_context_verdict(args) -> str:
     return "UNKNOWN"
 
 
+def completion_line(outcome: RunResult, mode: str) -> str:
+    """The terminal's one-line summary of a completed run.
+
+    Derived from what the run RECORDED, never from the mode alone. The runner
+    previously printed the dry-run sentence unconditionally, so a successful
+    ``--real-run`` -- a run in which a model process really did start and really
+    did spend a paid turn -- announced on the terminal that "no model was
+    invoked". The artifacts were right and only the sentence was wrong, which is
+    the dangerous shape of that defect: an operator reading the terminal would
+    have described the evidence to a reviewer exactly backwards.
+
+    ``invoked`` is read from the invocation block rather than inferred from
+    ``mode`` so the sentence reports the observation instead of the intention.
+    """
+    invoked = False
+    scored = False
+    if outcome.record:
+        invocation = outcome.record.get("invocation") or {}
+        invoked = bool(invocation.get("invoked"))
+        scored = bool((outcome.record.get("outcome") or {}).get("scored"))
+    scoring = "something was scored" if scored else "nothing was scored"
+
+    if not invoked:
+        if mode == "dry-run":
+            return f"dry run complete; no model was invoked and {scoring}"
+        # Real mode that reached COMPLETE without starting a process. The runner
+        # refuses before this today, so it is reported rather than described.
+        return f"run complete; NO model process was started and {scoring}"
+    return f"real run complete; a model process was invoked and {scoring}"
+
+
 def _print_readiness(report: gov.ReadinessReport) -> None:
     print(f"readiness — {report.purpose} / {report.task_id} / {report.condition}")
     for item in report.prerequisites:
@@ -1027,7 +1058,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if outcome.refusal_code:
             print(f"  => REFUSED {outcome.refusal_code}", file=sys.stderr)
         else:
-            print("  => dry run complete; no model was invoked and nothing was scored")
+            print(f"  => {completion_line(outcome, request.mode)}")
 
     return 0 if outcome.ok else 1
 
