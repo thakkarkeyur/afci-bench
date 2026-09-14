@@ -674,16 +674,31 @@ def test_the_report_records_the_rejected_criterion_and_the_overlap_guards():
     assert "deliberately not in the task body" in report
 
 
-def test_the_reset_checkpoint_row_is_functional_and_claims_no_implementation():
+def test_the_reset_checkpoint_row_is_functional_and_withholds_the_predicate():
+    """The row reports that a predicate EXISTS and still publishes none of it.
+
+    This test previously required the row to say the predicate was "not yet
+    drafted". That was true when PT07 was authored and stopped being true when
+    the private PT07 ``reset_checkpoint.json`` was written; the row and this
+    guard then kept asserting it. The correction is bookkeeping only: the
+    predicate itself is unchanged, its contents stay withheld, and ``status``
+    stays TODO because the allowances are still unresolved (TD-B01/TD-B11).
+    """
     row = _by_id(RESET_MATRIX)["PT07"]
     assert row["condition_neutral"] == "yes"
-    assert row["status"].strip().upper() == "TODO"
+    assert row["status"].strip().upper() == "TODO", (
+        "drafting a predicate does not resolve the allowances, so the row stays "
+        "TODO until TD-B01/TD-B11 are decided"
+    )
     definition = row["checkpoint_definition"].lower()
     assert "withheld" in definition
-    assert "not yet drafted" in definition, (
-        "the row must not imply that a private reset predicate already exists"
+    assert "not yet drafted" not in definition, (
+        "the private PT07 reset predicate exists; the row must not deny it"
     )
-    assert "must not rely on any assertion about internal persistence" in definition
+    assert "drafted in the private evaluator repository" in definition, (
+        "the row must say a predicate exists without publishing its contents"
+    )
+    assert "relying on no assertion about internal persistence" in definition
     for leak in ("AR-", "OPP-", "expected_layer", "prohibited_layer"):
         assert leak not in _text(RESET_MATRIX), f"RESET_CHECKPOINT_MATRIX.csv leaks {leak}"
 
