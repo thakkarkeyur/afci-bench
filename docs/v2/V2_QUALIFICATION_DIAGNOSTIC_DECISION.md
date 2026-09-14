@@ -479,6 +479,61 @@ each of these is demonstrated per repetition rather than asserted in advance:
     `scored: false`, all five eligibility flags `false`, and no artifact written
     anywhere inside the canonical repository.
 
+### 6.4 The isolation criterion, extended to this purpose on the same terms
+
+[`PT08_DIAGNOSTIC_ISOLATION_CLARIFICATION.md`](PT08_DIAGNOSTIC_ISOLATION_CLARIFICATION.md)
+adjudicated, for `PT08_DIFFICULTY_DIAGNOSTIC`, that the isolation `TD-B19`
+requires is the **effective model-visible execution context** — so a sterile
+`HOME` and configuration directory holding nothing but the credential satisfies
+it, and a separate billing identity, a dedicated subscription and an
+`ANTHROPIC_API_KEY` are **not** required. Its applicability table names that one
+run purpose, so it does **not** reach this one on its own, and running under an
+unadjudicated attestation would be exactly the kind of silent widening this
+repository refuses elsewhere.
+
+> **`SL-V2-QUAL-01`, isolation clause.** The `SL-PT08-04` isolation criterion and
+> its eleven requirements apply to `INSTRUMENT_QUALIFICATION_DIAGNOSTIC` over
+> `PT09`/`PT10` under `C1`, **unchanged and in full**. Nothing is relaxed: the
+> closed contamination list, the credential-only profile, the prohibition on
+> credential contents in artifacts, the fresh-process and fresh-session
+> requirements, and the requirement that the audit target the **actual** launch
+> environment and the **actual** launch command all stand as written.
+
+| Field | Required value |
+|---|---|
+| `isolation_criterion` | `effective model-visible execution context` |
+| `isolation_criterion_authority` | `SL-PT08-04, extended by SL-V2-QUAL-01` |
+| `separate_billing_identity_required` | `false` |
+| `dedicated_subscription_required` | `false` |
+| `anthropic_api_key_required` | `false` |
+| `subscription_authentication_permitted` | `true` |
+| `credential_files_permitted_in_run_config_dir` | `.credentials.json` |
+| `other_host_claude_configuration_permitted` | `false` |
+| `credential_contents_in_artifacts` | `prohibited` |
+| `context_audit_required_verdict` | `CLEAN` |
+| `context_audit_target` | `the actual launch environment and the actual launch command` |
+| `attestation_flag_sufficient` | `false` |
+| `fresh_process_required` | `true` |
+| `fresh_session_required` | `true` |
+| `resume_permitted` | `false` |
+| `continuation_permitted` | `false` |
+| `session_reuse_permitted` | `false` |
+| `enterprise_managed_settings_permitted` | `false` |
+| `td_b19_general_policy_amended` | `false` |
+
+**`attestation_flag_sufficient` is `false` here too.** The runner's attestation
+flag is a gate, never evidence: what demonstrates isolation is the `CLEAN`
+verdict the context audit returns against the launch that is actually used, and
+the runner refuses on anything else before a process could be created. `TD-B19`
+stays **open** and **blocking**, and its general policy row is **unamended**.
+
+One consequence is worth stating because it cost a refusal to discover: the audit
+walks the **ancestors** of the model-visible worktree, so a run root under the
+operator's own profile makes the real `~/.claude` an ancestor and the verdict
+`CONTAMINATED`. The artifact root for these runs is therefore outside the user
+profile as well as outside both repositories. The audit was right and the first
+root was wrong.
+
 ---
 
 ## 7. The qualification decision rule — FROZEN BEFORE ANY RUN

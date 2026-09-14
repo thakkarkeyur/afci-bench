@@ -587,6 +587,78 @@ def test_a_non_clean_context_is_refused_per_repetition(purpose):
     assert gov.CONTEXT_AUDIT_UNKNOWN in {c for c, _ in problems}
 
 
+def test_the_isolation_criterion_is_adjudicated_for_this_purpose(text):
+    """§6.4. SL-PT08-04's table names ONE run purpose, so it does not reach this
+    one on its own; running under an unadjudicated attestation would be a silent
+    widening. The extension must be explicit, and must relax nothing."""
+    assert "### 6.4 The isolation criterion" in text
+    assert "SL-PT08-04, extended by SL-V2-QUAL-01" in text
+    for field, value in (
+        ("isolation_criterion", "effective model-visible execution context"),
+        ("separate_billing_identity_required", "false"),
+        ("anthropic_api_key_required", "false"),
+        ("other_host_claude_configuration_permitted", "false"),
+        ("credential_contents_in_artifacts", "prohibited"),
+        ("context_audit_required_verdict", "CLEAN"),
+        # The load-bearing one: an attestation flag is a gate, never evidence.
+        ("attestation_flag_sufficient", "false"),
+        ("fresh_process_required", "true"),
+        ("fresh_session_required", "true"),
+        ("resume_permitted", "false"),
+        ("session_reuse_permitted", "false"),
+        ("enterprise_managed_settings_permitted", "false"),
+        ("td_b19_general_policy_amended", "false"),
+    ):
+        assert f"| `{field}` | `{value}` |" in text, f"{field} must be pinned {value}"
+
+
+def test_the_isolation_extension_matches_the_record_it_extends():
+    """Every field the extension restates must carry the SAME value SL-PT08-04
+    pinned. An 'extension' that quietly changed one would be a relaxation."""
+    import re as _re
+
+    source = (REPO / "docs" / "v2" / "PT08_DIAGNOSTIC_ISOLATION_CLARIFICATION.md").read_text(
+        encoding="utf-8"
+    )
+    target = RECORD.read_text(encoding="utf-8")
+
+    def rows(blob):
+        return {
+            m.group(1): m.group(2)
+            for m in _re.finditer(r"^\|\s*`(\w+)`\s*\|\s*`([^`]*)`\s*\|\s*$", blob, _re.M)
+        }
+
+    # Fields that NAME the record rather than constrain the run. These must
+    # differ — an extension that reported PT08's purpose would be misfiled — so
+    # they are excluded by name rather than by silently skipping mismatches.
+    identity = {
+        "run_purpose",
+        "decision_id",
+        "diagnostic_freeze_authority",
+        "isolation_criterion_authority",
+        "diagnostic_freeze_task",
+        "diagnostic_freeze_task_sha256",
+        "priority_b_state",
+    }
+    original, extended = rows(source), rows(target)
+    for field in identity & set(original) & set(extended):
+        if field in {"run_purpose", "decision_id", "diagnostic_freeze_authority"}:
+            assert original[field] != extended[field], (
+                f"{field} must identify THIS decision, not the one it extends"
+            )
+    shared = (set(original) & set(extended)) - identity
+    assert len(shared) >= 12, f"too few shared isolation fields to compare: {shared}"
+    for field in sorted(shared):
+        assert original[field] == extended[field], (
+            f"{field} is {extended[field]!r} here but {original[field]!r} in the "
+            "record this extends; an extension may not relax a pinned value"
+        )
+
+
+def test_td_b19_stays_open_and_unamended():
+    assert gov.decision_is_open("TD-B19")
+
+
 def test_c1_delivers_no_architecture_content(purpose):
     """A qualification probe is the unguided baseline arm, by construction."""
     gov.assert_architecture_delivery_none("C1")
