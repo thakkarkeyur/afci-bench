@@ -38,7 +38,7 @@
     "run_purpose": {
       "type": "object",
       "additionalProperties": false,
-      "description": "SL-PT08-01 section 9. The five eligibility flags are derived from the purpose and never accepted from a caller; a record whose flags disagree with the purpose is refused rather than written.",
+      "description": "SL-PT08-01 section 9, and SL-V2-QUAL-01 section 3.1 for the qualification purpose. The five eligibility flags are derived from the purpose and never accepted from a caller; a record whose flags disagree with the purpose is refused rather than written. The name enum is a CLOSED list of the governed non-confirmatory run purposes: a record naming an unregistered purpose is invalid, and adding a purpose to it is a Study-Lead decision rather than a schema edit.",
       "required": [
         "name",
         "decision_id",
@@ -50,7 +50,7 @@
         "enters_power_estimation"
       ],
       "properties": {
-        "name": { "type": "string", "enum": ["PT08_DIFFICULTY_DIAGNOSTIC"] },
+        "name": { "type": "string", "enum": ["PT08_DIFFICULTY_DIAGNOSTIC", "INSTRUMENT_QUALIFICATION_DIAGNOSTIC"] },
         "decision_id": { "type": "string" },
         "confirmatory": { "type": "boolean", "enum": [false] },
         "confirmatory_eligible": { "type": "boolean", "enum": [false] },
