@@ -682,3 +682,64 @@ def test_the_sterile_environment_is_built_by_allowlist(tmp_path):
     assert "ANTHROPIC_API_KEY" not in sterile.env
     built = ca.build_allowlisted_env({"PATH": "p", "CLAUDE_CODE_SESSION_ID": "s", "FOO": "f"})
     assert built == {"PATH": "p"}
+
+
+# --------------------------------------------------------------------------- #
+# The prompt must survive delivery, whatever the host locale is
+# --------------------------------------------------------------------------- #
+def test_the_launcher_delivers_a_non_ascii_prompt_verbatim(tmp_path, monkeypatch):
+    """Regression: the task body is delivered as UTF-8, not as the host locale.
+
+    ``subprocess.run(..., text=True)`` with no explicit encoding uses the process
+    locale. On a Windows host that is cp1252, so a task body containing an arrow,
+    an en dash or a curly quote raised UnicodeEncodeError while WRITING THE
+    PROMPT: the model received an empty stdin, emitted no ``system.init``, and the
+    repetition was invalid for a reason that had nothing to do with the model.
+
+    The public task bodies genuinely contain such characters, so this is not a
+    hypothetical. The check is on the bytes the child actually receives.
+    """
+    import json
+    import subprocess
+    import sys
+
+    prompt = tmp_path / "task_prompt.md"
+    # Every character here appears in at least one approved public task body.
+    body = "Return the accepted items → report the rest — “exactly”.\n"
+    prompt.write_text(body, encoding="utf-8")
+
+    echo = tmp_path / "echo_stdin.py"
+    echo.write_text(
+        "import sys\n"
+        "data = sys.stdin.buffer.read()\n"
+        "sys.stdout.buffer.write(data)\n",
+        encoding="utf-8",
+    )
+
+    # Drive the same call shape the launcher uses, with the same pinned encoding.
+    proc = subprocess.run(
+        [sys.executable, str(echo)],
+        input=prompt.read_text(encoding="utf-8"),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        shell=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout == body, (
+        "the prompt did not survive delivery; the child received "
+        f"{proc.stdout!r} instead of {body!r}"
+    )
+
+    # And the launcher itself must PIN the encoding on the call that delivers the
+    # prompt, rather than inheriting whatever the host locale happens to be.
+    source = (HARNESS / "model_adapter.py").read_text(encoding="utf-8")
+    call = source.split("input=stdin_text,", 1)
+    assert len(call) == 2, "the launcher no longer delivers the prompt over stdin"
+    # Everything up to the close of that subprocess.run call.
+    tail = call[1].split("shell=False", 1)[0]
+    assert 'encoding="utf-8"' in tail, (
+        "the prompt-delivering subprocess.run does not pin encoding='utf-8'; it "
+        "would encode the task body with the host locale"
+    )

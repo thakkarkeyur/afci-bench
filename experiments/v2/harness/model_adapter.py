@@ -471,6 +471,19 @@ class RealClaudeCodeLauncher:
                 input=stdin_text,
                 capture_output=True,
                 text=True,
+                # PINNED, not inherited. ``text=True`` alone encodes stdin with
+                # the process locale, which on a Windows host is cp1252: a task
+                # body containing any character outside it -- an arrow, a dash,
+                # a quotation mark -- raised UnicodeEncodeError while WRITING
+                # THE PROMPT, so the model received an empty stdin, produced no
+                # system.init and the repetition was invalid. The task bodies are
+                # UTF-8 and the runtime speaks UTF-8; the locale is not a
+                # governed input and must not decide what the model is asked.
+                # ``errors`` protects the DECODE of the runtime's own output;
+                # every Python string encodes to UTF-8, so the prompt itself can
+                # never be silently substituted.
+                encoding="utf-8",
+                errors="replace",
                 timeout=self.timeout_seconds,
                 shell=False,
             )
