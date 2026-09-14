@@ -87,9 +87,24 @@ def test_case_02_a_wrong_run_purpose_fails_closed(tmp_path, wrong):
 
 
 def test_case_02b_no_confirmatory_purpose_is_registered_at_all():
-    """Nothing confirmatory is authorised, so nothing confirmatory is expressible."""
-    assert list(gov.RUN_PURPOSES) == [PURPOSE]
-    assert all(not p.confirmatory for p in gov.RUN_PURPOSES.values())
+    """Nothing confirmatory is authorised, so nothing confirmatory is expressible.
+
+    The claim is about the CHARACTER of what is registered, not about how many
+    purposes exist: a second non-confirmatory diagnostic purpose is authorised
+    (`INSTRUMENT_QUALIFICATION_DIAGNOSTIC`, `SL-V2-QUAL-01`) and registering it
+    must not be able to smuggle a confirmatory one in beside it. Every registered
+    purpose is therefore checked, on every axis that would make it a result.
+    """
+    assert PURPOSE in gov.RUN_PURPOSES
+    for name, purpose in gov.RUN_PURPOSES.items():
+        assert not purpose.confirmatory, f"{name} is registered as confirmatory"
+        assert not purpose.result_bearing, f"{name} is registered as result-bearing"
+        assert purpose.firewall_flags() == {f: False for f in gov.FIREWALL_FIELDS}, (
+            f"{name} does not pin every eligibility flag false"
+        )
+        assert gov.artifact_schema_problems(purpose) == [], (
+            f"{name}'s artifact schema does not enforce the quarantine"
+        )
 
 
 # --------------------------------------------------------------------------- #

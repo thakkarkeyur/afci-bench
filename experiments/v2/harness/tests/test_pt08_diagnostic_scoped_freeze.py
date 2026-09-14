@@ -224,13 +224,69 @@ def test_9_another_run_purpose_is_rejected():
     }
 
 
-def test_9b_only_one_purpose_carries_an_authority_at_all():
-    granted = [
-        p.name for p in gov.RUN_PURPOSES.values() if p.diagnostic_freeze_authority
-    ]
-    assert granted == [PURPOSE_NAME], (
-        "SL-PT08-06 is not precedent; a second exception needs its own decision"
+def test_9b_no_purpose_inherits_this_exception_as_precedent():
+    """`SL-PT08-06` §3: it creates NO precedent for a second exception.
+
+    A second exception has since been adjudicated (`SL-V2-QUAL-01`, for
+    `INSTRUMENT_QUALIFICATION_DIAGNOSTIC` over `PT09`/`PT10`), so the original
+    form of this test — "exactly one purpose carries an authority" — would now
+    fail for a reason that is not the risk it guards. The risk it guards is
+    **inheritance**: a purpose acquiring a scoped freeze WITHOUT its own
+    Study-Lead decision, or by reading `SL-PT08-06`'s record.
+
+    That is what is asserted here instead, and it is strictly stronger than a
+    count: every authority is DISTINCT, every authorised purpose names its own
+    RECORD, and no purpose may reach `SL-PT08-06`'s tables but `PT08`'s own.
+    """
+    granted = {
+        p.name: p for p in gov.RUN_PURPOSES.values() if p.diagnostic_freeze_authority
+    }
+    assert PURPOSE_NAME in granted
+
+    authorities = [p.diagnostic_freeze_authority for p in granted.values()]
+    assert len(set(authorities)) == len(authorities), (
+        f"two purposes share one freeze authority: {authorities}; SL-PT08-06 is "
+        "not precedent and an exception is never inherited"
     )
+    records = [p.diagnostic_freeze_record for p in granted.values()]
+    assert len(set(records)) == len(records), (
+        f"two purposes read one freeze record: {records}"
+    )
+
+    pt08 = granted[PURPOSE_NAME]
+    assert pt08.diagnostic_freeze_authority == AUTHORITY
+    assert pt08.permitted_tasks == (TASK,)
+    assert set(pt08.diagnostic_freeze_table_headings) == {TASK}
+
+    # No other authorised purpose may resolve a freeze for PT08, and PT08's
+    # purpose may resolve one for no other task.
+    for name, purpose in granted.items():
+        if name == PURPOSE_NAME:
+            continue
+        assert gov.diagnostic_freeze_for(purpose, TASK, CONDITION) is None
+        for other_task in purpose.permitted_tasks:
+            assert gov.diagnostic_freeze_for(pt08, other_task, CONDITION) is None
+
+
+def test_9c_every_purpose_that_carries_an_authority_names_its_own_decision():
+    """A purpose with no authority of its own can never acquire one by default."""
+    for purpose in gov.RUN_PURPOSES.values():
+        if purpose.diagnostic_freeze_authority is None:
+            assert purpose.diagnostic_freeze_record is None
+            assert purpose.diagnostic_freeze_table_headings == {}
+            continue
+        record = purpose.freeze_record_path()
+        assert record is not None and record.is_file(), (
+            f"{purpose.name} names a freeze record that does not exist: {record}"
+        )
+        for task_id in purpose.permitted_tasks:
+            heading = purpose.freeze_table_heading(task_id)
+            assert heading, f"{purpose.name}/{task_id} has no applicability section"
+            table = gov.governed_diagnostic_freeze(record, heading)
+            assert table.get("diagnostic_freeze_authority") == (
+                purpose.diagnostic_freeze_authority
+            )
+            assert table.get("diagnostic_freeze_task") == task_id
 
 
 # --------------------------------------------------------------------------- #

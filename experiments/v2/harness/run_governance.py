@@ -70,6 +70,13 @@ SUBSTRATE_IDENTITY_DOC = DOCS_V2 / "SOURCE_SUBSTRATE_IDENTITY.md"
 #: its applicability table from this record rather than trusting a constant.
 DIAGNOSTIC_FREEZE_RECORD = DOCS_V2 / "PT08_DIAGNOSTIC_SCOPED_FREEZE_DECISION.md"
 
+#: ``SL-V2-QUAL-01``: the pre-data natural-path escape-hatch policy, the
+#: ``INSTRUMENT_QUALIFICATION_DIAGNOSTIC`` run purpose, and the PT09/PT10
+#: diagnostic-scoped freezes. One record, section-scoped tables: the parsers below
+#: are pointed at a named section rather than at the document, so a second task's
+#: table can never silently redefine the first's.
+QUALIFICATION_DECISION_RECORD = DOCS_V2 / "V2_QUALIFICATION_DIAGNOSTIC_DECISION.md"
+
 #: The harness-local execution-record schema. ``SL-PT08-02`` makes this the
 #: authoritative schema for ``PT08_DIFFICULTY_DIAGNOSTIC`` and for that purpose
 #: only, because it already mechanically requires every quarantine field.
@@ -240,6 +247,19 @@ NON_RESULT_FIELDS: Tuple[str, ...] = ("is_result", "scored")
 #: Everything a non-result execution-record schema must pin to ``false``.
 QUARANTINE_FIELDS: Tuple[str, ...] = FIREWALL_FIELDS + NON_RESULT_FIELDS
 
+#: The section of a freeze record whose applicability table the runner
+#: re-derives, for the single-task ``SL-PT08-06`` record. A record carries other
+#: two-column tables for human readers, and parsing the whole file would let a
+#: prose table silently redefine a governed value, so every parse is scoped to a
+#: named section rather than to the document.
+#:
+#: Defined here, above :data:`RUN_PURPOSES`, because each purpose names the
+#: sections it is governed by and the dict is evaluated at import.
+DIAGNOSTIC_FREEZE_TABLE_HEADING = "### 2.1 The applicability table"
+
+#: The section that pins the frozen execution configuration (SL-PT08-06 §5).
+DIAGNOSTIC_FREEZE_CONFIG_HEADING = "## 5. The frozen execution configuration"
+
 
 @dataclass(frozen=True)
 class RunPurpose:
@@ -274,11 +294,82 @@ class RunPurpose:
     #: never acquire a scoped freeze, and the suite-wide gate governs it in full.
     diagnostic_freeze_authority: Optional[str] = None
 
+    # ------------------------------------------------------------------ #
+    # Where THIS purpose's governance is written down.
+    #
+    # ``SL-PT08-06`` was a single-task exception, so the runner could name its
+    # record and its table headings as module constants. A second authorised
+    # purpose makes that a bug rather than a simplification: two purposes would
+    # read one another's tables. Every authority location is therefore carried by
+    # the purpose, and every default below reproduces the PT08 behaviour exactly,
+    # so the pre-existing purpose is unchanged by this generalisation.
+    #
+    # A ``None`` heading means "parse the whole document", which is what the PT08
+    # records need because each of them carries exactly one governed table set. A
+    # record that carries a table set PER TASK names its sections instead, so a
+    # later section can never overwrite an earlier one's values.
+    # ------------------------------------------------------------------ #
+    #: The record carrying the run-purpose firewall table (SL-PT08-01 §9 and its
+    #: equivalents), repository-relative, and the section to scope the parse to.
+    firewall_record: str = "docs/v2/PT08_C1_DIFFICULTY_DIAGNOSTIC_DECISION.md"
+    firewall_heading: Optional[str] = None
+    #: The record carrying the repetition / fresh-execution table, and its section.
+    execution_decisions_record: str = (
+        "docs/v2/PT08_DIAGNOSTIC_EXECUTION_DECISIONS.md"
+    )
+    execution_decisions_heading: Optional[str] = None
+    #: The values that table must carry. PT08's are the module default.
+    repetition_pins: Optional[Tuple[Tuple[str, object], ...]] = None
+    #: The record carrying the diagnostic-scoped freeze, and the PER-TASK section
+    #: headings for its applicability table and its frozen-configuration table.
+    #: A task absent from the mapping has no scoped freeze and fails closed.
+    diagnostic_freeze_record: Optional[str] = None
+    diagnostic_freeze_table_headings: Dict[str, str] = field(default_factory=dict)
+    diagnostic_freeze_config_headings: Dict[str, str] = field(default_factory=dict)
+    #: The suite-wide facts the freeze record must report as NOT granted. Carried
+    #: per purpose because they are *facts about the study at the time of the
+    #: decision*, not constants: ``priority_b_state`` was truthfully ``not
+    #: started`` for SL-PT08-06 and is truthfully ``started; not complete`` now.
+    #: Pinning a stale value here would force a later record to misreport it.
+    diagnostic_freeze_global_pins: Optional[Tuple[Tuple[str, object], ...]] = None
+    #: The private architecture-corpus script this purpose's tasks are validated
+    #: by, private-root-relative. ``None`` keeps the per-task ``<task>_corpus.py``
+    #: convention. Never a guess: an unresolvable script is reported as absent.
+    private_corpus_script: Optional[str] = None
+
     def firewall_flags(self) -> Dict[str, bool]:
         return dict(self.firewall)
 
     def artifact_schema_path(self, repo: Path = REPO) -> Path:
         return Path(repo) / self.artifact_schema
+
+    def firewall_record_path(self, repo: Path = REPO) -> Path:
+        return Path(repo) / self.firewall_record
+
+    def execution_decisions_record_path(self, repo: Path = REPO) -> Path:
+        return Path(repo) / self.execution_decisions_record
+
+    def freeze_record_path(self, repo: Path = REPO) -> Optional[Path]:
+        return Path(repo) / self.diagnostic_freeze_record if self.diagnostic_freeze_record else None
+
+    def freeze_table_heading(self, task_id: str) -> Optional[str]:
+        return self.diagnostic_freeze_table_headings.get(task_id)
+
+    def freeze_config_heading(self, task_id: str) -> Optional[str]:
+        return self.diagnostic_freeze_config_headings.get(task_id)
+
+    def global_pins(self) -> Tuple[Tuple[str, object], ...]:
+        return (
+            DIAGNOSTIC_FREEZE_GLOBAL_PINS
+            if self.diagnostic_freeze_global_pins is None
+            else self.diagnostic_freeze_global_pins
+        )
+
+    def pins_for_repetitions(self) -> Tuple[Tuple[str, object], ...]:
+        return REPETITION_PINS if self.repetition_pins is None else self.repetition_pins
+
+    def corpus_script_for(self, task_id: str) -> str:
+        return self.private_corpus_script or f"scripts/{task_id.lower()}_corpus.py"
 
 
 #: The ONLY run purpose this repository currently authorises. No confirmatory
@@ -305,11 +396,87 @@ RUN_PURPOSES: Dict[str, RunPurpose] = {
         # SL-PT08-03. Three repeated difficulty probes of one instrument under
         # one condition. No power calculation justifies it and none is implied.
         repetitions=3,
-        # SL-PT08-06. The one purpose that carries a diagnostic-scoped freeze.
-        # It narrows the APPLICABILITY of the suite-wide G1 freeze prerequisite
-        # for this triple and passes no gate; every other purpose leaves this
-        # None and stays governed by the suite-wide rule in full.
+        # SL-PT08-06. A purpose that carries a diagnostic-scoped freeze. It
+        # narrows the APPLICABILITY of the suite-wide G1 freeze prerequisite for
+        # this triple and passes no gate; a purpose that leaves this None stays
+        # governed by the suite-wide rule in full.
         diagnostic_freeze_authority="SL-PT08-06",
+        diagnostic_freeze_record="docs/v2/PT08_DIAGNOSTIC_SCOPED_FREEZE_DECISION.md",
+        diagnostic_freeze_table_headings={"PT08": DIAGNOSTIC_FREEZE_TABLE_HEADING},
+        diagnostic_freeze_config_headings={"PT08": DIAGNOSTIC_FREEZE_CONFIG_HEADING},
+    ),
+    "INSTRUMENT_QUALIFICATION_DIAGNOSTIC": RunPurpose(
+        name="INSTRUMENT_QUALIFICATION_DIAGNOSTIC",
+        decision_id="SL-V2-QUAL-01",
+        description=(
+            "the pre-Stage-0, PT09/PT10-only, C1-only, NON-CONFIRMATORY instrument "
+            "qualification diagnostic authorised by SL-V2-QUAL-01: three repeated "
+            "C1 probes per instrument, to determine whether each candidate's "
+            "architecture opportunity exerts empirical pressure on an unguided "
+            "model. It is not a result, not scored for confirmatory E1, not "
+            "treatment-effect eligible and not power eligible"
+        ),
+        confirmatory=False,
+        # TWO instruments, deliberately. They are separate instruments qualified
+        # separately under one authority; nothing here pools or compares them.
+        permitted_tasks=("PT09", "PT10"),
+        permitted_conditions=("C1",),
+        firewall=tuple((f, False) for f in FIREWALL_FIELDS),
+        # Same reasoning as PT08_DIFFICULTY_DIAGNOSTIC: the harness record schema
+        # already requires every quarantine field, and the canonical
+        # result-manifest schema is untouched with its gap still UNRESOLVED.
+        artifact_schema="experiments/v2/harness/run_record.schema.json",
+        result_bearing=False,
+        # THREE observations per instrument, frozen before any run. No power
+        # calculation justifies the count and none is implied.
+        repetitions=3,
+        schema_decision_id="SL-V2-QUAL-01",
+        repetition_decision_id="SL-V2-QUAL-01",
+        diagnostic_freeze_authority="SL-V2-QUAL-01",
+        # One record, section-scoped. Every table this purpose is governed by
+        # lives in it, and each PER-TASK table names its own section so PT10's
+        # values can never be read as PT09's.
+        firewall_record="docs/v2/V2_QUALIFICATION_DIAGNOSTIC_DECISION.md",
+        firewall_heading="### 3.1 The run-purpose firewall table",
+        execution_decisions_record="docs/v2/V2_QUALIFICATION_DIAGNOSTIC_DECISION.md",
+        execution_decisions_heading="### 4.1 The repetition table",
+        repetition_pins=(
+            ("condition", "C1"),
+            ("tasks", "PT09, PT10"),
+            ("process_per_repetition", "fresh"),
+            ("session_per_repetition", "fresh"),
+            ("resume_permitted", False),
+            ("continuation_permitted", False),
+            ("session_reuse_permitted", False),
+            ("power_claim", "none"),
+            ("precision_claim", "none"),
+            ("treatment_effect_claim", "none"),
+        ),
+        diagnostic_freeze_record="docs/v2/V2_QUALIFICATION_DIAGNOSTIC_DECISION.md",
+        diagnostic_freeze_table_headings={
+            "PT09": "### 5.1 Applicability table - PT09",
+            "PT10": "### 5.2 Applicability table - PT10",
+        },
+        diagnostic_freeze_config_headings={
+            "PT09": "### 6.1 Frozen execution configuration - PT09",
+            "PT10": "### 6.2 Frozen execution configuration - PT10",
+        },
+        # priority B is no longer "not started": SL-QUAL-01 authored PT10 into it.
+        # The record must state that truthfully, so the pin states it truthfully.
+        diagnostic_freeze_global_pins=(
+            ("global_g1", False),
+            ("global_g1_passed_by_this_record", False),
+            ("suite_frozen", False),
+            ("global_manifest_frozen", False),
+            ("global_td_b32_status", "open"),
+            ("td_b12_g6_status", "open"),
+            ("td_b34_status", "open"),
+            ("priority_b_state", "started; not complete"),
+            ("td_b03_status", "open"),
+        ),
+        # PT09 and PT10 share one authored corpus module; there is no
+        # pt09_corpus.py and inventing one would be a guess, not a check.
+        private_corpus_script="scripts/qualification_corpus.py",
     ),
 }
 
@@ -373,12 +540,21 @@ def assert_firewall_consistent(purpose: RunPurpose, flags: Dict[str, object]) ->
         )
 
 
-def governed_firewall_from_record(path: Path = DIAGNOSTIC_RECORD) -> Dict[str, object]:
+def governed_firewall_from_record(
+    path: Path = DIAGNOSTIC_RECORD, heading: Optional[str] = None
+) -> Dict[str, object]:
     """Re-derive the firewall table from the governance record itself.
 
-    The runner's constants are not trusted on their own: this reads §9's table
-    out of ``PT08_C1_DIFFICULTY_DIAGNOSTIC_DECISION.md`` so a drift between the
-    code and the adjudication is a mechanical failure rather than a reading.
+    The runner's constants are not trusted on their own: this reads the table out
+    of the adjudication that authorises the purpose, so a drift between the code
+    and the adjudication is a mechanical failure rather than a reading.
+
+    ``heading`` scopes the parse to one named section. ``None`` parses the whole
+    document, which is what ``PT08_C1_DIFFICULTY_DIAGNOSTIC_DECISION.md`` needs
+    because it carries exactly one governed firewall table; a record that carries
+    several table sets must name its section so a later table cannot overwrite an
+    earlier one's values. An absent named section yields ``{}``, which every
+    caller reads as "not governed" and refuses on.
     """
     try:
         text = Path(path).read_text(encoding="utf-8")
@@ -386,6 +562,8 @@ def governed_firewall_from_record(path: Path = DIAGNOSTIC_RECORD) -> Dict[str, o
         raise RunnerRefusal(
             GOVERNANCE_RECORD_UNREADABLE, f"cannot read {path}: {exc}"
         ) from exc
+    if heading is not None:
+        text = _section(text, heading)
     values: Dict[str, object] = {}
     for row in re.finditer(r"^\|(.+?)\|(.+?)\|\s*$", text, re.MULTILINE):
         key = row.group(1).strip().strip("`").strip()
@@ -398,13 +576,15 @@ def governed_firewall_from_record(path: Path = DIAGNOSTIC_RECORD) -> Dict[str, o
 
 
 def governed_execution_decisions(
-    path: Path = EXECUTION_DECISIONS_RECORD,
+    path: Path = EXECUTION_DECISIONS_RECORD, heading: Optional[str] = None
 ) -> Dict[str, object]:
-    """Re-derive ``SL-PT08-02``/``SL-PT08-03``'s tables from the record itself.
+    """Re-derive the repetition / fresh-execution table from the record itself.
 
     Same discipline as :func:`governed_firewall_from_record`: the runner's
     constants are not trusted on their own, so a drift between the code and the
-    adjudication is a mechanical failure rather than a reading.
+    adjudication is a mechanical failure rather than a reading. ``heading`` scopes
+    the parse to one named section, for the same reason and with the same
+    fail-closed empty result.
     """
     try:
         text = Path(path).read_text(encoding="utf-8")
@@ -412,6 +592,8 @@ def governed_execution_decisions(
         raise RunnerRefusal(
             GOVERNANCE_RECORD_UNREADABLE, f"cannot read {path}: {exc}"
         ) from exc
+    if heading is not None:
+        text = _section(text, heading)
     values: Dict[str, object] = {}
     for row in re.finditer(r"^\|(.+?)\|(.+?)\|\s*$", text, re.MULTILINE):
         key = row.group(1).strip().strip("`").strip()
@@ -746,14 +928,9 @@ def decision_is_open(decision_id: str, path: Path = OPEN_DECISIONS) -> bool:
 # --------------------------------------------------------------------------- #
 # SL-PT08-06 — the diagnostic-scoped freeze exception
 # --------------------------------------------------------------------------- #
-#: The one section of the freeze record whose table the runner re-derives. The
-#: record carries other two-column tables for human readers, and parsing the
-#: whole file would let a prose table silently redefine a governed value, so the
-#: parse is scoped to the named section rather than to the document.
-DIAGNOSTIC_FREEZE_TABLE_HEADING = "### 2.1 The applicability table"
-
-#: The section that pins the frozen execution configuration (SL-PT08-06 §5).
-DIAGNOSTIC_FREEZE_CONFIG_HEADING = "## 5. The frozen execution configuration"
+# DIAGNOSTIC_FREEZE_TABLE_HEADING and DIAGNOSTIC_FREEZE_CONFIG_HEADING are
+# defined above RUN_PURPOSES, because each purpose names the sections it is
+# governed by and that dict is evaluated at import time.
 
 #: Values the record must carry for the scoped freeze to exist at all. Kept as
 #: data so a relaxation in the record is a mechanical failure, never a reading.
@@ -868,13 +1045,18 @@ def _table_values(section: str) -> Dict[str, object]:
 
 def governed_diagnostic_freeze(
     path: Path = DIAGNOSTIC_FREEZE_RECORD,
+    heading: str = DIAGNOSTIC_FREEZE_TABLE_HEADING,
 ) -> Dict[str, object]:
-    """Re-derive ``SL-PT08-06``'s applicability table from the record itself.
+    """Re-derive a scoped freeze's applicability table from the record itself.
 
     Same discipline as :func:`governed_firewall_from_record`: the runner's
     constants are not trusted on their own, so a drift between the code and the
     adjudication is a mechanical failure rather than a reading. An unreadable
-    record is a refusal, never an empty permission.
+    record is a refusal, never an empty permission; an absent SECTION yields
+    ``{}``, which callers read as "no scoped freeze" and refuse on.
+
+    ``heading`` is the per-task section, so a record governing two instruments
+    hands each of them its own table and neither can be read as the other's.
     """
     try:
         text = Path(path).read_text(encoding="utf-8")
@@ -882,20 +1064,21 @@ def governed_diagnostic_freeze(
         raise RunnerRefusal(
             GOVERNANCE_RECORD_UNREADABLE, f"cannot read {path}: {exc}"
         ) from exc
-    return _table_values(_section(text, DIAGNOSTIC_FREEZE_TABLE_HEADING))
+    return _table_values(_section(text, heading))
 
 
 def governed_diagnostic_freeze_configuration(
     path: Path = DIAGNOSTIC_FREEZE_RECORD,
+    heading: str = DIAGNOSTIC_FREEZE_CONFIG_HEADING,
 ) -> Dict[str, object]:
-    """``SL-PT08-06`` §5's frozen execution configuration, from the record."""
+    """A scoped freeze's frozen execution configuration, from the record."""
     try:
         text = Path(path).read_text(encoding="utf-8")
     except OSError as exc:
         raise RunnerRefusal(
             GOVERNANCE_RECORD_UNREADABLE, f"cannot read {path}: {exc}"
         ) from exc
-    return _table_values(_section(text, DIAGNOSTIC_FREEZE_CONFIG_HEADING))
+    return _table_values(_section(text, heading))
 
 
 def diagnostic_freeze_problems(
@@ -938,12 +1121,22 @@ def diagnostic_freeze_problems(
             f"under {purpose.name}; got {task_id!r}/{condition!r}",
         )]
 
-    governed = governed_diagnostic_freeze(record or DIAGNOSTIC_FREEZE_RECORD)
+    heading = purpose.freeze_table_heading(task_id)
+    if heading is None:
+        return [(
+            DIAGNOSTIC_FREEZE_SCOPE_EXCEEDED,
+            f"{authority} names no applicability section for {task_id} under "
+            f"{purpose.name}; a scoped freeze is never assumed for a task the "
+            "authority does not table",
+        )]
+    record_path = record or purpose.freeze_record_path() or DIAGNOSTIC_FREEZE_RECORD
+    governed = governed_diagnostic_freeze(record_path, heading)
     if not governed:
         return [(
             DIAGNOSTIC_FREEZE_MISSING,
-            f"{authority}'s applicability table is absent or unparseable; a "
-            "scoped freeze is never assumed",
+            f"{authority}'s applicability table for {task_id} "
+            f"({heading!r} in {Path(record_path).name}) is absent or unparseable; "
+            "a scoped freeze is never assumed",
         )]
 
     # ---- authority ------------------------------------------------------- #
@@ -967,7 +1160,7 @@ def diagnostic_freeze_problems(
             ))
 
     # ---- the suite-wide facts the record must NOT claim ------------------ #
-    for key, expected in DIAGNOSTIC_FREEZE_GLOBAL_PINS:
+    for key, expected in purpose.global_pins():
         if governed.get(key) != expected:
             problems.append((
                 SUITE_WIDE_G1_MUST_NOT_BE_CLAIMED,
@@ -1059,7 +1252,10 @@ def diagnostic_freeze_for(
     if diagnostic_freeze_problems(purpose, task_id, condition, **kwargs):
         return None
     governed = governed_diagnostic_freeze(
-        kwargs.get("record") or DIAGNOSTIC_FREEZE_RECORD
+        kwargs.get("record")
+        or purpose.freeze_record_path()
+        or DIAGNOSTIC_FREEZE_RECORD,
+        purpose.freeze_table_heading(task_id) or DIAGNOSTIC_FREEZE_TABLE_HEADING,
     )
     return DiagnosticFreeze(
         authority=str(governed["diagnostic_freeze_authority"]),
@@ -1373,11 +1569,21 @@ def private_sync_prefreeze_state(
 
 
 def private_architecture_corpus_available(
-    task_id: str, private_root: Optional[Path] = None
+    task_id: str,
+    private_root: Optional[Path] = None,
+    corpus_script: Optional[str] = None,
 ) -> Tuple[bool, str]:
-    """Read-only availability check for the task-specific architecture corpus."""
+    """Read-only availability check for the task's architecture corpus.
+
+    ``corpus_script`` is the private-root-relative module the authorising purpose
+    NAMES for this task. It defaults to the per-task ``<task>_corpus.py``
+    convention the earlier packages use. It is never guessed: two candidates
+    authored into one corpus module say so through their purpose, and a purpose
+    that names a module which is not present is reported as not available rather
+    than searched for.
+    """
     root = Path(private_root) if private_root else default_private_root()
-    corpus = root / "scripts" / f"{task_id.lower()}_corpus.py"
+    corpus = root / (corpus_script or f"scripts/{task_id.lower()}_corpus.py")
     spec = root / "spec" / "pilot_spec.py"
     if not corpus.is_file() or not spec.is_file():
         return False, f"the {task_id} architecture corpus is not available under {root}"
@@ -1604,7 +1810,9 @@ REPETITION_PINS: Tuple[Tuple[str, object], ...] = (
 )
 
 
-def _repetition_decision_probe(purpose: RunPurpose) -> Prerequisite:
+def _repetition_decision_probe(
+    purpose: RunPurpose, repo: Path = REPO
+) -> Prerequisite:
     """Check the runner's repetition constant against the governance record.
 
     Reports BLOCKED on any disagreement rather than preferring either side: a
@@ -1612,10 +1820,22 @@ def _repetition_decision_probe(purpose: RunPurpose) -> Prerequisite:
     sample size at all.
     """
     try:
-        governed = governed_execution_decisions()
+        governed = governed_execution_decisions(
+            purpose.execution_decisions_record_path(repo),
+            purpose.execution_decisions_heading,
+        )
     except RunnerRefusal as exc:
         return Prerequisite(
             "diagnostic_repetition_decision", BLOCKED, exc.message, exc.code
+        )
+    if not governed:
+        return Prerequisite(
+            "diagnostic_repetition_decision",
+            BLOCKED,
+            f"{purpose.repetition_decision_id}'s repetition table is absent or "
+            f"unparseable in {purpose.execution_decisions_record}; a governed "
+            "sample size is never assumed",
+            DIAGNOSTIC_REPETITION_DECISION_INCONSISTENT,
         )
 
     problems: List[str] = []
@@ -1625,7 +1845,7 @@ def _repetition_decision_probe(purpose: RunPurpose) -> Prerequisite:
             f"the record pins diagnostic_repetitions={recorded!r} but the runner "
             f"carries {purpose.repetitions!r}"
         )
-    for key, expected in REPETITION_PINS:
+    for key, expected in purpose.pins_for_repetitions():
         if governed.get(key) != expected:
             problems.append(f"{key} is {governed.get(key)!r}, not {expected!r}")
     if governed.get("condition") not in purpose.permitted_conditions:
@@ -1641,11 +1861,12 @@ def _repetition_decision_probe(purpose: RunPurpose) -> Prerequisite:
             "; ".join(problems[:6]),
             DIAGNOSTIC_REPETITION_DECISION_INCONSISTENT,
         )
+    subject = governed.get("task") or governed.get("tasks")
     return Prerequisite(
         "diagnostic_repetition_decision",
         PASS,
         f"{purpose.repetition_decision_id} pins {purpose.repetitions} independent "
-        f"repetitions of {governed.get('task')} under {governed.get('condition')} "
+        f"repetitions of {subject} under {governed.get('condition')} "
         "only, each on a fresh process and a fresh session with no resume, no "
         "continuation and no session reuse. No power, precision or "
         "treatment-effect claim attaches to the count, and no power calculation "
@@ -1702,8 +1923,10 @@ def check_readiness(
 
     items.append(_worktree_preparation_probe(task_id, condition))
 
-    governed = governed_firewall_from_record()
-    firewall_ok = governed.get("run_purpose", "").upper() == purpose.name and all(
+    governed = governed_firewall_from_record(
+        purpose.firewall_record_path(repo), purpose.firewall_heading
+    )
+    firewall_ok = str(governed.get("run_purpose", "")).upper() == purpose.name and all(
         governed.get(f) is False for f in FIREWALL_FIELDS
     )
     items.append(
@@ -1711,12 +1934,16 @@ def check_readiness(
             "diagnostic_governance",
             PASS if firewall_ok else BLOCKED,
             (
-                f"{purpose.decision_id} authorises {purpose.description}; the §9 "
-                f"firewall table pins run_purpose={purpose.name} with all five "
-                "eligibility flags false, and the runner re-derives them from it"
+                f"{purpose.decision_id} authorises {purpose.description}; the "
+                f"firewall table in {purpose.firewall_record} pins "
+                f"run_purpose={purpose.name} with all five eligibility flags "
+                "false, and the runner re-derives them from it"
             )
             if firewall_ok
-            else f"the §9 firewall table no longer matches the runner: {governed}",
+            else (
+                f"the firewall table in {purpose.firewall_record} no longer "
+                f"matches the runner: {governed}"
+            ),
             None if firewall_ok else DIAGNOSTIC_FIREWALL_INCONSISTENT,
         )
     )
@@ -1734,7 +1961,7 @@ def check_readiness(
     )
 
     corpus_ok, corpus_detail = private_architecture_corpus_available(
-        task_id, private_root
+        task_id, private_root, purpose.corpus_script_for(task_id)
     )
     items.append(
         Prerequisite(
@@ -1755,9 +1982,10 @@ def check_readiness(
             f"MODEL_REGISTRY.yml primary_model is {selected!r}"
             if selected
             else (
-                f"SL-PT08-05 pins {pinned!r} for {purpose.name} only; the global "
-                "primary_model stays null and TD-B03 stays open, so this confers "
-                "no confirmatory selection"
+                f"MODEL_REGISTRY.yml pins {pinned!r} for {purpose.name} only, "
+                f"under {purpose.decision_id}; the global primary_model stays "
+                "null and TD-B03 stays open, so this confers no confirmatory "
+                "selection"
             )
             if pinned
             else "MODEL_REGISTRY.yml records primary_model: null; selection is a "
@@ -1881,9 +2109,9 @@ def check_readiness(
             sync_detail
             if synced
             else (
-                "the now-closed public accounting synchronization (PT08-PUB-P2-2) "
-                "still requires a separate private propagation before PT08's "
-                "freeze, and the private record does not yet record it as "
+                "a public accounting synchronization must be propagated into the "
+                f"private package before {task_id} may be frozen, scoped or "
+                "otherwise, and the private record does not yet record it as "
                 f"satisfied: {sync_detail}. The private repository is read-only "
                 "here and this runner propagates nothing"
             ),
@@ -2000,8 +2228,8 @@ def check_readiness(
             )
         )
 
-    # ---- SL-PT08-03: the repetition count, re-derived from the record ------ #
-    items.append(_repetition_decision_probe(purpose))
+    # ---- the repetition count, re-derived from the authorising record ------ #
+    items.append(_repetition_decision_probe(purpose, repo))
 
     return ReadinessReport(
         purpose=purpose.name,

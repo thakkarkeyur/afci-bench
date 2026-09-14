@@ -86,6 +86,47 @@ diagnostic_model_selection:
     confers_no_confirmatory_eligibility: true
     td_b03_status: "open; unchanged by this pin"
 
+  # SL-V2-QUAL-01 - the PT09/PT10 C1 instrument-qualification diagnostic REUSES
+  # the configuration SL-PT08-05 already live-validated, rather than selecting a
+  # fresh one. The Q1 readback and the Q8 invalid-model-id rejection below are
+  # the SAME validation events SL-PT08-05 recorded, on the same machine, the same
+  # runtime and the same exact model id; they are CITED here so the runner can
+  # re-derive them for this purpose, and they are NOT re-performed and NOT a
+  # second, independent validation. The exact model readback is still checked on
+  # every individual observation, which is where it actually protects anything.
+  #
+  # Like the block above, this confers NO primary selection: TD-B03 stays open
+  # and primary_model stays null.
+  INSTRUMENT_QUALIFICATION_DIAGNOSTIC:
+    decision_id: "SL-V2-QUAL-01"
+    primary_model_family: "Claude Sonnet"
+    requested_selector: "sonnet"                # what Q1 asked for
+    exact_model_id: "claude-sonnet-5"           # what the runtime resolved
+    selector_used_for_repetitions: "claude-sonnet-5"   # the exact id, never the alias
+    q1_readback: "PASS"
+    q1_readback_sources: ["system.init.model", "modelUsage"]
+    q1_unambiguous: true
+    q1_validation_provenance: "SL-PT08-05; cited, not re-performed"
+    q8_invalid_model_id_rejection: "PASS"
+    q8_invalid_model_id: "claude-nonexistent-model-9x7q-not-a-real-id"
+    q8_evidence: "exit status 1; modelUsage empty; no other model reported; assistant turn synthetic"
+    q8_validation_provenance: "SL-PT08-05; cited, not re-performed"
+    sterile_context_validation: "PASS"
+    api_key_used: false
+    authentication: "claude-code-subscription-oauth (apiKeySource=none)"
+    fallback_model: "none; --fallback-model is refused by the launcher"
+    permission_mode: "acceptEdits"
+    tools: ["Read", "Edit", "Write", "Glob", "Grep", "Bash"]
+    repetitions: 3                              # PER INSTRUMENT; six observations in total
+    tasks: ["PT09", "PT10"]
+    condition: "C1"
+    validated_claude_code_cli_version: "2.1.229"
+    governed_toolchain_cli_version: "2.1.209"
+    cli_version_discrepancy: "UNRESOLVED - the governed toolchain value predates this machine's installed runtime; no version match is claimed"
+    confers_no_primary_selection: true
+    confers_no_confirmatory_eligibility: true
+    td_b03_status: "open; unchanged by this pin"
+
 # Model screening (CRITICAL_DESIGN_DECISIONS D10; TD-B03).
 screening:
   screen_models: ["Sonnet 5", "Opus 4.8"]

@@ -115,9 +115,13 @@ MUTATIONS: List[Tuple[str, List[Edit], str, str, str]] = [
     # 2. permit C4
     (
         "02-permit-c4",
+        # Re-anchored on PT08's own permitted_tasks line. A SECOND governed run
+        # purpose is now registered and legitimately carries the same
+        # permitted_conditions line, so the bare target stopped being unique.
+        # The mutation is unchanged; only the anchor names which purpose it hits.
         [("run_governance.py",
-          '        permitted_conditions=("C1",),',
-          '        permitted_conditions=("C1", "C4"),')],
+          '        permitted_tasks=("PT08",),\n        permitted_conditions=("C1",),',
+          '        permitted_tasks=("PT08",),\n        permitted_conditions=("C1", "C4"),')],
         "condition_gate",
         "REFUSED:CONDITION_NOT_PERMITTED_FOR_PURPOSE",
         "ACCEPTED",
@@ -135,9 +139,10 @@ MUTATIONS: List[Tuple[str, List[Edit], str, str, str]] = [
     # 3. diagnostic -> confirmatory (the quarantine flags)
     (
         "03-diagnostic-to-confirmatory-flags",
+        # Anchored on the SL-PT08-02 comment that follows PT08's firewall line.
         [("run_governance.py",
-          "        firewall=tuple((f, False) for f in FIREWALL_FIELDS),",
-          "        firewall=tuple((f, True) for f in FIREWALL_FIELDS),")],
+          "        firewall=tuple((f, False) for f in FIREWALL_FIELDS),\n        # SL-PT08-02.",
+          "        firewall=tuple((f, True) for f in FIREWALL_FIELDS),\n        # SL-PT08-02.")],
         "firewall_matches_record",
         "OK",
         "REFUSED:DIAGNOSTIC_FIREWALL_INCONSISTENT",
@@ -145,7 +150,9 @@ MUTATIONS: List[Tuple[str, List[Edit], str, str, str]] = [
     # 3b. diagnostic -> confirmatory (the purpose itself)
     (
         "03b-diagnostic-to-confirmatory-purpose",
-        [("run_governance.py", "        confirmatory=False,", "        confirmatory=True,")],
+        [("run_governance.py",
+          '        confirmatory=False,\n        permitted_tasks=("PT08",),',
+          '        confirmatory=True,\n        permitted_tasks=("PT08",),')],
         "confirmatory_area",
         "REFUSED:DIAGNOSTIC_ARTIFACT_IN_CONFIRMATORY_AREA",
         "ACCEPTED",
@@ -359,8 +366,10 @@ MUTATIONS: List[Tuple[str, List[Edit], str, str, str]] = [
     (
         "21-diagnostic-uses-canonical-result-schema",
         [("run_governance.py",
-          '        artifact_schema="experiments/v2/harness/run_record.schema.json",',
-          '        artifact_schema="experiments/v2/schemas/run_manifest.schema.json",')],
+          '        artifact_schema="experiments/v2/harness/run_record.schema.json",\n'
+          '        result_bearing=False,\n        # SL-PT08-03.',
+          '        artifact_schema="experiments/v2/schemas/run_manifest.schema.json",\n'
+          '        result_bearing=False,\n        # SL-PT08-03.')],
         "artifact_schema_firewall",
         "FIREWALL_OK",
         "FIREWALL_PROBLEMS",
@@ -368,7 +377,9 @@ MUTATIONS: List[Tuple[str, List[Edit], str, str, str]] = [
     # 22. claim the canonical result-manifest gap is globally resolved
     (
         "22-claim-canonical-schema-globally-resolved",
-        [("run_governance.py", "        result_bearing=False,", "        result_bearing=True,")],
+        [("run_governance.py",
+          "        result_bearing=False,\n        # SL-PT08-03.",
+          "        result_bearing=True,\n        # SL-PT08-03.")],
         "canonical_gap_scope",
         "NOT_APPLICABLE:RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL",
         "BLOCKED:RUN_MANIFEST_SCHEMA_LACKS_DIAGNOSTIC_FIREWALL",
@@ -376,7 +387,9 @@ MUTATIONS: List[Tuple[str, List[Edit], str, str, str]] = [
     # 23. shrink the diagnostic repetition count
     (
         "23-repetitions-3-to-1",
-        [("run_governance.py", "        repetitions=3,", "        repetitions=1,")],
+        [("run_governance.py",
+          "        repetitions=3,\n        # SL-PT08-06.",
+          "        repetitions=1,\n        # SL-PT08-06.")],
         "repetition_decision",
         "PASS:3",
         "BLOCKED:DIAGNOSTIC_REPETITION_DECISION_INCONSISTENT",
@@ -384,7 +397,9 @@ MUTATIONS: List[Tuple[str, List[Edit], str, str, str]] = [
     # 24. grow the diagnostic repetition count
     (
         "24-repetitions-3-to-4",
-        [("run_governance.py", "        repetitions=3,", "        repetitions=4,")],
+        [("run_governance.py",
+          "        repetitions=3,\n        # SL-PT08-06.",
+          "        repetitions=4,\n        # SL-PT08-06.")],
         "repetition_decision",
         "PASS:3",
         "BLOCKED:DIAGNOSTIC_REPETITION_DECISION_INCONSISTENT",
