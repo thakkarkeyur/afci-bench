@@ -98,7 +98,15 @@ CHECKPOINT_TASKS: Tuple[str, ...] = ("PT01", "PT04", "PT07")
 #: Detecting that would mean parsing command text and guessing at effects; the
 #: predicate is executed over what the tool channel states, not over what a
 #: command might have done.
-EDIT_TOOLS: Tuple[str, ...] = ("Edit", "Write")
+#: The set matches the DRAFTED detector's ``FILE_MUTATING_TOOLS`` exactly, so
+#: the two implementations of one selected predicate cannot disagree. Under the
+#: pilot's frozen tool set (``Read, Edit, Write, Glob, Grep, Bash``) the last two
+#: can never occur; they are listed anyway, because a set that differs only in
+#: members that cannot appear is still a set that differs.
+EDIT_TOOLS: Tuple[str, ...] = ("Write", "Edit", "MultiEdit", "NotebookEdit")
+
+#: Likewise for the shell tools. Only ``Bash`` is in the frozen tool set.
+SHELL_TOOLS: Tuple[str, ...] = ("Bash", "PowerShell", "Shell")
 
 #: The one CI surface a coding repetition may see (``TD-B16``). Supplied by the
 #: caller from ``run_governance.visible_ci_command``; restated here only as the
@@ -127,12 +135,17 @@ def ci_command_pattern(ci_command: str = DEFAULT_CI_COMMAND) -> "re.Pattern[str]
     Loose enough to survive the shapes a model actually types — a redirect
     (``npm run ci:agent 2>&1``), a prefix (``cd app && npm run ci:agent``),
     irregular spacing — and tight enough that a DIFFERENT command never matches.
-    ``npm run ci``, ``npm test`` and ``npm run ci:agent:watch`` are all rejected:
-    the trailing guard refuses a word character, a hyphen or a further ``:``.
+    ``npm run ci``, ``npm test`` and ``npm run ci:agent:watch`` are all rejected.
+
+    The guard character class is ``[\\w:.-]`` on BOTH sides, byte-for-byte the
+    drafted detector's. Two implementations of one selected predicate that
+    differed by a character class would fire on different events, and a
+    difference that only shows on an unusual command is the kind nobody finds
+    until the run it decides.
     """
     parts = [re.escape(p) for p in ci_command.split()]
     body = r"\s+".join(parts)
-    return re.compile(rf"(?<![\w:]){body}(?![\w:\-])")
+    return re.compile(rf"(?<![\w:.\-]){body}(?![\w:.\-])")
 
 
 @dataclass
@@ -249,7 +262,7 @@ class CiAgentAfterEditDetector:
                 self._pending_edits[tool_use_id] = str(name)
                 continue
 
-            if name != "Bash":
+            if name not in SHELL_TOOLS:
                 continue
             # The CI invocation only counts once an edit has ALREADY completed.
             # A ci:agent run before any edit is the agent looking at a red
