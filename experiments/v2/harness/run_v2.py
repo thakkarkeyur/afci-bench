@@ -66,19 +66,25 @@ import argparse
 import json
 import shutil
 import sys
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import condition_prompt as cp  # noqa: E402
 import context_audit as ca  # noqa: E402
+import efficiency_metrics as em  # noqa: E402
 import model_adapter as ma  # noqa: E402
 import prepare_model_worktree as pmw  # noqa: E402
+import reset_budget as rb  # noqa: E402
+import reset_orchestration as ro  # noqa: E402
 import run_artifacts as art  # noqa: E402
 import run_evaluation as ev  # noqa: E402
 import run_governance as gov  # noqa: E402
 import run_worktree as wt  # noqa: E402
+import stream_launcher as sl  # noqa: E402
 
 STATE_TRANSITION_REFUSED = "STATE_TRANSITION_REFUSED"
 
@@ -216,6 +222,17 @@ class RunRequest:
     permission_mode: Optional[str] = None
     tools: Sequence[str] = ()
     launch_timeout_seconds: int = 1800
+    #: SL-V2-EFF-01 / SL-V2-EFF-RESET-01 inputs. ``reset_state=None`` means the
+    #: purpose declares no reset state, which is every purpose that existed
+    #: before this package: those runs are unchanged and carry no reset block.
+    reset_state: Optional[str] = None
+    #: The PERMISSION allowlist, distinct from ``tools``. Empty by default, so a
+    #: caller that does not freeze one gets exactly the permissions the earlier
+    #: diagnostics ran under.
+    allowed_tools: Sequence[str] = ()
+    #: The agentic-turn ceiling. ``None`` means no purpose freezes one, and the
+    #: launch carries no ``--max-turns`` at all.
+    max_turns: Optional[int] = None
 
 
 @dataclass
@@ -303,6 +320,10 @@ def run(request: RunRequest) -> RunResult:
     repo_state_before: Dict[str, str] = {}
     prompt_path: Optional[Path] = None
     sterile: Optional[ca.SterileEnv] = None
+    reset_block: Optional[Dict[str, object]] = None
+    efficiency_block: Optional[Dict[str, object]] = None
+    reset_outcome: Optional[ro.ResetOutcome] = None
+    run_started = time.monotonic()
 
     def build_plan() -> ma.LaunchPlan:
         """The launch, built from one place so the audited and used argv cannot
@@ -320,6 +341,8 @@ def run(request: RunRequest) -> RunResult:
             sterile=request.credential_source is not None,
             permission_mode=request.permission_mode,
             tools=request.tools,
+            allowed_tools=request.allowed_tools,
+            max_turns=request.max_turns,
         )
 
     try:
@@ -329,7 +352,13 @@ def run(request: RunRequest) -> RunResult:
         gov.assert_task_and_condition_permitted(
             purpose, request.task_id, request.condition
         )
-        gov.assert_architecture_delivery_none(request.condition)
+        # Replaced, not relaxed. The predecessor asserted "delivery == none" for
+        # every run, which was right while every authorised purpose was a
+        # baseline-only diagnostic. A C4 run under a C1-only authority is still
+        # refused, with the same code; what is now permitted is a C4 run under an
+        # authority that names C4.
+        gov.assert_architecture_delivery_authorised(purpose, request.condition)
+        reset_state = _resolve_reset_state(purpose, request)
 
         expected_sha = gov.expected_task_sha256(request.task_id)
         body = gov.public_task_path(request.task_id)
@@ -399,9 +428,23 @@ def run(request: RunRequest) -> RunResult:
 
         # The prompt is delivered out of band and is never written into the
         # model-visible worktree (CONDITION_MATRIX.csv: task_delivery=prompt).
+        #
+        # For a condition whose architecture_delivery is 'none' this is the task
+        # body verbatim, byte for byte, exactly as before. For C4 it is the
+        # approved architecture payload as primary context followed by the same
+        # verbatim body — the prompt_injection delivery the worktree policy
+        # already defines — and the payload it actually carries is re-hashed and
+        # checked against the approved document before anything is started.
+        prompt_text = cp.compose_task_prompt(
+            request.condition, body.read_bytes(), repo=request.repo
+        )
+        prompt_manifest = cp.assert_architecture_payload(
+            request.condition, prompt_text, repo=request.repo, where="task prompt"
+        )
         prompt_path = directory.path("prompts/task_prompt.md")
         prompt_path.parent.mkdir(parents=True, exist_ok=True)
-        prompt_path.write_bytes(body.read_bytes())
+        prompt_path.write_text(prompt_text, encoding="utf-8", newline="\n")
+        directory.write_json("prompt_manifest.json", prompt_manifest)
 
         readiness = gov.check_readiness(
             request.task_id,
@@ -431,6 +474,15 @@ def run(request: RunRequest) -> RunResult:
                 dest_root=directory.worktree,
                 task_path=body,
                 task_id=request.task_id,
+                # None for a no-architecture arm, and the approved payload for
+                # one that receives it. C4's delivery is prompt_injection, so
+                # supplying it here writes NO file into the model's worktree —
+                # it records the payload's hash in the prepared manifest, which
+                # is what lets the worktree enforcement verify that the arm got
+                # what the record says it got.
+                architecture_text=gov.architecture_payload_for(
+                    request.condition, request.repo
+                ),
             )
         )
         directory.write_json("prepared_manifest.json", prepared.manifest)
@@ -529,8 +581,12 @@ def run(request: RunRequest) -> RunResult:
         # ---------------- MODEL_INVOCATION ------------------------------ #
         machine.enter("MODEL_INVOCATION")
         launcher = request.process_launcher
+        stream_outcome: Optional[sl.StreamOutcome] = None
         if launcher is None and request.mode == "real" and request.launcher_executable:
-            launcher = ma.RealClaudeCodeLauncher(
+            # The LIVE launcher, for reset and non-reset alike. A launcher used
+            # only for resets would make "was this a reset?" and "which launcher
+            # ran it?" the same question, and the two must stay separable.
+            launcher = sl.LiveClaudeCodeLauncher(
                 executable=request.launcher_executable,
                 cwd=directory.worktree,
                 env=plan.environment(),
@@ -539,6 +595,7 @@ def run(request: RunRequest) -> RunResult:
                 canonical_repo=request.repo,
                 config_dir=sterile.config_dir if sterile else None,
                 timeout_seconds=request.launch_timeout_seconds,
+                checkpoint=None,  # a NON_RESET run is never interrupted
             )
         adapter = ma.ModelInvocationAdapter(
             mode=request.mode,
@@ -551,15 +608,79 @@ def run(request: RunRequest) -> RunResult:
             ),
             governed_ids=tuple(gov.governed_model_ids()),
         )
-        invocation = adapter.invoke(plan)
-        if invocation.invoked:
-            machine.passed(f"model process completed: {invocation.status}")
-        else:
-            machine.skipped(
-                "DRY_RUN_NO_INVOKE",
-                "no model process was started; this is a dry run and no paid "
-                "execution occurred",
+
+        if reset_state == rb.RESET and request.mode == "real":
+            adapter.assert_real_invocation_permitted(plan.model_id)
+            reset_outcome = ro.run_reset(
+                ro.ResetInputs(
+                    run_purpose=purpose.name,
+                    task_id=request.task_id,
+                    task_sha256=expected_sha,
+                    task_body=body.read_bytes(),
+                    condition=request.condition,
+                    model_id=str(request.model_id),
+                    runtime_version=gov.live_runtime_validation(purpose.name)[2],
+                    worktree=directory.worktree,
+                    artifact_dir=directory.run_dir,
+                    sterile_base=request.sterile_base,
+                    credential_source=Path(str(request.credential_source)),
+                    launcher_executable=str(request.launcher_executable),
+                    canonical_repo=request.repo,
+                    governed_root=directory.run_dir,
+                    permission_mode=str(request.permission_mode),
+                    tools=tuple(request.tools),
+                    allowed_tools=tuple(request.allowed_tools),
+                    generated_at=request.generated_at,
+                    repo=request.repo,
+                    launch_timeout_seconds=request.launch_timeout_seconds,
+                )
             )
+            reset_block = reset_outcome.to_dict()
+            invocation = ma.ModelInvocationOutcome(
+                invoked=True,
+                status=reset_outcome.status,
+                exit_status=(
+                    reset_outcome.phase_b.exit_status
+                    if reset_outcome.phase_b
+                    else (
+                        reset_outcome.phase_a.exit_status
+                        if reset_outcome.phase_a
+                        else None
+                    )
+                ),
+                runtime_evidence_path=(
+                    reset_outcome.phase_a.runtime_evidence_path
+                    if reset_outcome.phase_a
+                    else None
+                ),
+                # BOTH phases' events. The model-identity readback then covers
+                # the whole observation rather than its first half, so a phase B
+                # that somehow resolved a different model is caught by the
+                # existing Q1 check as an AMBIGUOUS readback instead of passing
+                # unexamined.
+                runtime_evidence=(
+                    list(reset_outcome.phase_a_events)
+                    + list(reset_outcome.phase_b_events)
+                ),
+                detail=reset_outcome.detail,
+            )
+            machine.passed(
+                f"two-phase reset: {reset_outcome.status}; "
+                f"checkpoint_reached={reset_outcome.checkpoint_reached}"
+            )
+        else:
+            invocation = adapter.invoke(plan)
+            if isinstance(invocation, sl.StreamOutcome):
+                stream_outcome = invocation
+                invocation = stream_outcome.as_invocation_outcome()
+            if invocation.invoked:
+                machine.passed(f"model process completed: {invocation.status}")
+            else:
+                machine.skipped(
+                    "DRY_RUN_NO_INVOKE",
+                    "no model process was started; this is a dry run and no paid "
+                    "execution occurred",
+                )
 
         # ---------------- MODEL_IDENTITY_VALIDATION --------------------- #
         machine.enter("MODEL_IDENTITY_VALIDATION")
@@ -641,6 +762,24 @@ def run(request: RunRequest) -> RunResult:
                 + ", ".join(str(c.code) for c in evaluation.blockers),
             )
 
+        # The efficiency block is derived AFTER evaluation so TOTAL_RUN_SECONDS
+        # and EVALUATION_SECONDS are real durations rather than estimates, and
+        # it is built only for a purpose that declares a reset state: no earlier
+        # record grows a block it never had.
+        if reset_state is not None and invocation.invoked:
+            efficiency_block = _efficiency_block(
+                reset_state=reset_state,
+                request=request,
+                reset_outcome=reset_outcome,
+                stream_outcome=stream_outcome,
+                invocation=invocation,
+                run_started=run_started,
+            )
+        if reset_state is not None and reset_block is None:
+            reset_block = _declared_reset_block(
+                request, purpose, reset_state, stream_outcome, invocation
+            )
+
         # ---------------- RECORD_ARTIFACTS ------------------------------ #
         machine.enter("RECORD_ARTIFACTS")
         record = _build_record(
@@ -658,6 +797,8 @@ def run(request: RunRequest) -> RunResult:
             capture=capture,
             evaluation=evaluation,
             readiness=result.readiness,
+            reset=reset_block,
+            efficiency=efficiency_block,
             outcome={
                 "status": "DRY_RUN_COMPLETE" if request.mode == "dry-run" else "COMPLETE",
                 "code": None,
@@ -700,6 +841,8 @@ def run(request: RunRequest) -> RunResult:
                     capture=capture,
                     evaluation=evaluation,
                     readiness=result.readiness,
+                    reset=reset_block,
+                    efficiency=efficiency_block,
                     outcome={
                         "status": (
                             "DRY_RUN_REFUSED"
@@ -723,6 +866,183 @@ def run(request: RunRequest) -> RunResult:
     return result
 
 
+#: Purposes that declare a reset state. A purpose absent from this mapping runs
+#: exactly as it did before this package: no reset state, no reset block, no
+#: efficiency block, no turn ceiling and no permission allowlist.
+RESET_AWARE_PURPOSES: Dict[str, Sequence[str]] = {
+    "AFCI_EFFICIENCY_PILOT": rb.RESET_STATES,
+}
+
+
+def _resolve_reset_state(
+    purpose: gov.RunPurpose, request: RunRequest
+) -> Optional[str]:
+    """The run's reset state, or ``None`` for a purpose that has none.
+
+    Fails closed both ways. A reset-aware purpose that is handed no reset state
+    is refused rather than defaulted to ``NON_RESET``: the two arms are the
+    experimental factor, and silently picking one would assign half the design
+    by omission. A purpose that is NOT reset-aware and is handed a reset state
+    is refused too, because it has no frozen allowance to run under.
+    """
+    states = RESET_AWARE_PURPOSES.get(purpose.name)
+    if states is None:
+        if request.reset_state is not None:
+            raise gov.RunnerRefusal(
+                gov.RESET_NOT_AUTHORISED_FOR_PURPOSE,
+                f"{purpose.name} declares no reset state; "
+                f"{request.reset_state!r} was supplied and no authority freezes "
+                "an allowance for it",
+            )
+        return None
+    if request.reset_state is None:
+        raise gov.RunnerRefusal(
+            gov.RESET_STATE_INVALID,
+            f"{purpose.name} crosses every cell with {list(states)}; a run must "
+            "declare which one it is and never defaults to either",
+        )
+    return rb.assert_reset_state(request.reset_state)
+
+
+def _declared_reset_block(
+    request: RunRequest,
+    purpose: gov.RunPurpose,
+    reset_state: str,
+    stream_outcome: Optional[sl.StreamOutcome],
+    invocation: ma.ModelInvocationOutcome,
+) -> Dict[str, object]:
+    """The reset block a run carries when no two-phase orchestration ran.
+
+    That covers two different situations and they are recorded as two different
+    things rather than collapsed:
+
+    * a **NON_RESET** run, which really was one process. ``reset_state:
+      NON_RESET`` is a positive statement about it, not the absence of a reset
+      block, which a later reader could read as "nobody recorded it".
+    * a **RESET** run that never reached invocation — a dry run. It keeps
+      ``reset_state: RESET``, because that is the arm it was assigned to, and
+      says plainly that no phase happened. Writing ``NON_RESET`` here would
+      label a run as the other arm of the experiment on the strength of it not
+      having started.
+    """
+    block = rb.budget_block(
+        run_purpose=purpose.name,
+        reset_state=reset_state,
+        repo=request.repo,
+    )
+    if reset_state == rb.NON_RESET:
+        detail = "one process, one session, one profile; no interruption"
+        status = stream_outcome.completion if stream_outcome else (
+            invocation.status if invocation.invoked else "NOT_INVOKED"
+        )
+    else:
+        detail = (
+            "assigned to the RESET arm; no phase was executed, so no checkpoint "
+            "was evaluated and no phase A or phase B exists"
+        )
+        status = "NOT_INVOKED"
+    block.update(
+        {
+            "status": status,
+            "checkpoint_reached": None,
+            "checkpoint_id": None,
+            "checkpoint_hash": None,
+            "phase_a_session_id": None,
+            "phase_b_session_id": None,
+            "pre_reset_turns_used": None,
+            "post_reset_turns_used": None,
+            "resume_used": False,
+            "continue_used": False,
+            "conversation_reused": False,
+            "phase_a_summarised_into_phase_b": False,
+            "detail": detail,
+        }
+    )
+    return block
+
+
+def _efficiency_block(
+    *,
+    reset_state: str,
+    request: RunRequest,
+    reset_outcome: Optional[ro.ResetOutcome],
+    stream_outcome: Optional[sl.StreamOutcome],
+    invocation: ma.ModelInvocationOutcome,
+    run_started: float,
+) -> Optional[Dict[str, object]]:
+    """Measure the observation, failing closed rather than reporting zeros."""
+    ci_command = gov.visible_ci_command(request.task_id)
+    total = time.monotonic() - run_started
+
+    if reset_state == rb.RESET:
+        if reset_outcome is None or reset_outcome.phase_b is None:
+            # A reset that produced no phase B produced no reset observation to
+            # measure. Phase A's own usage is still recorded, because it was
+            # really spent and a pilot that reported it as nothing would
+            # understate what the checkpoint-not-reached outcome cost.
+            if reset_outcome is None or not reset_outcome.phase_a_events:
+                return None
+            usage = em.extract_usage(
+                reset_outcome.phase_a_events,
+                expected_model_id=request.model_id,
+                where="RESET phase A (no phase B)",
+                allow_partial=True,
+            )
+            tools = em.extract_tool_metrics(
+                reset_outcome.phase_a_events, ci_command=ci_command
+            )
+            timing = em.Timing(
+                phase_a_seconds=reset_outcome.phase_a.model_seconds
+                if reset_outcome.phase_a
+                else None,
+                total_run_seconds=total,
+            )
+            return {
+                "reset_state": rb.RESET,
+                "status": reset_outcome.status,
+                "complete": False,
+                "TURNS_USED": em.turns_used(reset_outcome.phase_a_events),
+                "usage": usage.to_dict(),
+                "tools": tools.to_dict(),
+                "timing": timing.to_dict(),
+                "phases": {"A": {"usage": usage.to_dict(), "tools": tools.to_dict()}},
+            }
+        timing = em.Timing(
+            phase_a_seconds=reset_outcome.phase_a.model_seconds
+            if reset_outcome.phase_a
+            else None,
+            phase_b_seconds=reset_outcome.phase_b.model_seconds,
+            reset_handoff_seconds=reset_outcome.handoff_seconds,
+            total_run_seconds=total,
+        )
+        measurement = em.aggregate_reset(
+            reset_outcome.phase_a_events,
+            reset_outcome.phase_b_events,
+            model_id=request.model_id,
+            ci_command=ci_command,
+            timing=timing,
+        )
+        payload = measurement.to_dict()
+        payload["status"] = reset_outcome.status
+        payload["complete"] = True
+        return payload
+
+    events = invocation.runtime_evidence or []
+    timing = em.Timing(
+        phase_a_seconds=stream_outcome.wall_seconds if stream_outcome else None,
+        total_run_seconds=total,
+    )
+    measurement = em.measure_non_reset(
+        events, model_id=request.model_id, ci_command=ci_command, timing=timing
+    )
+    payload = measurement.to_dict()
+    payload["status"] = (
+        stream_outcome.completion if stream_outcome else invocation.status
+    )
+    payload["complete"] = True
+    return payload
+
+
 def _build_record(
     *,
     request: RunRequest,
@@ -740,6 +1060,8 @@ def _build_record(
     evaluation: Optional[ev.EvaluationPlan],
     readiness: Optional[gov.ReadinessReport],
     outcome: Dict[str, object],
+    reset: Optional[Dict[str, object]] = None,
+    efficiency: Optional[Dict[str, object]] = None,
 ) -> Dict[str, object]:
     blockers: List[Dict[str, str]] = []
     if readiness is not None:
@@ -760,6 +1082,9 @@ def _build_record(
             if directory.path("launch_manifest.json").exists()
             else None
         ),
+        "allowed_tools": list(plan.allowed_tools) if plan else list(request.allowed_tools),
+        "tools": list(plan.tools) if plan else list(request.tools),
+        "max_turns": plan.max_turns if plan else request.max_turns,
     }
 
     invocation_block = invocation.to_dict()
@@ -773,6 +1098,7 @@ def _build_record(
         "prepared_manifest.json",
         "context_audit.json",
         "launch_manifest.json",
+        "prompt_manifest.json",
         "prompts/task_prompt.md",
     ):
         path = directory.path(name)
@@ -821,6 +1147,8 @@ def _build_record(
         outcome=outcome,
         generated_at=request.generated_at,
         repo=request.repo,
+        reset=reset,
+        efficiency=efficiency,
     )
 
 
@@ -909,8 +1237,70 @@ def _build_parser() -> argparse.ArgumentParser:
         "--launch-timeout-seconds", type=int, default=1800,
         help="Wall-clock ceiling for one repetition.",
     )
+    p.add_argument(
+        "--reset-state", default=None, choices=list(rb.RESET_STATES),
+        help=(
+            "SL-V2-EFF-01: which arm of the reset factor this run is. REQUIRED "
+            "for a reset-aware purpose and refused for any other; it never "
+            "defaults, because defaulting would assign half the design by "
+            "omission."
+        ),
+    )
+    p.add_argument(
+        "--allowed-tool", action="append", default=[],
+        help=(
+            "A permission allowlist rule, repeatable (e.g. 'Bash(npm run "
+            "ci:agent)'). DISTINCT from --tool: --tool says which tools exist, "
+            "this says which uses of them are pre-approved. Omitted means the "
+            "purpose's frozen allowlist, or none."
+        ),
+    )
+    p.add_argument(
+        "--max-turns", type=int, default=None,
+        help=(
+            "SL-V2-EFF-RESET-01's agentic-turn ceiling. Omitted means the "
+            "purpose's frozen allowance, or no ceiling at all."
+        ),
+    )
     p.add_argument("--json", action="store_true", help="Emit machine-readable output.")
     return p
+
+
+def _frozen_allowed_tools(run_purpose: Optional[str], task_id: str) -> Sequence[str]:
+    """The permission allowlist a purpose freezes, or nothing at all.
+
+    ``AFCI_EFFICIENCY_PILOT`` freezes an allowlist for exactly one command: the
+    governed CI surface the task body already tells the model to use. It was
+    added because the earlier configuration refused that command in all 44
+    attempts across every executed live run, so a benchmark that told a model to
+    validate its work was measuring the refusal. Every other purpose keeps the
+    configuration it ran under, which is no allowlist.
+    """
+    if run_purpose != "AFCI_EFFICIENCY_PILOT":
+        return ()
+    try:
+        command = gov.visible_ci_command(task_id)
+    except gov.RunnerRefusal:
+        return ()
+    return ma.bash_allow_rule(command) if command else ()
+
+
+def _frozen_max_turns(
+    run_purpose: Optional[str], reset_state: Optional[str]
+) -> Optional[int]:
+    """The turn ceiling a purpose freezes for this arm, or ``None``.
+
+    A ``RESET`` run gets no top-level ceiling: its two phases carry their own,
+    and putting phase A's on the outer launch would suggest the whole run had
+    32 turns rather than 32 + 32.
+    """
+    if run_purpose != "AFCI_EFFICIENCY_PILOT" or reset_state is None:
+        return None
+    if reset_state == rb.RESET:
+        return None
+    return rb.turn_budget(
+        run_purpose=run_purpose, reset_state=reset_state
+    ).max_turns
 
 
 def live_context_verdict(args) -> str:
@@ -1027,6 +1417,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             permission_mode=args.permission_mode or ma.DIAGNOSTIC_PERMISSION_MODE,
             tools=tuple(args.tool) or ma.DIAGNOSTIC_TOOLS,
             launch_timeout_seconds=args.launch_timeout_seconds,
+            reset_state=args.reset_state,
+            allowed_tools=(
+                tuple(args.allowed_tool)
+                or _frozen_allowed_tools(args.run_purpose, args.task)
+            ),
+            max_turns=(
+                args.max_turns
+                if args.max_turns is not None
+                else _frozen_max_turns(args.run_purpose, args.reset_state)
+            ),
         )
         outcome = run(request)
     except gov.RunnerRefusal as refusal:

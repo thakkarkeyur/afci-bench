@@ -107,6 +107,36 @@ DIAGNOSTIC_PERMISSION_MODE = "acceptEdits"
 #: answer from outside the governed substrate.
 DIAGNOSTIC_TOOLS: Tuple[str, ...] = ("Read", "Edit", "Write", "Glob", "Grep", "Bash")
 
+#: ``--tools`` and ``--allowed-tools`` are DIFFERENT flags and the difference is
+#: load-bearing:
+#:
+#: * ``--tools`` selects which built-in tools EXIST in the session.
+#: * ``--allowed-tools`` is the PERMISSION allowlist: which uses of them are
+#:   pre-approved without an interactive prompt.
+#:
+#: Every executed v2 run to date passed the first and not the second, under
+#: ``--permission-mode acceptEdits``. That mode auto-approves edits and leaves
+#: ``Bash`` to rule evaluation, which — with no allow rule — returns
+#: ``behavior: "passthrough"`` with the reason "This command requires approval".
+#: In headless mode there is no one to ask, so the call is refused. The effect,
+#: measured over all nine executed live artifacts, was that ``npm run ci:agent``
+#: NEVER RAN: 44 attempts, 0 executions. A benchmark that instructs a model to
+#: validate with a command it is then refused is measuring the refusal.
+#:
+#: The allowlist is a PER-PURPOSE frozen input, not a module default: no purpose
+#: acquires one by importing this module, and the two already-executed
+#: diagnostics keep the exact configuration they ran under.
+def bash_allow_rule(command: str) -> Tuple[str, str]:
+    """The exact and prefix allow rules for one governed shell command.
+
+    Two rules, because the runtime matches exact rules and prefix rules
+    separately: the exact rule admits the bare command and the prefix rule
+    admits the shapes a model actually types after it — a redirect, a pipe
+    target, a flag. Neither admits a DIFFERENT command, and neither admits a
+    compound (``cd X && ...``), whose parts are each evaluated on their own.
+    """
+    return (f"Bash({command})", f"Bash({command}:*)")
+
 
 @dataclass(frozen=True)
 class LaunchPlan:
@@ -124,6 +154,12 @@ class LaunchPlan:
     sterile: bool = False
     prompt_delivery: str = "argv-mention"
     prompt_path: Optional[str] = None
+    #: The permission allowlist, distinct from ``tools``. Empty for every
+    #: purpose that does not freeze one.
+    allowed_tools: Tuple[str, ...] = ()
+    #: SL-V2-EFF-RESET-01's agentic-turn ceiling, or ``None`` when no purpose
+    #: freezes one. Never defaulted to a number.
+    max_turns: Optional[int] = None
 
     def environment(self) -> Dict[str, str]:
         return dict(self.env)
@@ -182,6 +218,8 @@ def build_fresh_launch(
     sterile: bool = False,
     permission_mode: Optional[str] = None,
     tools: Sequence[str] = (),
+    allowed_tools: Sequence[str] = (),
+    max_turns: Optional[int] = None,
 ) -> LaunchPlan:
     """Build the fresh-process launch for one run, failing closed.
 
@@ -224,9 +262,23 @@ def build_fresh_launch(
     argv += ["--add-dir", workspace]
     if permission_mode:
         argv += ["--permission-mode", permission_mode]
+    if max_turns is not None:
+        if isinstance(max_turns, bool) or not isinstance(max_turns, int) or max_turns < 1:
+            raise gov.RunnerRefusal(
+                gov.RESET_BUDGET_NOT_FROZEN,
+                f"the turn ceiling must be a positive integer, got {max_turns!r}; "
+                "the runner never rounds, clamps or defaults an allowance",
+            )
+        argv += ["--max-turns", str(max_turns)]
     if session_id is not None:
         argv += ["--session-id", session_id]
     argv += list(extra)
+    if allowed_tools:
+        # Variadic like --tools, so it is placed among the variadic flags and
+        # each rule is its own token: a rule containing a space (there are none
+        # today, but "Bash(npm run ci:agent)" is one parenthesis away from
+        # having one) must never be split across the flag's boundary.
+        argv += ["--allowed-tools", *list(allowed_tools)]
     if tools:
         # Last before the terminator: --tools is variadic, so it must not be
         # able to swallow a following flag.
@@ -273,6 +325,8 @@ def build_fresh_launch(
         sterile=sterile,
         prompt_delivery=prompt_delivery,
         prompt_path=str(prompt_path),
+        allowed_tools=tuple(allowed_tools),
+        max_turns=max_turns,
     )
 
 

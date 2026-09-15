@@ -26,7 +26,7 @@ by name.
 
 ## Counts
 
-- **Blocking decisions: 41** (`TD-B01`–`TD-B41`) — must be resolved before the
+- **Blocking decisions: 42** (`TD-B01`–`TD-B42`) — must be resolved before the
   corresponding data collection; all are cited inline across the protocol files.
   `TD-B16`–`TD-B21` were added by the pre-execution design-review reconciliation;
   `TD-B22` was added by the independent public review of the pilot task package;
@@ -48,8 +48,8 @@ by name.
   fixed, very small decision space is analysed at the **realised** cluster count.
 - **Non-blocking decisions: 6** (`TD-N01`–`TD-N06`) — refinements that do not
   block the confirmatory design.
-- **Total decisions: 47**, of which **4 are resolved** (`TD-B23`, `TD-B24`,
-  `TD-B38`, `TD-B40`) and **43 remain open**. Three of the resolved entries are
+- **Total decisions: 48**, of which **4 are resolved** (`TD-B23`, `TD-B24`,
+  `TD-B38`, `TD-B40`) and **44 remain open**. Three of the resolved entries are
   the model-visible architecture-comment remediation, the leakage audit that
   proves it, and the experiment-awareness remediation; all were completed
   **before** any task authoring and **before** any benchmark or model execution.
@@ -70,7 +70,7 @@ confirmatory analysis.
 
 ---
 
-## Blocking decisions (TD-B01 – TD-B41)
+## Blocking decisions (TD-B01 – TD-B42)
 
 | ID | Decision | Owner | Resolved during | Gate |
 |----|----------|-------|-----------------|------|
@@ -206,6 +206,7 @@ that the count can only ever be three.
 | ID | Decision | Owner | Resolved during | Gate |
 |----|----------|-------|-----------------|------|
 | **TD-B41** | **Residual specification of the small-cluster E1 analysis at the realised cluster count `G`.** **`G` is not asserted to be three:** `G` is the number of `decision_cluster_id` levels carrying at least one **final, frozen, E1-eligible** opportunity once the eligibility gates resolve (§4c). Three is the demonstrated **ceiling** and the current **expectation**, never a guarantee; the **G = 2** contingency and the **G < 2** blocking rule are pre-registered in §4c **before** any power simulation. **Already pre-registered and not reopened** (§4b–§4c): `decision_cluster_id` is a **fixed** factor at every admissible `G` and **no cluster random-intercept variance is ever estimated from so few clusters**; the clusters are an **exhaustively enumerated fixed set**, not a sample from a population of clusters; `condition`, `reset` and their interaction remain the **inferential target** and are identified **within** clusters, because every scored task is run under every condition; opportunities and repeated runs stay **nested observations inside the known clusters** and are never entered as independent architecture decisions; and inference is never reported as if `G` were large. **Still open, with the permitted options enumerated so the choice cannot drift:** (1) the repeated-measures structure for `task` and run at the realised counts — **(1a)** `task` as a fixed block nested within cluster, **(1b)** `task` as a random intercept **only if** identifiable at the realised count, or **(1c)** a cell-level dispersion / observation-level term — chosen by pre-registered criteria at pilot, **never** by which option yields the larger effect; (2) whether the cluster-robust sensitivity is **CR2 or CR3 with Satterthwaite-style degrees of freedom**, conditional on the implementation supporting it reliably at the realised `G`, with the honest fallback that at three clusters the corrected degrees of freedom are unreliable and **at G = 2 unusable** — in which case the **within-block randomisation inference** carries the sensitivity and the cluster-robust re-fit is **omitted or labelled unreliable**, never promoted to primary evidence; (3) whether the `cluster × condition` heterogeneity check is reportable at the realised cell sizes, noting that **at G = 2 it carries a single between-cluster contrast** and must be read as such. **Nothing data-dependent may be run before this is resolved, and it must be resolved before the `TD-B37` power simulation.** No model was fitted, no data exist, no power value is frozen. | Statistician | before the `TD-B37` power simulation (with `TD-B06`/`TD-B20`/`TD-B30`) | G2/G3 |
+| **TD-B42** | **Every AFCI-Bench v2 live run executed to date denied the governed CI surface, and the bearing of that on those runs' outcomes is unresolved.** Measured across all nine saved artifacts — `PT08` R1–R3 under `SL-PT08-01`, `PT09`/`PT10` R1–R3 under `SL-V2-QUAL-01` — `npm run ci:agent` was attempted **44 times and executed 0 times**, refused by the runtime with *"This command requires approval"*. The mechanism is not a defect in the runtime: `--permission-mode acceptEdits` auto-approves **edits** and leaves `Bash` to permission-rule evaluation, which with no matching allow rule returns `behavior: "passthrough"`; in headless mode there is nobody to ask, so the call is refused. Simple read commands (`ls`, `find`) pass a built-in safe list, which is why some `Bash` calls did succeed and the condition was not visible as a total failure. **What is unresolved is interpretive, not mechanical.** The public task bodies name `npm run ci:agent` as the one CI surface the coding model may see (`TD-B16`), so those nine runs were instructed to validate their work with a command they were then refused, and their difficulty and qualification outcomes — `SL-PT08-07`'s `REVISE PT08` / `CONTINUE benchmark` disposition and `SL-V2-QUAL-01`'s `FAIL-FLOOR` / `REVISE-WEAK` results — were obtained under that constraint. **Nothing is re-interpreted, retracted or re-run here.** Those records stand exactly as written, their bytes are preserved, and no outcome value is changed. What must be decided is whether either disposition is affected, and if so how it is amended without re-reading data that already exists. **`SL-V2-EFF-01` does not resolve this**: it freezes a permission allowlist for its own pilot only (`Bash(npm run ci:agent)`, `Bash(npm run ci:agent:*)`), leaves the `PT08` and `PT09`/`PT10` configurations untouched, and creates no precedent for the confirmatory execution configuration. | Study Lead | before `G1`, with `TD-B34` | G1/G2 |
 
 Added by the pre-execution design-review reconciliation: `TD-B16`–`TD-B21`; added
 by the independent public review of the pilot task package: `TD-B22`; added by the
@@ -213,7 +214,9 @@ suite-classification decision: `TD-B23`–`TD-B33`; added by the pre-authoring
 opportunity reassessment: `TD-B34`–`TD-B37`; added by the
 architecture-neutral-substrate review: `TD-B38`; added by the pre-authoring
 functional-evaluator boundary package: `TD-B39`–`TD-B40`; added by the
-remaining-leaf feasibility governance package: `TD-B41`. Apart from the three
+remaining-leaf feasibility governance package: `TD-B41`; added by the AFCI
+efficiency pilot's pre-data freeze, from a measurement over the nine
+already-executed live artifacts: `TD-B42`. Apart from the three
 substrate/leakage entries recorded as resolved above (`TD-B23`, `TD-B24`,
 `TD-B38`), each is **open** — the CI/leakage **mechanisms** are delivered and
 tested, but the runner-time enforcement, authored suite, frozen hashes,

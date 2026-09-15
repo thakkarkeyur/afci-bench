@@ -559,6 +559,21 @@ AUTHORISED_RUNNER_MODULES = [
 #: is a diagnostic repetition, and neither is scored.
 AUTHORISED_STAGE0_MODULES = ["stage0_runtime_probe.py"]
 
+#: The AFCI efficiency pilot's execution modules, authorised by `SL-V2-EFF-01`
+#: and `SL-V2-EFF-RESET-01`. Enumerated separately again, for the same reason
+#: the Stage-0 controls were: they are not part of the PT08 runner, they execute
+#: no PT08 repetition, and the PT08 diagnostic's configuration is untouched by
+#: them. Every one is inert for a purpose that declares no reset state.
+AUTHORISED_EFFICIENCY_PILOT_MODULES = [
+    "checkpoint_detector.py",
+    "condition_prompt.py",
+    "efficiency_metrics.py",
+    "efficiency_run_plan.py",
+    "reset_budget.py",
+    "reset_orchestration.py",
+    "stream_launcher.py",
+]
+
 
 def test_the_harness_gained_exactly_the_authorised_runner_and_nothing_else():
     """Replaces the earlier `no runner has appeared` check, and is stricter.
@@ -576,6 +591,7 @@ def test_the_harness_gained_exactly_the_authorised_runner_and_nothing_else():
         PRE_EXISTING_HARNESS_MODULES
         + AUTHORISED_RUNNER_MODULES
         + AUTHORISED_STAGE0_MODULES
+        + AUTHORISED_EFFICIENCY_PILOT_MODULES
     ), f"the harness gained or lost an unenumerated module: {present}"
     for module in PRE_EXISTING_HARNESS_MODULES:
         assert (harness / module).is_file(), f"{module} disappeared"

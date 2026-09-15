@@ -39,6 +39,7 @@ No model is invoked and no benchmark task is executed.
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import re
 import shutil
@@ -207,6 +208,39 @@ ISOLATED_ENVIRONMENT_NOT_VERIFIED = "ISOLATED_ENVIRONMENT_NOT_VERIFIED"
 MODEL_PROCESS_FAILED = "MODEL_PROCESS_FAILED"
 MODEL_WORKTREE_NOT_LAUNCHABLE = "MODEL_WORKTREE_NOT_LAUNCHABLE"
 
+# ---- Two-phase reset execution (SL-V2-EFF-RESET-01, pilot-scoped) ---------- #
+# Every one of these is a REFUSAL, not a degradation. A reset that cannot be
+# performed exactly as the protocol describes produces no observation at all;
+# there is no "mostly a reset" and no repair path that spends another run.
+RESET_STATE_INVALID = "RESET_STATE_INVALID"
+RESET_NOT_AUTHORISED_FOR_PURPOSE = "RESET_NOT_AUTHORISED_FOR_PURPOSE"
+RESET_BUDGET_NOT_FROZEN = "RESET_BUDGET_NOT_FROZEN"
+RESET_CHECKPOINT_NOT_SELECTED = "RESET_CHECKPOINT_NOT_SELECTED"
+RESET_CHECKPOINT_PREDICATE_MISMATCH = "RESET_CHECKPOINT_PREDICATE_MISMATCH"
+RESET_PHASE_PROCESS_NOT_STOPPED = "RESET_PHASE_PROCESS_NOT_STOPPED"
+RESET_PHASE_SESSION_REUSED = "RESET_PHASE_SESSION_REUSED"
+RESET_PHASE_PROFILE_REUSED = "RESET_PHASE_PROFILE_REUSED"
+RESET_PHASE_CONVERSATION_REUSED = "RESET_PHASE_CONVERSATION_REUSED"
+RESET_PHASE_CONTEXT_AUDIT_MISSING = "RESET_PHASE_CONTEXT_AUDIT_MISSING"
+RESET_PHASE_MODEL_CHANGED = "RESET_PHASE_MODEL_CHANGED"
+RESET_PHASE_RUNTIME_CHANGED = "RESET_PHASE_RUNTIME_CHANGED"
+RESET_PHASE_CONDITION_CHANGED = "RESET_PHASE_CONDITION_CHANGED"
+RESET_PHASE_TASK_CHANGED = "RESET_PHASE_TASK_CHANGED"
+RESET_PHASE_ARCHITECTURE_CHANGED = "RESET_PHASE_ARCHITECTURE_CHANGED"
+RESET_WORKTREE_NOT_PRESERVED = "RESET_WORKTREE_NOT_PRESERVED"
+
+#: NOT a refusal. The substantive observation a reset run produces when phase A
+#: exhausts its allowance without the selected checkpoint ever becoming true.
+#: It is recorded, never repaired: no phase B is fabricated, no rerun is
+#: scheduled, no budget is raised and no alternate checkpoint is substituted.
+RESET_CHECKPOINT_NOT_REACHED = "RESET_CHECKPOINT_NOT_REACHED"
+
+# ---- Efficiency measurement (SL-V2-EFF-01, pilot-scoped) ------------------ #
+EFFICIENCY_USAGE_MISSING = "EFFICIENCY_USAGE_MISSING"
+EFFICIENCY_USAGE_MALFORMED = "EFFICIENCY_USAGE_MALFORMED"
+EFFICIENCY_RUN_PLAN_INVALID = "EFFICIENCY_RUN_PLAN_INVALID"
+ARCHITECTURE_CONTEXT_HASH_MISMATCH = "ARCHITECTURE_CONTEXT_HASH_MISMATCH"
+
 #: The pinned run-manifest schema (``experiments/v2/schemas``) is byte-pinned by
 #: the private evaluator's public linkage and sets ``additionalProperties:false``,
 #: so it cannot carry SL-PT08-01 §9's six quarantine fields without a linkage
@@ -259,6 +293,29 @@ DIAGNOSTIC_FREEZE_TABLE_HEADING = "### 2.1 The applicability table"
 
 #: The section that pins the frozen execution configuration (SL-PT08-06 §5).
 DIAGNOSTIC_FREEZE_CONFIG_HEADING = "## 5. The frozen execution configuration"
+
+#: Values the record must carry for the scoped freeze to exist at all. Kept as
+#: data so a relaxation in the record is a mechanical failure, never a reading.
+#:
+#: Defined here, above :data:`RUN_PURPOSES`, for the same reason the headings
+#: are: a purpose may narrow this tuple in its own definition and that dict is
+#: evaluated at import.
+DIAGNOSTIC_FREEZE_PINS: Tuple[Tuple[str, object], ...] = (
+    ("diagnostic_freeze_frozen", True),
+    ("diagnostic_freeze_model_selector_is_alias", False),
+    ("diagnostic_freeze_api_key_used", False),
+    ("diagnostic_freeze_fallback_model_permitted", False),
+    ("diagnostic_freeze_process_per_repetition", "fresh"),
+    ("diagnostic_freeze_session_per_repetition", "fresh"),
+    ("diagnostic_freeze_resume_permitted", False),
+    ("diagnostic_freeze_continuation_permitted", False),
+    ("diagnostic_freeze_session_reuse_permitted", False),
+    ("diagnostic_freeze_sterile_context_required", True),
+    ("diagnostic_freeze_context_audit_required_every_repetition", True),
+    ("diagnostic_freeze_architecture_delivery", "none"),
+    ("diagnostic_freeze_is_result", False),
+    ("diagnostic_freeze_scored", False),
+)
 
 
 @dataclass(frozen=True)
@@ -326,6 +383,15 @@ class RunPurpose:
     diagnostic_freeze_record: Optional[str] = None
     diagnostic_freeze_table_headings: Dict[str, str] = field(default_factory=dict)
     diagnostic_freeze_config_headings: Dict[str, str] = field(default_factory=dict)
+    #: The execution values the freeze table must carry, or ``None`` for the
+    #: module default. Carried per purpose for the same reason
+    #: :data:`diagnostic_freeze_global_pins` is: a purpose authorising more than
+    #: one condition cannot pin a single ``architecture_delivery`` statically,
+    #: because its arms legitimately differ. Dropping that one key from the tuple
+    #: does NOT drop the check — :func:`diagnostic_freeze_problems` still
+    #: re-derives the delivery from :func:`architecture_delivery_for` for the
+    #: condition in hand and refuses on disagreement, which is the stronger test.
+    diagnostic_freeze_pins: Optional[Tuple[Tuple[str, object], ...]] = None
     #: The suite-wide facts the freeze record must report as NOT granted. Carried
     #: per purpose because they are *facts about the study at the time of the
     #: decision*, not constants: ``priority_b_state`` was truthfully ``not
@@ -352,11 +418,46 @@ class RunPurpose:
     def freeze_record_path(self, repo: Path = REPO) -> Optional[Path]:
         return Path(repo) / self.diagnostic_freeze_record if self.diagnostic_freeze_record else None
 
-    def freeze_table_heading(self, task_id: str) -> Optional[str]:
-        return self.diagnostic_freeze_table_headings.get(task_id)
+    @staticmethod
+    def _heading(
+        headings: Dict[str, str], task_id: str, condition: Optional[str]
+    ) -> Optional[str]:
+        """Look a section up by ``TASK/CONDITION`` first, then by ``TASK``.
 
-    def freeze_config_heading(self, task_id: str) -> Optional[str]:
-        return self.diagnostic_freeze_config_headings.get(task_id)
+        A purpose authorising ONE condition per task tables its sections by task
+        and nothing changes for it. A purpose authorising SEVERAL conditions per
+        task — the efficiency pilot runs each of its tasks under both ``C1`` and
+        ``C4`` — must table them per (task, condition), because the two differ in
+        a load-bearing value: ``C1`` receives no architecture payload and ``C4``
+        receives it by prompt injection. Reading one arm's table as the other's
+        would let the record certify a delivery that never happened.
+        """
+        if condition:
+            scoped = headings.get(f"{task_id}/{condition}")
+            if scoped is not None:
+                return scoped
+        return headings.get(task_id)
+
+    def freeze_table_heading(
+        self, task_id: str, condition: Optional[str] = None
+    ) -> Optional[str]:
+        return self._heading(
+            self.diagnostic_freeze_table_headings, task_id, condition
+        )
+
+    def freeze_config_heading(
+        self, task_id: str, condition: Optional[str] = None
+    ) -> Optional[str]:
+        return self._heading(
+            self.diagnostic_freeze_config_headings, task_id, condition
+        )
+
+    def freeze_pins(self) -> Tuple[Tuple[str, object], ...]:
+        return (
+            DIAGNOSTIC_FREEZE_PINS
+            if self.diagnostic_freeze_pins is None
+            else self.diagnostic_freeze_pins
+        )
 
     def global_pins(self) -> Tuple[Tuple[str, object], ...]:
         return (
@@ -477,6 +578,98 @@ RUN_PURPOSES: Dict[str, RunPurpose] = {
         # PT09 and PT10 share one authored corpus module; there is no
         # pt09_corpus.py and inventing one would be a guess, not a check.
         private_corpus_script="scripts/qualification_corpus.py",
+    ),
+    "AFCI_EFFICIENCY_PILOT": RunPurpose(
+        name="AFCI_EFFICIENCY_PILOT",
+        decision_id="SL-V2-EFF-01",
+        description=(
+            "the pre-Stage-0, PT01/PT04/PT07-only, C1-and-C4-only, "
+            "NON-CONFIRMATORY AFCI efficiency pilot authorised by SL-V2-EFF-01: "
+            "three repetitions of each task in each condition in each reset "
+            "state, to see whether supplying the architecture context changes "
+            "what a run COSTS. It is not a result, not scored for confirmatory "
+            "E1, not treatment-effect eligible and not power eligible, and it "
+            "estimates no effect"
+        ),
+        confirmatory=False,
+        # THREE instruments and TWO conditions. This is the first purpose in the
+        # repository that authorises C4 at all, and it authorises it for cost
+        # measurement only: no architecture score, no violation value and no
+        # E1 numerator or denominator is produced, read or implied by it.
+        permitted_tasks=("PT01", "PT04", "PT07"),
+        permitted_conditions=("C1", "C4"),
+        firewall=tuple((f, False) for f in FIREWALL_FIELDS),
+        artifact_schema="experiments/v2/harness/run_record.schema.json",
+        result_bearing=False,
+        # THREE repetitions per (task, condition, reset state) cell, frozen
+        # before any efficiency observation exists. No power calculation
+        # justifies the count and none is implied.
+        repetitions=3,
+        schema_decision_id="SL-V2-EFF-01",
+        repetition_decision_id="SL-V2-EFF-01",
+        diagnostic_freeze_authority="SL-V2-EFF-01",
+        firewall_record="docs/v2/AFCI_EFFICIENCY_PILOT_DECISION.md",
+        firewall_heading="### 3.1 The run-purpose firewall table",
+        execution_decisions_record="docs/v2/AFCI_EFFICIENCY_PILOT_DECISION.md",
+        execution_decisions_heading="### 4.1 The repetition table",
+        repetition_pins=(
+            ("condition", "C1, C4"),
+            ("tasks", "PT01, PT04, PT07"),
+            ("reset_states", "NON_RESET, RESET"),
+            ("process_per_repetition", "fresh"),
+            ("session_per_repetition", "fresh"),
+            ("resume_permitted", False),
+            ("continuation_permitted", False),
+            ("session_reuse_permitted", False),
+            ("power_claim", "none"),
+            ("precision_claim", "none"),
+            ("treatment_effect_claim", "none"),
+        ),
+        diagnostic_freeze_record="docs/v2/AFCI_EFFICIENCY_PILOT_DECISION.md",
+        # SIX applicability tables, one per (task, condition). They are NOT
+        # collapsed to three: C1 and C4 differ in architecture_delivery, which is
+        # the one value a freeze table exists to pin, and a shared table would
+        # certify a delivery one of the two arms never received.
+        diagnostic_freeze_table_headings={
+            "PT01/C1": "### 6.1 Applicability table - PT01 / C1",
+            "PT01/C4": "### 6.2 Applicability table - PT01 / C4",
+            "PT04/C1": "### 6.3 Applicability table - PT04 / C1",
+            "PT04/C4": "### 6.4 Applicability table - PT04 / C4",
+            "PT07/C1": "### 6.5 Applicability table - PT07 / C1",
+            "PT07/C4": "### 6.6 Applicability table - PT07 / C4",
+        },
+        diagnostic_freeze_config_headings={
+            "PT01/C1": "### 7.1 Frozen execution configuration - PT01 / C1",
+            "PT01/C4": "### 7.2 Frozen execution configuration - PT01 / C4",
+            "PT04/C1": "### 7.3 Frozen execution configuration - PT04 / C1",
+            "PT04/C4": "### 7.4 Frozen execution configuration - PT04 / C4",
+            "PT07/C1": "### 7.5 Frozen execution configuration - PT07 / C1",
+            "PT07/C4": "### 7.6 Frozen execution configuration - PT07 / C4",
+        },
+        # The module default minus the single static architecture-delivery pin,
+        # which this purpose cannot carry because its two arms legitimately
+        # differ. The delivery is still checked, and checked HARDER: it is
+        # re-derived from architecture_delivery_for(condition) and compared with
+        # the record, so an absent or wrong value still refuses.
+        diagnostic_freeze_pins=tuple(
+            (k, v)
+            for k, v in DIAGNOSTIC_FREEZE_PINS
+            if k != "diagnostic_freeze_architecture_delivery"
+        ),
+        # Truthful at the time of writing, exactly as SL-V2-QUAL-01's were.
+        diagnostic_freeze_global_pins=(
+            ("global_g1", False),
+            ("global_g1_passed_by_this_record", False),
+            ("suite_frozen", False),
+            ("global_manifest_frozen", False),
+            ("global_td_b32_status", "open"),
+            ("td_b12_g6_status", "open"),
+            ("td_b34_status", "open"),
+            ("td_b01_status", "open"),
+            ("td_b11_status", "open"),
+            ("priority_b_state", "started; not complete"),
+            ("td_b03_status", "open"),
+        ),
     ),
 }
 
@@ -719,6 +912,39 @@ def assert_architecture_delivery_none(condition: str) -> None:
         )
 
 
+#: The architecture deliveries a run purpose may legitimately carry, derived
+#: from the conditions its authority permits. Nothing is widened here: a purpose
+#: still cannot run a condition outside ``permitted_conditions``, and the
+#: delivery it gets is still the one ``prepare_model_worktree`` defines.
+def permitted_architecture_deliveries(purpose: RunPurpose) -> Tuple[str, ...]:
+    return tuple(
+        sorted({architecture_delivery_for(c) for c in purpose.permitted_conditions})
+    )
+
+
+def assert_architecture_delivery_authorised(
+    purpose: RunPurpose, condition: str
+) -> None:
+    """Refuse a delivery the authorising purpose does not cover.
+
+    The predecessor of this check asserted ``delivery == 'none'`` for every run,
+    which was exactly right while every authorised purpose was a baseline-only
+    diagnostic and became wrong the moment a purpose authorised ``C4``. It is
+    replaced rather than relaxed: the delivery must still be one the purpose's
+    own permitted conditions produce, so a ``C4`` run under a ``C1``-only
+    authority is refused with the same code it was refused with before.
+    """
+    delivery = architecture_delivery_for(condition)
+    allowed = permitted_architecture_deliveries(purpose)
+    if delivery not in allowed:
+        raise RunnerRefusal(
+            ARCHITECTURE_DELIVERY_VIOLATION,
+            f"{condition} architecture_delivery is {delivery!r}; {purpose.name} "
+            f"authorises {list(purpose.permitted_conditions)}, whose deliveries "
+            f"are {list(allowed)}",
+        )
+
+
 # --------------------------------------------------------------------------- #
 # Public authorities
 # --------------------------------------------------------------------------- #
@@ -932,25 +1158,6 @@ def decision_is_open(decision_id: str, path: Path = OPEN_DECISIONS) -> bool:
 # defined above RUN_PURPOSES, because each purpose names the sections it is
 # governed by and that dict is evaluated at import time.
 
-#: Values the record must carry for the scoped freeze to exist at all. Kept as
-#: data so a relaxation in the record is a mechanical failure, never a reading.
-DIAGNOSTIC_FREEZE_PINS: Tuple[Tuple[str, object], ...] = (
-    ("diagnostic_freeze_frozen", True),
-    ("diagnostic_freeze_model_selector_is_alias", False),
-    ("diagnostic_freeze_api_key_used", False),
-    ("diagnostic_freeze_fallback_model_permitted", False),
-    ("diagnostic_freeze_process_per_repetition", "fresh"),
-    ("diagnostic_freeze_session_per_repetition", "fresh"),
-    ("diagnostic_freeze_resume_permitted", False),
-    ("diagnostic_freeze_continuation_permitted", False),
-    ("diagnostic_freeze_session_reuse_permitted", False),
-    ("diagnostic_freeze_sterile_context_required", True),
-    ("diagnostic_freeze_context_audit_required_every_repetition", True),
-    ("diagnostic_freeze_architecture_delivery", "none"),
-    ("diagnostic_freeze_is_result", False),
-    ("diagnostic_freeze_scored", False),
-)
-
 #: The suite-wide facts the record must continue to report as NOT granted. If a
 #: freeze record ever claimed one of them, the exception would have stopped being
 #: an applicability narrowing and become a gate pass, so it is refused outright.
@@ -1121,13 +1328,13 @@ def diagnostic_freeze_problems(
             f"under {purpose.name}; got {task_id!r}/{condition!r}",
         )]
 
-    heading = purpose.freeze_table_heading(task_id)
+    heading = purpose.freeze_table_heading(task_id, condition)
     if heading is None:
         return [(
             DIAGNOSTIC_FREEZE_SCOPE_EXCEEDED,
-            f"{authority} names no applicability section for {task_id} under "
-            f"{purpose.name}; a scoped freeze is never assumed for a task the "
-            "authority does not table",
+            f"{authority} names no applicability section for {task_id}/{condition} "
+            f"under {purpose.name}; a scoped freeze is never assumed for a "
+            "(task, condition) the authority does not table",
         )]
     record_path = record or purpose.freeze_record_path() or DIAGNOSTIC_FREEZE_RECORD
     governed = governed_diagnostic_freeze(record_path, heading)
@@ -1169,7 +1376,7 @@ def diagnostic_freeze_problems(
             ))
 
     # ---- the execution pins ---------------------------------------------- #
-    for key, expected in DIAGNOSTIC_FREEZE_PINS:
+    for key, expected in purpose.freeze_pins():
         if governed.get(key) != expected:
             problems.append((
                 DIAGNOSTIC_FREEZE_RECORD_INCONSISTENT,
@@ -1255,7 +1462,8 @@ def diagnostic_freeze_for(
         kwargs.get("record")
         or purpose.freeze_record_path()
         or DIAGNOSTIC_FREEZE_RECORD,
-        purpose.freeze_table_heading(task_id) or DIAGNOSTIC_FREEZE_TABLE_HEADING,
+        purpose.freeze_table_heading(task_id, condition)
+        or DIAGNOSTIC_FREEZE_TABLE_HEADING,
     )
     return DiagnosticFreeze(
         authority=str(governed["diagnostic_freeze_authority"]),
@@ -1756,9 +1964,49 @@ class ReadinessReport:
         }
 
 
+#: The approved architecture payload (the MAD), read from the one governed
+#: location. ``C3``/``C4`` require it and ``C1``/``C2`` must never see it.
+ARCHITECTURE_CONTEXT = REPO / "docs" / "v2" / "ARCHITECTURE_CONTEXT.md"
+
+
+def architecture_context_bytes(repo: Path = REPO) -> bytes:
+    """The EXACT bytes of the approved architecture payload.
+
+    Read as bytes, not as text: ``C4`` delivers the *same bytes* the oracle's
+    catalog is traceable to and that the manifest hashes, so a newline or
+    encoding normalisation on the way in would silently make the payload a
+    different document from the one the record pins.
+    """
+    path = Path(repo) / "docs" / "v2" / "ARCHITECTURE_CONTEXT.md"
+    try:
+        return path.read_bytes()
+    except OSError as exc:
+        raise RunnerRefusal(
+            GOVERNANCE_RECORD_UNREADABLE,
+            f"the approved architecture payload is unreadable at {path}: {exc}",
+        ) from exc
+
+
+def architecture_context_sha256(repo: Path = REPO) -> str:
+    return hashlib.sha256(architecture_context_bytes(repo)).hexdigest()
+
+
+def architecture_payload_for(condition: str, repo: Path = REPO) -> Optional[str]:
+    """The payload this condition receives, or ``None`` when it receives none.
+
+    Derived from :func:`architecture_delivery_for` rather than from a second
+    list of conditions, so the two can never disagree about which arm is the
+    baseline.
+    """
+    if architecture_delivery_for(condition) == "none":
+        return None
+    return architecture_context_bytes(repo).decode("utf-8")
+
+
 def _worktree_preparation_probe(task_id: str, condition: str) -> Prerequisite:
     """Prepare the governed worktree into a throwaway directory and discard it."""
     tmp = Path(tempfile.mkdtemp(prefix="afci-v2-readiness-"))
+    expected = architecture_delivery_for(condition)
     try:
         result = pmw.prepare_model_worktree(
             pmw.PreparationRequest(
@@ -1767,14 +2015,15 @@ def _worktree_preparation_probe(task_id: str, condition: str) -> Prerequisite:
                 dest_root=tmp / "worktree",
                 task_path=public_task_path(task_id),
                 task_id=task_id,
+                architecture_text=architecture_payload_for(condition),
             )
         )
         delivery = result.manifest["architecture_delivery"]
-        if delivery != "none":
+        if delivery != expected:
             return Prerequisite(
                 "c1_worktree_preparation",
                 BLOCKED,
-                f"architecture_delivery is {delivery!r}",
+                f"architecture_delivery is {delivery!r}, not {expected!r}",
                 ARCHITECTURE_DELIVERY_VIOLATION,
             )
         return Prerequisite(
@@ -1782,7 +2031,7 @@ def _worktree_preparation_probe(task_id: str, condition: str) -> Prerequisite:
             PASS,
             f"{condition} worktree prepares cleanly: "
             f"{result.manifest['entry_count']} allowlisted files, "
-            f"architecture_delivery=none, content_hash "
+            f"architecture_delivery={delivery}, content_hash "
             f"{str(result.manifest['content_hash'])[:16]}...",
         )
     except pmw.WorktreePreparationError as exc:
@@ -1848,10 +2097,17 @@ def _repetition_decision_probe(
     for key, expected in purpose.pins_for_repetitions():
         if governed.get(key) != expected:
             problems.append(f"{key} is {governed.get(key)!r}, not {expected!r}")
-    if governed.get("condition") not in purpose.permitted_conditions:
+    # A purpose authorising SEVERAL conditions tables them as one comma-separated
+    # cell. Every token must be permitted and the set must be exhaustive: a
+    # record naming a subset would let an unlisted arm run unrecorded, and one
+    # naming an extra would widen the authority by punctuation.
+    declared = [
+        c.strip() for c in str(governed.get("condition", "")).split(",") if c.strip()
+    ]
+    if not declared or sorted(declared) != sorted(purpose.permitted_conditions):
         problems.append(
-            f"the record's condition {governed.get('condition')!r} is outside the "
-            f"purpose's permitted conditions {list(purpose.permitted_conditions)}"
+            f"the record's condition {governed.get('condition')!r} does not match "
+            f"the purpose's permitted conditions {list(purpose.permitted_conditions)}"
         )
 
     if problems:

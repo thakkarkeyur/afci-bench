@@ -1,0 +1,767 @@
+{
+  "architecture_context_sha256": "bf6f32b162a23b851596d8b489d938bef10d0b8616a50dcc039873d12ffa7a4d",
+  "authority": "SL-V2-EFF-01",
+  "block_count": 18,
+  "blocks": [
+    {
+      "block_id": "PT07|NON_RESET|R1",
+      "condition_order": [
+        "C1",
+        "C4"
+      ],
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT01|RESET|R3",
+      "condition_order": [
+        "C4",
+        "C1"
+      ],
+      "repetition": 3,
+      "reset_state": "RESET",
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT01|RESET|R2",
+      "condition_order": [
+        "C1",
+        "C4"
+      ],
+      "repetition": 2,
+      "reset_state": "RESET",
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT07|RESET|R3",
+      "condition_order": [
+        "C4",
+        "C1"
+      ],
+      "repetition": 3,
+      "reset_state": "RESET",
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT01|NON_RESET|R2",
+      "condition_order": [
+        "C4",
+        "C1"
+      ],
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT01|RESET|R1",
+      "condition_order": [
+        "C1",
+        "C4"
+      ],
+      "repetition": 1,
+      "reset_state": "RESET",
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT04|NON_RESET|R2",
+      "condition_order": [
+        "C4",
+        "C1"
+      ],
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|RESET|R1",
+      "condition_order": [
+        "C1",
+        "C4"
+      ],
+      "repetition": 1,
+      "reset_state": "RESET",
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT01|NON_RESET|R3",
+      "condition_order": [
+        "C1",
+        "C4"
+      ],
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT07|RESET|R1",
+      "condition_order": [
+        "C1",
+        "C4"
+      ],
+      "repetition": 1,
+      "reset_state": "RESET",
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT04|RESET|R3",
+      "condition_order": [
+        "C1",
+        "C4"
+      ],
+      "repetition": 3,
+      "reset_state": "RESET",
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|NON_RESET|R3",
+      "condition_order": [
+        "C1",
+        "C4"
+      ],
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|RESET|R2",
+      "condition_order": [
+        "C1",
+        "C4"
+      ],
+      "repetition": 2,
+      "reset_state": "RESET",
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|NON_RESET|R1",
+      "condition_order": [
+        "C4",
+        "C1"
+      ],
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT01|NON_RESET|R1",
+      "condition_order": [
+        "C4",
+        "C1"
+      ],
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT07|NON_RESET|R2",
+      "condition_order": [
+        "C4",
+        "C1"
+      ],
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT07|RESET|R2",
+      "condition_order": [
+        "C4",
+        "C1"
+      ],
+      "repetition": 2,
+      "reset_state": "RESET",
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT07|NON_RESET|R3",
+      "condition_order": [
+        "C4",
+        "C1"
+      ],
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "task_id": "PT07"
+    }
+  ],
+  "budget_authority": "SL-V2-EFF-RESET-01",
+  "checkpoint_authority": "SL-V2-EFF-CHK-01",
+  "conditions": [
+    "C1",
+    "C4"
+  ],
+  "enters_confirmatory_dataset": false,
+  "is_result": false,
+  "model_id": "claude-sonnet-5",
+  "non_reset_max_turns": 64,
+  "ordering_method": "sort by SHA-256 of a seeded string; no language RNG is used, so the schedule is reproducible on any machine and any Python",
+  "post_reset_max_turns": 32,
+  "pre_reset_max_turns": 32,
+  "record": "afci-bench/v2/afci-efficiency-pilot-run-plan",
+  "repetitions": [
+    1,
+    2,
+    3
+  ],
+  "reset_states": [
+    "NON_RESET",
+    "RESET"
+  ],
+  "run_count": 36,
+  "run_purpose": "AFCI_EFFICIENCY_PILOT",
+  "runs": [
+    {
+      "block_id": "PT07|NON_RESET|R1",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 1,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 1,
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT07|NON_RESET|R1",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 2,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 2,
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT01|RESET|R3",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 1,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 3,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 3,
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT01|RESET|R3",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 2,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 3,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 4,
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT01|RESET|R2",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 1,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 2,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 5,
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT01|RESET|R2",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 2,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 2,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 6,
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT07|RESET|R3",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 1,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 3,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 7,
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT07|RESET|R3",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 2,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 3,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 8,
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT01|NON_RESET|R2",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 1,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 9,
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT01|NON_RESET|R2",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 2,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 10,
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT01|RESET|R1",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 1,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 1,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 11,
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT01|RESET|R1",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 2,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 1,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 12,
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT04|NON_RESET|R2",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 1,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 13,
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|NON_RESET|R2",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 2,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 14,
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|RESET|R1",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 1,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 1,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 15,
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|RESET|R1",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 2,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 1,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 16,
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT01|NON_RESET|R3",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 1,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 17,
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT01|NON_RESET|R3",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 2,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 18,
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT07|RESET|R1",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 1,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 1,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 19,
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT07|RESET|R1",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 2,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 1,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 20,
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT04|RESET|R3",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 1,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 3,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 21,
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|RESET|R3",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 2,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 3,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 22,
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|NON_RESET|R3",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 1,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 23,
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|NON_RESET|R3",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 2,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 24,
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|RESET|R2",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 1,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 2,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 25,
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|RESET|R2",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 2,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 2,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 26,
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|NON_RESET|R1",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 1,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 27,
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT04|NON_RESET|R1",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 2,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 28,
+      "task_id": "PT04"
+    },
+    {
+      "block_id": "PT01|NON_RESET|R1",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 1,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 29,
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT01|NON_RESET|R1",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 2,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 30,
+      "task_id": "PT01"
+    },
+    {
+      "block_id": "PT07|NON_RESET|R2",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 1,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 31,
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT07|NON_RESET|R2",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 2,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 32,
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT07|RESET|R2",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 1,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 2,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 33,
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT07|RESET|R2",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": null,
+      "position_in_block": 2,
+      "post_reset_turn_limit": 32,
+      "pre_reset_turn_limit": 32,
+      "repetition": 2,
+      "reset_state": "RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 34,
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT07|NON_RESET|R3",
+      "condition": "C4",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 1,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 35,
+      "task_id": "PT07"
+    },
+    {
+      "block_id": "PT07|NON_RESET|R3",
+      "condition": "C1",
+      "is_result": false,
+      "max_turns": 64,
+      "position_in_block": 2,
+      "post_reset_turn_limit": null,
+      "pre_reset_turn_limit": null,
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "scored": false,
+      "sequence": 36,
+      "task_id": "PT07"
+    }
+  ],
+  "runtime_version": "2.1.229",
+  "scored": false,
+  "seed": "AFCI_EFFICIENCY_PILOT_V1_20260914",
+  "task_sha256": {
+    "PT01": "6c938822fe19cd6e87942a6ee24ec8f604c0883da1b7f80d45216be35d7c9c39",
+    "PT04": "f349b150b1d8fe5676fed8460b1840b988ee2bb0a78b1966ef82ae9ce9c8a9b5",
+    "PT07": "557caed09420354efbc823c8b72e54b0760ac72847aba0d9c07d99e37ff7d2d7"
+  },
+  "tasks": [
+    "PT01",
+    "PT04",
+    "PT07"
+  ]
+}

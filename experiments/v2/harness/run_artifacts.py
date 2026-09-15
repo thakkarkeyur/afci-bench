@@ -246,6 +246,12 @@ def build_run_record(
     outcome: Dict[str, object],
     generated_at: str = "unspecified",
     repo: Path = gov.REPO,
+    #: SL-V2-EFF-01 / SL-V2-EFF-RESET-01. Both default to ``None`` and both are
+    #: OMITTED from the record when they are ``None``, so a record written by a
+    #: purpose that has neither is byte-identical to the one it produced before
+    #: these fields existed.
+    reset: Optional[Dict[str, object]] = None,
+    efficiency: Optional[Dict[str, object]] = None,
 ) -> Dict[str, object]:
     """Assemble the run record, deriving the firewall from the purpose itself."""
     firewall = purpose.firewall_flags()
@@ -261,7 +267,14 @@ def build_run_record(
     # fail closed instead of being written.
     gov.assert_firewall_consistent(purpose, run_purpose_block)
 
+    extra: Dict[str, object] = {}
+    if reset is not None:
+        extra["reset"] = reset
+    if efficiency is not None:
+        extra["efficiency"] = efficiency
+
     return {
+        **extra,
         "schema_version": RECORD_SCHEMA_VERSION,
         "record_kind": "runner_run_record",
         "run_id": run_id,

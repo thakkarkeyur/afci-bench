@@ -269,7 +269,16 @@ def test_9b_no_purpose_inherits_this_exception_as_precedent():
 
 
 def test_9c_every_purpose_that_carries_an_authority_names_its_own_decision():
-    """A purpose with no authority of its own can never acquire one by default."""
+    """A purpose with no authority of its own can never acquire one by default.
+
+    Every (task, CONDITION) the purpose permits must have its own applicability
+    section. The condition is part of the lookup because a purpose authorising
+    more than one condition — the efficiency pilot runs each task under `C1` and
+    `C4` — must table them separately: the two differ in
+    ``architecture_delivery``, which is the value a freeze table exists to pin,
+    and reading one arm's table as the other's would certify a delivery that arm
+    never received.
+    """
     for purpose in gov.RUN_PURPOSES.values():
         if purpose.diagnostic_freeze_authority is None:
             assert purpose.diagnostic_freeze_record is None
@@ -279,14 +288,26 @@ def test_9c_every_purpose_that_carries_an_authority_names_its_own_decision():
         assert record is not None and record.is_file(), (
             f"{purpose.name} names a freeze record that does not exist: {record}"
         )
+        seen = set()
         for task_id in purpose.permitted_tasks:
-            heading = purpose.freeze_table_heading(task_id)
-            assert heading, f"{purpose.name}/{task_id} has no applicability section"
-            table = gov.governed_diagnostic_freeze(record, heading)
-            assert table.get("diagnostic_freeze_authority") == (
-                purpose.diagnostic_freeze_authority
-            )
-            assert table.get("diagnostic_freeze_task") == task_id
+            for condition in purpose.permitted_conditions:
+                heading = purpose.freeze_table_heading(task_id, condition)
+                assert heading, (
+                    f"{purpose.name}/{task_id}/{condition} has no applicability "
+                    "section"
+                )
+                table = gov.governed_diagnostic_freeze(record, heading)
+                assert table.get("diagnostic_freeze_authority") == (
+                    purpose.diagnostic_freeze_authority
+                )
+                assert table.get("diagnostic_freeze_task") == task_id
+                assert table.get("diagnostic_freeze_condition") == condition
+                # A shared section would make two arms indistinguishable.
+                assert heading not in seen, (
+                    f"{purpose.name} reuses section {heading!r} for more than one "
+                    "(task, condition)"
+                )
+                seen.add(heading)
 
 
 # --------------------------------------------------------------------------- #

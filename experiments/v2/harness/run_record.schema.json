@@ -50,7 +50,7 @@
         "enters_power_estimation"
       ],
       "properties": {
-        "name": { "type": "string", "enum": ["PT08_DIFFICULTY_DIAGNOSTIC", "INSTRUMENT_QUALIFICATION_DIAGNOSTIC"] },
+        "name": { "type": "string", "enum": ["PT08_DIFFICULTY_DIAGNOSTIC", "INSTRUMENT_QUALIFICATION_DIAGNOSTIC", "AFCI_EFFICIENCY_PILOT"] },
         "decision_id": { "type": "string" },
         "confirmatory": { "type": "boolean", "enum": [false] },
         "confirmatory_eligible": { "type": "boolean", "enum": [false] },
@@ -171,7 +171,18 @@
         "model_status": { "type": "string" },
         "effort_input": { "type": ["string", "null"] },
         "session_handling": { "type": "string" },
-        "manifest_path": { "type": ["string", "null"] }
+        "manifest_path": { "type": ["string", "null"] },
+        "allowed_tools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "The PERMISSION allowlist, distinct from the tool set. Empty for every purpose that freezes none, which is what every run before SL-V2-EFF-01 did. OPTIONAL so records written before this field existed still validate."
+        },
+        "tools": { "type": "array", "items": { "type": "string" } },
+        "max_turns": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "SL-V2-EFF-RESET-01's agentic-turn ceiling for this process, or null when the authorising purpose freezes none. Never defaulted to a number."
+        }
       }
     },
     "invocation": {
@@ -186,8 +197,71 @@
         "detail": { "type": "string" },
         "started_at": { "type": ["string", "null"] },
         "ended_at": { "type": ["string", "null"] },
-        "wall_clock_seconds": { "type": ["number", "null"] }
+        "wall_clock_seconds": { "type": ["number", "null"] },
+        "stderr_path": { "type": ["string", "null"] },
+        "event_count": { "type": ["integer", "null"] },
+        "termination_method": {
+          "type": ["string", "null"],
+          "description": "How the process was made to stop. NOT_TERMINATED is the honest answer for one that ended on its own; a hard tree kill is recorded as TERMINATED_PROCESS_TREE and never relabelled as a graceful stop."
+        },
+        "completion": { "type": ["string", "null"] },
+        "stopped_early": { "type": ["boolean", "null"] },
+        "stop_event_index": { "type": ["integer", "null"] },
+        "max_turns_reached": {
+          "type": ["boolean", "null"],
+          "description": "True when the terminal result event carried subtype error_max_turns. That run exits 1 by design and is NOT a process failure."
+        }
       }
+    },
+    "reset": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "description": "SL-V2-EFF-RESET-01. Present only for a run whose purpose declares a reset state. OPTIONAL in the schema ON PURPOSE: every record written before this field existed carries no reset state and must stay valid and unrewritten. A reset_state of NON_RESET is a positive statement that the run was one process, not an absence.",
+      "required": ["reset_state"],
+      "properties": {
+        "reset_state": { "type": "string", "enum": ["NON_RESET", "RESET"] },
+        "status": { "type": ["string", "null"] },
+        "single_process": { "type": ["boolean", "null"] },
+        "max_turns": { "type": ["integer", "null"] },
+        "budget_authority": { "type": ["string", "null"] },
+        "checkpoint_authority": { "type": ["string", "null"] },
+        "checkpoint_id": { "type": ["string", "null"] },
+        "checkpoint_hash": { "type": ["string", "null"] },
+        "checkpoint_reached": { "type": ["boolean", "null"] },
+        "checkpoint_event_index": { "type": ["integer", "null"] },
+        "checkpoint_evidence": { "type": ["object", "null"] },
+        "phase_a_session_id": { "type": ["string", "null"] },
+        "phase_b_session_id": { "type": ["string", "null"] },
+        "phase_a_model": { "type": ["string", "null"] },
+        "phase_b_model": { "type": ["string", "null"] },
+        "phase_a_runtime": { "type": ["string", "null"] },
+        "phase_b_runtime": { "type": ["string", "null"] },
+        "phase_a_context_audit": { "type": ["string", "null"] },
+        "phase_b_context_audit": { "type": ["string", "null"] },
+        "phase_a_termination_method": { "type": ["string", "null"] },
+        "pre_reset_turn_limit": { "type": ["integer", "null"] },
+        "post_reset_turn_limit": { "type": ["integer", "null"] },
+        "pre_reset_turns_used": { "type": ["integer", "null"] },
+        "post_reset_turns_used": { "type": ["integer", "null"] },
+        "reset_handoff_seconds": { "type": ["number", "null"] },
+        "fresh_phase_b_process": { "type": ["boolean", "null"] },
+        "fresh_phase_b_profile": { "type": ["boolean", "null"] },
+        "fresh_phase_b_session": { "type": ["boolean", "null"] },
+        "same_worktree_across_reset": { "type": ["boolean", "null"] },
+        "phase_a_summarised_into_phase_b": { "type": "boolean", "enum": [false] },
+        "resume_used": { "type": "boolean", "enum": [false] },
+        "continue_used": { "type": "boolean", "enum": [false] },
+        "conversation_reused": { "type": "boolean", "enum": [false] },
+        "unused_pre_reset_transfers": { "type": "boolean", "enum": [false] },
+        "total_allowance": { "type": ["integer", "null"] },
+        "detail": { "type": ["string", "null"] },
+        "phases": { "type": ["object", "null"] }
+      }
+    },
+    "efficiency": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "description": "SL-V2-EFF-01's measurement block. OPTIONAL: records written before it existed carry none and stay valid. TOTAL_OUTPUT_TOKENS is nullable because a reset run's phase A is interrupted before its terminal result event, and the streamed per-message output figure is the message-start value rather than the total — so the output figure is withheld rather than understated. All three INPUT categories reconstruct exactly from the partial stream and are never withheld."
     },
     "model_identity": {
       "type": "object",

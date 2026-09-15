@@ -127,6 +127,72 @@ diagnostic_model_selection:
     confers_no_confirmatory_eligibility: true
     td_b03_status: "open; unchanged by this pin"
 
+  # SL-V2-EFF-01 - the PT01/PT04/PT07 x C1/C4 x NON_RESET/RESET efficiency
+  # pilot. It REUSES the configuration SL-PT08-05 live-validated, on the same
+  # machine, the same runtime and the same exact model id, with ONE deliberate
+  # difference recorded below and nowhere else.
+  #
+  # THE DIFFERENCE: a permission allowlist for the governed CI command. Measured
+  # across all nine executed live artifacts (PT08 R1-R3, PT09 R1-R3, PT10
+  # R1-R3), `npm run ci:agent` was refused with "This command requires approval"
+  # in all 44 attempts and executed 0 times. acceptEdits auto-approves edits
+  # and leaves Bash to rule evaluation, which with no allow rule returns
+  # behavior: "passthrough"; headless has nobody to ask, so the call is refused.
+  # A benchmark that instructs a model to validate with a command it is then
+  # refused is measuring the refusal, and the selected reset checkpoint would
+  # fire on a denial rather than on a validation.
+  #
+  # This pin does NOT change the PT08 or PT09/PT10 configurations, which keep
+  # exactly what they ran under, and does NOT re-interpret their outcomes. The
+  # bearing of the finding on those packages is TD-B42 and is UNRESOLVED.
+  #
+  # Like the blocks above, this confers NO primary selection: TD-B03 stays open
+  # and primary_model stays null.
+  AFCI_EFFICIENCY_PILOT:
+    decision_id: "SL-V2-EFF-01"
+    primary_model_family: "Claude Sonnet"
+    requested_selector: "sonnet"                # what Q1 asked for
+    exact_model_id: "claude-sonnet-5"           # what the runtime resolved
+    selector_used_for_repetitions: "claude-sonnet-5"   # the exact id, never the alias
+    q1_readback: "PASS"
+    q1_readback_sources: ["system.init.model", "modelUsage"]
+    q1_unambiguous: true
+    q1_validation_provenance: "SL-PT08-05; cited, not re-performed"
+    q8_invalid_model_id_rejection: "PASS"
+    q8_invalid_model_id: "claude-nonexistent-model-9x7q-not-a-real-id"
+    q8_evidence: "exit status 1; modelUsage empty; no other model reported; assistant turn synthetic"
+    q8_validation_provenance: "SL-PT08-05; cited, not re-performed"
+    sterile_context_validation: "PASS"
+    api_key_used: false
+    authentication: "claude-code-subscription-oauth (apiKeySource=none)"
+    fallback_model: "none; --fallback-model is refused by the launcher"
+    permission_mode: "acceptEdits"
+    tools: ["Read", "Edit", "Write", "Glob", "Grep", "Bash"]
+    # DISTINCT from `tools`: `tools` says which tools exist, this says which uses
+    # of them are pre-approved. Two rules because the runtime matches exact and
+    # prefix rules separately. Neither admits a different command, and neither
+    # admits a compound such as `cd X && npm run ci:agent`.
+    allowed_tools: ["Bash(npm run ci:agent)", "Bash(npm run ci:agent:*)"]
+    allowed_tools_rationale: "SL-V2-EFF-01 section 5; all 44 prior ci:agent attempts were refused and 0 executed"
+    allowed_tools_scope: "AFCI_EFFICIENCY_PILOT ONLY; PT08 and PT09/PT10 configurations are unchanged"
+    repetitions: 3                              # PER (task, condition, reset state) cell
+    tasks: ["PT01", "PT04", "PT07"]
+    conditions: ["C1", "C4"]
+    reset_states: ["NON_RESET", "RESET"]
+    observations_maximum: 36
+    # SL-V2-EFF-RESET-01, pilot-scoped. Resolves NO global allowance: TD-B01 and
+    # TD-B11 stay open and G2 is not passed.
+    pre_reset_max_turns: 32
+    post_reset_max_turns: 32
+    non_reset_max_turns: 64
+    turn_budget_authority: "SL-V2-EFF-RESET-01"
+    validated_claude_code_cli_version: "2.1.229"
+    governed_toolchain_cli_version: "2.1.209"
+    cli_version_discrepancy: "UNRESOLVED - the governed toolchain value predates this machine's installed runtime; no version match is claimed"
+    confers_no_primary_selection: true
+    confers_no_confirmatory_eligibility: true
+    td_b03_status: "open; unchanged by this pin"
+
 # Model screening (CRITICAL_DESIGN_DECISIONS D10; TD-B03).
 screening:
   screen_models: ["Sonnet 5", "Opus 4.8"]

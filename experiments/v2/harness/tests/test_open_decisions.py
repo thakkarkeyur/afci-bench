@@ -182,13 +182,19 @@ def test_closing_td_b40_confers_no_freeze_and_no_gate_pass():
         )
 
 
-def test_counts_are_41_blocking_6_nonblocking():
+def test_counts_are_42_blocking_6_nonblocking():
+    """The blocking range is CONTIGUOUS, which is the property worth pinning.
+
+    `TD-B42` was added by the AFCI efficiency pilot's pre-data freeze: every
+    executed live run to date denied the governed CI surface (44 attempts, 0
+    executions), and the bearing of that on those runs' outcomes is unresolved.
+    """
     rows = _registry_rows()
     blocking = [r["decision_id"] for r in rows if r["blocking"] == "yes"]
     nonblocking = [r["decision_id"] for r in rows if r["blocking"] == "no"]
-    assert sorted(blocking) == [f"TD-B{i:02d}" for i in range(1, 42)], blocking
+    assert sorted(blocking) == [f"TD-B{i:02d}" for i in range(1, 43)], blocking
     assert sorted(nonblocking) == [f"TD-N{i:02d}" for i in range(1, 7)], nonblocking
-    assert len(blocking) == 41 and len(nonblocking) == 6
+    assert len(blocking) == 42 and len(nonblocking) == 6
 
 
 def test_markdown_registry_counts_match_the_csv():

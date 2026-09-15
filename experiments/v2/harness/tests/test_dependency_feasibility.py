@@ -1055,10 +1055,19 @@ def test_the_registry_records_the_feasibility_package_without_closing_its_own_bl
     its residuals completed. That is recorded here rather than asserted away: the
     resolved set is pinned exactly, and the blockers this package must never close
     — `TD-B34`, `TD-B37`, `TD-B41` — are asserted open by name.
+
+    The registry has since also GROWN, by `TD-B42` from the AFCI efficiency
+    pilot's pre-data freeze. The counts are therefore read from the CSV and
+    checked against the prose, rather than pinned to the two numbers that were
+    current when this package was written: this test exists to prove the
+    feasibility package closed nothing of its own, and a later package legitimately
+    opening a new blocker must not read as that package closing one.
     """
     md = _text(DECISIONS_MD)
-    assert "Blocking decisions: 41**" in md
-    assert "Total decisions: 47**" in md
+    rows_for_counts = _rows(DECISIONS_CSV)
+    blocking = sum(1 for r in rows_for_counts if r["blocking"] == "yes")
+    assert f"Blocking decisions: {blocking}**" in md
+    assert f"Total decisions: {len(rows_for_counts)}**" in md
     rows = _rows(DECISIONS_CSV)
     resolved = {r["decision_id"] for r in rows if r["status"].strip().lower() == "resolved"}
     assert resolved == {"TD-B23", "TD-B24", "TD-B38", "TD-B40"}, (
