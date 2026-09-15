@@ -339,13 +339,22 @@ def test_case_17b_a_dry_run_never_fabricates_a_readback(tmp_path):
 def test_case_18_an_unvalidated_hidden_acceptance_fails_closed():
     """The gate still fires — on a package whose acceptance is unvalidated.
 
-    PT08's acceptance is now validated, so PT08 is the wrong probe for this
-    gate and would test the freeze gate instead. PT07 is the right one: its
-    scaffold is still `draft_unvalidated`.
+    The probe has to be a task that is ACTUALLY unvalidated, and which one that
+    is has changed twice: PT08 was validated first, then PT01, PT04 and PT07
+    under SL-V2-ORACLE-01. PT02 is the current right probe - its scaffold is
+    still `draft_unvalidated` and no runtime exists for it.
     """
     with pytest.raises(gov.RunnerRefusal) as exc:
-        ev.assert_scoring_prerequisites("PT07")
-    assert exc.value.code == "PT07_HIDDEN_ACCEPTANCE_NOT_VALIDATED"
+        ev.assert_scoring_prerequisites("PT02")
+    assert exc.value.code == "PT02_HIDDEN_ACCEPTANCE_NOT_VALIDATED"
+
+    # And a now-validated task is still refused - at the FREEZE gate, which is
+    # the next one along. Validation buys the acceptance prerequisite and
+    # nothing beyond it.
+    for validated in ("PT01", "PT04", "PT07"):
+        with pytest.raises(gov.RunnerRefusal) as still:
+            ev.assert_scoring_prerequisites(validated)
+        assert still.value.code == gov.MANIFEST_NOT_FROZEN, validated
 
 
 def test_case_18b_a_scored_run_is_refused_before_any_worktree_is_prepared(tmp_path):

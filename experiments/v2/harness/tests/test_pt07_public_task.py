@@ -357,7 +357,12 @@ def test_pt07_is_not_presented_as_frozen_or_as_carrying_an_opportunity():
         assert "not_yet_authored" not in values, (
             f"{path.name}: PT07's private package exists; 'not_yet_authored' is stale"
         )
-        assert row["status"] == "candidate-not-frozen", path.name
+        # The ACCEPTANCE row moved to `validated` under SL-V2-ORACLE-01. That is a
+        # HIDDEN-ACCEPTANCE state, not a lifecycle freeze, so what this test pins
+        # is the freeze itself rather than a token that also used to carry
+        # "not yet acceptance-validated" along with it.
+        assert row["status"] in ("candidate-not-frozen", "validated"), path.name
+        assert row["status"] != "frozen", path.name
         assert "not_yet_frozen" in values.lower(), (
             f"{path.name}: the row must record that the package is not frozen"
         )

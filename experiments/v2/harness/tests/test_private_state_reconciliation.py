@@ -359,8 +359,17 @@ def test_fact_2_pt07_is_not_frozen():
     assert "not a freeze" in reason, (
         "the record must say explicitly that package approval is not a freeze"
     )
-    for path in (RULE_MATRIX, LAYER_MATRIX, ACCEPTANCE_MATRIX):
+    for path in (RULE_MATRIX, LAYER_MATRIX):
         assert _by_id(path)["PT07"]["status"] == "candidate-not-frozen", path.name
+    # The ACCEPTANCE row moved to `validated` under SL-V2-ORACLE-01, which is a
+    # HIDDEN-ACCEPTANCE state and not a lifecycle freeze. What this test is about
+    # is the freeze, so it asserts the freeze directly rather than through a
+    # token that also happened to mean "not yet acceptance-validated".
+    acceptance_status = _by_id(ACCEPTANCE_MATRIX)["PT07"]["status"]
+    assert acceptance_status == "validated", ACCEPTANCE_MATRIX.name
+    assert acceptance_status != "frozen", ACCEPTANCE_MATRIX.name
+    assert "NOT A FREEZE" in _by_id(ACCEPTANCE_MATRIX)["PT07"]["notes"]
+    assert "not_yet_frozen" in _by_id(ACCEPTANCE_MATRIX)["PT07"]["notes"]
     assert _by_id(MATRIX_PATH)["PT07"]["task_status"] == "candidate"
     b34 = _norm(_decision("TD-B34")["decision"])
     assert "is not frozen" in b34

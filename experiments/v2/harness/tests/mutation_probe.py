@@ -228,12 +228,16 @@ def case_readback_missing_gate(scratch: Path) -> str:
 
 
 #: The hidden-acceptance gate is probed on a task whose acceptance is still
-#: UNVALIDATED. It used to be probed on PT08, but PT08's hidden acceptance is now
-#: validated, so PT08 answers True under the real harness AND under a mutation
-#: that removes the guard - the probe would agree with itself and the mutation
-#: test would pass while proving nothing. PT07 is still draft_unvalidated, so it
-#: still discriminates. This preserves the guard's power; it does not weaken it.
-UNVALIDATED_PROBE_TASK = "PT07"
+#: UNVALIDATED. A probe task that is VALIDATED answers True under the real
+#: harness AND under a mutation that removes the guard - the probe would agree
+#: with itself and the mutation test would pass while proving nothing.
+#:
+#: This constant has now moved twice, for the same reason each time: PT08 was
+#: validated first, then PT01, PT04 and PT07 under SL-V2-ORACLE-01. PT02 is still
+#: draft_unvalidated with no runtime authored for it, so it still discriminates.
+#: Each move preserves the guard's power; none weakens it. If PT02 is ever
+#: validated, this must move again rather than the assertion being relaxed.
+UNVALIDATED_PROBE_TASK = "PT02"
 
 
 def case_hidden_acceptance_gate(scratch: Path) -> str:

@@ -1062,10 +1062,18 @@ def test_the_pt08_acceptance_row_carries_no_current_state_draft_token():
         "PT08's acceptance row still carries the draft_unvalidated token; the "
         "runner scans the WHOLE ROW and would read the package as unvalidated"
     )
-    # the other nine rows still carry their own unvalidated lifecycle untouched
-    for tid in ("PT01", "PT02", "PT03", "PT04", "PT05", "PT06", "PT07",
-                "PR01", "PR02"):
+    # The rows that have NOT been acceptance-validated still carry their own
+    # unvalidated lifecycle untouched. PT01, PT04 and PT07 moved to `validated`
+    # under SL-V2-ORACLE-01 on their own executed evidence - which is a different
+    # thing from PT08's row moving, and neither row moved the other.
+    for tid in ("PT02", "PT03", "PT05", "PT06", "PR01", "PR02"):
         assert _by_id(ACCEPTANCE_MATRIX)[tid]["status"] == "candidate-not-frozen", tid
+    for tid in ("PT01", "PT04", "PT07"):
+        row = _by_id(ACCEPTANCE_MATRIX)[tid]
+        assert row["status"] == "validated", tid
+        # validated is NOT frozen, and the row has to say so itself
+        assert "NOT A FREEZE" in row["notes"], tid
+        assert "not_yet_frozen" in row["notes"], tid
 
 
 def test_the_pt08_acceptance_status_is_exactly_validated_and_never_frozen():
@@ -1079,8 +1087,14 @@ def test_the_runner_helpers_read_validated_but_not_frozen():
     gov = _gov()
     assert gov.hidden_acceptance_is_validated("PT08") is True
     assert gov.manifest_is_frozen("PT08") is False
-    # and nothing else moved with it
-    for tid in ("PT01", "PT04", "PT07", "PR02"):
+    # and nothing else moved WITH it. PT01, PT04 and PT07 are validated on their
+    # own separately executed evidence under SL-V2-ORACLE-01, not by inheriting
+    # PT08's; what matters here is that NONE of them is frozen, and that a task
+    # with no executed evidence is still read as unvalidated.
+    for tid in ("PT01", "PT04", "PT07"):
+        assert gov.hidden_acceptance_is_validated(tid) is True, tid
+        assert gov.manifest_is_frozen(tid) is False, tid
+    for tid in ("PT02", "PT03", "PR02"):
         assert gov.hidden_acceptance_is_validated(tid) is False, tid
         assert gov.manifest_is_frozen(tid) is False, tid
 

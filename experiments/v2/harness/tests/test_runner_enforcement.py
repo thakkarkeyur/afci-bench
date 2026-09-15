@@ -552,17 +552,21 @@ def test_q8_treats_a_silent_substitution_as_a_failure_of_the_control():
 # Evaluation boundary and the freeze gate
 # --------------------------------------------------------------------------- #
 def test_pt08_hidden_acceptance_no_longer_blocks_the_functional_channel():
-    """PT08's hidden acceptance is validated, so this one channel is READY.
+    """A validated hidden acceptance makes this one channel READY.
 
     Ready is not run-eligible: the freeze gate below is a separate check and it
-    still refuses. The nine other packages keep the refusal unchanged, which is
-    what shows the gate still works rather than having been switched off.
+    still refuses. The packages that are still unvalidated keep the refusal
+    unchanged, which is what shows the gate still works rather than having been
+    switched off.
     """
-    channel = ev.functional_acceptance_channel("PT08")
-    assert channel.ready is True
-    assert channel.code is None
-    assert "validated" in channel.detail
-    for tid in ("PT01", "PT04", "PT07", "PR02"):
+    # PT01, PT04 and PT07 joined PT08 under SL-V2-ORACLE-01, each on its own
+    # separately executed evidence.
+    for tid in ("PT08", "PT01", "PT04", "PT07"):
+        channel = ev.functional_acceptance_channel(tid)
+        assert channel.ready is True, tid
+        assert channel.code is None, tid
+        assert "validated" in channel.detail, tid
+    for tid in ("PT02", "PT03", "PT05", "PR02"):
         other = ev.functional_acceptance_channel(tid)
         assert other.ready is False, tid
         assert other.code == f"{tid}_HIDDEN_ACCEPTANCE_NOT_VALIDATED", tid
@@ -586,10 +590,17 @@ def test_a_scored_run_is_refused_before_execution():
         ev.assert_scoring_prerequisites("PT08")
     assert exc.value.code == gov.MANIFEST_NOT_FROZEN
     assert exc.value.code != "PT08_HIDDEN_ACCEPTANCE_NOT_VALIDATED"
-    # a package whose hidden acceptance is still unvalidated refuses earlier
+    # a package whose hidden acceptance is still unvalidated refuses earlier.
+    # PT07 was that probe until SL-V2-ORACLE-01 validated it; PT02 is one that
+    # genuinely still has no runtime.
     with pytest.raises(gov.RunnerRefusal) as other:
-        ev.assert_scoring_prerequisites("PT07")
-    assert other.value.code == "PT07_HIDDEN_ACCEPTANCE_NOT_VALIDATED"
+        ev.assert_scoring_prerequisites("PT02")
+    assert other.value.code == "PT02_HIDDEN_ACCEPTANCE_NOT_VALIDATED"
+    # and a newly validated package refuses at the freeze, exactly like PT08
+    for tid in ("PT01", "PT04", "PT07"):
+        with pytest.raises(gov.RunnerRefusal) as moved:
+            ev.assert_scoring_prerequisites(tid)
+        assert moved.value.code == gov.MANIFEST_NOT_FROZEN, tid
 
 
 def test_the_freeze_status_is_reported_and_never_changed():
