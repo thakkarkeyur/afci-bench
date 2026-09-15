@@ -12,13 +12,23 @@ firewall. Every existing harness module keeps its job; this one sequences them.
 
 What this is not
 ----------------
-It is **not** a model invoker. ``--dry-run`` executes every safe pre-launch
-step and never starts a model process. Real invocation is implemented as an
-adapter that refuses before any process could be created while
-``MODEL_REGISTRY.yml`` records ``primary_model: null`` — which it does. It
-selects no model, chooses no sample size, validates no hidden acceptance,
-freezes nothing and passes no gate. It produces no result: the run-record schema
-pins ``is_result: false`` and ``scored: false``.
+It **selects no model**. ``MODEL_REGISTRY.yml`` still records
+``primary_model: null`` and ``TD-B03`` is still open, so a real invocation is
+reachable only for a run purpose the registry pins a model for, by name, and is
+refused before any process could be created for every other. It chooses no
+sample size, validates no hidden acceptance, freezes nothing and passes no gate.
+It produces no result: the run-record schema pins ``is_result: false`` and
+``scored: false`` and refuses a record that says otherwise.
+
+``--dry-run`` executes every safe pre-launch step and never starts a model
+process.
+
+**It does invoke a model**, for a purpose that authorises one. That sentence
+used to read "it is not a model invoker", which was true when it was written and
+stopped being true when ``SL-PT08-05`` pinned a model for the PT08 diagnostic
+and its three repetitions ran through this module. It is corrected rather than
+softened: a reader deciding whether this file can spend money should not have to
+work that out from somewhere else.
 
 The state machine
 -----------------
@@ -48,6 +58,25 @@ actually be used: the plan is derived in ``PRECHECK``, certified in
 (``LAUNCH_COMMAND_DIVERGED_FROM_AUDIT``). Auditing one command and running
 another would make the audit decorative.
 
+The reset, and why it does not add a state
+------------------------------------------
+A purpose may declare a ``reset_state`` (``SL-V2-EFF-01`` is the first that
+does). ``NON_RESET`` runs the machine above unchanged, one process. ``RESET``
+runs :mod:`reset_orchestration` from inside ``MODEL_INVOCATION``: phase A, the
+handoff, phase B.
+
+The states are deliberately NOT extended for it. The machine's order is a
+contract that existing records were written against, and a reset is not a
+different orchestration — it is one invocation performed in two halves. So the
+two-phase structure, including phase B's own mandatory context audit, lives in
+the module that owns it and is recorded in the run record's ``reset`` block,
+where a reader finds both phases side by side rather than interleaved into a
+state log that would no longer describe either.
+
+``reset_state`` is never defaulted. A purpose that declares one and is handed
+none is refused, because the two arms are the experimental factor and picking
+one by omission would assign half the design by accident.
+
 Usage
 -----
 ::
@@ -58,7 +87,13 @@ Usage
     python experiments/v2/harness/run_v2.py --dry-run \\
         --task PT08 --condition C1 --run-purpose PT08_DIFFICULTY_DIAGNOSTIC
 
-No model is invoked and no benchmark task is executed.
+A reset-aware purpose must declare its arm::
+
+    python experiments/v2/harness/run_v2.py --dry-run \\
+        --task PT01 --condition C4 --run-purpose AFCI_EFFICIENCY_PILOT \\
+        --reset-state RESET --repetition 1
+
+Neither of those starts a model process.
 """
 from __future__ import annotations
 
@@ -359,6 +394,8 @@ def run(request: RunRequest) -> RunResult:
         # authority that names C4.
         gov.assert_architecture_delivery_authorised(purpose, request.condition)
         reset_state = _resolve_reset_state(purpose, request)
+        if reset_state is not None and request.mode == "real":
+            _assert_frozen_launch_configuration(purpose, request, reset_state)
 
         expected_sha = gov.expected_task_sha256(request.task_id)
         body = gov.public_task_path(request.task_id)
@@ -902,6 +939,44 @@ def _resolve_reset_state(
             "declare which one it is and never defaults to either",
         )
     return rb.assert_reset_state(request.reset_state)
+
+
+def _assert_frozen_launch_configuration(
+    purpose: gov.RunPurpose, request: RunRequest, reset_state: str
+) -> None:
+    """Refuse a real run whose launch is not the one the authority froze.
+
+    This exists because the alternative fails OPEN, which is the wrong direction
+    for both values it checks:
+
+    * a missing turn ceiling would let one repetition run without any allowance
+      at all while every other repetition in the same cell ran under 64, and the
+      record would show nothing wrong;
+    * a missing permission allowlist would reproduce, exactly, the defect
+      `SL-V2-EFF-01` §5 was written about — the governed CI command refused in
+      every attempt, and the run measuring the refusal.
+
+    Both are compared against what the purpose FREEZES, re-derived rather than
+    restated, so a caller cannot satisfy the check by passing something that
+    merely looks plausible.
+    """
+    expected_tools = _frozen_allowed_tools(purpose.name, request.task_id)
+    if tuple(request.allowed_tools) != tuple(expected_tools):
+        raise gov.RunnerRefusal(
+            gov.DIAGNOSTIC_FREEZE_RECORD_INCONSISTENT,
+            f"{purpose.decision_id} freezes the permission allowlist "
+            f"{list(expected_tools)} for {request.task_id}; the run supplies "
+            f"{list(request.allowed_tools)}. A run without it is refused the "
+            "governed CI command and measures the refusal",
+        )
+    expected_turns = _frozen_max_turns(purpose.name, reset_state)
+    if request.max_turns != expected_turns:
+        raise gov.RunnerRefusal(
+            gov.RESET_BUDGET_NOT_FROZEN,
+            f"{reset_state} under {purpose.name} carries a frozen ceiling of "
+            f"{expected_turns!r}; the run supplies {request.max_turns!r}. The "
+            "runner never runs an allowance it was not given",
+        )
 
 
 def _declared_reset_block(

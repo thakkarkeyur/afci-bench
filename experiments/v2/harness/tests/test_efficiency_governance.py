@@ -409,6 +409,61 @@ def _clean_audit():
     return _Audit()
 
 
+def test_a_real_run_without_the_frozen_allowlist_or_ceiling_is_refused(tmp_path):
+    """Both checks fail CLOSED; the alternative reproduces the defect TD-B42 names."""
+    base = dict(
+        task_id="PT01",
+        condition="C1",
+        run_purpose=PURPOSE,
+        mode="real",
+        artifact_root=tmp_path / "runs",
+        keep_worktree=False,
+    )
+    purpose = gov.resolve_run_purpose(PURPOSE)
+
+    # No allowlist at all.
+    request = run_v2.RunRequest(
+        **base, reset_state=rb.NON_RESET, allowed_tools=(), max_turns=64
+    )
+    with pytest.raises(gov.RunnerRefusal) as excinfo:
+        run_v2._assert_frozen_launch_configuration(purpose, request, rb.NON_RESET)
+    assert excinfo.value.code == gov.DIAGNOSTIC_FREEZE_RECORD_INCONSISTENT
+
+    # A plausible-looking but different allowlist.
+    request = run_v2.RunRequest(
+        **base, reset_state=rb.NON_RESET,
+        allowed_tools=("Bash(npm run ci)",), max_turns=64,
+    )
+    with pytest.raises(gov.RunnerRefusal):
+        run_v2._assert_frozen_launch_configuration(purpose, request, rb.NON_RESET)
+
+    # No ceiling on the arm that has one.
+    request = run_v2.RunRequest(
+        **base, reset_state=rb.NON_RESET,
+        allowed_tools=ma.bash_allow_rule(CI), max_turns=None,
+    )
+    with pytest.raises(gov.RunnerRefusal) as excinfo:
+        run_v2._assert_frozen_launch_configuration(purpose, request, rb.NON_RESET)
+    assert excinfo.value.code == gov.RESET_BUDGET_NOT_FROZEN
+
+    # An outer ceiling on the arm that must not have one.
+    request = run_v2.RunRequest(
+        **base, reset_state=rb.RESET,
+        allowed_tools=ma.bash_allow_rule(CI), max_turns=32,
+    )
+    with pytest.raises(gov.RunnerRefusal) as excinfo:
+        run_v2._assert_frozen_launch_configuration(purpose, request, rb.RESET)
+    assert excinfo.value.code == gov.RESET_BUDGET_NOT_FROZEN
+
+    # And the two frozen configurations pass.
+    for state, turns in ((rb.NON_RESET, 64), (rb.RESET, None)):
+        ok = run_v2.RunRequest(
+            **base, reset_state=state,
+            allowed_tools=ma.bash_allow_rule(CI), max_turns=turns,
+        )
+        run_v2._assert_frozen_launch_configuration(purpose, ok, state)
+
+
 def test_a_dry_run_refuses_a_condition_the_purpose_does_not_authorise(tmp_path):
     result = run_v2.run(
         run_v2.RunRequest(
