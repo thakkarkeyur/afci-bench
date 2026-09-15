@@ -784,6 +784,54 @@ No run in this schedule has been executed.
 
 ---
 
+## 12a. The pilot is FROZEN but NOT YET RUN-ELIGIBLE
+
+Everything above is frozen. The pilot still **cannot execute**, and the reason
+is recorded here rather than discovered by whoever tries.
+
+`check_readiness` reports, for all six (task, condition) cells:
+
+| blocker | PT01 | PT04 | PT07 |
+|---|---|---|---|
+| `PRIVATE_PUBLIC_SYNC_PROPAGATION_REQUIRED_BEFORE_FREEZE` | **BLOCKED** | **BLOCKED** | **BLOCKED** |
+| `ARCHITECTURE_CORPUS_NOT_AVAILABLE` | **BLOCKED** | **BLOCKED** | pass |
+| `CONTEXT_AUDIT_UNKNOWN` | see below | see below | see below |
+
+**The public-sync propagation.** The private package record must state that a
+public accounting synchronization has been propagated before a task may be
+frozen — *scoped or otherwise*, which is exactly what §6 does. `PT08`, `PT09`
+and `PT10` carry that record and are `SATISFIED`. `PT01` and `PT04` have **no
+package record at all**; `PT07` has one that **carries no
+`public_synchronisation_required_before_freeze` entry**.
+
+**The architecture corpus.** `PT01` and `PT04` have no private
+`<task>_corpus.py`. `PT07`, `PT08` and the qualification pair do. Whether a
+COST-ONLY purpose — which produces no architecture score, violation value or
+E1 contribution — needs the architecture-oracle validation corpus at all is a
+reasonable question, and it is **not answered here**. This record does not
+weaken a prerequisite so that its own pilot passes.
+
+**The context verdict is not in this list.** A readiness report has not run the
+audit and truthfully reports it as not demonstrated; `CONTEXT_AUDIT` runs it
+moments later and refuses on anything but `CLEAN`. A dry run of `PT01`/`C4`
+with a governed sterile profile returns **CLEAN** and completes every state.
+
+**The runner now refuses rather than spending.** A real run whose own readiness
+report carries any blocker other than the context verdict is refused in
+`PRECHECK`, before a process could be created. That closed a fail-OPEN: the
+report was computed, written to `readiness.json`, recorded in
+`prerequisite_blockers` — and then not acted on. It never mattered, because
+every purpose executed so far had its prerequisites met. That was luck, not a
+control.
+
+**Operational note.** The artifact root must be **outside the operator's home
+directory**. The context audit scans the workspace's ancestors, so a run rooted
+under `~` finds the developer's own `~/.claude` and is correctly reported
+`CONTAMINATED`. The executed diagnostics used `D:\pt08-diagnostic` and
+`D:\afci-v2-qual` for this reason.
+
+---
+
 ## 13. What this decision does NOT do
 
 | | status after this record |

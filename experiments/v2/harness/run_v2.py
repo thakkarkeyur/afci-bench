@@ -493,6 +493,9 @@ def run(request: RunRequest) -> RunResult:
         result.readiness = readiness
         directory.write_json("readiness.json", readiness.to_dict())
 
+        if request.mode == "real":
+            _assert_readiness_permits_a_real_run(readiness)
+
         machine.passed(
             f"{purpose.decision_id} authorises {request.task_id}/{request.condition}; "
             f"task hash verified; substrate {substrate['commit'][:12]} hashes "
@@ -939,6 +942,47 @@ def _resolve_reset_state(
             "declare which one it is and never defaults to either",
         )
     return rb.assert_reset_state(request.reset_state)
+
+
+#: Blockers a REAL run may still carry into ``PRECHECK``, because the very next
+#: state resolves them fail-closed and resolving them earlier is not possible.
+#:
+#: Exactly one qualifies: the context-isolation verdict. A readiness report has
+#: not run the audit and truthfully reports the verdict as not demonstrated;
+#: ``CONTEXT_AUDIT`` runs it moments later and refuses on anything but CLEAN
+#: before a process could be created.
+_BLOCKERS_RESOLVED_BY_A_LATER_STATE: Sequence[str] = (
+    gov.CONTEXT_AUDIT_UNKNOWN,
+    gov.CONTEXT_AUDIT_CONTAMINATED,
+)
+
+
+def _assert_readiness_permits_a_real_run(readiness: gov.ReadinessReport) -> None:
+    """Refuse a paid run whose own readiness report says it is not eligible.
+
+    This closes a fail-OPEN. The readiness report was computed, written to
+    ``readiness.json`` and recorded in ``prerequisite_blockers`` — and then not
+    acted on. A run could therefore spend real money while the artifact beside
+    it said, correctly, that its prerequisites were unmet. It never happened,
+    because every purpose executed so far had them met; that is luck, not a
+    control.
+
+    Reported all at once rather than one at a time: an operator preparing a
+    36-run session needs the whole list, not the first item thirty-six times.
+    """
+    outstanding = [
+        item
+        for item in readiness.blocked
+        if str(item.code) not in _BLOCKERS_RESOLVED_BY_A_LATER_STATE
+    ]
+    if not outstanding:
+        return
+    detail = "; ".join(f"<{item.code}> {item.item}: {item.detail}" for item in outstanding)
+    raise gov.RunnerRefusal(
+        str(outstanding[0].code),
+        f"{len(outstanding)} run-eligibility prerequisite(s) are unmet and a real "
+        f"run is refused before a process could be created: {detail}",
+    )
 
 
 def _assert_frozen_launch_configuration(

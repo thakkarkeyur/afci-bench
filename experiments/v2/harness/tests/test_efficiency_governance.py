@@ -464,6 +464,75 @@ def test_a_real_run_without_the_frozen_allowlist_or_ceiling_is_refused(tmp_path)
         run_v2._assert_frozen_launch_configuration(purpose, ok, state)
 
 
+def test_a_real_run_is_refused_while_its_own_readiness_says_it_is_not_eligible():
+    """The fail-OPEN this package closed, and the one blocker that stays allowed."""
+    class Item:
+        def __init__(self, item, code, detail=""):
+            self.item, self.code, self.detail = item, code, detail
+
+    class Report:
+        def __init__(self, blocked):
+            self.blocked = blocked
+
+    # The context verdict alone is permitted through: CONTEXT_AUDIT runs next
+    # and refuses on anything but CLEAN.
+    run_v2._assert_readiness_permits_a_real_run(
+        Report([Item("clean_isolated_context", gov.CONTEXT_AUDIT_UNKNOWN)])
+    )
+    run_v2._assert_readiness_permits_a_real_run(Report([]))
+
+    for code in (
+        gov.ARCHITECTURE_CORPUS_NOT_AVAILABLE,
+        gov.PRIVATE_PUBLIC_SYNC_PROPAGATION_REQUIRED_BEFORE_FREEZE,
+        gov.PRIVATE_LINKAGE_NOT_VERIFIABLE,
+        gov.HIDDEN_ACCEPTANCE_NOT_VALIDATED,
+        gov.MANIFEST_NOT_FROZEN,
+    ):
+        with pytest.raises(gov.RunnerRefusal) as excinfo:
+            run_v2._assert_readiness_permits_a_real_run(
+                Report([Item("x", code, "why")])
+            )
+        assert excinfo.value.code == code
+
+    # Every outstanding blocker is reported at once, not one at a time.
+    with pytest.raises(gov.RunnerRefusal) as excinfo:
+        run_v2._assert_readiness_permits_a_real_run(
+            Report([
+                Item("clean_isolated_context", gov.CONTEXT_AUDIT_UNKNOWN),
+                Item("a", gov.ARCHITECTURE_CORPUS_NOT_AVAILABLE, "no corpus"),
+                Item("b", gov.PRIVATE_PUBLIC_SYNC_PROPAGATION_REQUIRED_BEFORE_FREEZE, "no sync"),
+            ])
+        )
+    message = excinfo.value.message
+    assert "2 run-eligibility prerequisite(s)" in message
+    assert "no corpus" in message and "no sync" in message
+    assert "clean_isolated_context" not in message
+
+
+@pytest.mark.parametrize("task", TASKS)
+@pytest.mark.parametrize("condition", CONDITIONS)
+def test_the_pilot_tasks_are_not_yet_run_eligible(task, condition):
+    """Recorded as a FACT, not smoothed over. See the session report.
+
+    The three pilot instruments have executable, validated hidden acceptance,
+    but they have never been through the private pre-freeze public-sync
+    propagation, and PT01/PT04 have no private architecture corpus. Those are
+    prerequisites of a real run and they are unmet, so the runner refuses.
+
+    This test asserts the CURRENT state. When the private package work is done
+    it will fail, and that failure is the signal to re-read the freeze rather
+    than to delete the test.
+    """
+    report = gov.check_readiness(
+        task, condition, PURPOSE, private_root=gov.default_private_root()
+    )
+    codes = {str(item.code) for item in report.blocked}
+    assert gov.PRIVATE_PUBLIC_SYNC_PROPAGATION_REQUIRED_BEFORE_FREEZE in codes
+    if task in ("PT01", "PT04"):
+        assert gov.ARCHITECTURE_CORPUS_NOT_AVAILABLE in codes
+    assert report.run_eligible is False
+
+
 def test_a_dry_run_refuses_a_condition_the_purpose_does_not_authorise(tmp_path):
     result = run_v2.run(
         run_v2.RunRequest(
