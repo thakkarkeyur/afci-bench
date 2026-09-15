@@ -469,6 +469,43 @@ def test_the_record_leaks_no_per_task_architecture_identity():
     ), "the eligibility record renders a layer edge"
 
 
+def test_the_readiness_probe_declares_the_reset_arm_it_audits(monkeypatch):
+    """A reset-aware purpose refuses a run that does not declare its arm.
+
+    ``--check-readiness --live-context-audit`` runs a real dry run so the audited
+    environment is the one a repetition would launch in. It did not pass the arm
+    on, so for this purpose the probe refused in ``PRECHECK`` and the verdict
+    came back ``UNKNOWN`` — which reads as *the environment is not clean* when
+    what happened is that the audit never ran. The arm is threaded, never
+    defaulted: a purpose that needs one and is given none still refuses.
+    """
+    seen = {}
+
+    def _fake_run(request):
+        seen["reset_state"] = request.reset_state
+        return run_v2.RunResult(
+            machine=None,
+            record={"context_audit": {"verdict": "CLEAN"}},
+        )
+
+    monkeypatch.setattr(run_v2, "run", _fake_run)
+    args = run_v2._build_parser().parse_args([
+        "--task", "PT01", "--condition", "C1", "--run-purpose", PURPOSE,
+        "--reset-state", "RESET", "--check-readiness",
+    ])
+    assert run_v2.live_context_verdict(args) == "CLEAN"
+    assert seen["reset_state"] == "RESET"
+
+    args = run_v2._build_parser().parse_args([
+        "--task", "PT01", "--condition", "C1", "--run-purpose", PURPOSE,
+        "--check-readiness",
+    ])
+    run_v2.live_context_verdict(args)
+    assert seen["reset_state"] is None, (
+        "an absent arm must stay absent so the purpose's own refusal fires"
+    )
+
+
 def test_no_efficiency_observation_exists_when_this_rule_is_recorded():
     """The pre-data proof, mechanical rather than prose."""
     for name in ("results", "analysis"):

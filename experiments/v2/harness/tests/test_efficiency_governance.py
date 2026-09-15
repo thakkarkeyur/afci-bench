@@ -511,26 +511,56 @@ def test_a_real_run_is_refused_while_its_own_readiness_says_it_is_not_eligible()
 
 @pytest.mark.parametrize("task", TASKS)
 @pytest.mark.parametrize("condition", CONDITIONS)
-def test_the_pilot_tasks_are_not_yet_run_eligible(task, condition):
-    """Recorded as a FACT, not smoothed over. See the session report.
+def test_the_pilot_tasks_are_run_eligible_but_for_the_context_verdict(task, condition):
+    """The state §12a predicted this test would reach, reached.
 
-    The three pilot instruments have executable, validated hidden acceptance,
-    but they have never been through the private pre-freeze public-sync
-    propagation, and PT01/PT04 have no private architecture corpus. Those are
-    prerequisites of a real run and they are unmet, so the runner refuses.
+    Its predecessor asserted that the three instruments were NOT run-eligible:
+    they had never been through the private pre-freeze public-sync propagation,
+    and PT01/PT04 had no private architecture corpus. Its docstring said that
+    when the private package work was done the test would fail, and that the
+    failure was the signal to re-read the freeze rather than to delete the test.
+    That is what happened, so it is re-read here rather than deleted.
 
-    This test asserts the CURRENT state. When the private package work is done
-    it will fail, and that failure is the signal to re-read the freeze rather
-    than to delete the test.
+    The sync item was discharged by PROPAGATION — each package now records it
+    SATISFIED against a public commit the runner independently verifies is an
+    ancestor of HEAD. The corpus item is `SL-V2-EFF-ELIG-01`'s narrowing, and it
+    is asserted as `N/A` rather than `PASS`, because the corpus still does not
+    exist and the requirement is unchanged everywhere it applies.
+
+    The context verdict is the one blocker left, it is not of this kind, and
+    `_assert_readiness_permits_a_real_run` lets exactly it through because
+    `CONTEXT_AUDIT` runs the real audit moments later and refuses on anything
+    but CLEAN.
     """
     report = gov.check_readiness(
         task, condition, PURPOSE, private_root=gov.default_private_root()
     )
     codes = {str(item.code) for item in report.blocked}
-    assert gov.PRIVATE_PUBLIC_SYNC_PROPAGATION_REQUIRED_BEFORE_FREEZE in codes
-    if task in ("PT01", "PT04"):
-        assert gov.ARCHITECTURE_CORPUS_NOT_AVAILABLE in codes
-    assert report.run_eligible is False
+    assert codes == {gov.CONTEXT_AUDIT_UNKNOWN}, (
+        f"{task}/{condition} carries a blocker other than the context verdict: "
+        f"{[(i.item, i.code, i.detail) for i in report.blocked]}"
+    )
+    statuses = {item.item: item.status for item in report.prerequisites}
+    assert statuses["private_sync_propagation_before_freeze"] == gov.PASS
+    assert statuses["pilot_architecture_validation"] == gov.PASS
+    # PT07 ships a corpus; PT01 and PT04 do not and are exempt, never "passed".
+    assert statuses["architecture_corpus_availability"] == (
+        gov.PASS if task == "PT07" else gov.NOT_APPLICABLE
+    )
+    # And the narrowing claims nothing: G1 is still not passed.
+    assert statuses["suite_wide_gate_g1"] == gov.NOT_APPLICABLE
+
+
+@pytest.mark.parametrize("task", TASKS)
+@pytest.mark.parametrize("condition", CONDITIONS)
+def test_a_clean_context_verdict_leaves_no_blocker_at_all(task, condition):
+    """The whole frozen matrix, with the one deferred verdict supplied."""
+    report = gov.check_readiness(
+        task, condition, PURPOSE,
+        private_root=gov.default_private_root(), context_verdict="CLEAN",
+    )
+    assert report.blocked == [], [(i.item, i.code) for i in report.blocked]
+    assert report.run_eligible is True
 
 
 def test_a_dry_run_refuses_a_condition_the_purpose_does_not_authorise(tmp_path):

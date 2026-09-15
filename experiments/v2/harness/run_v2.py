@@ -1437,6 +1437,14 @@ def live_context_verdict(args) -> str:
             condition=args.condition,
             run_purpose=args.run_purpose,
             mode="dry-run",
+            # A reset-aware purpose refuses a run that does not declare its arm,
+            # and the probe is a real run of every pre-launch state. Omitting the
+            # arm here made the probe refuse in PRECHECK and report the verdict
+            # as UNKNOWN — which reads as "the environment is not clean" when
+            # what actually happened is that the audit never ran. The arm is
+            # threaded rather than defaulted: a purpose that needs one and is
+            # given none still refuses, exactly as a repetition would.
+            reset_state=args.reset_state,
             artifact_root=root / "readiness-context-audit",
             private_root=Path(args.private_root) if args.private_root else None,
             sterile_base=Path(args.sterile_base) if args.sterile_base else None,
