@@ -202,6 +202,17 @@ PRIVATE_LINKAGE_NOT_VERIFIABLE = "PRIVATE_LINKAGE_NOT_VERIFIABLE"
 ARCHITECTURE_CORPUS_NOT_AVAILABLE = "ARCHITECTURE_CORPUS_NOT_AVAILABLE"
 ISOLATED_ENVIRONMENT_NOT_VERIFIED = "ISOLATED_ENVIRONMENT_NOT_VERIFIED"
 
+#: SL-V2-EFF-ELIG-01. The executed legal / target-violating reference validation
+#: a pilot-scoped corpus exemption stands on. It is a REFUSAL in every direction:
+#: an absent record, a record not bound to the approved task bytes, a legal
+#: reference that violates, a violating reference the scorer misses, or a
+#: detected rule/edge that is not the declared target one all fail closed. The
+#: exemption never widens — a task that cannot satisfy it is simply blocked by
+#: ARCHITECTURE_CORPUS_NOT_AVAILABLE exactly as before.
+PILOT_ARCHITECTURE_VALIDATION_NOT_AVAILABLE = (
+    "PILOT_ARCHITECTURE_VALIDATION_NOT_AVAILABLE"
+)
+
 # Real-process launch outcomes. A launch that cannot be started, cannot be
 # completed, or cannot be read back is INVALID; none of these is ever a partial
 # success that a repetition could still be scored from.
@@ -403,6 +414,24 @@ class RunPurpose:
     #: convention. Never a guess: an unresolvable script is reported as absent.
     private_corpus_script: Optional[str] = None
 
+    # ------------------------------------------------------------------ #
+    # ``SL-V2-EFF-ELIG-01``: the PILOT-SCOPED architecture-corpus exemption.
+    #
+    # ``None`` is the fail-closed default, and it is the value every existing
+    # purpose keeps. A purpose that names no exemption authority is governed by
+    # the corpus prerequisite IN FULL, which is what every confirmatory or
+    # result-bearing purpose must remain governed by. The exemption cannot be
+    # acquired by running, by editing an artifact, or by a task: it exists only
+    # where a Study-Lead decision put it, on the purpose itself.
+    # ------------------------------------------------------------------ #
+    architecture_corpus_exemption: Optional[str] = None
+    architecture_corpus_exemption_record: Optional[str] = None
+    architecture_corpus_exemption_heading: Optional[str] = None
+    #: The values that record's table must carry for the exemption to exist at
+    #: all. Carried as data so a relaxation in the record is a mechanical
+    #: failure rather than a reading, exactly as the freeze pins are.
+    architecture_corpus_exemption_pins: Tuple[Tuple[str, object], ...] = ()
+
     def firewall_flags(self) -> Dict[str, bool]:
         return dict(self.firewall)
 
@@ -471,6 +500,13 @@ class RunPurpose:
 
     def corpus_script_for(self, task_id: str) -> str:
         return self.private_corpus_script or f"scripts/{task_id.lower()}_corpus.py"
+
+    def corpus_exemption_record_path(self, repo: Path = REPO) -> Optional[Path]:
+        return (
+            Path(repo) / self.architecture_corpus_exemption_record
+            if self.architecture_corpus_exemption_record
+            else None
+        )
 
 
 #: The ONLY run purpose this repository currently authorises. No confirmatory
@@ -669,6 +705,43 @@ RUN_PURPOSES: Dict[str, RunPurpose] = {
             ("td_b11_status", "open"),
             ("priority_b_state", "started; not complete"),
             ("td_b03_status", "open"),
+        ),
+        # SL-V2-EFF-ELIG-01. THE ONLY purpose in the repository that carries an
+        # architecture-corpus exemption, and it carries it because this is the
+        # only purpose whose architecture measurement is a descriptive guardrail
+        # rather than a scored quantity. Every other purpose, registered or
+        # future, leaves these fields at their fail-closed defaults and is
+        # governed by the corpus prerequisite in full.
+        architecture_corpus_exemption="SL-V2-EFF-ELIG-01",
+        architecture_corpus_exemption_record=(
+            "docs/v2/AFCI_EFFICIENCY_PILOT_ELIGIBILITY_DECISION.md"
+        ),
+        architecture_corpus_exemption_heading="### 3.1 The eligibility rule table",
+        architecture_corpus_exemption_pins=(
+            ("decision_id", "SL-V2-EFF-ELIG-01"),
+            ("run_purpose", "AFCI_EFFICIENCY_PILOT"),
+            ("architecture_corpus_required_for_run_eligibility", False),
+            ("pilot_scoped_conditions_required", 8),
+            ("architecture_measurement_role", "descriptive quality guardrail"),
+            # The four that keep the narrowing a narrowing. If the record ever
+            # claimed one of them, the exemption would have stopped being scoped
+            # and become a global relaxation, so it is refused outright.
+            ("architecture_corpus_requirement_waived_globally", False),
+            ("architecture_corpus_required_for_confirmatory_use", True),
+            ("private_public_sync_propagation_still_required", True),
+            ("enters_confirmatory_e1_analysis", False),
+            ("enters_treatment_effect_analysis", False),
+            ("enters_power_estimation", False),
+            ("passes_g1", False),
+            ("passes_g2", False),
+            ("closes_td_b32", False),
+            ("closes_td_b34", False),
+            ("closes_td_b39", False),
+            ("changes_e1", False),
+            ("admits_new_candidates", False),
+            ("makes_pilot_tasks_confirmatory", False),
+            ("changes_frozen_pilot_metrics_or_thresholds", False),
+            ("observations_when_recorded", 0),
         ),
     ),
 }
@@ -1802,6 +1875,303 @@ def private_architecture_corpus_available(
 
 
 # --------------------------------------------------------------------------- #
+# SL-V2-EFF-ELIG-01 — the pilot-scoped architecture-corpus exemption
+# --------------------------------------------------------------------------- #
+#: The umbrella/raw-detection family rule. It is registered, it is evaluated, and
+#: it may NEVER back a scored opportunity — so it may never be the target rule a
+#: corpus exemption is validated against either.
+UMBRELLA_RULE_ID = "AR-DEP-001"
+
+
+def catalog_rule_ids(repo: Path = REPO) -> List[str]:
+    """Every ``rule_id`` the approved public architecture rule catalog declares.
+
+    Read from the public catalog rather than from a constant, so a target rule
+    the catalog does not register can never be validated against.
+    """
+    path = Path(repo) / "docs" / "v2" / "ARCHITECTURE_RULE_CATALOG.yml"
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise RunnerRefusal(
+            GOVERNANCE_RECORD_UNREADABLE, f"cannot read {path}: {exc}"
+        ) from exc
+    return sorted(
+        {m.group(1).strip() for m in re.finditer(r"^\s*-?\s*rule_id:\s*(\S+)", text,
+                                                 re.MULTILINE)}
+    )
+
+
+def _reference_problems(label: str, block: object, target: Dict[str, object],
+                        *, violating: bool) -> List[str]:
+    """Why one validated reference fails to establish what it claims.
+
+    The two references are checked by the SAME function in opposite directions,
+    because the property that matters is that they DISAGREE on the architecture
+    channel while AGREEING on the functional one. Checking them with two
+    bespoke readers would let the two drift apart.
+    """
+    problems: List[str] = []
+    if not isinstance(block, dict):
+        return [f"{label}_reference validation is absent"]
+
+    if str(block.get("hidden_functional_acceptance", "")).strip().upper() != "PASS":
+        problems.append(
+            f"the {label} reference does not record hidden functional acceptance "
+            f"PASS (got {block.get('hidden_functional_acceptance')!r})"
+        )
+    failed = block.get("semantic_failed_cases")
+    if failed:
+        problems.append(f"the {label} reference failed semantic cases {failed}")
+
+    expected_status = "VIOLATION" if violating else "SATISFIED"
+    status = str(block.get("architecture_status", "")).strip().upper()
+    if status != expected_status:
+        problems.append(
+            f"the architecture scorer reports {status or '<absent>'} on the "
+            f"{label} reference, not {expected_status}"
+        )
+
+    if block.get("applicable_opportunity_count") != 1:
+        problems.append(
+            f"the {label} reference does not record the intended target "
+            f"opportunity as applicable exactly once (applicable_opportunity_"
+            f"count={block.get('applicable_opportunity_count')!r})"
+        )
+    expected_violated = 1 if violating else 0
+    if block.get("violated_opportunity_count") != expected_violated:
+        problems.append(
+            f"the {label} reference records violated_opportunity_count="
+            f"{block.get('violated_opportunity_count')!r}, not {expected_violated}"
+        )
+
+    if violating:
+        # The exact intended violation, not merely A violation. A detected rule
+        # or edge that is not the declared target one would mean the scorer
+        # noticed something else, which establishes nothing about this target.
+        for field_name, target_key in (
+            ("detected_rule_id", "rule_id"),
+            ("detected_source_layer", "source_layer"),
+            ("detected_target_layer", "forbidden_target_layer"),
+        ):
+            got, want = block.get(field_name), target.get(target_key)
+            if got != want:
+                problems.append(
+                    f"the violating reference's {field_name} is {got!r}, not the "
+                    f"declared target {target_key} {want!r}"
+                )
+    elif block.get("detected_target_layer") is not None:
+        problems.append(
+            "the legal reference records a detected forbidden target layer "
+            f"({block.get('detected_target_layer')!r}); a legal reference takes "
+            "no forbidden edge"
+        )
+    return problems
+
+
+def private_architecture_validation_state(
+    task_id: str,
+    private_root: Optional[Path] = None,
+    repo: Path = REPO,
+    expected_task_sha: Optional[str] = None,
+) -> Tuple[bool, str, List[str]]:
+    """Read-only: has the executed legal / violating validation been recorded?
+
+    This is ``SL-V2-EFF-ELIG-01`` conditions 2 to 6, read out of the private
+    per-task package record. It never imports private code, never executes
+    anything, never writes, and decides nothing: the private package is the
+    authority for what was executed and this only reports it.
+
+    Returns ``(ok, detail, problems)``. An absent or unreadable private
+    repository is *not verifiable* rather than a pass, in both directions.
+    """
+    root = Path(private_root) if private_root else default_private_root()
+    record = root / "tasks" / task_id / f"{task_id.lower()}_package_record.json"
+    if not record.is_file():
+        return False, f"private package record not available at {record}", [
+            f"no private package record at {record}"
+        ]
+    try:
+        data = json.loads(record.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return False, f"private package record unreadable: {exc}", [
+            f"private package record unreadable: {exc}"
+        ]
+
+    block = data.get("architecture_validation")
+    if not isinstance(block, dict):
+        return False, (
+            f"{record.name} carries no architecture_validation record"
+        ), [f"{record.name} carries no architecture_validation record"]
+
+    record_id = block.get("record_id", "<unnamed>")
+    problems: List[str] = []
+
+    state = str(block.get("state", "")).strip().upper()
+    if state != "VALIDATED":
+        problems.append(f"{record_id} state is {state or '<absent>'!r}, not VALIDATED")
+
+    # Bound to the EXACT approved bytes. A validation of some other revision of
+    # the task establishes nothing about the one the pilot will run.
+    if expected_task_sha is not None:
+        claimed = str(block.get("public_task_sha256", "")).strip()
+        if claimed != expected_task_sha:
+            problems.append(
+                f"{record_id} is bound to public_task_sha256 "
+                f"{claimed[:16] or '<absent>'}..., not the approved "
+                f"{expected_task_sha[:16]}..."
+            )
+
+    if block.get("hidden_functional_acceptance_validated") is not True:
+        problems.append(
+            "the record does not state that hidden functional acceptance is "
+            "validated"
+        )
+    if block.get("functional_acceptance_enforces_architecture") is not False:
+        problems.append(
+            "the record does not state that functional acceptance leaves "
+            "architecture alone; a functional oracle that enforced placement "
+            "would make the architecture measurement circular"
+        )
+
+    target = block.get("target")
+    if not isinstance(target, dict):
+        problems.append("the record declares no target opportunity")
+        target = {}
+    else:
+        rule_id = str(target.get("rule_id", "")).strip()
+        registered = catalog_rule_ids(repo)
+        if rule_id not in registered:
+            problems.append(
+                f"the declared target rule {rule_id or '<absent>'!r} is not a "
+                "rule the approved public architecture rule catalog registers"
+            )
+        elif rule_id == UMBRELLA_RULE_ID:
+            problems.append(
+                f"the declared target rule is the umbrella {UMBRELLA_RULE_ID}, "
+                "which may never back a scored opportunity"
+            )
+        for key in ("source_layer", "forbidden_target_layer"):
+            if not str(target.get(key, "")).strip():
+                problems.append(f"the declared target carries no {key}")
+
+    problems += _reference_problems(
+        "legal", block.get("legal_reference"), target, violating=False
+    )
+    problems += _reference_problems(
+        "violating", block.get("violating_reference"), target, violating=True
+    )
+
+    if problems:
+        return False, f"{record_id}: " + "; ".join(problems[:6]), problems
+    return True, (
+        f"{record_id} is VALIDATED against the approved public task bytes: a "
+        f"legal reference passes hidden functional acceptance and scores "
+        f"SATISFIED on the single applicable target opportunity with zero "
+        f"violations, and a functionally correct target-violating reference "
+        f"ALSO passes hidden functional acceptance while the architecture "
+        f"scorer reports the exact declared target violation on it"
+    ), []
+
+
+def architecture_corpus_exemption_problems(
+    purpose: RunPurpose,
+    task_id: str,
+    private_root: Optional[Path] = None,
+    repo: Path = REPO,
+) -> List[str]:
+    """Why ``SL-V2-EFF-ELIG-01``'s eight conditions do NOT hold for this task.
+
+    An empty list means all eight are mechanically satisfied. A purpose with no
+    exemption authority always gets a problem, because it has no exemption to
+    evaluate — that is the fail-closed default and it is what keeps every
+    confirmatory purpose governed by the corpus prerequisite in full.
+    """
+    if not purpose.architecture_corpus_exemption:
+        return [
+            f"{purpose.name} names no architecture-corpus exemption authority, "
+            "so the corpus prerequisite governs it in full"
+        ]
+
+    problems: List[str] = []
+
+    # The authorising record itself, re-derived rather than trusted.
+    record_path = purpose.corpus_exemption_record_path(repo)
+    if record_path is None or not record_path.is_file():
+        return [
+            f"{purpose.architecture_corpus_exemption}'s record is not available "
+            f"at {purpose.architecture_corpus_exemption_record}"
+        ]
+    try:
+        governed = _table_values(
+            _section(
+                record_path.read_text(encoding="utf-8"),
+                purpose.architecture_corpus_exemption_heading or "",
+            )
+        )
+    except OSError as exc:
+        return [f"cannot read {record_path}: {exc}"]
+    if not governed:
+        return [
+            f"{purpose.architecture_corpus_exemption}'s eligibility rule table "
+            f"is absent from {purpose.architecture_corpus_exemption_record}"
+        ]
+    for key, want in purpose.architecture_corpus_exemption_pins:
+        got = governed.get(key)
+        if got != want:
+            problems.append(
+                f"the eligibility rule table records {key}={got!r}, not {want!r}"
+            )
+
+    # Condition 1 — hidden functional acceptance validated (PUBLIC authority).
+    if not hidden_acceptance_is_validated(task_id):
+        problems.append(
+            f"condition 1: TASK_ACCEPTANCE_MATRIX.csv does not record {task_id}'s "
+            "hidden functional acceptance as validated"
+        )
+
+    # Conditions 2-6 — the executed reference validation (PRIVATE authority).
+    try:
+        expected_sha = expected_task_sha256(task_id)
+    except RunnerRefusal as exc:
+        expected_sha = None
+        problems.append(f"conditions 2-6: {exc.message}")
+    ok, _detail, validation_problems = private_architecture_validation_state(
+        task_id, private_root, repo, expected_sha
+    )
+    if not ok:
+        problems += [f"conditions 2-6: {p}" for p in validation_problems]
+
+    # Condition 7 — the architecture measurement is descriptive here, which is
+    # true exactly when the purpose is non-confirmatory and non-result-bearing.
+    if purpose.confirmatory or purpose.result_bearing:
+        problems.append(
+            f"condition 7: {purpose.name} is confirmatory={purpose.confirmatory} "
+            f"result_bearing={purpose.result_bearing}, so its architecture "
+            "measurement is not a descriptive guardrail"
+        )
+
+    # Condition 8 — re-derived from the PURPOSE's own firewall table, in the
+    # authorising pilot record, rather than from the exemption record. The two
+    # are different documents on purpose: a record cannot exempt itself by
+    # restating its own firewall.
+    firewall = governed_firewall_from_record(
+        purpose.firewall_record_path(repo), purpose.firewall_heading
+    )
+    for flag in (
+        "enters_confirmatory_e1_analysis",
+        "enters_treatment_effect_analysis",
+        "enters_power_estimation",
+    ):
+        if firewall.get(flag) is not False:
+            problems.append(
+                f"condition 8: {purpose.firewall_record} does not pin {flag} "
+                f"false (got {firewall.get(flag)!r})"
+            )
+    return problems
+
+
+# --------------------------------------------------------------------------- #
 # Artifact-area governance
 # --------------------------------------------------------------------------- #
 def assert_artifact_area_permitted(
@@ -2219,14 +2589,90 @@ def check_readiness(
     corpus_ok, corpus_detail = private_architecture_corpus_available(
         task_id, private_root, purpose.corpus_script_for(task_id)
     )
-    items.append(
-        Prerequisite(
-            "architecture_corpus_availability",
-            PASS if corpus_ok else BLOCKED,
-            corpus_detail,
-            None if corpus_ok else ARCHITECTURE_CORPUS_NOT_AVAILABLE,
-        )
+    # SL-V2-EFF-ELIG-01. The exemption is evaluated for any purpose that names
+    # one, whether or not the corpus happens to be present, so the report states
+    # the validation as a fact rather than only when it is load-bearing. A
+    # purpose that names none gets the pre-existing behaviour exactly.
+    exemption_problems = (
+        architecture_corpus_exemption_problems(purpose, task_id, private_root, repo)
+        if purpose.architecture_corpus_exemption
+        else ["no exemption authority"]
     )
+    exempt = purpose.architecture_corpus_exemption is not None and not exemption_problems
+    if corpus_ok:
+        items.append(
+            Prerequisite("architecture_corpus_availability", PASS, corpus_detail)
+        )
+    elif exempt:
+        # NOT_APPLICABLE, never PASS. PASS would read as "the corpus exists" and
+        # it does not; the requirement simply does not apply to this purpose, and
+        # the corpus work is NOT done, NOT waived and NOT reduced in scope for
+        # any purpose it does apply to.
+        items.append(
+            Prerequisite(
+                "architecture_corpus_availability",
+                NOT_APPLICABLE,
+                (
+                    f"NOT APPLICABLE TO {purpose.name}, and NOT RESOLVED. "
+                    f"{corpus_detail}. "
+                    f"{purpose.architecture_corpus_exemption} adjudicates that a "
+                    "full per-task architecture mutation/corpus package is not a "
+                    "run-eligibility prerequisite for this COST-ONLY purpose when "
+                    "its eight pre-data conditions hold, and they hold and are "
+                    "reported separately as pilot_architecture_validation. The "
+                    "corpus requirement is UNCHANGED and REQUIRED in full "
+                    "everywhere it already applied, including every confirmatory "
+                    "and result-bearing purpose; this closes no gate, closes no "
+                    "TD row and changes no E1 admission"
+                ),
+            )
+        )
+    else:
+        items.append(
+            Prerequisite(
+                "architecture_corpus_availability",
+                BLOCKED,
+                corpus_detail
+                + (
+                    "; and "
+                    f"{purpose.architecture_corpus_exemption}'s pilot-scoped "
+                    "exemption does not apply: "
+                    + "; ".join(exemption_problems[:4])
+                    if purpose.architecture_corpus_exemption
+                    else ""
+                ),
+                ARCHITECTURE_CORPUS_NOT_AVAILABLE,
+            )
+        )
+
+    if purpose.architecture_corpus_exemption:
+        items.append(
+            Prerequisite(
+                "pilot_architecture_validation",
+                PASS if not exemption_problems else BLOCKED,
+                (
+                    f"{purpose.architecture_corpus_exemption}'s eight pre-data "
+                    f"conditions are mechanically satisfied for {task_id}: hidden "
+                    "functional acceptance is validated; a legal reference passes "
+                    "it and scores SATISFIED on the single applicable target "
+                    "opportunity with zero violations; a functionally correct "
+                    "target-violating reference ALSO passes it; the architecture "
+                    "scorer reports the exact declared target violation on that "
+                    "reference; functional acceptance does not enforce "
+                    "architecture; and this purpose is non-confirmatory, "
+                    "non-result-bearing and pinned out of E1, treatment-effect "
+                    "and power analysis"
+                )
+                if not exemption_problems
+                else (
+                    f"{purpose.architecture_corpus_exemption}'s conditions are not "
+                    "satisfied: " + "; ".join(exemption_problems[:6])
+                ),
+                None
+                if not exemption_problems
+                else PILOT_ARCHITECTURE_VALIDATION_NOT_AVAILABLE,
+            )
+        )
 
     # ---- BLOCKED items ---------------------------------------------------- #
     selected = primary_model()

@@ -786,6 +786,10 @@ No run in this schedule has been executed.
 
 ## 12a. The pilot is FROZEN but NOT YET RUN-ELIGIBLE
 
+**This section records the state AT FREEZE TIME and is preserved exactly as
+adjudicated. §12b records what has changed since, and the two are read
+together.** Nothing in §12b edits a value in this section.
+
 Everything above is frozen. The pilot still **cannot execute**, and the reason
 is recorded here rather than discovered by whoever tries.
 
@@ -829,6 +833,31 @@ directory**. The context audit scans the workspace's ancestors, so a run rooted
 under `~` finds the developer's own `~/.claude` and is correctly reported
 `CONTAMINATED`. The executed diagnostics used `D:\pt08-diagnostic` and
 `D:\afci-v2-qual` for this reason.
+
+---
+
+## 12b. What has changed since §12a, recorded beside it
+
+§12a listed two blockers. Both have since been discharged, each in the way its
+own record required, and **zero efficiency observations exist at the moment this
+is written** — the same state §12a was written in.
+
+| §12a blocker | state now | how |
+|---|---|---|
+| `PRIVATE_PUBLIC_SYNC_PROPAGATION_REQUIRED_BEFORE_FREEZE` | **DISCHARGED** | by **propagation**, not by adjudication. The private packages for all three instruments now carry the canonical `<task>_package_record.json` with `public_synchronisation_required_before_freeze` = `SATISFIED`, each citing the exact public commit it verified and each bound to the approved public task hash. The public readiness check independently verifies that the cited commit is an ancestor of public `HEAD`. |
+| `ARCHITECTURE_CORPUS_NOT_AVAILABLE` | **NOT APPLICABLE to this purpose** | by [`SL-V2-EFF-ELIG-01`](AFCI_EFFICIENCY_PILOT_ELIGIBILITY_DECISION.md), a separate Study-Lead decision taken on the question §12a explicitly left open. It is reported `N/A` and never `PASS`: the corpus does not exist for two of the three instruments, and the requirement is **UNCHANGED and REQUIRED in full** for every purpose it already applied to, including every confirmatory and result-bearing one. |
+
+The third line of §12a's table — the context verdict — is unchanged and was
+never a blocker of this kind: a readiness report has not run the audit, and
+`CONTEXT_AUDIT` runs it moments later and refuses on anything but `CLEAN`.
+
+`SL-V2-EFF-ELIG-01` passes no gate, closes no `TD` row, changes no `E1`
+admission, makes none of these tasks confirmatory, and changes **nothing** this
+record froze: not the task bodies, not the MAD, not the checkpoints, not the
+reset budgets, not the permission rules, not the metrics, not the decision
+thresholds, not the run schedule and not the model or runtime.
+
+**Nothing in §1–§12 of this record is edited by any of the above.**
 
 ---
 
