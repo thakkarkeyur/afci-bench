@@ -432,6 +432,28 @@ class RunPurpose:
     #: failure rather than a reading, exactly as the freeze pins are.
     architecture_corpus_exemption_pins: Tuple[Tuple[str, object], ...] = ()
 
+    # ------------------------------------------------------------------ #
+    # ``SL-V2-EFF-FUNC-01``: the post-run functional-validity channel, and the
+    # architecture reporting it does NOT imply.
+    #
+    # Both default to the pre-existing behaviour, so no registered purpose
+    # changes by acquiring these fields. ``None`` means *this purpose runs no
+    # post-run functional evaluation*, which is what every purpose did before;
+    # ``True`` means *an architecture result is expected of this purpose*, which
+    # is what every purpose's evaluation block already reported.
+    # ------------------------------------------------------------------ #
+    #: The Study-Lead decision that defines ``FUNCTIONAL_VALID`` for this purpose
+    #: and authorises the out-of-band private scorer, or ``None``. A purpose that
+    #: names no authority is never handed a candidate worktree to score.
+    functional_evaluation_authority: Optional[str] = None
+    functional_evaluation_record: Optional[str] = None
+    #: False for a purpose whose governance defines it as COST-ONLY. It does not
+    #: disable architecture scoring — nothing here could — it stops the run
+    #: record from reporting a missing architecture result as an outstanding
+    #: BLOCKER, which reads as "an architecture result is owed" for a purpose
+    #: that is forbidden to produce one.
+    produces_architecture_result: bool = True
+
     def firewall_flags(self) -> Dict[str, bool]:
         return dict(self.firewall)
 
@@ -743,6 +765,17 @@ RUN_PURPOSES: Dict[str, RunPurpose] = {
             ("changes_frozen_pilot_metrics_or_thresholds", False),
             ("observations_when_recorded", 0),
         ),
+        # SL-V2-EFF-FUNC-01. THE ONLY purpose that carries a post-run functional
+        # evaluation, because it is the only one whose frozen analysis needs a
+        # paired functional verdict to admit a cost figure at all. The same
+        # decision records that this purpose produces NO architecture result,
+        # which is not a change of scope but the removal of a report that
+        # implied one was owed.
+        functional_evaluation_authority="SL-V2-EFF-FUNC-01",
+        functional_evaluation_record=(
+            "docs/v2/AFCI_EFFICIENCY_PILOT_FUNCTIONAL_VALIDITY_DECISION.md"
+        ),
+        produces_architecture_result=False,
     ),
 }
 

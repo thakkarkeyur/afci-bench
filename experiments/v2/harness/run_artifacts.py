@@ -47,6 +47,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
 import context_audit as ca
+import functional_evaluation as fe
 import run_governance as gov
 
 SCHEMA_PATH = Path(__file__).resolve().parent / "run_record.schema.json"
@@ -221,6 +222,34 @@ class ArtifactDirectory:
         return str(Path(path))
 
 
+def _validated_functional_evaluation(block: Dict[str, object]) -> Dict[str, object]:
+    """Re-derive ``functional_valid`` at record-assembly time, and refuse a lie.
+
+    ``SL-V2-EFF-FUNC-01`` says the verdict is DERIVED. That has to be true of the
+    record as well as of the module that produced it, or the derivation would be
+    a convention rather than a property: a caller could assemble a block by hand,
+    set the flag, and the record would carry it. The counts are the only input;
+    a block whose flag disagrees with them is refused rather than corrected,
+    because silently rewriting someone's claimed verdict is worse than failing.
+    """
+    missing = [f for f in fe.REQUIRED_COUNTS if f not in block]
+    if missing:
+        raise gov.RunnerRefusal(
+            fe.FUNCTIONAL_EVALUATOR_MALFORMED_RESULT,
+            f"the functional evaluation block omits {missing}; it is assembled "
+            "from a scorer result, never by hand",
+        )
+    derived = fe.derive_functional_valid(block) and bool(block.get("executed"))
+    if bool(block.get("functional_valid")) != derived:
+        raise gov.RunnerRefusal(
+            fe.FUNCTIONAL_VALID_NOT_DERIVABLE,
+            f"the functional evaluation block claims functional_valid="
+            f"{block.get('functional_valid')!r} while its own counts derive "
+            f"{derived!r}; the verdict is not a supplied value",
+        )
+    return dict(block)
+
+
 def build_run_record(
     *,
     purpose: gov.RunPurpose,
@@ -252,6 +281,11 @@ def build_run_record(
     #: these fields existed.
     reset: Optional[Dict[str, object]] = None,
     efficiency: Optional[Dict[str, object]] = None,
+    #: SL-V2-EFF-FUNC-01. Same contract as the two above: ``None`` is omitted, so
+    #: a record written by a purpose that carries no functional evaluation is
+    #: byte-identical to the one it produced before this field existed, and the
+    #: PT08/PT09/PT10 records already on disk stay schema-valid unchanged.
+    functional_evaluation: Optional[Dict[str, object]] = None,
 ) -> Dict[str, object]:
     """Assemble the run record, deriving the firewall from the purpose itself."""
     firewall = purpose.firewall_flags()
@@ -272,6 +306,10 @@ def build_run_record(
         extra["reset"] = reset
     if efficiency is not None:
         extra["efficiency"] = efficiency
+    if functional_evaluation is not None:
+        extra["functional_evaluation"] = _validated_functional_evaluation(
+            functional_evaluation
+        )
 
     return {
         **extra,

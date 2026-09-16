@@ -263,6 +263,172 @@
       "additionalProperties": true,
       "description": "SL-V2-EFF-01's measurement block. OPTIONAL: records written before it existed carry none and stay valid. TOTAL_OUTPUT_TOKENS is nullable because a reset run's phase A is interrupted before its terminal result event, and the streamed per-message output figure is the message-start value rather than the total — so the output figure is withheld rather than understated. All three INPUT categories reconstruct exactly from the partial stream and are never withheld."
     },
+    "functional_evaluation": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "description": "SL-V2-EFF-FUNC-01. The post-run functional-validity block. Present only for a run whose purpose a Study-Lead decision put the channel on. OPTIONAL in the schema ON PURPOSE: every record written before this field existed carries none and must stay valid and unrewritten, which is why the PT08, PT09 and PT10 records already on disk are untouched by it. functional_valid is DERIVED from the semantic counts by experiments/v2/harness/functional_evaluation.py and re-derived again when the record is assembled; it is never a value a caller supplies. The NON-SEMANTIC counts are recorded and reported and enter no clause of that derivation. An evaluation that could not be performed is written with executed=false and a runtime_error, never omitted: 'this run was not functionally valid' and 'nobody looked' are different facts.",
+      "required": [
+        "record",
+        "authority",
+        "executed",
+        "evaluator_task",
+        "semantic_case_count_expected",
+        "semantic_case_count_executed",
+        "semantic_pass_count",
+        "semantic_fail_count",
+        "semantic_error_count",
+        "nonsemantic_case_count_expected",
+        "nonsemantic_case_count_executed",
+        "nonsemantic_pass_count",
+        "nonsemantic_fail_count",
+        "nonsemantic_error_count",
+        "missing_case_ids",
+        "duplicate_case_ids",
+        "runtime_error",
+        "functional_valid"
+      ],
+      "properties": {
+        "record": {
+          "type": "string",
+          "const": "afci-bench/v2/functional-evaluation"
+        },
+        "authority": {
+          "type": "string",
+          "const": "SL-V2-EFF-FUNC-01"
+        },
+        "authority_record": {
+          "type": ["string", "null"]
+        },
+        "executed": {
+          "type": "boolean"
+        },
+        "evaluator_task": {
+          "type": "string"
+        },
+        "evaluator_version": {
+          "type": ["string", "null"]
+        },
+        "evaluator_runtime_sha256": {
+          "type": ["string", "null"]
+        },
+        "evaluator_suite_sha256": {
+          "type": ["string", "null"]
+        },
+        "semantic_case_count_expected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "semantic_case_count_executed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "semantic_pass_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "semantic_fail_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "semantic_error_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nonsemantic_case_count_expected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nonsemantic_case_count_executed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nonsemantic_pass_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nonsemantic_fail_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nonsemantic_error_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missing_case_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missing_semantic_case_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "indeterminate_case_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "duplicate_case_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unexpected_case_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "runtime_error": {
+          "type": ["object", "null"],
+          "required": ["code", "detail"],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "detail": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "functional_valid": {
+          "type": "boolean"
+        },
+        "functional_valid_is_derived": {
+          "type": "boolean",
+          "const": true
+        },
+        "functional_valid_derived_by": {
+          "type": ["string", "null"]
+        },
+        "nonsemantic_cases_do_not_determine_validity": {
+          "type": "boolean",
+          "const": true
+        },
+        "architecture_scored": {
+          "type": "boolean",
+          "const": false
+        },
+        "worktree_unchanged_during_evaluation": {
+          "type": ["boolean", "null"]
+        },
+        "assertions_per_case": {
+          "type": ["object", "null"]
+        },
+        "transport": {
+          "type": ["object", "null"]
+        },
+        "scorer": {
+          "type": ["object", "null"]
+        }
+      }
+    },
     "model_identity": {
       "type": "object",
       "additionalProperties": false,

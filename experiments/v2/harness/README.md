@@ -28,6 +28,7 @@ evaluator mounts are gitignored and must not be committed.
 | `run_worktree.py` | Runner-time enforcement of the worktree policy (`TD-B22`) and post-run capture. |
 | `model_adapter.py` | Fresh-process launch construction, the invocation adapter, and the `Q1`/`Q8` model-identity contract. |
 | `run_artifacts.py` | The deterministic run-artifact layout and the run record, validated against `run_record.schema.json`. |
+| `functional_evaluation.py` | `SL-V2-EFF-FUNC-01`: the post-run functional-validity channel. An invocation boundary and a derivation — it holds **no** acceptance logic, invokes the private scorer out of band against the *preserved* worktree, and derives `FUNCTIONAL_VALID` from the semantic counts. Inert for a purpose that names no functional-evaluation authority. |
 
 ## The runner
 

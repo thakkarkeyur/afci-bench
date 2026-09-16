@@ -572,6 +572,20 @@ AUTHORISED_EFFICIENCY_PILOT_MODULES = [
     "reset_budget.py",
     "reset_orchestration.py",
     "stream_launcher.py",
+    # `SL-V2-EFF-FUNC-01`: the post-run functional-validity channel, and the
+    # frozen pilot analysis that consumes it. The channel carries NO acceptance
+    # logic — the hidden suites stay in the private evaluator repository — and it
+    # is inert for a purpose that names no functional-evaluation authority, which
+    # is every purpose but the efficiency pilot. The analysis reads run records
+    # and executes nothing. PT08's diagnostic is untouched by both.
+    #
+    # The analysis lives here rather than in `experiments/v2/analysis/`, beside
+    # `efficiency_run_plan.py`, because that directory is a CONFIRMATORY AREA
+    # whose emptiness is itself the pre-data evidence: a dozen guards read it as
+    # "no observation exists", and a script placed there would have had to
+    # weaken every one of them.
+    "functional_evaluation.py",
+    "efficiency_pilot_analysis.py",
 ]
 
 

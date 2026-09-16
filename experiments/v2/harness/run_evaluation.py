@@ -75,6 +75,16 @@ class EvaluationChannel:
     def ready(self) -> bool:
         return self.status == "READY"
 
+    @property
+    def not_produced(self) -> bool:
+        """A channel this purpose is governed NOT to produce. Not a blocker.
+
+        Kept distinct from ``ready`` on purpose: this channel produced nothing
+        and never will for this purpose, and calling that "ready" would be as
+        misleading in the other direction as calling it "blocked" was.
+        """
+        return self.status == NOT_PRODUCED
+
     def to_dict(self) -> dict:
         return {
             "channel": self.channel,
@@ -94,7 +104,18 @@ class EvaluationPlan:
 
     @property
     def blockers(self) -> List[EvaluationChannel]:
-        return [c for c in self.channels if not c.ready]
+        """Channels that are OWED a result and do not have one.
+
+        A ``NOT_PRODUCED`` channel is excluded, because a blocker is something
+        that gets resolved and then produced. Reporting a result the purpose is
+        forbidden to produce as an outstanding blocker made every efficiency
+        pilot run look as though it still owed an architecture score.
+        """
+        return [c for c in self.channels if not (c.ready or c.not_produced)]
+
+    @property
+    def not_produced(self) -> List[EvaluationChannel]:
+        return [c for c in self.channels if c.not_produced]
 
     @property
     def ready(self) -> bool:
@@ -108,8 +129,20 @@ class EvaluationPlan:
                 "functional acceptance and architecture scoring are evaluated "
                 "independently; neither result is an input to the other"
             ),
+            "channels_not_produced": [c.channel for c in self.not_produced],
             "channels": [c.to_dict() for c in self.channels],
         }
+
+
+def _purpose_or_none(run_purpose: Optional[str]) -> Optional[gov.RunPurpose]:
+    """Resolve a purpose, or ``None`` when none was supplied.
+
+    An UNRECOGNISED purpose still raises: only the absence of one is tolerated
+    here, and it yields the suite-wide answer, which is the fail-closed reading.
+    """
+    if run_purpose is None or not str(run_purpose).strip():
+        return None
+    return gov.resolve_run_purpose(run_purpose)
 
 
 def functional_acceptance_channel(
@@ -142,6 +175,22 @@ def functional_acceptance_channel(
     )
 
 
+#: ``SL-V2-EFF-FUNC-01`` §5. The status a channel carries for a purpose whose
+#: governance forbids it to produce that result at all. It is NOT ``READY`` and
+#: NOT ``BLOCKED``: a blocker is something that would be resolved and then
+#: produced, and this one never will be.
+NOT_PRODUCED = "NOT_PRODUCED"
+ARCHITECTURE_NOT_PRODUCED_BY_THIS_PURPOSE = "ARCHITECTURE_NOT_PRODUCED_BY_THIS_PURPOSE"
+
+#: The sentence the run record and the pilot report both carry, written once.
+ARCHITECTURE_NOT_PRODUCED_STATEMENT = (
+    "Not produced by AFCI_EFFICIENCY_PILOT under its frozen cost-only "
+    "governance. Existing pre-data legal/violating architecture validation was "
+    "used only for eligibility. No live-run architecture treatment inference is "
+    "made."
+)
+
+
 def architecture_scoring_channel(
     task_id: str,
     *,
@@ -164,7 +213,26 @@ def architecture_scoring_channel(
     diagnostic-scoped freeze satisfy the gate for the one authorised triple. A
     caller that supplies neither gets the suite-wide answer alone, which is the
     fail-closed reading and is exactly what every other task and purpose gets.
+
+    ``SL-V2-EFF-FUNC-01`` adds ONE reporting correction and no capability. A
+    purpose whose governance defines it as **cost-only** is forbidden to produce
+    an architecture result, so reporting its absent architecture result as an
+    outstanding ``BLOCKED`` channel said that one was owed. It is reported as
+    ``NOT_PRODUCED`` instead. Nothing is scored that was not scored before, and
+    nothing that was blocked for any other purpose becomes available.
     """
+    purpose = _purpose_or_none(run_purpose)
+    if purpose is not None and not purpose.produces_architecture_result:
+        return EvaluationChannel(
+            channel="architecture_opportunity_scoring",
+            status=NOT_PRODUCED,
+            code=ARCHITECTURE_NOT_PRODUCED_BY_THIS_PURPOSE,
+            detail=(
+                f"{purpose.name} produces no architecture score, violation value "
+                f"or E1 contribution under {purpose.decision_id}. "
+                + ARCHITECTURE_NOT_PRODUCED_STATEMENT
+            ),
+        )
     freeze_state = gov.manifest_freeze_state(
         task_id,
         condition=condition,

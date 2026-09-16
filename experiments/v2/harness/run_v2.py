@@ -111,6 +111,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import condition_prompt as cp  # noqa: E402
 import context_audit as ca  # noqa: E402
 import efficiency_metrics as em  # noqa: E402
+import functional_evaluation as fe  # noqa: E402
 import model_adapter as ma  # noqa: E402
 import prepare_model_worktree as pmw  # noqa: E402
 import reset_budget as rb  # noqa: E402
@@ -268,6 +269,12 @@ class RunRequest:
     #: The agentic-turn ceiling. ``None`` means no purpose freezes one, and the
     #: launch carries no ``--max-turns`` at all.
     max_turns: Optional[int] = None
+    #: SL-V2-EFF-FUNC-01: the ceiling on ONE post-hoc functional evaluation. It
+    #: is harness plumbing and bounds only the out-of-band scorer; it touches no
+    #: turn budget, no model process and no measured quantity.
+    functional_evaluation_timeout_seconds: int = (
+        fe.FUNCTIONAL_EVALUATION_TIMEOUT_SECONDS
+    )
 
 
 @dataclass
@@ -357,6 +364,7 @@ def run(request: RunRequest) -> RunResult:
     sterile: Optional[ca.SterileEnv] = None
     reset_block: Optional[Dict[str, object]] = None
     efficiency_block: Optional[Dict[str, object]] = None
+    functional_evaluation: Optional[Dict[str, object]] = None
     reset_outcome: Optional[ro.ResetOutcome] = None
     run_started = time.monotonic()
 
@@ -773,6 +781,24 @@ def run(request: RunRequest) -> RunResult:
             condition=request.condition,
             run_purpose=purpose.name,
         )
+
+        # SL-V2-EFF-FUNC-01. The functional scorer is RUN here, not planned.
+        #
+        # It runs only for a purpose a Study-Lead decision put the channel on,
+        # only after the model process has finished, and only against the
+        # PRESERVED post-run worktree — never the live tree the model was
+        # editing, and never the canonical repository. A run whose checkpoint was
+        # never reached still has a preserved final state and is still scored
+        # against it; its checkpoint status is recorded independently in the
+        # ``reset`` block and no phase B is invented to produce one.
+        functional_evaluation = _functional_evaluation_block(
+            purpose=purpose,
+            request=request,
+            invocation=invocation,
+            capture=capture,
+            directory=directory,
+        )
+
         if request.scored or request.mode == "real":
             # Re-asserted against what was actually OBSERVED, not against what
             # was requested: the runtime's own reported version and the audit
@@ -839,6 +865,7 @@ def run(request: RunRequest) -> RunResult:
             readiness=result.readiness,
             reset=reset_block,
             efficiency=efficiency_block,
+            functional_evaluation=functional_evaluation,
             outcome={
                 "status": "DRY_RUN_COMPLETE" if request.mode == "dry-run" else "COMPLETE",
                 "code": None,
@@ -883,6 +910,7 @@ def run(request: RunRequest) -> RunResult:
                     readiness=result.readiness,
                     reset=reset_block,
                     efficiency=efficiency_block,
+                    functional_evaluation=functional_evaluation,
                     outcome={
                         "status": (
                             "DRY_RUN_REFUSED"
@@ -1162,6 +1190,62 @@ def _efficiency_block(
     return payload
 
 
+def _functional_evaluation_block(
+    *,
+    purpose: gov.RunPurpose,
+    request: RunRequest,
+    invocation: ma.ModelInvocationOutcome,
+    capture: Optional[wt.WorktreeCapture],
+    directory: art.ArtifactDirectory,
+) -> Optional[Dict[str, object]]:
+    """``SL-V2-EFF-FUNC-01``: run the private functional scorer, or say why not.
+
+    The ORDER is the contract, and it is why this is called from
+    ``POST_RUN_EVALUATION`` and from nowhere else:
+
+    1. the model process has finished — ``invocation.invoked`` is what says so;
+    2. the worktree has been captured — ``CAPTURE_WORKTREE`` produced a
+       ``capture`` whose ``capture_root`` is an immutable copy taken after the
+       process ended;
+    3. only then is the private scorer handed that copy.
+
+    A run whose reset checkpoint was never reached still satisfies all three: it
+    has a finished process and a preserved final state, so it is scored against
+    that state. Its ``RESET_CHECKPOINT_NOT_REACHED`` status is recorded
+    independently in the ``reset`` block, no phase B is invented, and the
+    functional verdict says nothing about the checkpoint in either direction.
+
+    Returns ``None`` — and writes no block at all — for a purpose no Study-Lead
+    decision put this channel on, so every earlier purpose's record is unchanged.
+    """
+    if not fe.purpose_requires_functional_evaluation(purpose):
+        return None
+    if not invocation.invoked:
+        block = fe.not_executed(
+            request.task_id,
+            fe.FUNCTIONAL_EVALUATION_NO_WORKTREE,
+            "no model process ran, so no candidate worktree was produced and "
+            "none is scored; nothing is inferred from the absence",
+        )
+    elif capture is None:
+        block = fe.not_executed(
+            request.task_id,
+            fe.FUNCTIONAL_EVALUATION_NO_WORKTREE,
+            "the model process ran but no post-run worktree was captured, so "
+            "there is no preserved candidate to score",
+        )
+    else:
+        block = fe.evaluate_preserved_worktree(
+            request.task_id,
+            Path(capture.capture_root),
+            result_path=directory.path("functional_evaluation_result.json"),
+            private_root=request.private_root,
+            timeout_seconds=request.functional_evaluation_timeout_seconds,
+        )
+    directory.write_json("functional_evaluation.json", block)
+    return block
+
+
 def _build_record(
     *,
     request: RunRequest,
@@ -1181,6 +1265,7 @@ def _build_record(
     outcome: Dict[str, object],
     reset: Optional[Dict[str, object]] = None,
     efficiency: Optional[Dict[str, object]] = None,
+    functional_evaluation: Optional[Dict[str, object]] = None,
 ) -> Dict[str, object]:
     blockers: List[Dict[str, str]] = []
     if readiness is not None:
@@ -1268,6 +1353,7 @@ def _build_record(
         repo=request.repo,
         reset=reset,
         efficiency=efficiency,
+        functional_evaluation=functional_evaluation,
     )
 
 
