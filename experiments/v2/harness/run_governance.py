@@ -252,6 +252,43 @@ EFFICIENCY_USAGE_MALFORMED = "EFFICIENCY_USAGE_MALFORMED"
 EFFICIENCY_RUN_PLAN_INVALID = "EFFICIENCY_RUN_PLAN_INVALID"
 ARCHITECTURE_CONTEXT_HASH_MISMATCH = "ARCHITECTURE_CONTEXT_HASH_MISMATCH"
 
+# ---- Artifact identity and ownership (SL-V2-EFF-ABORT-01) ----------------- #
+#: The destination of a run's governed artifacts could not be proved new for
+#: THIS observation: it already exists carrying another run's identity, another
+#: observation's material, or content whose owner cannot be established.
+#:
+#: Raised BEFORE model invocation and before anything is written. That timing is
+#: the whole control. Attempt 1 of the efficiency pilot refused on the same
+#: underlying fact — one observation's directory already held another's — but it
+#: refused in ``CAPTURE_WORKTREE``, after the prompt had been delivered, after
+#: the model had run to completion, and after the earlier observation's prepared
+#: worktree and manifests had already been overwritten on the way in.
+ARTIFACT_IDENTITY_COLLISION_PREINVOCATION = (
+    "ARTIFACT_IDENTITY_COLLISION_PREINVOCATION"
+)
+
+#: A recursive delete was requested for a path that is not this run's own fresh
+#: temporary state. Cleanup is permitted; reclaiming another observation's
+#: directory because the next run derived the same path is not.
+ARTIFACT_DESTRUCTIVE_REUSE_REFUSED = "ARTIFACT_DESTRUCTIVE_REUSE_REFUSED"
+
+#: A declared execution attempt that is not a governed one. Attempt identity is
+#: infrastructure provenance, and provenance that was silently repaired is
+#: provenance nobody can reconcile against the execution it names.
+EXECUTION_ATTEMPT_INVALID = "EXECUTION_ATTEMPT_INVALID"
+
+#: The whole-schedule preflight found two scheduled rows deriving one identity,
+#: or one artifact directory. It refuses the WHOLE execution before row 1 rather
+#: than the row that happens to collide, because the collision is a property of
+#: the schedule and discovering it at row 9 is what cost Attempt 1 an observation.
+EFFICIENCY_SCHEDULE_IDENTITY_COLLISION = "EFFICIENCY_SCHEDULE_IDENTITY_COLLISION"
+
+#: The chosen artifact or sterile root descends from the active user profile, or
+#: its ancestor chain carries host ``.claude`` material the pre-execution context
+#: audit would (correctly) read as CONTAMINATED. Pilot-scoped: it is an operator
+#: isolation requirement for the replacement execution, not a treatment change.
+ARTIFACT_ROOT_NOT_ISOLATED = "ARTIFACT_ROOT_NOT_ISOLATED"
+
 #: The pinned run-manifest schema (``experiments/v2/schemas``) is byte-pinned by
 #: the private evaluator's public linkage and sets ``additionalProperties:false``,
 #: so it cannot carry SL-PT08-01 §9's six quarantine fields without a linkage
@@ -453,6 +490,22 @@ class RunPurpose:
     #: BLOCKER, which reads as "an architecture result is owed" for a purpose
     #: that is forbidden to produce one.
     produces_architecture_result: bool = True
+
+    # ------------------------------------------------------------------ #
+    # ``SL-V2-EFF-RESTART-01``: the operator-level execution-root isolation
+    # requirement, and why it is a PURPOSE field rather than a global one.
+    #
+    # ``None`` -- the default every other purpose keeps -- means this purpose
+    # imposes no isolation requirement on its execution roots beyond the ones
+    # :func:`assert_artifact_area_permitted` already imposes on every run. The
+    # PT08/PT09/PT10 diagnostics executed under roots this requirement would now
+    # refuse, and retro-fitting it to them would invalidate artifacts produced
+    # correctly under the rules in force when they ran.
+    #
+    # The requirement is infrastructure isolation, not a treatment: it changes
+    # where a run's files live and nothing a run measures.
+    # ------------------------------------------------------------------ #
+    requires_isolated_execution_root: Optional[str] = None
 
     def firewall_flags(self) -> Dict[str, bool]:
         return dict(self.firewall)
@@ -776,6 +829,13 @@ RUN_PURPOSES: Dict[str, RunPurpose] = {
             "docs/v2/AFCI_EFFICIENCY_PILOT_FUNCTIONAL_VALIDITY_DECISION.md"
         ),
         produces_architecture_result=False,
+        # SL-V2-EFF-RESTART-01. THE ONLY purpose that carries an execution-root
+        # isolation requirement, because it is the only purpose with a
+        # replacement execution to authorise. Attempt 1 established the fact it
+        # encodes: a root under the operator's profile puts the host's real
+        # ~/.claude on the ancestor chain the pre-execution audit walks, and the
+        # audit then marks the environment CONTAMINATED -- correctly.
+        requires_isolated_execution_root="SL-V2-EFF-RESTART-01",
     ),
 }
 

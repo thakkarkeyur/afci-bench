@@ -113,6 +113,21 @@ def _content_hash_of_entries(entries: Sequence[Dict[str, object]]) -> str:
     return digest.hexdigest()
 
 
+def directory_content_hash(root: Path) -> Dict[str, object]:
+    """Inventory a directory tree using the preparer's own hashing convention.
+
+    Read-only, and public because ``SL-V2-EFF-ABORT-01``'s evidence inventory
+    has to hash preserved Attempt-1 material without inventing a second
+    convention for what a directory's content hash is.
+    """
+    entries = _on_disk_entries(Path(root))
+    return {
+        "entry_count": len(entries),
+        "content_hash": _content_hash_of_entries(entries),
+        "bytes": sum(int(e["bytes"]) for e in entries),
+    }
+
+
 def _on_disk_entries(root: Path) -> List[Dict[str, object]]:
     entries: List[Dict[str, object]] = []
     for path in sorted(Path(root).rglob("*")):

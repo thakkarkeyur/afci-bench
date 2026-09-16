@@ -99,7 +99,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import sys
 import time
 from dataclasses import dataclass, field
@@ -275,6 +274,11 @@ class RunRequest:
     functional_evaluation_timeout_seconds: int = (
         fe.FUNCTIONAL_EVALUATION_TIMEOUT_SECONDS
     )
+    #: SL-V2-EFF-RESTART-01: which execution of the governed schedule this run
+    #: belongs to. ``None`` means the purpose declares none, which is every
+    #: purpose that existed before the decision and is what keeps their run ids
+    #: and their records exactly as they were.
+    execution_attempt: Optional[int] = None
 
 
 @dataclass
@@ -365,6 +369,7 @@ def run(request: RunRequest) -> RunResult:
     reset_block: Optional[Dict[str, object]] = None
     efficiency_block: Optional[Dict[str, object]] = None
     functional_evaluation: Optional[Dict[str, object]] = None
+    run_identity: Optional[Dict[str, object]] = None
     reset_outcome: Optional[ro.ResetOutcome] = None
     run_started = time.monotonic()
 
@@ -445,7 +450,7 @@ def run(request: RunRequest) -> RunResult:
         if request.scored:
             ev.assert_scoring_prerequisites(request.task_id)
 
-        run_id = art.derive_run_id(
+        identity_inputs = dict(
             purpose=purpose.name,
             task_id=request.task_id,
             condition=request.condition,
@@ -453,9 +458,40 @@ def run(request: RunRequest) -> RunResult:
             substrate_hash=str(substrate["content_hash"]),
             mode=request.mode,
             repetition=request.repetition,
+            # SL-V2-EFF-ABORT-01. Both are None for a purpose that declares
+            # neither, and the derivation is then byte-identical to the one every
+            # existing artifact was written under.
+            reset_state=reset_state,
+            execution_attempt=request.execution_attempt,
         )
+        run_id = art.derive_run_id(**identity_inputs)
+        run_identity = art.run_identity_block(**identity_inputs)
+
         root = request.artifact_root or gov.default_artifact_root()
-        directory = art.ArtifactDirectory(Path(root), run_id, purpose).create()
+
+        # SL-V2-EFF-RESTART-01, Part J. Enforced for a REAL run under a purpose
+        # whose authority requires an isolated execution root, and enforced here
+        # -- before the destination is created, before the prompt is composed
+        # and before any process could exist.
+        if request.mode == "real" and purpose.requires_isolated_execution_root:
+            art.assert_execution_root_isolated(Path(root), label="artifact root")
+            if request.sterile_base is not None:
+                art.assert_execution_root_isolated(
+                    Path(request.sterile_base), label="sterile base"
+                )
+
+        # SL-V2-EFF-ABORT-01, Part G. The ownership guard runs inside create(),
+        # which means it runs BEFORE this binding is assigned. A refusal
+        # therefore leaves ``directory`` as None, and the refusal handler below
+        # writes NO record -- so a colliding destination keeps every byte of the
+        # observation that owns it.
+        directory = art.ArtifactDirectory(
+            Path(root),
+            run_id,
+            purpose,
+            identity=_ownership_identity(request, purpose, run_id, reset_state),
+            spends_an_observation=(request.mode == "real"),
+        ).create()
         result.run_dir = directory.run_dir
 
         repo_state_before = gov.repository_state(request.repo)
@@ -513,8 +549,12 @@ def run(request: RunRequest) -> RunResult:
 
         # ---------------- PREPARE_WORKTREE ------------------------------ #
         machine.enter("PREPARE_WORKTREE")
-        if directory.worktree.exists():
-            shutil.rmtree(directory.worktree)
+        # SL-V2-EFF-ABORT-01, Part H. The predecessor called shutil.rmtree on
+        # whatever stood here, which is right for state this run built moments
+        # ago and destroys a previous observation's prepared worktree when two
+        # runs derive one directory. The delete now goes through the artifact
+        # directory, which permits it only for this run's own fresh state.
+        directory.remove_temporary(directory.worktree)
         prepared = pmw.prepare_model_worktree(
             pmw.PreparationRequest(
                 condition=request.condition,
@@ -866,6 +906,7 @@ def run(request: RunRequest) -> RunResult:
             reset=reset_block,
             efficiency=efficiency_block,
             functional_evaluation=functional_evaluation,
+            run_identity=run_identity,
             outcome={
                 "status": "DRY_RUN_COMPLETE" if request.mode == "dry-run" else "COMPLETE",
                 "code": None,
@@ -911,6 +952,7 @@ def run(request: RunRequest) -> RunResult:
                     reset=reset_block,
                     efficiency=efficiency_block,
                     functional_evaluation=functional_evaluation,
+                    run_identity=run_identity,
                     outcome={
                         "status": (
                             "DRY_RUN_REFUSED"
@@ -929,9 +971,42 @@ def run(request: RunRequest) -> RunResult:
                 pass
     finally:
         if directory is not None and not request.keep_worktree:
-            shutil.rmtree(directory.worktree, ignore_errors=True)
+            # Same guard as PREPARE_WORKTREE's. A cleanup that runs in a
+            # ``finally`` is exactly where an unguarded rmtree would do its
+            # damage quietly, so it is refused rather than silenced.
+            try:
+                directory.remove_temporary(directory.worktree, ignore_errors=True)
+            except gov.RunnerRefusal:  # pragma: no cover - guarded by create()
+                pass
 
     return result
+
+
+def _ownership_identity(
+    request: RunRequest,
+    purpose: gov.RunPurpose,
+    run_id: str,
+    reset_state: Optional[str],
+) -> Dict[str, object]:
+    """What the destination's ``run_identity.json`` claims the directory is for.
+
+    Every field the run id hashes, restated as data. A marker that carried only
+    the id would still catch the collision, but it would not tell an operator
+    reading a stalled execution WHICH scheduled row owns the directory in front
+    of them, which is the question Attempt 1 left unanswerable.
+    """
+    return {
+        "run_id": run_id,
+        "run_purpose": purpose.name,
+        "task_id": request.task_id,
+        "condition": request.condition,
+        "mode": request.mode,
+        "repetition": art.normalise_repetition(request.repetition),
+        "reset_state": reset_state,
+        "execution_attempt": art.normalise_execution_attempt(
+            request.execution_attempt
+        ),
+    }
 
 
 #: Purposes that declare a reset state. A purpose absent from this mapping runs
@@ -1266,6 +1341,7 @@ def _build_record(
     reset: Optional[Dict[str, object]] = None,
     efficiency: Optional[Dict[str, object]] = None,
     functional_evaluation: Optional[Dict[str, object]] = None,
+    run_identity: Optional[Dict[str, object]] = None,
 ) -> Dict[str, object]:
     blockers: List[Dict[str, str]] = []
     if readiness is not None:
@@ -1354,6 +1430,8 @@ def _build_record(
         reset=reset,
         efficiency=efficiency,
         functional_evaluation=functional_evaluation,
+        execution_attempt=request.execution_attempt,
+        run_identity=run_identity,
     )
 
 
@@ -1401,6 +1479,17 @@ def _build_parser() -> argparse.ArgumentParser:
             "run id, so repetitions of one task/condition no longer collide and "
             "no longer need a separate --artifact-root each. Omitted means 1, "
             "recorded as not declared."
+        ),
+    )
+    p.add_argument(
+        "--execution-attempt", type=int, default=None,
+        help=(
+            "SL-V2-EFF-RESTART-01: which execution of the governed schedule this "
+            "run belongs to. It enters the run id and the artifact directory, so "
+            "a replacement execution cannot land on an aborted one's artifacts. "
+            "INFRASTRUCTURE PROVENANCE ONLY: it changes no task, condition, "
+            "budget, metric, threshold or analysis. Omitted means the purpose "
+            "declares none, which is how every run before this decision behaved."
         ),
     )
     p.add_argument("--generated-at", default="unspecified", help="Caller-supplied stamp.")
@@ -1531,6 +1620,10 @@ def live_context_verdict(args) -> str:
             # threaded rather than defaulted: a purpose that needs one and is
             # given none still refuses, exactly as a repetition would.
             reset_state=args.reset_state,
+            # Threaded for the same reason the arm is: the probe must derive the
+            # identity a repetition of this attempt would derive, or it would
+            # certify a directory no repetition will ever use.
+            execution_attempt=args.execution_attempt,
             artifact_root=root / "readiness-context-audit",
             private_root=Path(args.private_root) if args.private_root else None,
             sterile_base=Path(args.sterile_base) if args.sterile_base else None,
@@ -1640,6 +1733,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 if args.max_turns is not None
                 else _frozen_max_turns(args.run_purpose, args.reset_state)
             ),
+            execution_attempt=args.execution_attempt,
         )
         outcome = run(request)
     except gov.RunnerRefusal as refusal:

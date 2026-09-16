@@ -586,6 +586,16 @@ AUTHORISED_EFFICIENCY_PILOT_MODULES = [
     # weaken every one of them.
     "functional_evaluation.py",
     "efficiency_pilot_analysis.py",
+    # `SL-V2-EFF-ABORT-01` / `SL-V2-EFF-RESTART-01`: execution-attempt provenance
+    # and the whole-schedule identity preflight, after Attempt 1 of the pilot was
+    # aborted for a deterministic run-id/artifact collision. It derives
+    # identities, hashes plans and inventories preserved evidence; it invokes no
+    # model, creates no directory and writes nothing outside an explicit call.
+    #
+    # Inert for PT08, and deliberately so: `PT08_DIFFICULTY_DIAGNOSTIC` declares
+    # no execution attempt, so it derives exactly the run ids its artifacts were
+    # written with, and the module's attempt namespace is unreachable from it.
+    "execution_attempt.py",
 ]
 
 

@@ -1,0 +1,447 @@
+{
+  "any_artifact_reconstructed": false,
+  "authority": "SL-V2-EFF-ABORT-01",
+  "collision_pairs_in_schedule": 18,
+  "comparative_analysis_performed": false,
+  "continuation_threshold_evaluated": false,
+  "damaged_observations": 2,
+  "damaged_sequences": [
+    6,
+    9
+  ],
+  "disposition": "ABORTED_INFRASTRUCTURE_ATTEMPT",
+  "excluded_from_every_efficiency_analysis": true,
+  "execution_attempt": 1,
+  "intact_governed_observations": 7,
+  "intact_sequences": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    8
+  ],
+  "is_result": false,
+  "operator_logs": {
+    "seq-01.log": {
+      "bytes": 1652,
+      "sha256": "d2762335868a0c5531c0a25be8ee9e9e6c09a10ce51d75ed61e9c61e206aab02"
+    },
+    "seq-02.log": {
+      "bytes": 1664,
+      "sha256": "a10f6e224914e7a6c4379e4676d824c152d64b17ce31202830b236f6c62ac288"
+    },
+    "seq-03.log": {
+      "bytes": 1670,
+      "sha256": "48058cc07bc22fde62a796cf7e43810eba1aad3cbba375941b8b3cc1fcc6bbea"
+    },
+    "seq-04.log": {
+      "bytes": 1658,
+      "sha256": "8743affd29908b96e4f2a5f80cbe974327307f5abf0f932992ba59a6ff273003"
+    },
+    "seq-05.log": {
+      "bytes": 1658,
+      "sha256": "4e2cf463f69d81a8a3a413fe62bfcd4f774eb512b6650daf0f8d9d8fb503ee2d"
+    },
+    "seq-06.log": {
+      "bytes": 1670,
+      "sha256": "ea6f2f14f74847302adeecb612b8744ac76b81e819a6cd1b60c1261d8e2ec896"
+    },
+    "seq-07.log": {
+      "bytes": 1670,
+      "sha256": "b09fc0167e2dff1862390fcf47a5d8706ee72b79af6485819d36afb2ae919734"
+    },
+    "seq-08.log": {
+      "bytes": 1658,
+      "sha256": "e50bfdafb5d2162468053809c4306de2e1ac55fd56ebbdbb06b3d10fc22a6f35"
+    },
+    "seq-09.log": {
+      "bytes": 101,
+      "sha256": "93ddd8530369939c8c2b8a31269063e080a4f43ca719cd0e7bda34d3295a3e0f"
+    }
+  },
+  "pilot_decision_emitted": false,
+  "poolable_with_replacement_execution": false,
+  "preserved_for": "audit and provenance only",
+  "record": "afci-bench/v2/afci-efficiency-pilot-attempt-1-evidence-inventory",
+  "rows": [
+    {
+      "artifact_dir": "D:\\afci-runs\\obs\\afci-efficiency-pilot-pt07-c1-real-r1-bbf19c70f5d4",
+      "artifact_dir_exists": true,
+      "artifact_dir_shared_with_attempted_row": false,
+      "block_id": "PT07|NON_RESET|R1",
+      "captured_worktree": {
+        "bytes": 423865,
+        "content_hash": "7deece73e81d7966ec41234c3a2cd7510a5766796add367f29e48a78839bce60",
+        "entry_count": 49
+      },
+      "captured_worktree_attributable_to_this_row": true,
+      "captured_worktree_present": true,
+      "collision_partner_attempted": [],
+      "collision_partner_sequences": [
+        19
+      ],
+      "condition": "C1",
+      "derived_run_id": "afci-efficiency-pilot-pt07-c1-real-r1-bbf19c70f5d4",
+      "functional_evaluation_attributable_to_this_row": true,
+      "functional_evaluation_present": true,
+      "functional_evaluation_sha256": "c27dbe48e10420cc3e10d631482d2da28d55f36f3be50fed8f894524ce07a72b",
+      "governed_record_attributed_to_arm": "NON_RESET",
+      "governed_record_intact_for_this_row": true,
+      "governed_record_present": true,
+      "governed_record_sha256": "54385f7387c07aad83eb0d682a67cb301e199870336decfb1952638e424b2033",
+      "model_invoked": true,
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "runtime_evidence": {
+        "runtime_evidence.jsonl": {
+          "bytes": 220168,
+          "sha256": "6516a7580c5f42e456051256f4cfdc55b6668430c0f4409fd9a64b82bcdd2def"
+        }
+      },
+      "sequence": 1,
+      "status": "INTACT_GOVERNED_OBSERVATION",
+      "task_id": "PT07"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\obs\\afci-efficiency-pilot-pt07-c4-real-r1-c996b3ffb249",
+      "artifact_dir_exists": true,
+      "artifact_dir_shared_with_attempted_row": false,
+      "block_id": "PT07|NON_RESET|R1",
+      "captured_worktree": {
+        "bytes": 429217,
+        "content_hash": "ab3b55e41936b15b60f447f2f5a4da7296e4b568da68ac02af5a4f131a1efeea",
+        "entry_count": 49
+      },
+      "captured_worktree_attributable_to_this_row": true,
+      "captured_worktree_present": true,
+      "collision_partner_attempted": [],
+      "collision_partner_sequences": [
+        20
+      ],
+      "condition": "C4",
+      "derived_run_id": "afci-efficiency-pilot-pt07-c4-real-r1-c996b3ffb249",
+      "functional_evaluation_attributable_to_this_row": true,
+      "functional_evaluation_present": true,
+      "functional_evaluation_sha256": "46af822dba5c151f0696c7c23864eb658b19af4509e9d556aa692cde9c970c8a",
+      "governed_record_attributed_to_arm": "NON_RESET",
+      "governed_record_intact_for_this_row": true,
+      "governed_record_present": true,
+      "governed_record_sha256": "87fe7f512a053441b80c29d6ac128f6a7399b2ab586c041c5eef8922568d5631",
+      "model_invoked": true,
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "runtime_evidence": {
+        "runtime_evidence.jsonl": {
+          "bytes": 400551,
+          "sha256": "d3760d3e6f6d5d15718e66eb0abbb35b837ae9c5633530e3b9fedce34f5d71b1"
+        }
+      },
+      "sequence": 2,
+      "status": "INTACT_GOVERNED_OBSERVATION",
+      "task_id": "PT07"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\obs\\afci-efficiency-pilot-pt01-c4-real-r3-1a5e41dba903",
+      "artifact_dir_exists": true,
+      "artifact_dir_shared_with_attempted_row": false,
+      "block_id": "PT01|RESET|R3",
+      "captured_worktree": {
+        "bytes": 421400,
+        "content_hash": "2af05ab61d97de9c3385cffc6d22038248071bbbf7647fb726c70d6a6c4c248a",
+        "entry_count": 49
+      },
+      "captured_worktree_attributable_to_this_row": true,
+      "captured_worktree_present": true,
+      "collision_partner_attempted": [],
+      "collision_partner_sequences": [
+        18
+      ],
+      "condition": "C4",
+      "derived_run_id": "afci-efficiency-pilot-pt01-c4-real-r3-1a5e41dba903",
+      "functional_evaluation_attributable_to_this_row": true,
+      "functional_evaluation_present": true,
+      "functional_evaluation_sha256": "33c82887c68bd09663b6e6924b44814f71c53286803728c0d7ee877925a80305",
+      "governed_record_attributed_to_arm": "RESET",
+      "governed_record_intact_for_this_row": true,
+      "governed_record_present": true,
+      "governed_record_sha256": "75bce3d77b682fb5ffac2456b6b1712fe0cf4ef2d97b3378972fd63f1d4c03f7",
+      "model_invoked": true,
+      "repetition": 3,
+      "reset_state": "RESET",
+      "runtime_evidence": {
+        "phase_a_runtime_evidence.jsonl": {
+          "bytes": 193808,
+          "sha256": "7e9068f7b1e45267beb4893fe4a778fe85ba4e03d97e935e4776e70de775cfbc"
+        },
+        "phase_b_runtime_evidence.jsonl": {
+          "bytes": 130168,
+          "sha256": "a977492571838df1377f7710d07dcf66fd47c0234269d510114493bfa91b2f2b"
+        }
+      },
+      "sequence": 3,
+      "status": "INTACT_GOVERNED_OBSERVATION",
+      "task_id": "PT01"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\obs\\afci-efficiency-pilot-pt01-c1-real-r3-960cd0a8efce",
+      "artifact_dir_exists": true,
+      "artifact_dir_shared_with_attempted_row": false,
+      "block_id": "PT01|RESET|R3",
+      "captured_worktree": {
+        "bytes": 417765,
+        "content_hash": "4ba0b1967a35b0c56b464a580f4190c8f87a9380a662987cc8cf8c6a1b28704f",
+        "entry_count": 49
+      },
+      "captured_worktree_attributable_to_this_row": true,
+      "captured_worktree_present": true,
+      "collision_partner_attempted": [],
+      "collision_partner_sequences": [
+        17
+      ],
+      "condition": "C1",
+      "derived_run_id": "afci-efficiency-pilot-pt01-c1-real-r3-960cd0a8efce",
+      "functional_evaluation_attributable_to_this_row": true,
+      "functional_evaluation_present": true,
+      "functional_evaluation_sha256": "8fda17374831b318338e81dac788c6f46cd54d5ef7b7d3d5ed177fa2ba50cad8",
+      "governed_record_attributed_to_arm": "RESET",
+      "governed_record_intact_for_this_row": true,
+      "governed_record_present": true,
+      "governed_record_sha256": "52b8fd047c0592c41063664f312d5c96f0e4b2decd7b1e4738b3ece5ba4dfd91",
+      "model_invoked": true,
+      "repetition": 3,
+      "reset_state": "RESET",
+      "runtime_evidence": {
+        "phase_a_runtime_evidence.jsonl": {
+          "bytes": 143528,
+          "sha256": "08e051c3d0269c9f682012098b8276fc1e829591e3532aa431c725d5b349d6a2"
+        },
+        "phase_b_runtime_evidence.jsonl": {
+          "bytes": 79158,
+          "sha256": "2f236619fcb210a4da7d9138e7387a26c3cc618f86ed30d2914a878b685a741f"
+        }
+      },
+      "sequence": 4,
+      "status": "INTACT_GOVERNED_OBSERVATION",
+      "task_id": "PT01"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\obs\\afci-efficiency-pilot-pt01-c1-real-r2-c2e0afda6c84",
+      "artifact_dir_exists": true,
+      "artifact_dir_shared_with_attempted_row": false,
+      "block_id": "PT01|RESET|R2",
+      "captured_worktree": {
+        "bytes": 417714,
+        "content_hash": "9aaadd7912210e8161ff63caf87a9a92160dbf0e054ce04c1a4c2980f4439d37",
+        "entry_count": 49
+      },
+      "captured_worktree_attributable_to_this_row": true,
+      "captured_worktree_present": true,
+      "collision_partner_attempted": [],
+      "collision_partner_sequences": [
+        10
+      ],
+      "condition": "C1",
+      "derived_run_id": "afci-efficiency-pilot-pt01-c1-real-r2-c2e0afda6c84",
+      "functional_evaluation_attributable_to_this_row": true,
+      "functional_evaluation_present": true,
+      "functional_evaluation_sha256": "149d64771edceca9d1b82afecb062ac5240de55a9626f91a4853121e121bc24b",
+      "governed_record_attributed_to_arm": "RESET",
+      "governed_record_intact_for_this_row": true,
+      "governed_record_present": true,
+      "governed_record_sha256": "4eb1a9269b4106eb953a53019cdce7948beb9915def2d13320ca36be9e6da5de",
+      "model_invoked": true,
+      "repetition": 2,
+      "reset_state": "RESET",
+      "runtime_evidence": {
+        "phase_a_runtime_evidence.jsonl": {
+          "bytes": 147232,
+          "sha256": "b5c4612acfee8e16f088bf927a5ad6b34d317849dcce4e01a229461df9d8fe8b"
+        },
+        "phase_b_runtime_evidence.jsonl": {
+          "bytes": 81973,
+          "sha256": "701c28a1d78c6adb4d9eedb5b379e2bd3eac01a7ff0232534474ad900ffbdca5"
+        }
+      },
+      "sequence": 5,
+      "status": "INTACT_GOVERNED_OBSERVATION",
+      "task_id": "PT01"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\obs\\afci-efficiency-pilot-pt01-c4-real-r2-d0837c0e6305",
+      "artifact_dir_exists": true,
+      "artifact_dir_shared_with_attempted_row": true,
+      "block_id": "PT01|RESET|R2",
+      "captured_worktree": {
+        "bytes": 422080,
+        "content_hash": "8b44e8ca32e2b169ae9fb8cb65d478858b3439bf664dcf3f7087f36947578629",
+        "entry_count": 49
+      },
+      "captured_worktree_attributable_to_this_row": true,
+      "captured_worktree_present": true,
+      "collision_partner_attempted": [
+        9
+      ],
+      "collision_partner_sequences": [
+        9
+      ],
+      "condition": "C4",
+      "derived_run_id": "afci-efficiency-pilot-pt01-c4-real-r2-d0837c0e6305",
+      "functional_evaluation_attributable_to_this_row": true,
+      "functional_evaluation_present": true,
+      "functional_evaluation_sha256": "e3a24d6d4e28f15ee46872e434068ae456ff551734f3535afe8e966b1986ce5e",
+      "governed_record_attributed_to_arm": "NON_RESET",
+      "governed_record_intact_for_this_row": false,
+      "governed_record_present": true,
+      "governed_record_sha256": "6e1af2ab57b34b59648a6d2a830d2f00ad76f731936a07c273118b2576c366fe",
+      "model_invoked": true,
+      "repetition": 2,
+      "reset_state": "RESET",
+      "runtime_evidence": {
+        "phase_a_runtime_evidence.jsonl": {
+          "bytes": 210147,
+          "sha256": "a4d871519f58b15f4370a756b98e7e98c8d50659ab7ebdf7a9aed15807f09526"
+        },
+        "phase_b_runtime_evidence.jsonl": {
+          "bytes": 84291,
+          "sha256": "ae0ff0866d5d2f61f6b1d06bb7761dc3eb9463fe95846e20b766ebaeebe4c790"
+        }
+      },
+      "sequence": 6,
+      "status": "DAMAGED_GOVERNED_RECORD_OVERWRITTEN",
+      "task_id": "PT01"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\obs\\afci-efficiency-pilot-pt07-c4-real-r3-f6b664e36aa7",
+      "artifact_dir_exists": true,
+      "artifact_dir_shared_with_attempted_row": false,
+      "block_id": "PT07|RESET|R3",
+      "captured_worktree": {
+        "bytes": 425299,
+        "content_hash": "e674984066073bbcd01561254ce5f238cd0cad433cab1a2b05c332ad37aa3717",
+        "entry_count": 49
+      },
+      "captured_worktree_attributable_to_this_row": true,
+      "captured_worktree_present": true,
+      "collision_partner_attempted": [],
+      "collision_partner_sequences": [
+        35
+      ],
+      "condition": "C4",
+      "derived_run_id": "afci-efficiency-pilot-pt07-c4-real-r3-f6b664e36aa7",
+      "functional_evaluation_attributable_to_this_row": true,
+      "functional_evaluation_present": true,
+      "functional_evaluation_sha256": "1015f8dad0babe814428c1af7f146903aaa0fd9b3df2db0370274f8958e4c286",
+      "governed_record_attributed_to_arm": "RESET",
+      "governed_record_intact_for_this_row": true,
+      "governed_record_present": true,
+      "governed_record_sha256": "9620ae2fde7d436f615729b74a493b24a66e7bfc87632e14d77d10fb5292fb65",
+      "model_invoked": true,
+      "repetition": 3,
+      "reset_state": "RESET",
+      "runtime_evidence": {
+        "phase_a_runtime_evidence.jsonl": {
+          "bytes": 258790,
+          "sha256": "96728e1745eb68fc31ca1b79be0eb033aed6da0e7c25c8f738a581091f4b4269"
+        },
+        "phase_b_runtime_evidence.jsonl": {
+          "bytes": 105899,
+          "sha256": "c34103ddb177689f3701572bc10d1730bb0e61ecc8c47b5f1d04787eb8b16c06"
+        }
+      },
+      "sequence": 7,
+      "status": "INTACT_GOVERNED_OBSERVATION",
+      "task_id": "PT07"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\obs\\afci-efficiency-pilot-pt07-c1-real-r3-6fa7159e8e17",
+      "artifact_dir_exists": true,
+      "artifact_dir_shared_with_attempted_row": false,
+      "block_id": "PT07|RESET|R3",
+      "captured_worktree": {
+        "bytes": 415910,
+        "content_hash": "5e2c81bad8d6629d4509004109259908b857db16daecb6eecdef604703076339",
+        "entry_count": 49
+      },
+      "captured_worktree_attributable_to_this_row": true,
+      "captured_worktree_present": true,
+      "collision_partner_attempted": [],
+      "collision_partner_sequences": [
+        36
+      ],
+      "condition": "C1",
+      "derived_run_id": "afci-efficiency-pilot-pt07-c1-real-r3-6fa7159e8e17",
+      "functional_evaluation_attributable_to_this_row": true,
+      "functional_evaluation_present": true,
+      "functional_evaluation_sha256": "4c6596f58a4c4d0597e8e7fa43a750af662882ce24762a534ba05e7402048082",
+      "governed_record_attributed_to_arm": "RESET",
+      "governed_record_intact_for_this_row": true,
+      "governed_record_present": true,
+      "governed_record_sha256": "af9bad2987ba6f860fe1281bb1540f142064fdd4b2f79744bf0fc3f7366d573d",
+      "model_invoked": true,
+      "repetition": 3,
+      "reset_state": "RESET",
+      "runtime_evidence": {
+        "phase_a_runtime_evidence.jsonl": {
+          "bytes": 147188,
+          "sha256": "c22d2170f61e4b32555673455aac04cd8f8a7021f69e96cecf35222777913022"
+        },
+        "phase_b_runtime_evidence.jsonl": {
+          "bytes": 80983,
+          "sha256": "22820f480d28a5d75bafb066aef10d32d9f1c543d6af9b316aeb4573f13e039a"
+        }
+      },
+      "sequence": 8,
+      "status": "INTACT_GOVERNED_OBSERVATION",
+      "task_id": "PT07"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\obs\\afci-efficiency-pilot-pt01-c4-real-r2-d0837c0e6305",
+      "artifact_dir_exists": true,
+      "artifact_dir_shared_with_attempted_row": true,
+      "block_id": "PT01|NON_RESET|R2",
+      "captured_worktree": {
+        "bytes": 422080,
+        "content_hash": "8b44e8ca32e2b169ae9fb8cb65d478858b3439bf664dcf3f7087f36947578629",
+        "entry_count": 49
+      },
+      "captured_worktree_attributable_to_this_row": false,
+      "captured_worktree_present": true,
+      "collision_partner_attempted": [
+        6
+      ],
+      "collision_partner_sequences": [
+        6
+      ],
+      "condition": "C4",
+      "derived_run_id": "afci-efficiency-pilot-pt01-c4-real-r2-d0837c0e6305",
+      "functional_evaluation_attributable_to_this_row": false,
+      "functional_evaluation_present": true,
+      "functional_evaluation_sha256": "e3a24d6d4e28f15ee46872e434068ae456ff551734f3535afe8e966b1986ce5e",
+      "governed_record_attributed_to_arm": "NON_RESET",
+      "governed_record_intact_for_this_row": false,
+      "governed_record_present": true,
+      "governed_record_sha256": "6e1af2ab57b34b59648a6d2a830d2f00ad76f731936a07c273118b2576c366fe",
+      "model_invoked": true,
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "runtime_evidence": {
+        "runtime_evidence.jsonl": {
+          "bytes": 201093,
+          "sha256": "2d86529965e15802191bdaea1c8e699c5431654f8a55b0d2d000130bb45771d9"
+        }
+      },
+      "sequence": 9,
+      "status": "DAMAGED_POST_DELIVERY_COLLIDING_OBSERVATION",
+      "task_id": "PT01"
+    }
+  ],
+  "rows_attempted": 9,
+  "rows_not_started": 27,
+  "run_id_algorithm_version": 1,
+  "run_purpose": "AFCI_EFFICIENCY_PILOT",
+  "scheduled_rows": 36,
+  "scored": false,
+  "token_ratio_analysis_performed": false
+}

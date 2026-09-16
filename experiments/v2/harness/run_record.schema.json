@@ -74,6 +74,26 @@
       "type": "boolean",
       "description": "SL-RUNID-01. true when the caller declared the repetition index explicitly; false when the governed default of 1 was supplied. Recorded so a single run's record says which it was, instead of leaving a reader to guess whether an index of 1 was chosen or defaulted."
     },
+    "execution_attempt": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 99,
+      "description": "SL-V2-EFF-RESTART-01. The execution attempt of the governed schedule this run belongs to. INFRASTRUCTURE PROVENANCE ONLY: it separates a replacement execution's artifacts from an aborted execution's so the replacement cannot land on them, and it alters no task, condition, budget, metric, threshold or analysis. OMITTED for a purpose that declares no execution attempt, which is every purpose written before this decision; those records are unchanged and are never rewritten."
+    },
+    "run_identity": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "SL-V2-EFF-ABORT-01. How this record's run_id was derived, so a reader can re-derive it without knowing which algorithm minted it. OMITTED when the run declared neither a reset state nor an execution attempt, in which case the legacy SL-RUNID-01 derivation was used and the record is byte-identical to the one this runner produced before this field existed.",
+      "properties": {
+        "algorithm_version": { "type": "integer" },
+        "authority": { "type": "string" },
+        "fields": { "type": "array", "items": { "type": "string" } },
+        "repetition": { "type": "integer" },
+        "reset_state": { "type": ["string", "null"], "enum": ["NON_RESET", "RESET", null] },
+        "execution_attempt": { "type": ["integer", "null"] },
+        "run_id": { "type": "string" }
+      }
+    },
     "state_log": {
       "type": "array",
       "items": {
