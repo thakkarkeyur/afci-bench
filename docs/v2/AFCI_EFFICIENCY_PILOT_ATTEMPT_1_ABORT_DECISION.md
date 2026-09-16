@@ -207,6 +207,26 @@ That move is refused, for three reasons.
 
 Attempt 1 is therefore excluded as an attempt, not row by row.
 
+### 6.1 The rule is enforced, not merely stated
+
+A sentence in a decision record is not a control. The frozen analysis recurses
+into whatever directory it is handed, and the two executions' artifact roots are
+siblings — so an operator pointing it one level too high would have pooled the
+aborted execution with its replacement, silently, and the resulting report would
+have looked entirely normal.
+
+`efficiency_pilot_analysis.assert_single_execution_attempt` now refuses:
+
+* a record set spanning more than one execution attempt
+  (`ANALYSIS_SPANS_EXECUTION_ATTEMPTS`) — blocks measured in different
+  executions are not pairs;
+* any record from the aborted attempt, **including on its own**
+  (`ANALYSIS_INCLUDES_ABORTED_ATTEMPT`). Attempt-1 records are recognised by
+  their silence: a pilot record written after the repair declares its execution
+  attempt, and one that declares none was written before it.
+
+Every report now states on its face which single execution it read.
+
 ---
 
 ## 7. Evidence preservation
@@ -258,6 +278,7 @@ and `G1`/`G2` are exactly as they were.
 | destructive-reuse prevention | `run_artifacts.ArtifactDirectory.remove_temporary` |
 | whole-schedule identity preflight | `execution_attempt.preflight` |
 | execution-root isolation | `run_artifacts.assert_execution_root_isolated` |
+| the exclusion rule, enforced | `efficiency_pilot_analysis.assert_single_execution_attempt` |
 
 Each is proved by tests in
 `experiments/v2/harness/tests/test_efficiency_attempt_identity.py`, including a

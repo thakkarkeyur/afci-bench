@@ -47,6 +47,8 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 RUN_PURPOSE = "AFCI_EFFICIENCY_PILOT"
 DECISION_RECORD = "docs/v2/AFCI_EFFICIENCY_PILOT_DECISION.md"
+#: The decision that aborted execution attempt 1 and excluded it wholesale.
+ABORT_DECISION = "SL-V2-EFF-ABORT-01"
 FUNCTIONAL_VALIDITY_RECORD = (
     "docs/v2/AFCI_EFFICIENCY_PILOT_FUNCTIONAL_VALIDITY_DECISION.md"
 )
@@ -588,10 +590,95 @@ def decide(
 # --------------------------------------------------------------------------- #
 # The report
 # --------------------------------------------------------------------------- #
+#: ``SL-V2-EFF-ABORT-01``. The aborted execution attempt, whose observations may
+#: never enter an efficiency analysis. Its records declare NO execution attempt,
+#: because the field did not exist when they were written, so absence is the
+#: signature this refuses on rather than the value 1.
+ABORTED_EXECUTION_ATTEMPT = 1
+
+#: The replacement execution authorised by ``SL-V2-EFF-RESTART-01``. Restated
+#: here rather than imported: this module reads run records and nothing else, so
+#: it depends on no harness module and runs anywhere a record set does. A test
+#: asserts it equals ``execution_attempt.REPLACEMENT_ATTEMPT``, so the
+#: restatement is checked rather than trusted.
+REPLACEMENT_EXECUTION_ATTEMPT = 2
+
+ANALYSIS_SPANS_EXECUTION_ATTEMPTS = "ANALYSIS_SPANS_EXECUTION_ATTEMPTS"
+ANALYSIS_INCLUDES_ABORTED_ATTEMPT = "ANALYSIS_INCLUDES_ABORTED_ATTEMPT"
+
+
+def assert_single_execution_attempt(
+    records: Sequence[Dict[str, object]], sources: Sequence[str]
+) -> Optional[int]:
+    """Refuse a record set that pools executions, or includes the aborted one.
+
+    ``SL-V2-EFF-ABORT-01`` excludes execution attempt 1 wholesale and forbids
+    pooling it with the replacement. That exclusion was a sentence in a decision
+    record, and a sentence is not a control: ``load_records`` recurses into
+    whatever directory it is handed, and the two executions' artifact roots are
+    siblings. An operator pointing the analysis one level too high would have
+    pooled an aborted execution with its replacement, silently, and the report
+    would have looked entirely normal.
+
+    Two refusals:
+
+    * records disagreeing about which execution they belong to. A pilot analysis
+      is paired WITHIN a block, and blocks measured in different executions are
+      not pairs;
+    * any record from the aborted attempt, recognised by its silence: a real
+      pilot record written after this decision declares its attempt, and one
+      that declares none was written before the repair — which is to say, by the
+      execution that was aborted.
+
+    A ``dry-run`` record declares no attempt either and is not an observation;
+    it is ignored here and excluded on its own terms elsewhere.
+    """
+    attempts: Dict[Optional[int], List[str]] = {}
+    for record, source in zip(records, sources):
+        if str(record.get("mode")) != "real":
+            continue
+        if str(record.get("run_purpose", {}).get("name")) != RUN_PURPOSE:
+            continue
+        attempts.setdefault(record.get("execution_attempt"), []).append(source)
+
+    if not attempts:
+        return None
+    if len(attempts) > 1:
+        raise AnalysisRefusal(
+            ANALYSIS_SPANS_EXECUTION_ATTEMPTS,
+            "the supplied records span more than one execution attempt "
+            + "; ".join(
+                f"{attempt!r}: {len(paths)} record(s) e.g. {paths[0]}"
+                for attempt, paths in sorted(
+                    attempts.items(), key=lambda kv: (kv[0] is not None, kv[0])
+                )
+            )
+            + f". {ABORT_DECISION} forbids pooling executions",
+        )
+    (attempt, paths), = attempts.items()
+    if attempt is None:
+        raise AnalysisRefusal(
+            ANALYSIS_INCLUDES_ABORTED_ATTEMPT,
+            f"{len(paths)} record(s) declare no execution attempt, e.g. "
+            f"{paths[0]}. Those were written before the run-id repair, by the "
+            f"execution {ABORT_DECISION} aborted, and are excluded wholesale "
+            "from every efficiency analysis",
+        )
+    if attempt == ABORTED_EXECUTION_ATTEMPT:
+        raise AnalysisRefusal(
+            ANALYSIS_INCLUDES_ABORTED_ATTEMPT,
+            f"{len(paths)} record(s) declare execution attempt "
+            f"{ABORTED_EXECUTION_ATTEMPT}, which {ABORT_DECISION} aborted and "
+            "excluded wholesale",
+        )
+    return int(attempt)
+
+
 def analyse(records: Sequence[Dict[str, object]], *,
             sources: Optional[Sequence[str]] = None) -> Dict[str, object]:
     """The whole frozen analysis for a set of pilot run records."""
     names = list(sources) if sources else ["<memory>"] * len(records)
+    execution_attempt = assert_single_execution_attempt(records, names)
     observations = [
         Observation(record, source=name) for record, name in zip(records, names)
     ]
@@ -635,6 +722,10 @@ def analyse(records: Sequence[Dict[str, object]], *,
     return {
         "record": "afci-bench/v2/efficiency-pilot-analysis",
         "run_purpose": RUN_PURPOSE,
+        # SL-V2-EFF-ABORT-01: which single execution these observations came
+        # from. Recorded so a report says on its face that it pooled nothing.
+        "execution_attempt": execution_attempt,
+        "aborted_execution_attempt_excluded": ABORTED_EXECUTION_ATTEMPT,
         "frozen_by": "SL-V2-EFF-01",
         "frozen_record": DECISION_RECORD,
         "functional_validity_authority": "SL-V2-EFF-FUNC-01",
@@ -754,6 +845,11 @@ def synthetic_records(
                         "task_id": task,
                         "condition": condition,
                         "repetition": repetition,
+                        # A fixture that omitted these would leave the
+                        # execution-attempt guard unexercised by the very check
+                        # whose job is to prove the analysis is computable.
+                        "mode": "real",
+                        "execution_attempt": REPLACEMENT_EXECUTION_ATTEMPT,
                         "reset": {"reset_state": reset_state},
                         "efficiency": {
                             "reset_state": reset_state,
@@ -853,6 +949,9 @@ def self_check() -> Dict[str, object]:
         report = analyse(records)
         out["scenarios"][name] = {
             "records": len(records),
+            # Present so the self-check demonstrates the SL-V2-EFF-ABORT-01
+            # pooling guard running, rather than merely not tripping.
+            "execution_attempt": report["execution_attempt"],
             "blocks_observed": report["blocks"]["observed"],
             "blocks_eligible": report["blocks"]["eligible"],
             "functional_valid_counts": report["functional_valid_counts"],

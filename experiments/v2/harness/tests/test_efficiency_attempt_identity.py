@@ -783,6 +783,69 @@ def test_the_frozen_metrics_and_thresholds_are_unchanged():
     assert fe.FUNCTIONAL_EVALUATION_AUTHORITY == "SL-V2-EFF-FUNC-01"
 
 
+# --------------------------------------------------------------------------- #
+# PART A.8-9. The exclusion is ENFORCED, not merely declared.
+# --------------------------------------------------------------------------- #
+def test_the_replacement_attempt_constant_agrees_across_modules():
+    """The analysis restates it to stay standalone; the restatement is checked."""
+    assert epa.REPLACEMENT_EXECUTION_ATTEMPT == ea.REPLACEMENT_ATTEMPT
+    assert epa.ABORTED_EXECUTION_ATTEMPT == ea.ABORTED_ATTEMPT
+    assert epa.ABORT_DECISION == ea.ABORT_DECISION
+
+
+def test_the_frozen_analysis_is_still_computable():
+    """PART P: it runs end to end over synthetic records and emits a decision."""
+    report = epa.self_check()
+    assert report["computable"] is True, report
+    assert report["observations_read"] == 0
+    assert {s["execution_attempt"] for s in report["scenarios"].values()} == {
+        ea.REPLACEMENT_ATTEMPT
+    }
+    assert all(s["decision"] for s in report["scenarios"].values())
+
+
+def _pilot_record(attempt, task="PT01"):
+    records = epa.synthetic_records()
+    record = json.loads(json.dumps(records[0]))
+    record["task_id"] = task
+    if attempt is None:
+        record.pop("execution_attempt")
+    else:
+        record["execution_attempt"] = attempt
+    return record
+
+
+def test_pooling_two_executions_is_refused():
+    """The failure mode: two sibling artifact roots under one parent directory."""
+    with pytest.raises(epa.AnalysisRefusal) as excinfo:
+        epa.analyse(
+            [_pilot_record(2), _pilot_record(None, task="PT04")],
+            sources=["attempt-2/r/run_record.json", "obs/r/run_record.json"],
+        )
+    assert excinfo.value.code == epa.ANALYSIS_SPANS_EXECUTION_ATTEMPTS
+    assert ea.ABORT_DECISION in excinfo.value.message
+
+
+def test_an_aborted_attempt_record_is_refused_even_on_its_own():
+    """The seven intact Attempt-1 rows are excluded too; that is the whole rule."""
+    for attempt in (None, ea.ABORTED_ATTEMPT):
+        with pytest.raises(epa.AnalysisRefusal) as excinfo:
+            epa.analyse([_pilot_record(attempt)], sources=["obs/r/run_record.json"])
+        assert excinfo.value.code == epa.ANALYSIS_INCLUDES_ABORTED_ATTEMPT
+
+
+def test_the_replacement_executions_records_analyse_normally():
+    report = epa.analyse(epa.synthetic_records())
+    assert report["execution_attempt"] == ea.REPLACEMENT_ATTEMPT
+    assert report["aborted_execution_attempt_excluded"] == ea.ABORTED_ATTEMPT
+
+
+def test_a_dry_run_record_is_not_an_observation_and_does_not_trip_the_guard():
+    dry = _pilot_record(None)
+    dry["mode"] = "dry-run"
+    assert epa.assert_single_execution_attempt([dry], ["x"]) is None
+
+
 def test_a_restart_is_not_expressible_as_a_pilot_analysis_outcome():
     """PART A: the abort is not, and cannot be mistaken for, an analysis verdict."""
     inventory = _inventory()
