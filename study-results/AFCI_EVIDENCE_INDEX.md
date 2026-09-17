@@ -7,9 +7,9 @@ raw evidence** for every figure in this package.
 
 | what | value |
 | --- | --- |
-| public repo HEAD (`study-v2`) | `c544cc87a4f72dc33763035b0ba2c589ad8e72db` |
+| public repo HEAD (`study-v2`) | see `git rev-parse study-v2`; this package was compiled on the commit that adds the lower-model results |
 | public repo `main` (v1 base, tag `paper-v0`) | `2adc8741acad7ea5423f0bf3d9ad821ff023a35f` |
-| private evaluator repo HEAD | `e1154227008101f7054c61c33247e5d2c7c52e59` |
+| private evaluator repo HEAD | `8ad5e3738a50804aa81bbf99928acf7e54372b51` |
 | governed substrate commit | `630d3180af0d02a86330dfb599f559e78df65e94` |
 | governed substrate content hash | `0198d76c189f38589e872cab4305527c08e86ef736e1550e428e05f9178060f3` (49 entries) |
 
@@ -20,7 +20,7 @@ modified and nothing is pushed.
 
 ## Governance documents and their hashes
 
-SHA-256 of the file as committed on `study-v2` @ `c544cc87`.
+SHA-256 of the file as committed on `study-v2`.
 
 | document | sha256 |
 | --- | --- |
@@ -30,6 +30,9 @@ SHA-256 of the file as committed on `study-v2` @ `c544cc87`.
 | `docs/v2/AFCI_EFFICIENCY_PILOT_ATTEMPT_2_EXECUTION_PLAN.json` | `562415031c04b0673c54ac352a4ca35a66e885023aa212cedc284da0c65a087e` |
 | `docs/v2/AFCI_EFFICIENCY_PILOT_ATTEMPT_1_ABORT_DECISION.md` | `21547ed7d3f86e3c6793e830ca128ffe7bf3c6665ada07568c99d2c493a66445` |
 | `docs/v2/AFCI_EFFICIENCY_PILOT_ATTEMPT_1_EVIDENCE_INVENTORY.json` | `9985860fb3b7a5842e676cc1c66c876e712ea93a196999457d711332ba12683f` |
+| `docs/v2/AFCI_LOWER_MODEL_PILOT_DECISION.md` | `cbb73e76d4f9936319123f650751b079e33044e66afe6422b0c246fdbc716203` |
+| `docs/v2/AFCI_LOWER_MODEL_PILOT_RUN_PLAN.json` | `f045c0d93370f7e6f785274acd7df6b34bb28f52ba60cdcfd49eb6812b86b026` |
+| `docs/v2/AFCI_LOWER_MODEL_PILOT_EXECUTION_PLAN.json` | `2ff3f9b45e4ddf6f3318bb2a419d9d12b5eaab5b1a297acec425796ed4a24318` |
 | `docs/v2/V2_QUALIFICATION_DIAGNOSTIC_DECISION.md` | `e5bcebe5717ab301e9fe27565ddd9593677f56d5c6a78399c21ea1e260416385` |
 | `docs/v2/PT08_DIAGNOSTIC_OUTCOME_AND_DISPOSITION.md` | `3658dd21b2ac5b829df92bb8d4da5a8ad71262b6c36bd0c4f7ccbd1c1b94515e` |
 
@@ -298,6 +301,92 @@ per-message reconstruction).
 The full map is in the execution plan's `identities` array and is reproduced
 per-row in [`AFCI_MASTER_RUN_RESULTS.csv`](AFCI_MASTER_RUN_RESULTS.csv)
 (`sequence` column). Sequence 12 is the refused row.
+
+---
+
+## 5A. `V2_LOWER_MODEL_PILOT` — completed
+
+| | |
+| --- | --- |
+| status | COMPLETE |
+| included in analysis | **YES** — and still **non-confirmatory** |
+| authority | `SL-V2-LOWER-MODEL-01` |
+| executed | 2026-09-17T21:08:23Z → 2026-09-17T21:52:09Z |
+| model / runtime | `claude-haiku-4-5-20251001`, CLI `2.1.229` |
+| artifact root | `D:\afci-runs\lower-model-pilot` |
+| sterile base | `D:\afci-sterile\lower-model-pilot` |
+| operator logs | `D:\afci-runs\lower-model-pilot-logs\seq-01.log` … `seq-18.log` |
+
+### Plan and identity
+
+| what | value |
+| --- | --- |
+| scientific run plan | `docs/v2/AFCI_LOWER_MODEL_PILOT_RUN_PLAN.json`, sha256 `f045c0d9…` |
+| execution plan | `docs/v2/AFCI_LOWER_MODEL_PILOT_EXECUTION_PLAN.json`, sha256 `2ff3f9b4…` |
+| scientific projection sha256 | `fc331ee35f5a73380561e36d4f234a74752278d3fd9e94082fa870c464cfc817` |
+| schedule seed | `AFCI_LOWER_MODEL_PILOT_V1_20260917` |
+| prepared worktree content hash | `da7a679552d50857408d14e980cc5257ed42e33d7116630433f8451450d1bad6` (49 entries, identical in C1 and C4) |
+| execution attempt | 1 |
+| scheduled / executed | 18 / 18 |
+| unique run ids / artifact dirs | 18 / 18 |
+| overlap with the Sonnet namespace | **0** |
+
+### Artifacts
+
+Each of the 18 directories under the artifact root carries `run_record.json`,
+`run_identity.json`, `readiness.json`, `context_audit.json`, `launch_manifest.json`,
+`prompt_manifest.json`, `prepared_manifest.json`, `runtime_evidence.jsonl`,
+`runtime_evidence.stderr.txt`, `functional_evaluation.json`,
+`functional_evaluation_result.json`, `architecture_evaluation.json`,
+`architecture_evaluation_result.json`, `prompts/`, `worktree/` and
+`worktree_post_run/`.
+
+### Analysis
+
+| what | where |
+| --- | --- |
+| frozen analysis artifact | [`06_lower_model_pilot_completed/lower_model_pilot_frozen_analysis_report.json`](06_lower_model_pilot_completed/lower_model_pilot_frozen_analysis_report.json) |
+| all 18 runs, every metric | [`…/lower_model_runs_raw_metrics.csv`](06_lower_model_pilot_completed/lower_model_runs_raw_metrics.csv) |
+| endpoint medians | [`…/lower_model_endpoint_ratios.csv`](06_lower_model_pilot_completed/lower_model_endpoint_ratios.csv) |
+| the 8 paired blocks | [`…/lower_model_primary_pairs.csv`](06_lower_model_pilot_completed/lower_model_primary_pairs.csv) |
+| architecture aggregates | [`…/lower_model_architecture_summary.csv`](06_lower_model_pilot_completed/lower_model_architecture_summary.csv) |
+| every frozen decision clause | [`…/lower_model_decision_clauses.csv`](06_lower_model_pilot_completed/lower_model_decision_clauses.csv) |
+
+Regenerate with:
+
+```sh
+python experiments/v2/harness/lower_model_pilot_analysis.py \
+    D:\afci-runs\lower-model-pilot\*\run_record.json
+```
+
+All 18 directories under that root are substantive runs. Readiness records were
+written to a **separate** root (`D:\afci-runs\lower-model-readiness`), so the
+Attempt-2 trap of mixing readiness records into the analysis cannot recur.
+
+### Trace the headline number
+
+`median C4/C1 input tokens = 2.0372`:
+
+1. `lower_model_endpoint_ratios.csv` → row `TOTAL_INPUT_TOKENS`
+2. `lower_model_primary_pairs.csv` → the 8 pairs whose median it is
+3. `lower_model_pilot_frozen_analysis_report.json` →
+   `efficiency.endpoints.TOTAL_INPUT_TOKENS.pairs`
+4. any run directory's `run_record.json` → `efficiency.usage.TOTAL_INPUT_TOKENS`
+5. the same directory's `runtime_evidence.jsonl` → the terminal `result` event
+
+### Sequence → run id
+
+The full map is in the execution plan's `identities` array and is reproduced
+per-row in [`AFCI_MASTER_RUN_RESULTS.csv`](AFCI_MASTER_RUN_RESULTS.csv)
+(`sequence` column). No row was refused.
+
+### What is withheld
+
+The private opportunity identifiers, rule identifiers and hidden acceptance case
+semantics behind the architecture and functional counts are **not** in this
+package. They live in the private evaluator repository. The run record refuses to
+carry them at all — a structured scorer result naming hidden evaluator material is
+rejected rather than written. **No numeric result is withheld.**
 
 ---
 

@@ -1,7 +1,7 @@
 # AFCI-Bench — consolidated study evidence package
 
-**Compiled:** 2026-09-17
-**Repository:** `afci-bench`, branch `study-v2`, commit `c544cc87a4f72dc33763035b0ba2c589ad8e72db`
+**Compiled:** 2026-09-18
+**Repository:** `afci-bench`, branch `study-v2`
 **Scope:** every AFCI experiment executed to date, v1 and v2.
 **Status of the benchmark:** study v2 remains **PRE-FREEZE**. Gate `G1` is not
 passed, `primary_model` is still `null`, and **no confirmatory evidence has been
@@ -20,8 +20,9 @@ Four facts frame everything below, and each is verifiable from the files here.
 
 1. **Nothing in this package is a confirmatory result.** Every experiment run so
    far is exploratory (v1), diagnostic (PT08), instrument qualification
-   (PT09/PT10) or a non-confirmatory cost pilot (efficiency Attempt 2). No
-   experiment has produced a treatment-effect estimate, and none is eligible to.
+   (PT09/PT10) or a non-confirmatory pilot (efficiency Attempt 2, lower-model
+   pilot). No experiment has produced a treatment-effect estimate, and none is
+   eligible to.
 2. **No p-values, confidence intervals or effect sizes appear anywhere**, by
    design. The largest v2 experiment is a 3-repetition pilot, which supports
    none of them.
@@ -41,7 +42,7 @@ Four facts frame everything below, and each is verifiable from the files here.
 | --- | --- |
 | [`AFCI_RESULTS_SUMMARY.md`](AFCI_RESULTS_SUMMARY.md) | What we found, what it supports, what it does not |
 | [`AFCI_MASTER_EXPERIMENT_REGISTRY.csv`](AFCI_MASTER_EXPERIMENT_REGISTRY.csv) | One row per experiment set: counts, status, decision |
-| [`AFCI_MASTER_RUN_RESULTS.csv`](AFCI_MASTER_RUN_RESULTS.csv) | One row per actual run/attempt (103 rows) |
+| [`AFCI_MASTER_RUN_RESULTS.csv`](AFCI_MASTER_RUN_RESULTS.csv) | One row per actual run/attempt (121 rows) |
 | [`AFCI_METRICS_MATRIX.csv`](AFCI_METRICS_MATRIX.csv) | Which metric exists in which experiment, and at what status |
 | [`AFCI_EVIDENCE_INDEX.md`](AFCI_EVIDENCE_INDEX.md) | Summary number → analysis artifact → run record → raw evidence |
 | [`AFCI_EXCLUSIONS_AND_LIMITATIONS.md`](AFCI_EXCLUSIONS_AND_LIMITATIONS.md) | Everything that weakens or bounds the evidence |
@@ -54,10 +55,11 @@ Per-experiment folders hold derived tables and pointers, not bulk artifacts:
 - [`03_pt09_pt10_qualification/`](03_pt09_pt10_qualification/)
 - [`04_efficiency_attempt_1_aborted/`](04_efficiency_attempt_1_aborted/)
 - [`05_efficiency_attempt_2_completed/`](05_efficiency_attempt_2_completed/)
+- [`06_lower_model_pilot_completed/`](06_lower_model_pilot_completed/)
 
 ---
 
-## The six experiments at a glance
+## The seven experiments at a glance
 
 | id | what | runs (attempted → usable) | class | decision |
 | --- | --- | --- | --- | --- |
@@ -67,9 +69,10 @@ Per-experiment folders hold derived tables and pointers, not bulk artifacts:
 | `V2_PT10_QUALIFICATION` | PT10 C1 instrument qualification | 3 → 0 | qualification | REVISE / WEAK PRESSURE → STOP |
 | `V2_EFF_ATTEMPT1` | efficiency pilot, first execution | 9 → 0 | aborted | excluded wholesale |
 | `V2_EFF_ATTEMPT2` | efficiency pilot, second execution | 36 → 34 | cost pilot | STOP — no efficiency signal |
+| `V2_LOWER_MODEL_PILOT` | lower-capability model pilot (Haiku 4.5) | 18 → 17 | quality + cost pilot | NO SIGNAL — do not expand |
 
 "Usable" means *eligible to enter an analysis*. It is 0 for every experiment
-except Attempt 2, and even there it is not confirmatory.
+except Attempt 2 and the lower-model pilot, and neither is confirmatory.
 
 ---
 
@@ -85,6 +88,7 @@ package stores pointers and hashes instead.
 | PT09/PT10 qualification artifacts | `D:\afci-v2-qual` |
 | Efficiency Attempt 1 artifacts | `D:\afci-runs\obs`, `D:\afci-runs\logs` |
 | Efficiency Attempt 2 artifacts | `D:\afci-runs\attempt-2` |
+| Lower-model pilot artifacts | `D:\afci-runs\lower-model-pilot`, `D:\afci-runs\lower-model-pilot-logs` |
 
 [`AFCI_EVIDENCE_INDEX.md`](AFCI_EVIDENCE_INDEX.md) maps each of these to the
 specific files and hashes behind each summary number.
@@ -105,6 +109,13 @@ specific files and hashes behind each summary number.
   `experiments/v2/harness/efficiency_pilot_analysis.py`, over the 36 governed run
   records, unmodified. Its report is included verbatim at
   [`05_efficiency_attempt_2_completed/efficiency_pilot_frozen_analysis_report.json`](05_efficiency_attempt_2_completed/efficiency_pilot_frozen_analysis_report.json).
+- **Lower-model pilot** — produced by running the repository's own frozen
+  analysis, `experiments/v2/harness/lower_model_pilot_analysis.py`, over the 18
+  governed run records, unmodified. Its report is included verbatim at
+  [`06_lower_model_pilot_completed/lower_model_pilot_frozen_analysis_report.json`](06_lower_model_pilot_completed/lower_model_pilot_frozen_analysis_report.json).
+  Lines added/removed were computed by diffing each preserved post-run worktree
+  against a rebuild of the prepared baseline, which reproduces the recorded
+  prepared content hash `da7a679552d50857…` exactly.
 
 One methodological note on that last step. The analysis recurses into whatever
 directory it is handed. Pointing it at `D:\afci-runs\attempt-2` pulls in the 12

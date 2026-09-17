@@ -1,0 +1,1343 @@
+{
+  "architecture": {
+    "by_task": {
+      "PT01": {
+        "C1": {
+          "applicable_opportunities": 3,
+          "raw_violations": 0,
+          "runs": 3,
+          "scored_runs": 3,
+          "target_violation_runs": 0,
+          "unscored_runs": 0,
+          "violated_opportunities": 0
+        },
+        "C4": {
+          "applicable_opportunities": 3,
+          "raw_violations": 0,
+          "runs": 3,
+          "scored_runs": 3,
+          "target_violation_runs": 0,
+          "unscored_runs": 0,
+          "violated_opportunities": 0
+        }
+      },
+      "PT04": {
+        "C1": {
+          "applicable_opportunities": 3,
+          "raw_violations": 0,
+          "runs": 3,
+          "scored_runs": 3,
+          "target_violation_runs": 0,
+          "unscored_runs": 0,
+          "violated_opportunities": 0
+        },
+        "C4": {
+          "applicable_opportunities": 3,
+          "raw_violations": 0,
+          "runs": 3,
+          "scored_runs": 3,
+          "target_violation_runs": 0,
+          "unscored_runs": 0,
+          "violated_opportunities": 0
+        }
+      },
+      "PT07": {
+        "C1": {
+          "applicable_opportunities": 3,
+          "raw_violations": 0,
+          "runs": 3,
+          "scored_runs": 3,
+          "target_violation_runs": 0,
+          "unscored_runs": 0,
+          "violated_opportunities": 0
+        },
+        "C4": {
+          "applicable_opportunities": 3,
+          "raw_violations": 0,
+          "runs": 3,
+          "scored_runs": 3,
+          "target_violation_runs": 0,
+          "unscored_runs": 0,
+          "violated_opportunities": 0
+        }
+      }
+    },
+    "c4_has_fewer_target_violation_runs_overall": false,
+    "functionally_valid_pairs_only": {
+      "C1": {
+        "applicable_opportunities": 8,
+        "raw_violations": 0,
+        "runs": 8,
+        "scored_runs": 8,
+        "target_violation_runs": 0,
+        "unscored_runs": 0,
+        "violated_opportunities": 0
+      },
+      "C4": {
+        "applicable_opportunities": 8,
+        "raw_violations": 0,
+        "runs": 8,
+        "scored_runs": 8,
+        "target_violation_runs": 0,
+        "unscored_runs": 0,
+        "violated_opportunities": 0
+      }
+    },
+    "never_inferred_from": [
+      "the functional verdict",
+      "CI success",
+      "model prose",
+      "the number of files changed",
+      "any efficiency metric"
+    ],
+    "overall": {
+      "C1": {
+        "applicable_opportunities": 9,
+        "raw_violations": 0,
+        "runs": 9,
+        "scored_runs": 9,
+        "target_violation_runs": 0,
+        "unscored_runs": 0,
+        "violated_opportunities": 0
+      },
+      "C4": {
+        "applicable_opportunities": 9,
+        "raw_violations": 0,
+        "runs": 9,
+        "scored_runs": 9,
+        "target_violation_runs": 0,
+        "unscored_runs": 0,
+        "violated_opportunities": 0
+      }
+    },
+    "scope": "ALL runs, scored or not; unscored runs are excluded and counted",
+    "source": "record.architecture_evaluation",
+    "task_majority_required": 2,
+    "tasks_improved": [],
+    "tasks_improved_count": 0
+  },
+  "authority": "SL-V2-LOWER-MODEL-01",
+  "authority_record": "docs/v2/AFCI_LOWER_MODEL_PILOT_DECISION.md",
+  "block_count": 9,
+  "blocks": [
+    {
+      "C1": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C1",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 1,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt01-c1-real-r1-non-reset-a1-7f9c8e36f5b6\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT01"
+      },
+      "C4": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C4",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 1,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt01-c4-real-r1-non-reset-a1-5b244854b277\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT01"
+      },
+      "complete": true,
+      "duplicated_conditions": [],
+      "eligible": true,
+      "ineligible_reason": null,
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "task_id": "PT01"
+    },
+    {
+      "C1": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C1",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 2,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt01-c1-real-r2-non-reset-a1-6b12e654c4cf\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT01"
+      },
+      "C4": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C4",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 2,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt01-c4-real-r2-non-reset-a1-535ea5d5fc9f\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT01"
+      },
+      "complete": true,
+      "duplicated_conditions": [],
+      "eligible": true,
+      "ineligible_reason": null,
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "task_id": "PT01"
+    },
+    {
+      "C1": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C1",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 3,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt01-c1-real-r3-non-reset-a1-9a214fe5d531\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT01"
+      },
+      "C4": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C4",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 3,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt01-c4-real-r3-non-reset-a1-a04790b9b324\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT01"
+      },
+      "complete": true,
+      "duplicated_conditions": [],
+      "eligible": true,
+      "ineligible_reason": null,
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "task_id": "PT01"
+    },
+    {
+      "C1": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C1",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 1,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt04-c1-real-r1-non-reset-a1-746b1a826597\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT04"
+      },
+      "C4": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C4",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 1,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt04-c4-real-r1-non-reset-a1-4f661f6dacea\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT04"
+      },
+      "complete": true,
+      "duplicated_conditions": [],
+      "eligible": true,
+      "ineligible_reason": null,
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "task_id": "PT04"
+    },
+    {
+      "C1": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C1",
+        "functional_status": "INVALID",
+        "functional_valid": false,
+        "raw_architecture_violation_count": 0,
+        "repetition": 2,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt04-c1-real-r2-non-reset-a1-6408c7ba4346\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT04"
+      },
+      "C4": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C4",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 2,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt04-c4-real-r2-non-reset-a1-797795bff9d4\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT04"
+      },
+      "complete": true,
+      "duplicated_conditions": [],
+      "eligible": false,
+      "ineligible_reason": "a cost figure from a run that did not work is not a cheaper way of doing the task: C1 is INVALID",
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "task_id": "PT04"
+    },
+    {
+      "C1": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C1",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 3,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt04-c1-real-r3-non-reset-a1-6d840ddb619b\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT04"
+      },
+      "C4": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C4",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 3,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt04-c4-real-r3-non-reset-a1-5963dda7b71f\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT04"
+      },
+      "complete": true,
+      "duplicated_conditions": [],
+      "eligible": true,
+      "ineligible_reason": null,
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "task_id": "PT04"
+    },
+    {
+      "C1": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C1",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 1,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt07-c1-real-r1-non-reset-a1-c23fe9b5b301\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT07"
+      },
+      "C4": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C4",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 1,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt07-c4-real-r1-non-reset-a1-cb62aeaa1f2e\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT07"
+      },
+      "complete": true,
+      "duplicated_conditions": [],
+      "eligible": true,
+      "ineligible_reason": null,
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "task_id": "PT07"
+    },
+    {
+      "C1": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C1",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 2,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt07-c1-real-r2-non-reset-a1-91a4a61d7ac4\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT07"
+      },
+      "C4": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C4",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 2,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt07-c4-real-r2-non-reset-a1-506f24d2b808\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT07"
+      },
+      "complete": true,
+      "duplicated_conditions": [],
+      "eligible": true,
+      "ineligible_reason": null,
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "task_id": "PT07"
+    },
+    {
+      "C1": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C1",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 3,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt07-c1-real-r3-non-reset-a1-e6090108e222\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT07"
+      },
+      "C4": {
+        "architecture_applicable_opportunity_count": 1,
+        "architecture_status": "SCORED",
+        "architecture_violated_opportunity_count": 0,
+        "condition": "C4",
+        "functional_status": "VALID",
+        "functional_valid": true,
+        "raw_architecture_violation_count": 0,
+        "repetition": 3,
+        "reset_state": "NON_RESET",
+        "source": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt07-c4-real-r3-non-reset-a1-d0cd6a0d8139\\run_record.json",
+        "target_opportunity_violated": false,
+        "task_id": "PT07"
+      },
+      "complete": true,
+      "duplicated_conditions": [],
+      "eligible": true,
+      "ineligible_reason": null,
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "task_id": "PT07"
+    }
+  ],
+  "complete_blocks": 9,
+  "decision": {
+    "authority": "SL-V2-LOWER-MODEL-01",
+    "channels_combined_into_one_score": false,
+    "confidence_intervals": "none",
+    "confirmatory_effect_claim": "none",
+    "efficiency_clauses": [
+      {
+        "clause": "12.2.1 functional guardrail",
+        "detail": "C4 valid 9 vs C1 valid 8; deficit -1 <= 1",
+        "satisfied": true
+      },
+      {
+        "clause": "12.2.2 at least one endpoint threshold met",
+        "detail": "median TOTAL_INPUT_TOKENS 2.0372 < 1.00; median EXPLORATION_CALLS 1.7308 <= 0.80; median TOTAL_TOOL_CALLS 1.5023 <= 0.85",
+        "satisfied": false
+      }
+    ],
+    "efficiency_signal": false,
+    "efficiency_triggers": [
+      {
+        "clause": "12.2.2 TOTAL_INPUT_TOKENS",
+        "comparison": "<",
+        "detail": "median TOTAL_INPUT_TOKENS 2.0372 < 1.00",
+        "median": 2.0372096836576747,
+        "satisfied": false,
+        "threshold": 1.0
+      },
+      {
+        "clause": "12.2.2 EXPLORATION_CALLS",
+        "comparison": "<=",
+        "detail": "median EXPLORATION_CALLS 1.7308 <= 0.80",
+        "median": 1.7307692307692308,
+        "satisfied": false,
+        "threshold": 0.8
+      },
+      {
+        "clause": "12.2.2 TOTAL_TOOL_CALLS",
+        "comparison": "<=",
+        "detail": "median TOTAL_TOOL_CALLS 1.5023 <= 0.85",
+        "median": 1.5023148148148149,
+        "satisfied": false,
+        "threshold": 0.85
+      }
+    ],
+    "expansion_authorised": false,
+    "frozen_before_any_observation": true,
+    "open_source_study": "A separate open-source repository complexity study may still proceed, because repository complexity is an independent moderator and this pilot measures nothing about it. That study is a distinct future experiment and is NOT authorised by this record or by this outcome.",
+    "outcome": "DO NOT EXPAND THE SYNTHETIC LOWER-MODEL MATRIX AUTOMATICALLY",
+    "p_values": "none",
+    "quality_clauses": [
+      {
+        "clause": "12.1.1 C4 has fewer target architecture-violation runs overall",
+        "detail": "C4 0 vs C1 0",
+        "satisfied": false
+      },
+      {
+        "clause": "12.1.2 improvement in at least 2 of 3 tasks",
+        "detail": "improved: none",
+        "satisfied": false
+      },
+      {
+        "clause": "12.1.3 functional guardrail",
+        "detail": "C4 valid 9 vs C1 valid 8; deficit -1 <= 1",
+        "satisfied": true
+      }
+    ],
+    "quality_signal": false,
+    "signals_held": []
+  },
+  "efficiency": {
+    "direction": "C4 / C1; lower is better for C4",
+    "eligible_pairs": 8,
+    "endpoints": {
+      "CI_COMMAND_RUNS": {
+        "c4_lower_count": 3,
+        "c4_lower_fraction": 0.375,
+        "endpoint": "CI_COMMAND_RUNS",
+        "median": 1.0,
+        "n": 8,
+        "non_reset_only": false,
+        "pairs": [
+          {
+            "C1": 1.0,
+            "C4": 1.0,
+            "ratio": 1.0,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 1.0,
+            "C4": 1.0,
+            "ratio": 1.0,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 1.0,
+            "C4": 1.0,
+            "ratio": 1.0,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 2.0,
+            "C4": 1.0,
+            "ratio": 0.5,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 1.0,
+            "C4": 1.0,
+            "ratio": 1.0,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 4.0,
+            "C4": 1.0,
+            "ratio": 0.25,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 1.0,
+            "C4": 1.0,
+            "ratio": 1.0,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 2.0,
+            "C4": 1.0,
+            "ratio": 0.5,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          }
+        ],
+        "task_medians": {
+          "PT01": 1.0,
+          "PT04": 0.75,
+          "PT07": 0.5
+        },
+        "tasks_improving": [
+          "PT04",
+          "PT07"
+        ],
+        "undefined_pairs": []
+      },
+      "EDIT_AND_WRITE_CALLS": {
+        "c4_lower_count": 2,
+        "c4_lower_fraction": 0.25,
+        "endpoint": "EDIT_AND_WRITE_CALLS",
+        "median": 1.1741071428571428,
+        "n": 8,
+        "non_reset_only": false,
+        "pairs": [
+          {
+            "C1": 2.0,
+            "C4": 4.0,
+            "ratio": 2.0,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 5.0,
+            "C4": 5.0,
+            "ratio": 1.0,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 2.0,
+            "C4": 6.0,
+            "ratio": 3.0,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 16.0,
+            "C4": 17.0,
+            "ratio": 1.0625,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 7.0,
+            "C4": 9.0,
+            "ratio": 1.2857142857142858,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 8.0,
+            "C4": 12.0,
+            "ratio": 1.5,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 8.0,
+            "C4": 7.0,
+            "ratio": 0.875,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 8.0,
+            "C4": 6.0,
+            "ratio": 0.75,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          }
+        ],
+        "task_medians": {
+          "PT01": 2.0,
+          "PT04": 1.1741071428571428,
+          "PT07": 0.875
+        },
+        "tasks_improving": [
+          "PT07"
+        ],
+        "undefined_pairs": []
+      },
+      "EXPLORATION_CALLS": {
+        "c4_lower_count": 1,
+        "c4_lower_fraction": 0.125,
+        "endpoint": "EXPLORATION_CALLS",
+        "median": 1.7307692307692308,
+        "n": 8,
+        "non_reset_only": false,
+        "pairs": [
+          {
+            "C1": 8.0,
+            "C4": 20.0,
+            "ratio": 2.5,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 9.0,
+            "C4": 18.0,
+            "ratio": 2.0,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 13.0,
+            "C4": 18.0,
+            "ratio": 1.3846153846153846,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 13.0,
+            "C4": 19.0,
+            "ratio": 1.4615384615384615,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 8.0,
+            "C4": 23.0,
+            "ratio": 2.875,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 6.0,
+            "C4": 14.0,
+            "ratio": 2.3333333333333335,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 13.0,
+            "C4": 14.0,
+            "ratio": 1.0769230769230769,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 13.0,
+            "C4": 6.0,
+            "ratio": 0.46153846153846156,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          }
+        ],
+        "task_medians": {
+          "PT01": 2.0,
+          "PT04": 2.168269230769231,
+          "PT07": 1.0769230769230769
+        },
+        "tasks_improving": [],
+        "undefined_pairs": []
+      },
+      "MODEL_WALL_SECONDS": {
+        "c4_lower_count": 3,
+        "c4_lower_fraction": 0.375,
+        "endpoint": "MODEL_WALL_SECONDS",
+        "median": 1.5268019978741307,
+        "n": 8,
+        "non_reset_only": false,
+        "pairs": [
+          {
+            "C1": 69.947,
+            "C4": 194.362,
+            "ratio": 2.7787038757916704,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 67.312,
+            "C4": 108.316,
+            "ratio": 1.609163299263133,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 56.541,
+            "C4": 134.572,
+            "ratio": 2.380078173360924,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 214.17,
+            "C4": 188.332,
+            "ratio": 0.8793575197273195,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 117.281,
+            "C4": 185.541,
+            "ratio": 1.5820209582114748,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 121.987,
+            "C4": 179.514,
+            "ratio": 1.4715830375367869,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 158.803,
+            "C4": 133.831,
+            "ratio": 0.842748562684584,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 175.875,
+            "C4": 60.408,
+            "ratio": 0.34347121535181235,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          }
+        ],
+        "task_medians": {
+          "PT01": 2.380078173360924,
+          "PT04": 1.230689238969397,
+          "PT07": 0.842748562684584
+        },
+        "tasks_improving": [
+          "PT07"
+        ],
+        "undefined_pairs": []
+      },
+      "TEST_COMMAND_RUNS": {
+        "c4_lower_count": 1,
+        "c4_lower_fraction": 1.0,
+        "endpoint": "TEST_COMMAND_RUNS",
+        "median": 0.0,
+        "n": 1,
+        "non_reset_only": false,
+        "pairs": [
+          {
+            "C1": 1.0,
+            "C4": 0.0,
+            "ratio": 0.0,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          }
+        ],
+        "task_medians": {
+          "PT01": null,
+          "PT04": null,
+          "PT07": 0.0
+        },
+        "tasks_improving": [
+          "PT07"
+        ],
+        "undefined_pairs": [
+          {
+            "C1": 0.0,
+            "C4": 0.0,
+            "ratio": null,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 0.0,
+            "C4": 2.0,
+            "ratio": null,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 0.0,
+            "C4": 0.0,
+            "ratio": null,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 0.0,
+            "C4": 0.0,
+            "ratio": null,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 0.0,
+            "C4": 2.0,
+            "ratio": null,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 0.0,
+            "C4": 0.0,
+            "ratio": null,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 0.0,
+            "C4": 0.0,
+            "ratio": null,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          }
+        ]
+      },
+      "TOTAL_INPUT_TOKENS": {
+        "c4_lower_count": 2,
+        "c4_lower_fraction": 0.25,
+        "endpoint": "TOTAL_INPUT_TOKENS",
+        "median": 2.0372096836576747,
+        "n": 8,
+        "non_reset_only": false,
+        "pairs": [
+          {
+            "C1": 313328.0,
+            "C4": 1416097.0,
+            "ratio": 4.519535438901087,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 493409.0,
+            "C4": 911161.0,
+            "ratio": 1.8466647345305822,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 385952.0,
+            "C4": 1127536.0,
+            "ratio": 2.9214410082082747,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 1236282.0,
+            "C4": 1573447.0,
+            "ratio": 1.2727249931649898,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 674972.0,
+            "C4": 1503672.0,
+            "ratio": 2.2277546327847673,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 630866.0,
+            "C4": 1647356.0,
+            "ratio": 2.6112613455155294,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 965496.0,
+            "C4": 872640.0,
+            "ratio": 0.9038255984488801,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 899445.0,
+            "C4": 452734.0,
+            "ratio": 0.5033481758195332,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          }
+        ],
+        "task_medians": {
+          "PT01": 2.9214410082082747,
+          "PT04": 1.7502398129748786,
+          "PT07": 0.9038255984488801
+        },
+        "tasks_improving": [
+          "PT07"
+        ],
+        "undefined_pairs": []
+      },
+      "TOTAL_OUTPUT_TOKENS": {
+        "c4_lower_count": 3,
+        "c4_lower_fraction": 0.375,
+        "endpoint": "TOTAL_OUTPUT_TOKENS",
+        "median": 1.7804062860277177,
+        "n": 8,
+        "non_reset_only": false,
+        "pairs": [
+          {
+            "C1": 5869.0,
+            "C4": 16187.0,
+            "ratio": 2.7580507752598398,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 6449.0,
+            "C4": 10252.0,
+            "ratio": 1.5897038300511708,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 5879.0,
+            "C4": 14737.0,
+            "ratio": 2.506718829732948,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 21256.0,
+            "C4": 19139.0,
+            "ratio": 0.9004045916447121,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 9380.0,
+            "C4": 18489.0,
+            "ratio": 1.9711087420042643,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 11619.0,
+            "C4": 23319.0,
+            "ratio": 2.0069713400464755,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 18025.0,
+            "C4": 12925.0,
+            "ratio": 0.7170596393897365,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 18759.0,
+            "C4": 6842.0,
+            "ratio": 0.3647315955008263,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          }
+        ],
+        "task_medians": {
+          "PT01": 2.506718829732948,
+          "PT04": 1.435756666824488,
+          "PT07": 0.7170596393897365
+        },
+        "tasks_improving": [
+          "PT07"
+        ],
+        "undefined_pairs": []
+      },
+      "TOTAL_TOOL_CALLS": {
+        "c4_lower_count": 2,
+        "c4_lower_fraction": 0.25,
+        "endpoint": "TOTAL_TOOL_CALLS",
+        "median": 1.5023148148148149,
+        "n": 8,
+        "non_reset_only": false,
+        "pairs": [
+          {
+            "C1": 17.0,
+            "C4": 48.0,
+            "ratio": 2.823529411764706,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 24.0,
+            "C4": 33.0,
+            "ratio": 1.375,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 20.0,
+            "C4": 40.0,
+            "ratio": 2.0,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 39.0,
+            "C4": 47.0,
+            "ratio": 1.205128205128205,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 27.0,
+            "C4": 44.0,
+            "ratio": 1.6296296296296295,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 26.0,
+            "C4": 43.0,
+            "ratio": 1.6538461538461537,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 34.0,
+            "C4": 32.0,
+            "ratio": 0.9411764705882353,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 34.0,
+            "C4": 19.0,
+            "ratio": 0.5588235294117647,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          }
+        ],
+        "task_medians": {
+          "PT01": 2.0,
+          "PT04": 1.4173789173789173,
+          "PT07": 0.9411764705882353
+        },
+        "tasks_improving": [
+          "PT07"
+        ],
+        "undefined_pairs": []
+      },
+      "UNIQUE_FILES_READ": {
+        "c4_lower_count": 2,
+        "c4_lower_fraction": 0.25,
+        "endpoint": "UNIQUE_FILES_READ",
+        "median": 1.25,
+        "n": 8,
+        "non_reset_only": false,
+        "pairs": [
+          {
+            "C1": 6.0,
+            "C4": 13.0,
+            "ratio": 2.1666666666666665,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 9.0,
+            "C4": 9.0,
+            "ratio": 1.0,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 9.0,
+            "C4": 9.0,
+            "ratio": 1.0,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT01"
+          },
+          {
+            "C1": 9.0,
+            "C4": 6.0,
+            "ratio": 0.6666666666666666,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 6.0,
+            "C4": 9.0,
+            "ratio": 1.5,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT04"
+          },
+          {
+            "C1": 6.0,
+            "C4": 9.0,
+            "ratio": 1.5,
+            "repetition": 1,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 6.0,
+            "C4": 9.0,
+            "ratio": 1.5,
+            "repetition": 2,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          },
+          {
+            "C1": 7.0,
+            "C4": 6.0,
+            "ratio": 0.8571428571428571,
+            "repetition": 3,
+            "reset_state": "NON_RESET",
+            "task_id": "PT07"
+          }
+        ],
+        "task_medians": {
+          "PT01": 1.0,
+          "PT04": 1.0833333333333333,
+          "PT07": 1.5
+        },
+        "tasks_improving": [],
+        "undefined_pairs": []
+      }
+    },
+    "primary": "TOTAL_INPUT_TOKENS",
+    "scope": "functionally-valid pairs only"
+  },
+  "enters_confirmatory_e1_analysis": false,
+  "enters_power_estimation": false,
+  "enters_treatment_effect_analysis": false,
+  "expected_blocks": 9,
+  "expected_runs": 18,
+  "functional": {
+    "C1_valid": 8,
+    "C4_valid": 9,
+    "c4_deficit_against_c1": -1,
+    "denominator": 9,
+    "guardrail_holds": true,
+    "guardrail_max_deficit": 1,
+    "per_arm": {
+      "C1": {
+        "invalid": 1,
+        "missing": 0,
+        "runs": 9,
+        "valid": 8
+      },
+      "C4": {
+        "invalid": 0,
+        "missing": 0,
+        "runs": 9,
+        "valid": 9
+      }
+    },
+    "source": "record.functional_evaluation.functional_valid"
+  },
+  "is_result": false,
+  "observation_count": 18,
+  "report": "afci-bench/v2/lower-model-pilot-analysis",
+  "reset_state": "NON_RESET",
+  "run_purpose": "AFCI_LOWER_MODEL_PILOT",
+  "scored": false,
+  "sonnet_comparison": {
+    "asymmetry": "The claude-sonnet-5 efficiency pilot produced NO architecture measurement at all under its frozen cost-only governance, so the quality channel has no Sonnet counterpart and the quality comparison is LOWER-MODEL ONLY. Only the efficiency channel is comparable across the two models.",
+    "difference_lower_model_minus_sonnet": 0.479,
+    "direction": "the lower model shows a HIGHER C4/C1 token ratio than Sonnet",
+    "efficiency_channel_comparable": true,
+    "interaction_estimated": "none",
+    "method": "descriptive; two within-model ratios reported side by side",
+    "never_pooled_statement": "Sonnet and lower-model records are NEVER pooled into one treatment estimate. They are two separate experiments on two separate models, and one number covering both would be an estimate of nothing. What is reported is within-Sonnet C4/C1, within-lower-model C4/C1, and the direction and magnitude of the difference, described rather than tested.",
+    "pooled": false,
+    "quality_channel_comparable": false,
+    "test_performed": "none",
+    "within_lower_model": {
+      "endpoint": "TOTAL_INPUT_TOKENS",
+      "median_token_ratio": 2.0372,
+      "paired_n": 8,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_LOWER_MODEL_PILOT"
+    },
+    "within_sonnet": {
+      "available": true,
+      "endpoint": "TOTAL_INPUT_TOKENS",
+      "median_token_ratio": 1.5582,
+      "model": "claude-sonnet-5",
+      "paired_n": 9,
+      "reset_state": "NON_RESET",
+      "run_purpose": "AFCI_EFFICIENCY_PILOT",
+      "source": "study-results/05_efficiency_attempt_2_completed/attempt2_primary_pairs.csv"
+    }
+  }
+}

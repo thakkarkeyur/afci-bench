@@ -1,42 +1,61 @@
 # AFCI-Bench — next study plan
 
-**Status of everything below: NOT STARTED.** No runs exist, no results are
-pre-populated, and no placeholder row appears in any results table.
+**Experiment A is COMPLETE.** All 18 runs executed on 2026-09-17 and the frozen
+continuation rule returned
+`NO LOWER-MODEL SIGNAL — DO NOT EXPAND THE SYNTHETIC LOWER-MODEL MATRIX`. §A below
+records what it found.
 
-**Experiment A is now DESIGNED AND FROZEN, and still NOT STARTED.** Its five
-open decisions have been taken and are recorded in
-[`SL-V2-LOWER-MODEL-01`](../../docs/v2/AFCI_LOWER_MODEL_PILOT_DECISION.md); its
-18-row schedule is committed; and its endpoints and continuation rule are frozen
-**before** any observation exists. Zero lower-model observations exist. §A below
-is updated to record what was decided; nothing else in this document changes.
+**Experiment B is NOT STARTED.** No runs exist, no results are pre-populated, and
+no placeholder row appears in any results table.
 
 ---
 
 ## What the evidence points at
 
-Two rival explanations account for every v2 null, and they are not separable from
-current data:
+Two rival explanations accounted for every Sonnet-era null. Experiment A has now
+tested the first of them.
 
-| explanation | the claim | the evidence for it |
+| explanation | the claim | status |
 | --- | --- | --- |
-| **strong-model ceiling** | `claude-sonnet-5` already knows what the MAD would tell it | functional acceptance saturated everywhere (3/3, 3/3, 3/3, 17/18, 17/18); baseline architecture violations at or near zero across three instruments |
-| **substrate legibility** | a 49-file synthetic Nx monorepo advertises its own architecture through imports and path aliases | three purpose-built instruments all landed at or near the architecture floor on the same substrate |
+| **strong-model ceiling** | `claude-sonnet-5` already knows what the MAD would tell it | **TESTED — NOT SUPPORTED.** On `claude-haiku-4-5-20251001` C4 was *more* expensive relative to C1 than it had been on Sonnet (2.0372 vs 1.5582), and the architecture floor persisted in **both** arms |
+| **substrate legibility** | a 49-file synthetic Nx monorepo advertises its own architecture through imports and path aliases | **UNTESTED.** Now the only surviving explanation of the pair, and strengthened indirectly: six instrument/model combinations have now landed at or near the floor on this one substrate |
 
-Each planned experiment varies **one** of these and holds the other fixed.
+The ceiling explanation losing support does not make the legibility explanation
+true — Experiment A's quality channel sat at the floor and so could not have
+detected a capability effect on violations even had one existed. What it removes
+is the most obvious alternative to running Experiment B.
 
 ---
 
-## Experiment A — `AFCI_LOWER_MODEL_PILOT` — **FROZEN PRE-DATA**
+## Experiment A — `AFCI_LOWER_MODEL_PILOT` — **COMPLETE, NO SIGNAL**
+
+> **Outcome, 2026-09-17.** 18/18 runs executed under the committed schedule with
+> zero infrastructure-invalid attempts. **Quality signal FAIL** — 1 applicable
+> opportunity per run and **0 violated in both arms**, so the arms tied at the
+> floor and nothing could be discriminated. **Efficiency signal FAIL** — median
+> C4/C1 tokens **2.0372**, exploration **1.7308**, tool calls **1.5023**, all three
+> triggers missed. Both functional guardrails **passed**, and C4 was in fact the
+> better arm functionally (**9/9** vs **8/9**). Frozen verdict:
+> `NO LOWER-MODEL SIGNAL — DO NOT EXPAND THE SYNTHETIC LOWER-MODEL MATRIX`.
+> Full tables: [`02_RESULTS_TABLES.md` §CC](02_RESULTS_TABLES.md).
+> Evidence: [`06_lower_model_pilot_completed/`](../06_lower_model_pilot_completed/).
+>
+> **What it bought.** A clean negative on the ceiling explanation, a first
+> architecture endpoint under both arms, and the observation that the floor is not
+> a strong-model artefact. **What it did not buy.** Any evidence about the
+> architecture document's quality effect — the floor saw to that — and any
+> cross-model causal claim, since the two pilots are never pooled.
 
 **Question.** Does a lower-capability model escape the architecture floor, and
 does explicit architecture context pay for itself there?
 
-**Why it comes first.** It reuses the entire existing apparatus — same substrate,
+**Why it came first.** It reused the entire existing apparatus — same substrate,
 same tasks, same hidden acceptance packages, same architecture oracle, same
-runner, same frozen analysis. Only the model changes. It is by far the cheaper of
-the two and it tests the explanation that is easiest to falsify.
+runner, same frozen analysis. Only the model changed. It was by far the cheaper of
+the two and it tested the explanation that is easiest to falsify. It cost **$3.80**
+in provider charges across all 18 runs and about 44 minutes of wall clock.
 
-**What it would keep fixed.** Substrate `630d3180` / `0198d76c…` (49 files); tasks
+**What it kept fixed.** Substrate `630d3180` / `0198d76c…` (49 files); tasks
 PT01, PT04, PT07 at their existing hashes; conditions C1 and C4 with the MAD at
 `bf6f32b1…`; the block-paired design and within-block randomisation; CLI 2.1.229;
 sterile subscription execution with exact model readback.
@@ -74,11 +93,17 @@ the difference described. One asymmetry is stated wherever the comparison is
 made: the Sonnet pilot produced no architecture measurement, so the quality
 channel has no Sonnet counterpart and is lower-model only.
 
-**What would make it informative even if it is another null.** A lower-capability
-model that *also* sits at the architecture floor would make the substrate
-explanation much harder to avoid, and would redirect effort to Experiment B. A
-model that produces non-zero baseline violations gives the study its first
-discriminating instrument, which is currently the binding constraint on everything.
+**What would have made it informative even if it were another null — and which
+branch actually happened.** The pre-data note read: a lower-capability model that
+*also* sits at the architecture floor would make the substrate explanation much
+harder to avoid and would redirect effort to Experiment B; a model producing
+non-zero baseline violations would give the study its first discriminating
+instrument.
+
+**The first branch is what occurred.** Both arms sat at zero violations on all
+three tasks. So the pilot delivered the redirection it was designed to deliver and
+did **not** deliver a discriminating instrument. The binding constraint is
+unchanged and better evidenced.
 
 **Reused without change:** `run_v2.py` and the runner state machine; sterile
 `HOME`/config construction; the context auditor; `efficiency_metrics.py`;
@@ -111,16 +136,29 @@ and the architecture measurement would be circular.
 
 ---
 
-## Experiment B — `OPEN_SOURCE_COMPLEXITY_STUDY`
+## Experiment B — `OPEN_SOURCE_COMPLEXITY_STUDY` — **STILL MOTIVATED, NOT STARTED**
 
 **Question.** On a real repository with genuine architectural complexity — one
 whose intended architecture is *not* inferable from its own structure — does
 explicit architecture context change behaviour?
 
+**Its motivation after Experiment A.** Unchanged and, if anything, stronger. It
+was never contingent on the lower-model result: repository complexity is an
+independent moderator and the lower-model pilot measured nothing about it. What
+Experiment A adds is the removal of the rival explanation — the floor is not
+explained by model strength, so the substrate is now the prime suspect. The frozen
+decision record says this explicitly: a negative lower-model result does **not**
+cancel Experiment B.
+
+**It is not authorised by Experiment A's outcome.** `SL-V2-LOWER-MODEL-01` grants
+it nothing. It remains a distinct future experiment requiring its own decision
+record, and it has not been started.
+
 **Why it is second.** It needs almost everything new: candidate repositories,
 new task bodies, new hidden acceptance packages, new architecture rule linkage,
 new opportunity authoring, and independent review of each. That is a far larger
-investment and it should be justified by what Experiment A shows.
+investment and it should be justified by what Experiment A shows — which it now
+is.
 
 **What it would have to establish first.**
 
@@ -150,7 +188,7 @@ repositories are shortlisted.
 ## What neither experiment changes
 
 Both are **non-confirmatory** unless and until the suite-wide gates are passed.
-As at 2026-09-17, unchanged by anything in this package:
+As at 2026-09-18, unchanged by Experiment A having run:
 
 | item | state |
 | --- | --- |
@@ -170,15 +208,21 @@ As at 2026-09-17, unchanged by anything in this package:
 1. ~~**Decide the Experiment A model and run purpose**, and freeze its decision
    rule before any observation.~~ **DONE** — `SL-V2-LOWER-MODEL-01`. Zero
    observations existed when it was frozen.
-2. **Run Experiment A.** Preflight the whole schedule's derived identities first —
-   that check exists now precisely because its absence cost Attempt 1. It is
-   `lower_model_run_plan.preflight`, it derives all 18 identities with no model
-   and no cost, and it refuses the whole execution on a single defect.
-3. **Read the result before planning Experiment B.** If a weaker model escapes the
-   architecture floor, the study has its instrument and the priority becomes
-   replication depth (`TD-B34`). If it does not, the substrate becomes the prime
-   suspect and Experiment B becomes the priority.
-4. **Only then** consider whether any confirmatory path is open, which still
+2. ~~**Run Experiment A.**~~ **DONE** — 18/18 on 2026-09-17, zero
+   infrastructure-invalid attempts. The identity preflight ran before the first
+   invocation and confirmed 18 unique run ids, 18 unique artifact directories,
+   zero overlap with the Sonnet namespace and all destinations unoccupied.
+3. ~~**Read the result before planning Experiment B.**~~ **DONE.** The weaker
+   model did **not** escape the architecture floor, so the substrate is now the
+   prime suspect and **Experiment B is the priority**.
+4. **Design Experiment B**, starting with the legibility criterion — the property
+   that must be *measured* rather than assumed, and the one thing that would make
+   its result interpretable where this pilot's quality channel was not.
+5. **In parallel, treat instrument discrimination as the binding constraint.** Six
+   instrument/model combinations now sit at or near the floor. An instrument that
+   cannot be violated cannot measure a treatment that prevents violations, and no
+   amount of extra repetitions fixes that.
+6. **Only then** consider whether any confirmatory path is open, which still
    requires `TD-B32`, `TD-B34`, `TD-B12`/`G6` and `G1`.
 
 ---

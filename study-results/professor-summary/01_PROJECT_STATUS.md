@@ -1,6 +1,6 @@
 # AFCI-Bench — project status
 
-**As at 2026-09-17.** Repository `afci-bench`, branch `study-v2`, commit `c544cc87`.
+**As at 2026-09-18.** Repository `afci-bench`, branch `study-v2`.
 
 ---
 
@@ -8,9 +8,9 @@
 
 The v1 study is published. The v2 study is **built and working but pre-freeze**:
 the harness, oracles and governance all execute end to end, and **no confirmatory
-evidence has been collected**. Six experiments have run. One of them — the
-efficiency pilot — reached a pre-registered decision, and that decision was
-**STOP**.
+evidence has been collected**. Seven experiments have run. Two of them — the
+efficiency pilot and the lower-model pilot — reached a pre-registered decision,
+and both decisions were **negative**.
 
 ## What has been run
 
@@ -22,8 +22,9 @@ efficiency pilot — reached a pre-registered decision, and that decision was
 | 4 | PT10 C1 qualification | 3 | qualification | REVISE / WEAK PRESSURE → STOP |
 | 5 | efficiency pilot, attempt 1 | 9 of 36 | aborted | infrastructure defect; excluded wholesale |
 | 6 | efficiency pilot, attempt 2 | 36 of 36 | cost pilot | **STOP — no efficiency signal** |
+| 7 | lower-model pilot (Haiku 4.5) | 18 of 18 | quality + cost pilot | **NO SIGNAL — do not expand** |
 
-**103 run/attempt rows recorded. 34 eligible for any analysis. 0 confirmatory.**
+**121 run/attempt rows recorded. 50 eligible for any analysis. 0 confirmatory.**
 
 ## The headline result
 
@@ -44,6 +45,35 @@ architecture document (C4) was **more expensive** than giving it the task alone
 
 One counter-signal: under context reset, C4's **recovery overhead** was lower in
 2 of 3 tasks for tokens and 3 of 3 for wall time. Descriptive only.
+
+## The second headline result — the lower model did not rescue AFCI
+
+The obvious rival explanation for the null above was a **strong-model ceiling**:
+`claude-sonnet-5` may already know what the architecture document says. The
+lower-model pilot tested that by re-running the same three tasks on
+`claude-haiku-4-5-20251001`, non-reset only, 18 runs, with the endpoints and the
+continuation rule frozen before any data existed.
+
+The ceiling explanation was **not supported**. C4 was not cheaper on the weaker
+model; it was *more* expensive than it had been on the stronger one.
+
+| C4 / C1, non-reset | Sonnet | Haiku 4.5 |
+| --- | ---: | ---: |
+| input tokens | 1.5582 | **2.0372** |
+| wall time | — | 1.5268 |
+| exploration calls | — | 1.7308 |
+| tool calls | — | 1.5023 |
+| provider cost | — | 1.8865 |
+| functional validity | 17/18 vs 17/18 | C1 8/9, C4 **9/9** |
+
+The two models are **never pooled**; these are two within-model ratios shown side
+by side, and the Sonnet column carries only the endpoint its cost-only governance
+produced.
+
+On quality, the pilot hit the same wall as PT08/PT09: **one applicable
+architecture opportunity per run, zero violated in both arms**. C4 could not beat
+C1 because neither arm ever violated anything. That is an instrument floor, not
+evidence that the document does nothing.
 
 ## What is healthy
 
@@ -72,25 +102,36 @@ One counter-signal: under context reset, C4's **recovery overhead** was lower in
 
 ## The open question
 
-Two rival explanations for the repeated null are **not separable** from current
-data:
+Two rival explanations for the repeated null were **not separable** from the
+Sonnet data alone:
 
 1. **Strong-model ceiling** — `claude-sonnet-5` already knows what the MAD says.
 2. **Substrate legibility** — a 49-file synthetic monorepo advertises its own
    architecture.
 
-The next two experiments vary one factor each.
+Explanation 1 has now been **tested and not supported**: weakening the model made
+C4 relatively *more* expensive, not less, and produced no quality gain. That
+shifts weight onto explanation 2, which remains untested. It does not prove it —
+the architecture floor means this pilot could not have detected a quality gain
+even had one existed, so the honest reading is that the ceiling story lost
+support rather than that legibility won.
 
 ## What happens next
 
 | experiment | status | tests |
 | --- | --- | --- |
-| `LOWER_MODEL_PILOT` | **NOT STARTED** | the ceiling explanation |
+| `LOWER_MODEL_PILOT` | **COMPLETE — no signal** | the ceiling explanation (not supported) |
 | `OPEN_SOURCE_COMPLEXITY_STUDY` | **NOT STARTED** | the legibility explanation |
 
-The lower-model pilot reuses the entire existing harness and is much the cheaper
-of the two, so it should run first. See
+The open-source complexity study remains scientifically motivated and is now the
+single most informative next experiment, because it is the only one of the two
+rival explanations still standing. It is **not** authorised by the lower-model
+result and has not been started. See
 [`05_NEXT_STUDY_PLAN.md`](05_NEXT_STUDY_PLAN.md).
+
+A third question the lower-model pilot raised on its own: three of three
+instruments now sit at the architecture floor under both arms. Instrument
+discrimination, not model capability, is the binding constraint.
 
 ## What this package will not tell you
 

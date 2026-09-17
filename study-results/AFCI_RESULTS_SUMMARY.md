@@ -1,6 +1,6 @@
 # AFCI-Bench — results summary
 
-**Compiled 2026-09-17** from `study-v2` @ `c544cc87`.
+**Compiled 2026-09-18** from `study-v2`.
 Every figure below was recomputed from raw evidence; see
 [`AFCI_EVIDENCE_INDEX.md`](AFCI_EVIDENCE_INDEX.md) for the trace.
 
@@ -14,10 +14,11 @@ Throughout, claims are tagged:
 
 ## 1. Executive summary
 
-Six experiments have been executed: one v1 study (48 runs) and five v2 experiment
-sets (55 attempted runs). **None of them is confirmatory.** The v2 programme has
-so far produced instrument-validation evidence and one completed cost pilot, and
-the cost pilot's pre-registered decision rule returned **STOP**.
+Seven experiments have been executed: one v1 study (48 runs) and six v2 experiment
+sets (73 attempted runs). **None of them is confirmatory.** The v2 programme has
+so far produced instrument-validation evidence, one completed cost pilot and one
+completed lower-model pilot; both pilots' pre-registered decision rules returned a
+negative verdict.
 
 The single most consequential result to date:
 
@@ -39,11 +40,26 @@ reset-recovery signal is the one place the mechanism the study is about — chea
 re-establishment of architectural intent — appears to show up, and it is
 descriptive only.
 
-**[INTERPRETATION]** Two rival explanations for the null are not distinguishable
-from the current data: a **strong-model ceiling** (the model already knows what
-the MAD would tell it) and **substrate legibility** (a 49-file synthetic
-monorepo whose architecture is inferable from the code). Both motivate the next
-two experiments.
+> **[FACT]** The lower-model pilot then tested the most obvious explanation for
+> that null — that a strong model already knows what the MAD says — by re-running
+> the same three tasks on `claude-haiku-4-5-20251001` (18 runs, non-reset, 8
+> paired blocks). The weaker model made C4 **relatively more** expensive, not
+> less: median C4/C1 input tokens **2.0372** against Sonnet's non-reset
+> **1.5582**. Functionally C4 was the better arm (**9/9** vs **8/9**). On
+> architecture, **both** arms violated the target in **0 of 9** runs.
+
+**[INTERPRETATION]** Explicit architecture context was not a general efficiency
+win on either model, and weakening the model did not rescue it. The
+**strong-model ceiling** explanation is therefore **not supported**. The rival
+**substrate legibility** explanation (a 49-file synthetic monorepo whose
+architecture is inferable from the code) remains untested and is now the primary
+open explanation.
+
+**[LIMITATION]** The lower-model pilot's architecture channel answered nothing:
+both arms sat at zero violations, so it could not have detected a quality effect
+even had one existed. A tie at the floor is **not** evidence that the MAD fails to
+improve architecture. The two pilots are two separate experiments on two separate
+models and are **never pooled**; no cross-model causal effect is estimated.
 
 ---
 
@@ -59,7 +75,9 @@ two experiments.
 | ~2026-09-15 | PT09/PT10 qualification, 6 runs | both STOP / REASSESS |
 | 2026-09-16 (early) | efficiency pilot Attempt 1 | ABORTED at sequence 9 — run-id collision |
 | 2026-09-16 14:28–20:02 UTC | efficiency pilot Attempt 2, 36 runs | STOP — no efficiency signal |
-| 2026-09-17 | this evidence package | reporting only |
+| 2026-09-17 (early) | lower-model pilot design frozen (18 runs) | pre-registered endpoints, two independent channels, continuation rule |
+| 2026-09-17 21:08–21:52 UTC | lower-model pilot, 18 runs, `claude-haiku-4-5-20251001` | NO SIGNAL — do not expand |
+| 2026-09-18 | this evidence package | reporting only |
 
 ---
 
@@ -274,13 +292,106 @@ changed was likewise not captured.
 
 ---
 
+## 5A. V2 lower-model pilot findings (Haiku 4.5)
+
+Authority `SL-V2-LOWER-MODEL-01`. `claude-haiku-4-5-20251001`, CLI `2.1.229`,
+non-reset only, 64 turns, 3 tasks x 2 conditions x 3 repetitions. Quality and
+efficiency are two **independent** channels, combined into no single score.
+
+### 5A.1 Execution and validity [FACT]
+
+18 of 18 scheduled runs executed in the committed order. 18 COMPLETE, 0 refused,
+**0 infrastructure-invalid attempts**. Model identity VALIDATED and context audit
+CLEAN on every run; no run reached the turn ceiling.
+
+17 of 18 runs were functionally valid — C1 **8/9**, C4 **9/9**. The single invalid
+run, `PT04/C1/R2`, failed all four semantic acceptance cases and strands its valid
+C4 partner, leaving **8 of 9** paired-eligible blocks and 16 runs in the paired
+analysis.
+
+### 5A.2 Architecture quality [FACT]
+
+| arm | runs | applicable opportunities | violated | target-violation runs |
+| --- | ---: | ---: | ---: | ---: |
+| C1 | 9 | 9 | 0 | **0** |
+| C4 | 9 | 9 | 0 | **0** |
+
+Identical by task: 3 applicable, 0 violated in both arms for PT01, PT04 and PT07.
+
+**[LIMITATION]** This is an **architecture floor**. C4 did not fail to beat C1 —
+neither arm violated anything, so there was nothing to discriminate. The frozen
+rule scores it FAIL because it requires *strictly fewer* violations, and a tie at
+zero is not an improvement. It is **no information**, not evidence against AFCI.
+
+### 5A.3 Efficiency endpoints [FACT]
+
+8 paired blocks; C4/C1, lower is better for C4.
+
+| endpoint | n | median | PT01 | PT04 | PT07 | C4 lower |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| **TOTAL_INPUT_TOKENS** | 8 | **2.0372** | 2.9214 | 1.7502 | 0.9038 | 2/8 |
+| TOTAL_OUTPUT_TOKENS | 8 | 1.7804 | 2.5067 | 1.4358 | 0.7171 | 3/8 |
+| MODEL_WALL_SECONDS | 8 | 1.5268 | 2.3801 | 1.2307 | 0.8427 | 3/8 |
+| TOTAL_TOOL_CALLS | 8 | 1.5023 | 2.0000 | 1.4174 | 0.9412 | 2/8 |
+| EXPLORATION_CALLS | 8 | 1.7308 | 2.0000 | 2.1683 | 1.0769 | 1/8 |
+| UNIQUE_FILES_READ | 8 | 1.2500 | 1.0000 | 1.0833 | 1.5000 | 2/8 |
+| EDIT_AND_WRITE_CALLS | 8 | 1.1741 | 2.0000 | 1.1741 | 0.8750 | 2/8 |
+| CI_COMMAND_RUNS | 8 | 1.0000 | 1.0000 | 0.7500 | 0.5000 | 3/8 |
+| provider cost USD | 8 | 1.8865 | 2.5232 | 1.5777 | 0.8078 | 2/8 |
+
+Provider cost is complete for **all 8 pairs**, unlike the Sonnet pilot, because
+every non-reset run emits a terminal result event. C1 total $1.3862, C4 total
+$2.0068 across the paired blocks; $3.8007 across all 18 runs.
+
+**[FACT]** PT07 is the one task where C4 was directionally cheaper on tokens,
+time, output and cost. PT01 was the most expensive for C4 on every endpoint.
+
+**[FACT]** Rework, over the 8 paired blocks: edit calls 54 vs 66, files re-edited
+16 vs 20, repeated file reads 16 vs **43**, turns used 229 vs 309, files changed
+25 vs 30, net lines +1621 vs +1746. C4 needed **fewer** failed CI cycles (9 vs 13).
+
+### 5A.4 The pre-registered decision [FACT]
+
+| signal | criterion | observed | verdict |
+| --- | --- | --- | --- |
+| QUALITY | C4 fewer target-violation runs overall | 0 vs 0 | **FAIL** |
+| QUALITY | improvement in >= 2 of 3 tasks | 0 of 3 | **FAIL** |
+| QUALITY | C4 valid no more than 1 below C1 | 9 vs 8 | PASS |
+| EFFICIENCY | C4 valid no more than 1 below C1 | 9 vs 8 | PASS |
+| EFFICIENCY | median TOKEN_RATIO < 1.00 | 2.0372 | **FAIL** |
+| EFFICIENCY | median EXPLORATION_RATIO <= 0.80 | 1.7308 | **FAIL** |
+| EFFICIENCY | median TOTAL_TOOL_RATIO <= 0.85 | 1.5023 | **FAIL** |
+
+> **`NO LOWER-MODEL SIGNAL - DO NOT EXPAND THE SYNTHETIC LOWER-MODEL MATRIX`**
+
+### 5A.5 Descriptive comparison with Sonnet [FACT]
+
+| C4 / C1, **non-reset only** | Sonnet | Haiku 4.5 |
+| --- | ---: | ---: |
+| median TOTAL_INPUT_TOKENS | 1.5582 (n=9) | **2.0372** (n=8) |
+| architecture endpoint | **not produced** (cost-only) | produced, at the floor |
+
+Difference **+0.479**, the lower model showing the *higher* ratio.
+
+**[LIMITATION]** Two separate experiments, never pooled. No test, no interaction
+estimate, no pooled model, and **no randomised cross-model causal effect**. The
+Sonnet pilot produced no architecture measurement, so only the efficiency channel
+is comparable at all.
+
+---
+
 ## 6. What we can conclude
 
 1. **[FACT]** On this substrate and this model, explicit MAD injection costs more
    than it saves across every captured cost dimension except CI invocations.
 2. **[FACT]** It does so without buying functional quality: 17/18 versus 17/18.
-3. **[FACT]** Three separate architecture instruments (PT08, PT09, PT10) sit at
-   or near the architecture floor for an unguided baseline on this substrate.
+3. **[FACT]** Six instrument/model combinations now sit at or near the
+   architecture floor on this substrate: PT08, PT09 and PT10 for an unguided
+   Sonnet baseline, and PT01, PT04 and PT07 for Haiku 4.5 in **both** the guided
+   and unguided arms.
+3a. **[FACT]** Weakening the model did not reduce C4's relative cost; it raised
+   it (2.0372 vs 1.5582 on non-reset input tokens), and produced no quality gain
+   because both arms sat at zero violations.
 4. **[FACT]** The reset-recovery direction is the one consistent counter-signal,
    strongest in wall time (3/3 tasks).
 5. **[INTERPRETATION]** The benchmark machinery itself works. Sterile execution,
@@ -288,9 +399,11 @@ changed was likewise not captured.
    architecture oracle, the artifact firewall, run-identity derivation and the
    frozen analysis all executed end to end and caught their own defects — twice,
    in ways that cost real money and were recorded rather than smoothed over.
-6. **[INTERPRETATION]** Expanding this pilot to the full suite, unchanged, is not
-   justified. That is the decision the frozen rule returned and it should be
-   honoured.
+6. **[INTERPRETATION]** Expanding either pilot, unchanged, is not justified. Both
+   frozen rules returned a negative verdict and both were honoured.
+7. **[INTERPRETATION]** The **strong-model ceiling** explanation for the repeated
+   null is not supported. Instrument discrimination, not model capability, is the
+   binding constraint on the programme.
 
 ---
 
@@ -312,6 +425,16 @@ changed was likewise not captured.
    comparison uninterpretable as a treatment contrast.
 7. **We cannot claim any architecture result from the efficiency pilot.** It
    produced none.
+8. **We cannot claim an architecture result from the lower-model pilot either.**
+   It produced an endpoint, but at the floor in both arms. A tie at zero
+   discriminates nothing and must not be read as AFCI failing to improve
+   architecture.
+9. **We cannot claim that model capability moderates AFCI's value.** The Sonnet
+   and Haiku pilots are separate experiments compared descriptively and never
+   pooled. Nothing here is a randomised cross-model causal effect.
+10. **We cannot generalise past `claude-sonnet-5` and
+    `claude-haiku-4-5-20251001`.** Two models, neither selected as the study
+    model; `primary_model` is still `null`.
 
 ---
 
@@ -331,34 +454,40 @@ The chain is short and each link is recorded:
 4. **The efficiency pilot asked a cheaper question that could be answered now** —
    does the MAD at least pay for itself? — and answered **no**, decisively, under
    a rule frozen before the data existed.
-5. **[INTERPRETATION]** The common factor across 2–4 is that a strong model on a
-   legible synthetic repository has little to gain from being told the
-   architecture. That is a statement about the *measurement conditions*, and it
-   points at exactly two changes: weaken the model, or harden the substrate.
+5. **The lower-model pilot weakened the model, and the null held.** Under a
+   rule frozen before the data, a weaker model produced no quality signal (both
+   arms at the floor) and a *worse* cost ratio than the stronger one.
+6. **[INTERPRETATION]** The common factor across 2–5 is not model strength — that
+   has now been varied and did not matter. What remains is that **a legible
+   synthetic repository gives an agent little to gain from being told its
+   architecture**, whether the agent is strong or weak. That points at one
+   remaining change: harden the substrate.
 
 ---
 
 ## 9. Next experiments
 
-Both are **NOT STARTED**. No runs exist and no results are pre-populated.
+### 9.1 `LOWER_MODEL_PILOT` — **COMPLETE**
 
-### 9.1 `LOWER_MODEL_PILOT`
+Executed 2026-09-17, 18 runs. It tested the strong-model-ceiling explanation
+directly: if the ceiling were the cause, a weaker model should have shown both
+architecture-floor escape and a better cost profile. It showed **neither**. The
+frozen rule returned `NO LOWER-MODEL SIGNAL`. See §5A.
 
-Re-run the efficiency and architecture questions with a lower-capability model.
-Directly tests the strong-model-ceiling explanation. If the ceiling is the cause,
-a weaker model should show both architecture-floor escape (non-zero baseline
-violations) and a different cost profile.
-
-### 9.2 `OPEN_SOURCE_COMPLEXITY_STUDY`
+### 9.2 `OPEN_SOURCE_COMPLEXITY_STUDY` — **NOT STARTED**
 
 Re-run against real / open-source repositories with genuine architectural
-complexity. Directly tests the substrate-legibility explanation.
+complexity. Directly tests the substrate-legibility explanation. No runs exist and
+no results are pre-populated.
 
-**[INTERPRETATION]** The lower-model pilot is the cheaper of the two and shares
-the entire existing harness, so it should run first. The open-source study needs
-new tasks, new hidden acceptance packages and new architecture rule linkage, which
-is a much larger investment and should be justified by what the lower-model pilot
-shows.
+**[INTERPRETATION]** This study **remains scientifically motivated** and is now the
+single most informative next experiment, because it tests the only one of the two
+rival explanations still standing. Its motivation was never contingent on the
+lower-model outcome — repository complexity is an independent moderator, and the
+lower-model pilot measured nothing about it — but the removal of the ceiling rival
+raises its priority. It is **not** authorised by the lower-model result, needs new
+tasks, new hidden acceptance packages and new architecture rule linkage, and
+requires its own decision record before any run.
 
 Neither should be treated as confirmatory. Gate `G1` is still not passed, the
 suite is still not frozen, and `TD-B32`, `TD-B34`, `TD-B03` and `TD-B19` all

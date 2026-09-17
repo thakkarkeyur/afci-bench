@@ -8,8 +8,8 @@ is said plainly.
 
 ## 0. The one-line version
 
-Of 103 recorded run/attempt rows, **34 are eligible for any analysis at all**, all
-34 belong to one non-confirmatory cost pilot, and **0 are confirmatory**.
+Of 121 recorded run/attempt rows, **50 are eligible for any analysis at all**, all
+50 belong to two non-confirmatory pilots, and **0 are confirmatory**.
 
 | experiment | rows | eligible | why not |
 | --- | ---: | ---: | --- |
@@ -19,6 +19,7 @@ Of 103 recorded run/attempt rows, **34 are eligible for any analysis at all**, a
 | `V2_PT10_QUALIFICATION` | 3 | 0 | qualification only |
 | `V2_EFF_ATTEMPT1` | 9 | 0 | attempt aborted wholesale |
 | `V2_EFF_ATTEMPT2` | 36 | 34 | eligible, but **non-confirmatory** |
+| `V2_LOWER_MODEL_PILOT` | 18 | 16 | eligible, but **non-confirmatory**; 1 functionally invalid, 1 stranded partner |
 
 ---
 
@@ -263,6 +264,54 @@ So:
 
 ---
 
+## 8A. Lower-model pilot — what is excluded and what is bounded
+
+**One run is functionally invalid and one valid run is unused.**
+
+| | |
+| --- | --- |
+| executed | 18 of 18 |
+| refused | 0 |
+| infrastructure-invalid attempts | 0 |
+| functionally valid | 17 (C1 8/9, C4 9/9) |
+| paired-eligible blocks | 8 of 9 |
+| runs in the paired efficiency analysis | 16 |
+| valid but unpaired | 1 |
+
+`PT04/C1/R2` failed all four of its semantic acceptance cases. Under the frozen
+`FUNCTIONAL_VALID` definition it is invalid, so block `PT04|R2` cannot be paired
+and its **valid** C4 partner is excluded from every efficiency ratio. The C4 run is
+not deleted and not counted as a failure — it is a complete observation with no
+comparator.
+
+**It was not replaced.** The frozen observation policy consumes a substantive
+observation once the real task is delivered, and explicitly forbids replacing one
+because it failed functionality. Only a pre-observation infrastructure-invalid
+attempt may be re-run, and none occurred.
+
+**Architecture is reported over all 18 runs, efficiency over the 8 paired blocks.**
+A run that violated the architecture is still a run that violated it, so the
+architecture channel is not restricted to functionally-valid pairs; the
+functionally-valid subset is reported alongside so a reader can see both. A cost
+figure from a run that did not work is not a cheaper way of doing the task, so the
+efficiency channel *is* restricted.
+
+**The architecture endpoint is descriptive.** It enters no `E1` numerator or
+denominator, no treatment-effect estimate and no power estimate. It exists under a
+pilot-scoped corpus exemption (`SL-V2-LOWER-MODEL-01` §9) which is **not** a full
+architecture mutation corpus and must never be described as one. The full corpus
+requirement is unchanged and required in full for every confirmatory purpose.
+
+**The quality channel produced no discriminating information.** Both arms recorded
+0 target violations across 9 runs each. See §11.
+
+**No private identifiers are published.** Opportunity ids, rule ids, forbidden
+scopes and hidden acceptance case semantics stay in the private evaluator
+repository; the run record refuses to carry them at all. No numeric result is
+withheld.
+
+---
+
 ## 9. No p-values, confidence intervals or confirmatory effect estimates
 
 The frozen analysis asserts `no_p_values`, `no_confidence_intervals` and
@@ -287,17 +336,20 @@ inferable from its own import graph and path aliases.
   directly attacks the MAD's marginal value — the thing the study measures.
 - The architecture-enforcing `.eslintrc.json` is excluded from the model-visible
   worktree, but the **structure itself** still signals the architecture.
-- Three instruments (PT08, PT09, PT10) sat at or near the architecture floor at
-  baseline on this substrate. That is as readily explained by the substrate as by
-  the tasks.
+- Six instrument/model combinations have now sat at or near the architecture
+  floor on this substrate: PT08, PT09 and PT10 for an unguided Sonnet baseline,
+  and PT01, PT04 and PT07 for Haiku 4.5 in **both** arms. That is as readily
+  explained by the substrate as by the tasks.
 
-**This is the primary external-validity threat to every v2 finding.**
+**This is the primary external-validity threat to every v2 finding, and after the
+lower-model pilot it is the leading one** — see §11, where the rival explanation
+was tested and not supported.
 
 ---
 
-## 11. Strong-model ceiling effect
+## 11. Ceiling effects, and the one test that has been run
 
-Every v2 run used `claude-sonnet-5`.
+Every Sonnet-era v2 run used `claude-sonnet-5`.
 
 - Functional acceptance was **saturated**: PT08 3/3, PT09 3/3, PT10 3/3, efficiency
   17/18 and 17/18. A saturated outcome cannot show improvement.
@@ -306,12 +358,30 @@ Every v2 run used `claude-sonnet-5`.
 - PT08's disposition names this directly: a baseline at the floor has no room
   beneath it.
 
-Ceiling and substrate legibility are **not separable** from the current data. They
-are the two rival explanations for the same null, which is exactly why the next two
-experiments are designed to vary one factor each.
+**The strong-model ceiling explanation has now been tested, and was not
+supported.** The lower-model pilot re-ran PT01/PT04/PT07 on
+`claude-haiku-4-5-20251001`. A weaker model did **not** escape the architecture
+floor — both arms violated the target in 0 of 9 runs — and C4's cost ratio got
+*worse*, not better (2.0372 against Sonnet's 1.5582 on non-reset input tokens).
+
+Three limitations bound that test, and none may be dropped when citing it:
+
+1. **The quality channel was uninformative, not negative.** Both arms sat at zero.
+   A tie at the floor cannot distinguish "the MAD does not help" from "the
+   instrument cannot see help". The frozen rule records FAIL because it demands
+   *strictly fewer* violations; that is a rule outcome, not a finding about AFCI.
+2. **It is not a randomised cross-model experiment.** Sonnet and Haiku were run
+   under separate purposes, separate schedules and separate analyses, and are
+   **never pooled**. The comparison is two within-model ratios shown side by side.
+   No interaction was estimated and none may be quoted.
+3. **One lower-capability model, one substrate, 8 paired blocks, 3 repetitions.**
+   Descriptive medians only.
+
+Substrate legibility (§10) remains **untested** and is now the leading explanation
+by elimination rather than by evidence.
 
 **`TD-B03` is open and `primary_model` is `null`** — no model has been selected
-for the study, so even the model used so far is provisional.
+for the study, so both models used so far are provisional.
 
 ---
 

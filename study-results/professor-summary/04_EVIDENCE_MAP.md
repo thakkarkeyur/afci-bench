@@ -30,6 +30,7 @@ tables, pointers and hashes.
 | PT09 / PT10 | `D:\afci-v2-qual` | [`03_pt09_pt10_qualification/`](../03_pt09_pt10_qualification/) |
 | Efficiency Attempt 1 | `D:\afci-runs\obs`, `D:\afci-runs\logs` | [`04_efficiency_attempt_1_aborted/`](../04_efficiency_attempt_1_aborted/) |
 | Efficiency Attempt 2 | `D:\afci-runs\attempt-2` | [`05_efficiency_attempt_2_completed/`](../05_efficiency_attempt_2_completed/) |
+| Lower-model pilot | `D:\afci-runs\lower-model-pilot`, `D:\afci-runs\lower-model-pilot-logs` | [`06_lower_model_pilot_completed/`](../06_lower_model_pilot_completed/) |
 
 ---
 
@@ -55,6 +56,30 @@ tables, pointers and hashes.
 4. `D:\afci-runs\attempt-2\afci-efficiency-pilot-pt01-c1-real-r1-non-reset-a2-739ef44ece2e\run_record.json`
    → `efficiency.usage.TOTAL_INPUT_TOKENS`
 5. the same directory's `runtime_evidence.jsonl` — the terminal result event
+
+### "median C4/C1 input tokens = 2.0372" (lower-model pilot)
+
+1. [`06_lower_model_pilot_completed/lower_model_endpoint_ratios.csv`](../06_lower_model_pilot_completed/lower_model_endpoint_ratios.csv)
+2. [`06_lower_model_pilot_completed/lower_model_primary_pairs.csv`](../06_lower_model_pilot_completed/lower_model_primary_pairs.csv)
+   — the 8 pairs whose median it is
+3. [`06_lower_model_pilot_completed/lower_model_pilot_frozen_analysis_report.json`](../06_lower_model_pilot_completed/lower_model_pilot_frozen_analysis_report.json)
+   → `efficiency.endpoints.TOTAL_INPUT_TOKENS.pairs`
+4. `D:\afci-runs\lower-model-pilot\afci-lower-model-pilot-pt07-c1-real-r3-non-reset-a1-e6090108e222\run_record.json`
+   → `efficiency.usage.TOTAL_INPUT_TOKENS`
+5. the same directory's `runtime_evidence.jsonl` — the terminal result event
+
+### "C1 and C4 both violated the target in 0 of 9 runs" (lower-model pilot)
+
+1. [`06_lower_model_pilot_completed/lower_model_architecture_summary.csv`](../06_lower_model_pilot_completed/lower_model_architecture_summary.csv)
+2. [`06_lower_model_pilot_completed/lower_model_runs_raw_metrics.csv`](../06_lower_model_pilot_completed/lower_model_runs_raw_metrics.csv)
+   → `architecture_applicable`, `architecture_violated`, `target_opportunity_violated`
+3. any run directory's `architecture_evaluation.json` → the derived counts
+4. the same directory's `architecture_evaluation_result.json` — the private
+   scorer's structured output, produced out of band against `worktree_post_run`
+
+The private opportunity and rule identifiers behind these counts are withheld from
+this package by the same policy that governs PT09/PT10, and the run record refuses
+to carry them at all.
 
 ### "PT10 violated its target in 1 of 3 runs"
 
@@ -93,7 +118,12 @@ both outside this repository. Steps 1 and 2 are public and carry every number.
 | efficiency run plan | `0038cd8b563ea804f4887d21cb37ceddb3a8f7632c4dd2315c260d3a9af95767` |
 | Attempt-2 execution plan | `562415031c04b0673c54ac352a4ca35a66e885023aa212cedc284da0c65a087e` |
 | schedule seed | `AFCI_EFFICIENCY_PILOT_V1_20260914` (SHA-256 ordering, no language RNG) |
-| model / runtime, all v2 runs | `claude-sonnet-5` / Claude Code CLI `2.1.229` |
+| **lower-model run plan** | `f045c0d93370f7e6f785274acd7df6b34bb28f52ba60cdcfd49eb6812b86b026` |
+| lower-model scientific projection | `fc331ee35f5a73380561e36d4f234a74752278d3fd9e94082fa870c464cfc817` |
+| lower-model schedule seed | `AFCI_LOWER_MODEL_PILOT_V1_20260917` (SHA-256 ordering, no language RNG) |
+| lower-model prepared worktree hash | `da7a679552d50857408d14e980cc5257ed42e33d7116630433f8451450d1bad6` (49 entries, identical in C1 and C4) |
+| model / runtime, Sonnet v2 runs | `claude-sonnet-5` / Claude Code CLI `2.1.229` |
+| model / runtime, lower-model pilot | `claude-haiku-4-5-20251001` / Claude Code CLI `2.1.229` |
 | v1 release | GitHub `ase2026-artifacts-v1` @ `1ba21ad75dacbac5eb87d354a490b088078c30da` |
 | v1 DOI | `10.5281/zenodo.19757261` |
 
@@ -128,6 +158,21 @@ python experiments/v2/harness/efficiency_pilot_analysis.py \
 dry-run readiness records under `readiness-context-audit\` which share the R1
 blocks' coordinates; including them corrupts pairing and yields 12 eligible blocks
 and a 1.3895 median instead of the correct 16 and 1.4014.
+
+---
+
+## Reproducing the lower-model analysis
+
+```sh
+python experiments/v2/harness/lower_model_pilot_analysis.py \
+    D:\afci-runs\lower-model-pilot\*\run_record.json
+```
+
+All 18 directories under that root are substantive runs — readiness records were
+written to a **separate** root (`D:\afci-runs\lower-model-readiness`) precisely so
+the Attempt-2 trap above cannot recur here. The analysis **refuses** a
+`claude-sonnet-5` record rather than filtering it out, so "never pooled" is a
+property of the code and not a convention.
 
 ---
 

@@ -1,0 +1,10 @@
+endpoint,n_pairs,median_c4_over_c1,c4_lower_count,median_PT01,median_PT04,median_PT07,direction
+CI_COMMAND_RUNS,8,1.0,3,1.0,0.75,0.5,C4/C1; lower is better for C4
+EDIT_AND_WRITE_CALLS,8,1.1741,2,2.0,1.1741,0.875,C4/C1; lower is better for C4
+EXPLORATION_CALLS,8,1.7308,1,2.0,2.1683,1.0769,C4/C1; lower is better for C4
+MODEL_WALL_SECONDS,8,1.5268,3,2.3801,1.2307,0.8427,C4/C1; lower is better for C4
+TEST_COMMAND_RUNS,1,0.0,1,,,0.0,C4/C1; lower is better for C4
+TOTAL_INPUT_TOKENS,8,2.0372,2,2.9214,1.7502,0.9038,C4/C1; lower is better for C4
+TOTAL_OUTPUT_TOKENS,8,1.7804,3,2.5067,1.4358,0.7171,C4/C1; lower is better for C4
+TOTAL_TOOL_CALLS,8,1.5023,2,2.0,1.4174,0.9412,C4/C1; lower is better for C4
+UNIQUE_FILES_READ,8,1.25,2,1.0,1.0833,1.5,C4/C1; lower is better for C4

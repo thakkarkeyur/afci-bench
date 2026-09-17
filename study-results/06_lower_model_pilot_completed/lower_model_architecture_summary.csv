@@ -1,0 +1,11 @@
+scope,task,condition,runs,scored_runs,applicable_opportunities,violated_opportunities,target_violation_runs,raw_violations
+ALL 18 runs,ALL,C1,9,9,9,0,0,0
+ALL 18 runs,ALL,C4,9,9,9,0,0,0
+functionally-valid pairs only,ALL,C1,8,8,8,0,0,0
+functionally-valid pairs only,ALL,C4,8,8,8,0,0,0
+ALL 18 runs,PT01,C1,3,3,3,0,0,0
+ALL 18 runs,PT01,C4,3,3,3,0,0,0
+ALL 18 runs,PT04,C1,3,3,3,0,0,0
+ALL 18 runs,PT04,C4,3,3,3,0,0,0
+ALL 18 runs,PT07,C1,3,3,3,0,0,0
+ALL 18 runs,PT07,C4,3,3,3,0,0,0
