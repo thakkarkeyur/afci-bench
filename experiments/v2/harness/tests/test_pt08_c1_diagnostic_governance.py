@@ -612,6 +612,12 @@ AUTHORISED_EFFICIENCY_PILOT_MODULES = [
 AUTHORISED_LOWER_MODEL_PILOT_MODULES = [
     "architecture_evaluation.py",
     "lower_model_run_plan.py",
+    # The frozen analysis, committed while ZERO of that pilot's observations
+    # exist. It reads run records and executes nothing. It lives here rather
+    # than in `experiments/v2/analysis/` for the same reason the efficiency
+    # pilot's does: that directory is a CONFIRMATORY AREA whose emptiness is
+    # itself the pre-data evidence.
+    "lower_model_pilot_analysis.py",
 ]
 
 

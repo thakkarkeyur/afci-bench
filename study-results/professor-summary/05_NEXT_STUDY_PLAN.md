@@ -88,8 +88,16 @@ execution-attempt guards; the permission allowlist for the governed CI surface.
 
 **Newly built for it:** `architecture_evaluation.py`, the post-run architecture
 channel, and a private arbitrary-worktree architecture scorer behind it;
-`lower_model_run_plan.py`, the frozen schedule and its whole-execution preflight.
-Both are inert for every other purpose.
+`lower_model_run_plan.py`, the frozen schedule and its whole-execution preflight;
+and `lower_model_pilot_analysis.py`, the frozen analysis. All three are inert for
+every other purpose.
+
+**Its analysis is computable, and that was checked before any data.** The
+analysis was executed against synthetic records only and returns the frozen
+outcome correctly in four directions — including the one the two-channel design
+exists for, where architecture improves while token cost rises and a composite
+score would have reported a wash. This matters because Attempt 2 of the
+efficiency pilot was, for a while, executable and *not* analysable.
 
 **Its controls are executed, not asserted.** For each of PT01, PT04 and PT07 a
 legal reference scores one applicable opportunity and zero violations, and a

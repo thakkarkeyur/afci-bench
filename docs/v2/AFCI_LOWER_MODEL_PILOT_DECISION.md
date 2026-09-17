@@ -772,6 +772,26 @@ better for `C4`.
 The quality and efficiency channels are **never** combined into one score, and
 neither is used to adjust the other.
 
+### 11.4 The analysis is computable, and that was checked before any data
+
+`experiments/v2/harness/lower_model_pilot_analysis.py` implements §11 and §12 and
+is committed **while zero lower-model observations exist**. It was executed
+against **synthetic records only** — fabricated in memory, never written, and
+none of them an observation, an estimate or a prediction — and it produces the
+frozen outcome correctly in four directions, including the one this design exists
+for: architecture improving while token cost rises yields a **quality signal and
+no efficiency signal**, where a composite score would have reported a wash.
+
+This section exists because the efficiency pilot was briefly **executable and not
+analysable**: its cost figures would have existed and the gate admitting them
+would not have been computable. That is not repeated here.
+
+The separation is structural rather than promised. The architecture summary and
+the efficiency summary share no input beyond the block list, neither reads the
+other's output, and the two continuation signals are evaluated independently. A
+`claude-sonnet-5` record handed to this analysis is **refused**, not filtered out,
+so "never pooled" is a property of the code.
+
 ---
 
 ## 12. The frozen continuation rule
