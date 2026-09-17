@@ -93,6 +93,70 @@ def test_the_live_runtime_controls_are_recorded_as_passed():
     assert block["repetitions"] == 3
 
 
+def test_the_lower_model_pin_is_a_readback_of_its_own_and_not_an_inheritance():
+    """`SL-V2-LOWER-MODEL-01` pins a SECOND model, so it needs its own readback.
+
+    A model pin may never inherit another model's Q1: the readback exists to
+    prove that the identifier requested is the identifier that served the
+    request, and Sonnet's readback says nothing about Haiku's. Q8 is the
+    opposite case and is cited rather than repeated, because invalid-model-id
+    rejection is a property of the RUNTIME, and the runtime is unchanged.
+    """
+    y = _yaml()
+    block = y["diagnostic_model_selection"]["AFCI_LOWER_MODEL_PILOT"]
+    assert block["decision_id"] == "SL-V2-LOWER-MODEL-01"
+    assert block["exact_model_id"] == "claude-haiku-4-5-20251001"
+    assert block["exact_model_id"] in VERIFIED_IDS
+
+    # The EXACT id was requested; no alias was resolved on the way in.
+    assert block["requested_selector"] == block["exact_model_id"]
+    assert block["selector_used_for_repetitions"] == block["exact_model_id"]
+
+    assert block["q1_readback"] == "PASS" and block["q1_unambiguous"] is True
+    assert set(block["q1_readback_sources"]) == {"system.init.model", "modelUsage"}
+    assert "not cited" in block["q1_validation_provenance"]
+    assert block["q1_validation_provenance"].startswith("SL-V2-LOWER-MODEL-01")
+
+    # ...and Q8 is explicitly the other way round.
+    assert block["q8_invalid_model_id_rejection"] == "PASS"
+    assert block["q8_invalid_model_id"] not in VERIFIED_IDS
+    assert block["q8_validation_provenance"].startswith("SL-PT08-05")
+    assert "cited" in block["q8_validation_provenance"]
+
+    assert block["api_key_used"] is False
+    assert block["lower_capability_than_primary_candidate"] is True
+    assert "claude-sonnet-5" in block["lower_capability_basis"]
+    # The availability claim is evidence, not an assertion: it names how the
+    # runtime was enumerated and what that enumeration found.
+    assert "enumeration" in block["model_availability_evidence"]
+    assert "no Haiku 5" in block["model_availability_evidence"]
+
+    for flag in ("confers_no_primary_selection", "confers_no_confirmatory_eligibility"):
+        assert block[flag] is True, flag
+    assert block["pools_with_sonnet_efficiency_pilot"] is False
+    assert block["td_b03_status"].startswith("open")
+    assert y["primary_model"] is None, "a diagnostic pin must never select a primary"
+
+
+def test_the_lower_model_pilot_matrix_and_budget_are_what_the_decision_freezes():
+    """18 observations, NON_RESET only, and the Sonnet pilot's own 64 turns."""
+    y = _yaml()
+    block = y["diagnostic_model_selection"]["AFCI_LOWER_MODEL_PILOT"]
+    assert block["tasks"] == ["PT01", "PT04", "PT07"]
+    assert block["conditions"] == ["C1", "C4"]
+    assert block["reset_states"] == ["NON_RESET"], "the reset arm is not authorised"
+    assert block["repetitions"] == 3
+    assert block["observations_maximum"] == 18
+
+    # The allowance is NOT reduced because the model is cheaper, and it is the
+    # SAME number the Sonnet pilot's NON_RESET arm ran under.
+    sonnet = y["diagnostic_model_selection"]["AFCI_EFFICIENCY_PILOT"]
+    assert block["non_reset_max_turns"] == sonnet["non_reset_max_turns"] == 64
+    assert "pre_reset_max_turns" not in block, "no reset allowance is pinned"
+    assert block["allowed_tools"] == sonnet["allowed_tools"]
+    assert "AFCI_LOWER_MODEL_PILOT ONLY" in block["allowed_tools_scope"]
+
+
 def test_registry_csv_matches_yaml_and_columns():
     y = yaml.safe_load((DOCS_V2 / "MODEL_REGISTRY.yml").read_text(encoding="utf-8"))
     with open(DOCS_V2 / "MODEL_REGISTRY.csv", newline="", encoding="utf-8") as fh:
@@ -119,4 +183,12 @@ def test_no_model_selected_as_primary_in_csv():
         assert "pending" in status, r["exact_model_id"]
         if "q1/q8 validated" in status:
             assert "pt08_difficulty_diagnostic only" in status
+            assert "no benchmark condition executed" in status
+        # The lower-model arm validated Q1 live for its own purpose and CITED
+        # Q8; its row must say which, and for which purpose, so a second
+        # diagnostic-scoped validation can never be read as the confirmatory one
+        # either.
+        if "q1 validated live" in status:
+            assert "afci_lower_model_pilot only" in status
+            assert "q8 cited from sl-pt08-05" in status
             assert "no benchmark condition executed" in status

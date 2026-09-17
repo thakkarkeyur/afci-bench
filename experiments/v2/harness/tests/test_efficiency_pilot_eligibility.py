@@ -166,19 +166,65 @@ def _codes(report: gov.ReadinessReport) -> set:
 # --------------------------------------------------------------------------- #
 # 1. The authority, re-derived from the record rather than trusted
 # --------------------------------------------------------------------------- #
-def test_only_the_efficiency_pilot_carries_an_exemption():
+#: Every purpose that carries an architecture-corpus exemption, and the AUTHORITY
+#: that granted it. A mapping rather than a single name, because a second pilot
+#: has since been authorised — and a mapping is what keeps the check fail-closed:
+#: a purpose absent from it must carry NONE, and a purpose present in it must
+#: carry exactly the authority written here and not some other purpose's.
+EXEMPTED_PURPOSES = {
+    PURPOSE: AUTHORITY,
+    # SL-V2-LOWER-MODEL-01 took the same question on its own facts, in its own
+    # record, against the same eight conditions. It did NOT inherit this one:
+    # SL-V2-EFF-ELIG-01 is scoped to the purpose it names, and an exemption that
+    # could be inherited would not be scoped at all.
+    "AFCI_LOWER_MODEL_PILOT": "SL-V2-LOWER-MODEL-01",
+}
+
+
+def test_only_an_authorised_pilot_carries_an_exemption_and_only_its_own():
     """The fail-closed default, asserted over every registered purpose.
 
     This is the test that would fail if a later package gave a confirmatory
-    purpose an exemption by copying the pilot's registration.
+    purpose an exemption by copying a pilot's registration — and, now that two
+    exemptions exist, it is also the test that would fail if one pilot were
+    quietly pointed at the other's authority or the other's record.
     """
     for name, purpose in gov.RUN_PURPOSES.items():
-        if name == PURPOSE:
-            assert purpose.architecture_corpus_exemption == AUTHORITY
+        expected = EXEMPTED_PURPOSES.get(name)
+        assert purpose.architecture_corpus_exemption == expected, (
+            f"{name} carries exemption {purpose.architecture_corpus_exemption!r}, "
+            f"not {expected!r}"
+        )
+        if expected is None:
+            assert purpose.architecture_corpus_exemption_record is None
+            assert purpose.architecture_corpus_exemption_pins == ()
         else:
-            assert purpose.architecture_corpus_exemption is None, (
-                f"{name} acquired an architecture-corpus exemption"
+            # An exemption only exists where its OWN record puts it, so the
+            # record a purpose names must be the one whose table names it back.
+            governed = gov._table_values(
+                gov._section(
+                    purpose.corpus_exemption_record_path(gov.REPO).read_text(
+                        encoding="utf-8"
+                    ),
+                    purpose.architecture_corpus_exemption_heading,
+                )
             )
+            assert governed.get("decision_id") == expected, name
+            assert governed.get("run_purpose") == name, name
+
+
+def test_an_exempted_purpose_is_never_confirmatory_or_result_bearing():
+    """Condition 7, asserted structurally over every exemption that exists.
+
+    The exemption is defensible only because the architecture measurement it
+    unblocks is descriptive. A confirmatory or result-bearing purpose holding one
+    would be the exact widening the scoping exists to prevent.
+    """
+    for name in EXEMPTED_PURPOSES:
+        purpose = gov.RUN_PURPOSES[name]
+        assert not purpose.confirmatory, name
+        assert not purpose.result_bearing, name
+        assert purpose.firewall_flags() == {f: False for f in gov.FIREWALL_FIELDS}
 
 
 def test_the_exemption_table_is_re_derived_from_the_record():

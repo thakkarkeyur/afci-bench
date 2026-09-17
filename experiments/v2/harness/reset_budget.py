@@ -115,6 +115,110 @@ RESET_BUDGET_PINS: Tuple[Tuple[str, object], ...] = (
 )
 
 
+#: ``SL-V2-LOWER-MODEL-01`` — the lower-capability-model pilot's allowance.
+#:
+#: It is a SECOND authority rather than an extension of the first, because the
+#: two pilots freeze genuinely different things: that one authorises both arms
+#: and splits 32/32 against 64; this one authorises ``NON_RESET`` ONLY and
+#: freezes the single number 64. Folding them together would have meant either
+#: teaching the efficiency pilot's record about a reset arm it does not run, or
+#: letting a lower-model row draw a reset allowance nothing froze for it.
+#:
+#: The NUMBER is deliberately identical. A cheaper model is not given a smaller
+#: ceiling: needing more turns to reach the same place is the phenomenon under
+#: study, and capping it lower would turn that phenomenon into a truncation.
+LOWER_MODEL_BUDGET_PURPOSE = "AFCI_LOWER_MODEL_PILOT"
+SL_V2_LOWER_MODEL_01 = "SL-V2-LOWER-MODEL-01"
+LOWER_MODEL_BUDGET_RECORD = "docs/v2/AFCI_LOWER_MODEL_PILOT_DECISION.md"
+LOWER_MODEL_BUDGET_HEADING = "### 8.1 The frozen turn-budget table"
+
+LOWER_MODEL_BUDGET_PINS: Tuple[Tuple[str, object], ...] = (
+    ("decision_id", SL_V2_LOWER_MODEL_01),
+    ("run_purpose", LOWER_MODEL_BUDGET_PURPOSE),
+    ("scope", "AFCI_LOWER_MODEL_PILOT ONLY"),
+    ("reset_states_authorised", NON_RESET),
+    ("reset_arm_authorised", False),
+    ("non_reset_max_turns", NON_RESET_MAX_TURNS),
+    ("total_allowance_non_reset", NON_RESET_MAX_TURNS),
+    # Stated as absent rather than as a number. A record that carried 32/32 here
+    # would be freezing an allowance for an arm this purpose cannot run.
+    ("pre_reset_max_turns", "not applicable"),
+    ("post_reset_max_turns", "not applicable"),
+    ("allowances_identical_across_conditions", True),
+    ("budget_lowered_because_the_model_is_cheaper", False),
+    ("td_b01_resolved_globally", False),
+    ("td_b11_resolved_globally", False),
+    ("g2_passed", False),
+    ("confirmatory_precedent_created", False),
+    ("decided_before_any_lower_model_observation", True),
+)
+
+
+@dataclass(frozen=True)
+class BudgetAuthority:
+    """One Study-Lead decision's frozen allowance, and the arms it covers.
+
+    Carried as data so a second pilot cannot acquire the first's allowance by
+    resembling it. A purpose absent from :data:`BUDGET_AUTHORITIES` has no
+    frozen budget at all and is refused — which is the state every purpose but
+    these two is in, and must stay in.
+    """
+
+    run_purpose: str
+    decision_id: str
+    record: str
+    heading: str
+    reset_states: Tuple[str, ...]
+    pins: Tuple[Tuple[str, object], ...]
+    non_reset_max_turns: int
+    pre_reset_max_turns: Optional[int] = None
+    post_reset_max_turns: Optional[int] = None
+
+    @property
+    def splits_a_reset(self) -> bool:
+        return RESET in self.reset_states
+
+    def record_path(self, repo: Path) -> Path:
+        return Path(repo) / self.record
+
+
+BUDGET_AUTHORITIES: Dict[str, BudgetAuthority] = {
+    RESET_BUDGET_PURPOSE: BudgetAuthority(
+        run_purpose=RESET_BUDGET_PURPOSE,
+        decision_id=SL_V2_EFF_RESET_01,
+        record=RESET_BUDGET_RECORD,
+        heading=RESET_BUDGET_HEADING,
+        reset_states=RESET_STATES,
+        pins=RESET_BUDGET_PINS,
+        non_reset_max_turns=NON_RESET_MAX_TURNS,
+        pre_reset_max_turns=PRE_RESET_MAX_TURNS,
+        post_reset_max_turns=POST_RESET_MAX_TURNS,
+    ),
+    LOWER_MODEL_BUDGET_PURPOSE: BudgetAuthority(
+        run_purpose=LOWER_MODEL_BUDGET_PURPOSE,
+        decision_id=SL_V2_LOWER_MODEL_01,
+        record=LOWER_MODEL_BUDGET_RECORD,
+        heading=LOWER_MODEL_BUDGET_HEADING,
+        reset_states=(NON_RESET,),
+        pins=LOWER_MODEL_BUDGET_PINS,
+        non_reset_max_turns=NON_RESET_MAX_TURNS,
+    ),
+}
+
+
+def budget_authority(run_purpose: str) -> BudgetAuthority:
+    """The frozen allowance authority for one purpose, or a refusal."""
+    authority = BUDGET_AUTHORITIES.get(run_purpose)
+    if authority is None:
+        raise gov.RunnerRefusal(
+            gov.RESET_NOT_AUTHORISED_FOR_PURPOSE,
+            f"no Study-Lead decision freezes a turn budget for {run_purpose!r}; "
+            f"the purposes that carry one are {sorted(BUDGET_AUTHORITIES)} and "
+            "the runner never invents an allowance",
+        )
+    return authority
+
+
 class ResetBudgetError(gov.RunnerRefusal):
     """A budget that cannot be re-derived is not a frozen budget."""
 
@@ -158,35 +262,50 @@ def assert_reset_state(reset_state: str) -> str:
 def governed_budget_table(
     repo: Path = gov.REPO,
     record: Optional[Path] = None,
-    heading: str = RESET_BUDGET_HEADING,
+    heading: Optional[str] = None,
+    *,
+    run_purpose: str = RESET_BUDGET_PURPOSE,
 ) -> Dict[str, object]:
-    """Re-derive the frozen budget table from the record itself."""
-    path = Path(record) if record else Path(repo) / RESET_BUDGET_RECORD
+    """Re-derive one purpose's frozen budget table from its own record.
+
+    ``run_purpose`` defaults to the efficiency pilot, so every call site that
+    predates a second authority reads exactly the table it always read.
+    """
+    authority = budget_authority(run_purpose)
+    path = Path(record) if record else authority.record_path(repo)
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
         raise gov.RunnerRefusal(
             gov.GOVERNANCE_RECORD_UNREADABLE, f"cannot read {path}: {exc}"
         ) from exc
-    return gov._table_values(gov._section(text, heading))
+    return gov._table_values(
+        gov._section(text, heading if heading is not None else authority.heading)
+    )
 
 
 def budget_problems(
     repo: Path = gov.REPO,
     record: Optional[Path] = None,
-    heading: str = RESET_BUDGET_HEADING,
+    heading: Optional[str] = None,
+    *,
+    run_purpose: str = RESET_BUDGET_PURPOSE,
 ) -> list:
     """Every reason the frozen budget cannot be re-derived. Empty means frozen."""
-    governed = governed_budget_table(repo, record, heading)
+    authority = budget_authority(run_purpose)
+    section = heading if heading is not None else authority.heading
+    governed = governed_budget_table(
+        repo, record, section, run_purpose=run_purpose
+    )
     if not governed:
         return [(
             gov.RESET_BUDGET_NOT_FROZEN,
-            f"{SL_V2_EFF_RESET_01}'s budget table ({heading!r} in "
-            f"{RESET_BUDGET_RECORD}) is absent or unparseable; a frozen budget "
+            f"{authority.decision_id}'s budget table ({section!r} in "
+            f"{authority.record}) is absent or unparseable; a frozen budget "
             "is never assumed",
         )]
     problems = []
-    for key, expected in RESET_BUDGET_PINS:
+    for key, expected in authority.pins:
         if governed.get(key) != expected:
             problems.append((
                 gov.RESET_BUDGET_NOT_FROZEN,
@@ -195,10 +314,15 @@ def budget_problems(
     # The arithmetic the protocol depends on, checked against the record rather
     # than against the constants: a record whose own numbers do not add up has
     # not frozen an equal-total split however plausible each number looks.
+    #
+    # Only for an authority that actually SPLITS a reset. A NON_RESET-only
+    # authority has no split to check, and its record states the two reset
+    # allowances as absent rather than as numbers, which the pins already
+    # require — so there is nothing here that a missing check could let through.
     pre = governed.get("pre_reset_max_turns")
     post = governed.get("post_reset_max_turns")
     non = governed.get("non_reset_max_turns")
-    if (
+    if authority.splits_a_reset and (
         isinstance(pre, int)
         and isinstance(post, int)
         and isinstance(non, int)
@@ -227,16 +351,17 @@ def turn_budget(
     a missing phase for a reset run, a phase supplied for a non-reset run, and a
     record whose table does not re-derive are all refusals rather than defaults.
     """
-    if run_purpose != RESET_BUDGET_PURPOSE:
+    authority = budget_authority(run_purpose)
+    assert_reset_state(reset_state)
+    if reset_state not in authority.reset_states:
         raise gov.RunnerRefusal(
             gov.RESET_NOT_AUTHORISED_FOR_PURPOSE,
-            f"{SL_V2_EFF_RESET_01} freezes a turn budget for "
-            f"{RESET_BUDGET_PURPOSE} ONLY; {run_purpose!r} has no frozen "
-            "allowance and the runner never invents one",
+            f"{authority.decision_id} authorises "
+            f"{list(authority.reset_states)} for {run_purpose}; {reset_state!r} "
+            "has no frozen allowance under it and the runner never invents one",
         )
-    assert_reset_state(reset_state)
 
-    problems = budget_problems(repo, record)
+    problems = budget_problems(repo, record, run_purpose=run_purpose)
     if problems:
         code, detail = problems[0]
         raise gov.RunnerRefusal(
@@ -260,8 +385,9 @@ def turn_budget(
             run_purpose=run_purpose,
             reset_state=NON_RESET,
             phase=None,
-            max_turns=NON_RESET_MAX_TURNS,
-            total_allowance=NON_RESET_MAX_TURNS,
+            max_turns=authority.non_reset_max_turns,
+            total_allowance=authority.non_reset_max_turns,
+            authority=authority.decision_id,
         )
 
     if phase not in PHASES:
@@ -274,9 +400,14 @@ def turn_budget(
         reset_state=RESET,
         phase=phase,
         max_turns=(
-            PRE_RESET_MAX_TURNS if phase == PHASE_A else POST_RESET_MAX_TURNS
+            authority.pre_reset_max_turns
+            if phase == PHASE_A
+            else authority.post_reset_max_turns
         ),
-        total_allowance=PRE_RESET_MAX_TURNS + POST_RESET_MAX_TURNS,
+        total_allowance=(
+            authority.pre_reset_max_turns + authority.post_reset_max_turns
+        ),
+        authority=authority.decision_id,
     )
 
 
@@ -290,13 +421,14 @@ def budget_block(
     exists, because the post-reset allowance is frozen IN ADVANCE and reporting
     it only once phase B had started would make it look derived from phase A.
     """
+    authority = budget_authority(run_purpose)
     assert_reset_state(reset_state)
     if reset_state == NON_RESET:
         budget = turn_budget(
             run_purpose=run_purpose, reset_state=NON_RESET, repo=repo, record=record
         )
         return {
-            "authority": SL_V2_EFF_RESET_01,
+            "authority": authority.decision_id,
             "reset_state": NON_RESET,
             "max_turns": budget.max_turns,
             "total_allowance": budget.total_allowance,
@@ -314,7 +446,7 @@ def budget_block(
         repo=repo, record=record,
     )
     return {
-        "authority": SL_V2_EFF_RESET_01,
+        "authority": authority.decision_id,
         "reset_state": RESET,
         "max_turns": None,
         "total_allowance": a.total_allowance,

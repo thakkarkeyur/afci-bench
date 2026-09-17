@@ -598,6 +598,22 @@ AUTHORISED_EFFICIENCY_PILOT_MODULES = [
     "execution_attempt.py",
 ]
 
+#: The lower-capability-model pilot's modules, authorised by
+#: `SL-V2-LOWER-MODEL-01`. Enumerated separately again, and for the same reason
+#: every list above is: they are not part of the PT08 runner, they execute no
+#: PT08 repetition, and PT08's configuration is untouched by them.
+#:
+#: `architecture_evaluation.py` is the FIRST post-run architecture channel in the
+#: harness. Like the functional channel beside it, it carries NO scoring logic —
+#: the oracle and the frozen per-task decision stay where they are — and it is
+#: inert for a purpose that names no architecture-evaluation authority, which is
+#: every purpose but this one. `lower_model_run_plan.py` builds and checks a
+#: schedule and invokes nothing.
+AUTHORISED_LOWER_MODEL_PILOT_MODULES = [
+    "architecture_evaluation.py",
+    "lower_model_run_plan.py",
+]
+
 
 def test_the_harness_gained_exactly_the_authorised_runner_and_nothing_else():
     """Replaces the earlier `no runner has appeared` check, and is stricter.
@@ -616,6 +632,7 @@ def test_the_harness_gained_exactly_the_authorised_runner_and_nothing_else():
         + AUTHORISED_RUNNER_MODULES
         + AUTHORISED_STAGE0_MODULES
         + AUTHORISED_EFFICIENCY_PILOT_MODULES
+        + AUTHORISED_LOWER_MODEL_PILOT_MODULES
     ), f"the harness gained or lost an unenumerated module: {present}"
     for module in PRE_EXISTING_HARNESS_MODULES:
         assert (harness / module).is_file(), f"{module} disappeared"

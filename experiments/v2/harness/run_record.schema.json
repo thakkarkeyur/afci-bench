@@ -50,7 +50,7 @@
         "enters_power_estimation"
       ],
       "properties": {
-        "name": { "type": "string", "enum": ["PT08_DIFFICULTY_DIAGNOSTIC", "INSTRUMENT_QUALIFICATION_DIAGNOSTIC", "AFCI_EFFICIENCY_PILOT"] },
+        "name": { "type": "string", "enum": ["PT08_DIFFICULTY_DIAGNOSTIC", "INSTRUMENT_QUALIFICATION_DIAGNOSTIC", "AFCI_EFFICIENCY_PILOT", "AFCI_LOWER_MODEL_PILOT"] },
         "decision_id": { "type": "string" },
         "confirmatory": { "type": "boolean", "enum": [false] },
         "confirmatory_eligible": { "type": "boolean", "enum": [false] },
@@ -443,6 +443,175 @@
         },
         "transport": {
           "type": ["object", "null"]
+        },
+        "scorer": {
+          "type": ["object", "null"]
+        }
+      }
+    },
+    "architecture_evaluation": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "description": "SL-V2-LOWER-MODEL-01. The post-run ARCHITECTURE-quality channel, written only by a purpose that names an architecture-evaluation authority and OMITTED entirely otherwise, so every record written before this decision validates unchanged. It is a SEPARATE block from functional_evaluation on purpose: the two are different measurements of the same candidate, neither is derivable from the other, and combining them would hide the case this pilot exists to find. Every count is integer OR NULL and null is the only value a refused evaluation may carry: a zero would make 'nobody measured this' indistinguishable from 'this candidate violated nothing'. architecture_violation_present is DERIVED from opportunity accounting at record-assembly time and a block whose flag disagrees with its own counts is refused rather than written. NON-CONFIRMATORY: it is never an E1 numerator or denominator, never a treatment-effect input and never a power input. It carries no rule identifier, no opportunity identifier, no layer name and no evidence path - only counts, a boolean and a one-way digest.",
+      "required": [
+        "record",
+        "authority",
+        "executed",
+        "evaluator_task",
+        "architecture_applicable_opportunity_count",
+        "architecture_fixed_opportunity_count",
+        "architecture_violated_opportunity_count",
+        "architecture_absent_opportunity_count",
+        "raw_architecture_violation_count",
+        "architecture_violation_present",
+        "architecture_scored",
+        "runtime_error",
+        "enters_confirmatory_e1_analysis",
+        "enters_treatment_effect_analysis",
+        "enters_power_estimation",
+        "is_result",
+        "scored"
+      ],
+      "properties": {
+        "record": {
+          "type": "string",
+          "const": "afci-bench/v2/architecture-evaluation"
+        },
+        "authority": {
+          "type": "string",
+          "const": "SL-V2-LOWER-MODEL-01"
+        },
+        "authority_record": {
+          "type": ["string", "null"]
+        },
+        "executed": {
+          "type": "boolean"
+        },
+        "evaluator_task": {
+          "type": "string"
+        },
+        "evaluator_name": {
+          "type": ["string", "null"]
+        },
+        "evaluator_version": {
+          "type": ["string", "null"]
+        },
+        "alias_aware": {
+          "type": ["boolean", "null"]
+        },
+        "manifest_id": {
+          "type": ["string", "null"]
+        },
+        "scored_opportunity_count": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "architecture_applicable_opportunity_count": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "architecture_fixed_opportunity_count": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "architecture_violated_opportunity_count": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "architecture_absent_opportunity_count": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "raw_architecture_violation_count": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "target_opportunity_violated": {
+          "type": ["boolean", "null"]
+        },
+        "target_opportunity_status": {
+          "type": ["string", "null"]
+        },
+        "target_opportunity_digest": {
+          "type": ["string", "null"],
+          "description": "A one-way SHA-256 digest of the frozen opportunity identifier. Stable across runs, so two records are comparable, and it discloses nothing: the identifier itself never crosses the evaluator boundary."
+        },
+        "architecture_violation_present": {
+          "type": ["boolean", "null"]
+        },
+        "architecture_scored": {
+          "type": "boolean"
+        },
+        "architecture_verdict_is_derived": {
+          "type": "boolean",
+          "const": true
+        },
+        "derived_by": {
+          "type": ["string", "null"]
+        },
+        "separate_from_functional_scoring": {
+          "type": "boolean",
+          "const": true
+        },
+        "enters_confirmatory_e1_analysis": {
+          "type": "boolean",
+          "enum": [false]
+        },
+        "enters_treatment_effect_analysis": {
+          "type": "boolean",
+          "enum": [false]
+        },
+        "enters_power_estimation": {
+          "type": "boolean",
+          "enum": [false]
+        },
+        "is_result": {
+          "type": "boolean",
+          "enum": [false]
+        },
+        "scored": {
+          "type": "boolean",
+          "enum": [false]
+        },
+        "verdict": {
+          "type": ["string", "null"]
+        },
+        "production_source_file_count": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "production_source_excluded_file_count": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "production_source_policy_id": {
+          "type": ["string", "null"]
+        },
+        "deterministic_order": {
+          "type": ["boolean", "null"]
+        },
+        "scored_file_count": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "scored_fingerprint_sha256": {
+          "type": ["string", "null"]
+        },
+        "worktree_unchanged_during_evaluation": {
+          "type": ["boolean", "null"]
+        },
+        "runtime_error": {
+          "type": ["object", "null"],
+          "required": ["code", "detail"],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "detail": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
         },
         "scorer": {
           "type": ["object", "null"]

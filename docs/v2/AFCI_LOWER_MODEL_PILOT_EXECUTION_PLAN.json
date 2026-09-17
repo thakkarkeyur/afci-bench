@@ -1,0 +1,241 @@
+{
+  "architecture_context_sha256": "bf6f32b162a23b851596d8b489d938bef10d0b8616a50dcc039873d12ffa7a4d",
+  "artifact_namespace": "attempt-1",
+  "artifact_root": "D:\\afci-runs\\lower-model-pilot",
+  "authority": "SL-V2-LOWER-MODEL-01",
+  "block_count": 9,
+  "conditions": [
+    "C1",
+    "C4"
+  ],
+  "enters_confirmatory_dataset": false,
+  "execution_attempt": 1,
+  "identities": [
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt07-c1-real-r3-non-reset-a1-e6090108e222",
+      "block_id": "PT07|R3",
+      "condition": "C1",
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt07-c1-real-r3-non-reset-a1-e6090108e222",
+      "sequence": 1,
+      "task_id": "PT07"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt07-c4-real-r3-non-reset-a1-d0cd6a0d8139",
+      "block_id": "PT07|R3",
+      "condition": "C4",
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt07-c4-real-r3-non-reset-a1-d0cd6a0d8139",
+      "sequence": 2,
+      "task_id": "PT07"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt07-c4-real-r2-non-reset-a1-506f24d2b808",
+      "block_id": "PT07|R2",
+      "condition": "C4",
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt07-c4-real-r2-non-reset-a1-506f24d2b808",
+      "sequence": 3,
+      "task_id": "PT07"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt07-c1-real-r2-non-reset-a1-91a4a61d7ac4",
+      "block_id": "PT07|R2",
+      "condition": "C1",
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt07-c1-real-r2-non-reset-a1-91a4a61d7ac4",
+      "sequence": 4,
+      "task_id": "PT07"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt04-c4-real-r3-non-reset-a1-5963dda7b71f",
+      "block_id": "PT04|R3",
+      "condition": "C4",
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt04-c4-real-r3-non-reset-a1-5963dda7b71f",
+      "sequence": 5,
+      "task_id": "PT04"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt04-c1-real-r3-non-reset-a1-6d840ddb619b",
+      "block_id": "PT04|R3",
+      "condition": "C1",
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt04-c1-real-r3-non-reset-a1-6d840ddb619b",
+      "sequence": 6,
+      "task_id": "PT04"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt04-c1-real-r2-non-reset-a1-6408c7ba4346",
+      "block_id": "PT04|R2",
+      "condition": "C1",
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt04-c1-real-r2-non-reset-a1-6408c7ba4346",
+      "sequence": 7,
+      "task_id": "PT04"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt04-c4-real-r2-non-reset-a1-797795bff9d4",
+      "block_id": "PT04|R2",
+      "condition": "C4",
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt04-c4-real-r2-non-reset-a1-797795bff9d4",
+      "sequence": 8,
+      "task_id": "PT04"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt01-c4-real-r1-non-reset-a1-5b244854b277",
+      "block_id": "PT01|R1",
+      "condition": "C4",
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt01-c4-real-r1-non-reset-a1-5b244854b277",
+      "sequence": 9,
+      "task_id": "PT01"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt01-c1-real-r1-non-reset-a1-7f9c8e36f5b6",
+      "block_id": "PT01|R1",
+      "condition": "C1",
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt01-c1-real-r1-non-reset-a1-7f9c8e36f5b6",
+      "sequence": 10,
+      "task_id": "PT01"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt01-c1-real-r2-non-reset-a1-6b12e654c4cf",
+      "block_id": "PT01|R2",
+      "condition": "C1",
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt01-c1-real-r2-non-reset-a1-6b12e654c4cf",
+      "sequence": 11,
+      "task_id": "PT01"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt01-c4-real-r2-non-reset-a1-535ea5d5fc9f",
+      "block_id": "PT01|R2",
+      "condition": "C4",
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt01-c4-real-r2-non-reset-a1-535ea5d5fc9f",
+      "sequence": 12,
+      "task_id": "PT01"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt07-c1-real-r1-non-reset-a1-c23fe9b5b301",
+      "block_id": "PT07|R1",
+      "condition": "C1",
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt07-c1-real-r1-non-reset-a1-c23fe9b5b301",
+      "sequence": 13,
+      "task_id": "PT07"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt07-c4-real-r1-non-reset-a1-cb62aeaa1f2e",
+      "block_id": "PT07|R1",
+      "condition": "C4",
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt07-c4-real-r1-non-reset-a1-cb62aeaa1f2e",
+      "sequence": 14,
+      "task_id": "PT07"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt01-c4-real-r3-non-reset-a1-a04790b9b324",
+      "block_id": "PT01|R3",
+      "condition": "C4",
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt01-c4-real-r3-non-reset-a1-a04790b9b324",
+      "sequence": 15,
+      "task_id": "PT01"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt01-c1-real-r3-non-reset-a1-9a214fe5d531",
+      "block_id": "PT01|R3",
+      "condition": "C1",
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt01-c1-real-r3-non-reset-a1-9a214fe5d531",
+      "sequence": 16,
+      "task_id": "PT01"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt04-c4-real-r1-non-reset-a1-4f661f6dacea",
+      "block_id": "PT04|R1",
+      "condition": "C4",
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt04-c4-real-r1-non-reset-a1-4f661f6dacea",
+      "sequence": 17,
+      "task_id": "PT04"
+    },
+    {
+      "artifact_dir": "D:\\afci-runs\\lower-model-pilot\\afci-lower-model-pilot-pt04-c1-real-r1-non-reset-a1-746b1a826597",
+      "block_id": "PT04|R1",
+      "condition": "C1",
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "run_id": "afci-lower-model-pilot-pt04-c1-real-r1-non-reset-a1-746b1a826597",
+      "sequence": 18,
+      "task_id": "PT04"
+    }
+  ],
+  "is_result": false,
+  "mode": "real",
+  "model_id": "claude-haiku-4-5-20251001",
+  "non_reset_max_turns": 64,
+  "overlapping_sonnet_run_ids": 0,
+  "record": "afci-bench/v2/afci-lower-model-pilot-execution-plan",
+  "repetitions": [
+    1,
+    2,
+    3
+  ],
+  "reset_states": [
+    "NON_RESET"
+  ],
+  "reuses_any_sonnet_pilot_observation": false,
+  "run_count": 18,
+  "run_id_algorithm_version": 2,
+  "run_id_fields": [
+    "run_purpose",
+    "task_id",
+    "condition",
+    "task_sha256",
+    "substrate_content_hash",
+    "mode",
+    "repetition",
+    "reset_state",
+    "execution_attempt"
+  ],
+  "run_purpose": "AFCI_LOWER_MODEL_PILOT",
+  "runtime_version": "2.1.229",
+  "scientific_plan_path": "docs/v2/AFCI_LOWER_MODEL_PILOT_RUN_PLAN.json",
+  "scientific_plan_sha256": "f045c0d93370f7e6f785274acd7df6b34bb28f52ba60cdcfd49eb6812b86b026",
+  "scientific_projection_sha256": "fc331ee35f5a73380561e36d4f234a74752278d3fd9e94082fa870c464cfc817",
+  "scored": false,
+  "seed": "AFCI_LOWER_MODEL_PILOT_V1_20260917",
+  "sterile_base": "D:\\afci-sterile\\lower-model-pilot",
+  "task_sha256": {
+    "PT01": "6c938822fe19cd6e87942a6ee24ec8f604c0883da1b7f80d45216be35d7c9c39",
+    "PT04": "f349b150b1d8fe5676fed8460b1840b988ee2bb0a78b1966ef82ae9ce9c8a9b5",
+    "PT07": "557caed09420354efbc823c8b72e54b0760ac72847aba0d9c07d99e37ff7d2d7"
+  },
+  "tasks": [
+    "PT01",
+    "PT04",
+    "PT07"
+  ]
+}

@@ -93,7 +93,14 @@ A reset-aware purpose must declare its arm::
         --task PT01 --condition C4 --run-purpose AFCI_EFFICIENCY_PILOT \\
         --reset-state RESET --repetition 1
 
-Neither of those starts a model process.
+...including one that authorises only a single arm, which still has to be named
+rather than inferred::
+
+    python experiments/v2/harness/run_v2.py --dry-run \\
+        --task PT01 --condition C4 --run-purpose AFCI_LOWER_MODEL_PILOT \\
+        --reset-state NON_RESET --repetition 1 --execution-attempt 1
+
+None of those starts a model process.
 """
 from __future__ import annotations
 
@@ -107,6 +114,7 @@ from typing import Callable, Dict, List, Optional, Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import architecture_evaluation as ae  # noqa: E402
 import condition_prompt as cp  # noqa: E402
 import context_audit as ca  # noqa: E402
 import efficiency_metrics as em  # noqa: E402
@@ -274,6 +282,13 @@ class RunRequest:
     functional_evaluation_timeout_seconds: int = (
         fe.FUNCTIONAL_EVALUATION_TIMEOUT_SECONDS
     )
+    #: SL-V2-LOWER-MODEL-01: the ceiling on ONE post-hoc architecture evaluation.
+    #: Separate from the functional one because the two scorers do different
+    #: work — one installs and builds, the other reads — and giving them one
+    #: number would size both by whichever is slower.
+    architecture_evaluation_timeout_seconds: int = (
+        ae.ARCHITECTURE_EVALUATION_TIMEOUT_SECONDS
+    )
     #: SL-V2-EFF-RESTART-01: which execution of the governed schedule this run
     #: belongs to. ``None`` means the purpose declares none, which is every
     #: purpose that existed before the decision and is what keeps their run ids
@@ -369,6 +384,7 @@ def run(request: RunRequest) -> RunResult:
     reset_block: Optional[Dict[str, object]] = None
     efficiency_block: Optional[Dict[str, object]] = None
     functional_evaluation: Optional[Dict[str, object]] = None
+    architecture_evaluation: Optional[Dict[str, object]] = None
     run_identity: Optional[Dict[str, object]] = None
     reset_outcome: Optional[ro.ResetOutcome] = None
     run_started = time.monotonic()
@@ -839,6 +855,18 @@ def run(request: RunRequest) -> RunResult:
             directory=directory,
         )
 
+        # SL-V2-LOWER-MODEL-01. The architecture scorer, on the SAME preserved
+        # worktree and with the same three preconditions — and deliberately as a
+        # second, independent call. Neither channel's outcome is an input to the
+        # other's, in either direction.
+        architecture_evaluation = _architecture_evaluation_block(
+            purpose=purpose,
+            request=request,
+            invocation=invocation,
+            capture=capture,
+            directory=directory,
+        )
+
         if request.scored or request.mode == "real":
             # Re-asserted against what was actually OBSERVED, not against what
             # was requested: the runtime's own reported version and the audit
@@ -906,6 +934,7 @@ def run(request: RunRequest) -> RunResult:
             reset=reset_block,
             efficiency=efficiency_block,
             functional_evaluation=functional_evaluation,
+            architecture_evaluation=architecture_evaluation,
             run_identity=run_identity,
             outcome={
                 "status": "DRY_RUN_COMPLETE" if request.mode == "dry-run" else "COMPLETE",
@@ -952,6 +981,7 @@ def run(request: RunRequest) -> RunResult:
                     reset=reset_block,
                     efficiency=efficiency_block,
                     functional_evaluation=functional_evaluation,
+                    architecture_evaluation=architecture_evaluation,
                     run_identity=run_identity,
                     outcome={
                         "status": (
@@ -1014,6 +1044,12 @@ def _ownership_identity(
 #: efficiency block, no turn ceiling and no permission allowlist.
 RESET_AWARE_PURPOSES: Dict[str, Sequence[str]] = {
     "AFCI_EFFICIENCY_PILOT": rb.RESET_STATES,
+    # SL-V2-LOWER-MODEL-01 declares a reset state and authorises exactly ONE of
+    # them. It is reset-AWARE rather than reset-free because every run must still
+    # say which arm it is — a record that simply omitted the field would be
+    # indistinguishable from a pre-reset-era record — and it is NON_RESET-only
+    # because the pilot isolates model capability as the single moderator.
+    "AFCI_LOWER_MODEL_PILOT": (rb.NON_RESET,),
 }
 
 
@@ -1044,7 +1080,18 @@ def _resolve_reset_state(
             f"{purpose.name} crosses every cell with {list(states)}; a run must "
             "declare which one it is and never defaults to either",
         )
-    return rb.assert_reset_state(request.reset_state)
+    state = rb.assert_reset_state(request.reset_state)
+    if state not in states:
+        # A governed state, but not one THIS purpose authorises. Refused here
+        # rather than three states later at the budget lookup, so the message
+        # names the authority rather than the missing allowance.
+        raise gov.RunnerRefusal(
+            gov.RESET_NOT_AUTHORISED_FOR_PURPOSE,
+            f"{purpose.decision_id} authorises {list(states)} for "
+            f"{purpose.name}; {state!r} is a governed reset state that this "
+            "purpose does not run",
+        )
+    return state
 
 
 #: Blockers a REAL run may still carry into ``PRECHECK``, because the very next
@@ -1321,6 +1368,60 @@ def _functional_evaluation_block(
     return block
 
 
+def _architecture_evaluation_block(
+    *,
+    purpose: gov.RunPurpose,
+    request: RunRequest,
+    invocation: ma.ModelInvocationOutcome,
+    capture: Optional[wt.WorktreeCapture],
+    directory: art.ArtifactDirectory,
+) -> Optional[Dict[str, object]]:
+    """``SL-V2-LOWER-MODEL-01``: run the private architecture scorer, or say why not.
+
+    Called from ``POST_RUN_EVALUATION``, immediately after the functional
+    channel and under the same three preconditions: the model process has
+    finished, the worktree has been captured, and only then is the private
+    scorer handed that immutable copy.
+
+    It is a SECOND, INDEPENDENT call rather than an extra output of the first.
+    The two scorers are different programs answering different questions, and
+    neither one's outcome is allowed to reach the other: a candidate that failed
+    functional acceptance is still scored for architecture, and a candidate that
+    violated the architecture is still scored as functionally valid if it was.
+    The frozen analysis decides which pairs each channel admits; the runner
+    records both, always.
+
+    Returns ``None`` — and writes no block at all — for a purpose no Study-Lead
+    decision put this channel on, so every earlier purpose's record is unchanged.
+    """
+    if not ae.purpose_requires_architecture_evaluation(purpose):
+        return None
+    if not invocation.invoked:
+        block = ae.not_executed(
+            request.task_id,
+            ae.ARCHITECTURE_EVALUATION_NO_WORKTREE,
+            "no model process ran, so no candidate worktree was produced and "
+            "none is scored; nothing is inferred from the absence",
+        )
+    elif capture is None:
+        block = ae.not_executed(
+            request.task_id,
+            ae.ARCHITECTURE_EVALUATION_NO_WORKTREE,
+            "the model process ran but no post-run worktree was captured, so "
+            "there is no preserved candidate to score",
+        )
+    else:
+        block = ae.evaluate_preserved_worktree(
+            request.task_id,
+            Path(capture.capture_root),
+            result_path=directory.path("architecture_evaluation_result.json"),
+            private_root=request.private_root,
+            timeout_seconds=request.architecture_evaluation_timeout_seconds,
+        )
+    directory.write_json("architecture_evaluation.json", block)
+    return block
+
+
 def _build_record(
     *,
     request: RunRequest,
@@ -1341,6 +1442,7 @@ def _build_record(
     reset: Optional[Dict[str, object]] = None,
     efficiency: Optional[Dict[str, object]] = None,
     functional_evaluation: Optional[Dict[str, object]] = None,
+    architecture_evaluation: Optional[Dict[str, object]] = None,
     run_identity: Optional[Dict[str, object]] = None,
 ) -> Dict[str, object]:
     blockers: List[Dict[str, str]] = []
@@ -1430,6 +1532,7 @@ def _build_record(
         reset=reset,
         efficiency=efficiency,
         functional_evaluation=functional_evaluation,
+        architecture_evaluation=architecture_evaluation,
         execution_attempt=request.execution_attempt,
         run_identity=run_identity,
     )
@@ -1560,6 +1663,16 @@ def _build_parser() -> argparse.ArgumentParser:
     return p
 
 
+#: The purposes whose authority freezes a permission allowlist for the governed
+#: CI surface. Enumerated rather than inferred: a purpose acquires an allowlist
+#: because a Study-Lead decision gave it one, never because it resembles a
+#: purpose that has one.
+_PURPOSES_THAT_FREEZE_A_CI_ALLOWLIST: Sequence[str] = (
+    "AFCI_EFFICIENCY_PILOT",
+    "AFCI_LOWER_MODEL_PILOT",
+)
+
+
 def _frozen_allowed_tools(run_purpose: Optional[str], task_id: str) -> Sequence[str]:
     """The permission allowlist a purpose freezes, or nothing at all.
 
@@ -1569,8 +1682,14 @@ def _frozen_allowed_tools(run_purpose: Optional[str], task_id: str) -> Sequence[
     attempts across every executed live run, so a benchmark that told a model to
     validate its work was measuring the refusal. Every other purpose keeps the
     configuration it ran under, which is no allowlist.
+
+    ``AFCI_LOWER_MODEL_PILOT`` reuses that allowlist UNCHANGED, because the fact
+    it was written about is a fact about the runtime rather than about the model,
+    and a lower-model pilot refused the same command would be measuring the same
+    refusal. ``TD-B42`` — what the finding means for the runs executed before the
+    allowlist existed — stays open and is not touched by either purpose.
     """
-    if run_purpose != "AFCI_EFFICIENCY_PILOT":
+    if run_purpose not in _PURPOSES_THAT_FREEZE_A_CI_ALLOWLIST:
         return ()
     try:
         command = gov.visible_ci_command(task_id)
@@ -1587,8 +1706,13 @@ def _frozen_max_turns(
     A ``RESET`` run gets no top-level ceiling: its two phases carry their own,
     and putting phase A's on the outer launch would suggest the whole run had
     32 turns rather than 32 + 32.
+
+    The ceiling is read from the purpose's OWN budget authority rather than from
+    a constant, so a second pilot cannot inherit the first's allowance by
+    resembling it — and a purpose that freezes none gets ``None`` and launches
+    without a ``--max-turns`` at all, exactly as every pre-pilot purpose did.
     """
-    if run_purpose != "AFCI_EFFICIENCY_PILOT" or reset_state is None:
+    if run_purpose not in rb.BUDGET_AUTHORITIES or reset_state is None:
         return None
     if reset_state == rb.RESET:
         return None

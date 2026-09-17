@@ -492,6 +492,25 @@ class RunPurpose:
     produces_architecture_result: bool = True
 
     # ------------------------------------------------------------------ #
+    # ``SL-V2-LOWER-MODEL-01``: the post-run ARCHITECTURE channel.
+    #
+    # Deliberately a SEPARATE pair of fields from the functional ones, and
+    # deliberately independent of :attr:`produces_architecture_result`. The two
+    # answer different questions: that one says whether an architecture result is
+    # OWED of this purpose, and this one says whether a live-worktree
+    # architecture SCORER is authorised to be invoked for it. A purpose can owe
+    # an architecture result through some other route and still name no scorer
+    # here, and ``None`` — the default every earlier purpose keeps — means no
+    # candidate worktree is ever handed to an architecture scorer at all.
+    #
+    # It is never merged with the functional channel. A functional verdict that
+    # could move because of an architecture finding, or the reverse, would make
+    # the two measurements one measurement wearing two names.
+    # ------------------------------------------------------------------ #
+    architecture_evaluation_authority: Optional[str] = None
+    architecture_evaluation_record: Optional[str] = None
+
+    # ------------------------------------------------------------------ #
     # ``SL-V2-EFF-RESTART-01``: the operator-level execution-root isolation
     # requirement, and why it is a PURPOSE field rather than a global one.
     #
@@ -836,6 +855,159 @@ RUN_PURPOSES: Dict[str, RunPurpose] = {
         # ~/.claude on the ancestor chain the pre-execution audit walks, and the
         # audit then marks the environment CONTAMINATED -- correctly.
         requires_isolated_execution_root="SL-V2-EFF-RESTART-01",
+    ),
+    "AFCI_LOWER_MODEL_PILOT": RunPurpose(
+        name="AFCI_LOWER_MODEL_PILOT",
+        decision_id="SL-V2-LOWER-MODEL-01",
+        description=(
+            "the pre-Stage-0, PT01/PT04/PT07-only, C1-and-C4-only, NON_RESET-only, "
+            "NON-CONFIRMATORY lower-capability-model AFCI pilot authorised by "
+            "SL-V2-LOWER-MODEL-01: three repetitions of each task in each "
+            "condition under a lower-capability coding model, to see whether "
+            "explicit architecture guidance becomes more useful when the model "
+            "has less ability to infer the architecture from the repository on "
+            "its own. It measures architecture quality and efficiency as two "
+            "INDEPENDENT channels and combines them into no single score. It is "
+            "not a result, not scored for confirmatory E1, not treatment-effect "
+            "eligible and not power eligible, it estimates no effect, and it is "
+            "NEVER pooled with the claude-sonnet-5 efficiency pilot"
+        ),
+        confirmatory=False,
+        permitted_tasks=("PT01", "PT04", "PT07"),
+        permitted_conditions=("C1", "C4"),
+        firewall=tuple((f, False) for f in FIREWALL_FIELDS),
+        artifact_schema="experiments/v2/harness/run_record.schema.json",
+        result_bearing=False,
+        # THREE repetitions per (task, condition) cell — 18 observations across
+        # 9 paired blocks — frozen before any lower-model observation exists. No
+        # power calculation justifies the count and none is implied.
+        repetitions=3,
+        schema_decision_id="SL-V2-LOWER-MODEL-01",
+        repetition_decision_id="SL-V2-LOWER-MODEL-01",
+        diagnostic_freeze_authority="SL-V2-LOWER-MODEL-01",
+        firewall_record="docs/v2/AFCI_LOWER_MODEL_PILOT_DECISION.md",
+        firewall_heading="### 3.1 The run-purpose firewall table",
+        execution_decisions_record="docs/v2/AFCI_LOWER_MODEL_PILOT_DECISION.md",
+        execution_decisions_heading="### 4.1 The repetition table",
+        repetition_pins=(
+            ("condition", "C1, C4"),
+            ("tasks", "PT01, PT04, PT07"),
+            # ONE arm. The reset factor is deliberately excluded so that MODEL
+            # CAPABILITY is the only moderator this pilot varies; a difference
+            # found while two factors moved would be attributable to either.
+            ("reset_states", "NON_RESET"),
+            ("process_per_repetition", "fresh"),
+            ("session_per_repetition", "fresh"),
+            ("resume_permitted", False),
+            ("continuation_permitted", False),
+            ("session_reuse_permitted", False),
+            ("power_claim", "none"),
+            ("precision_claim", "none"),
+            ("treatment_effect_claim", "none"),
+        ),
+        diagnostic_freeze_record="docs/v2/AFCI_LOWER_MODEL_PILOT_DECISION.md",
+        # SIX tables, one per (task, condition), for the same reason the
+        # efficiency pilot carries six: C1 and C4 differ in the one value a
+        # freeze table exists to pin.
+        diagnostic_freeze_table_headings={
+            "PT01/C1": "### 6.1 Applicability table - PT01 / C1",
+            "PT01/C4": "### 6.2 Applicability table - PT01 / C4",
+            "PT04/C1": "### 6.3 Applicability table - PT04 / C1",
+            "PT04/C4": "### 6.4 Applicability table - PT04 / C4",
+            "PT07/C1": "### 6.5 Applicability table - PT07 / C1",
+            "PT07/C4": "### 6.6 Applicability table - PT07 / C4",
+        },
+        diagnostic_freeze_config_headings={
+            "PT01/C1": "### 7.1 Frozen execution configuration - PT01 / C1",
+            "PT01/C4": "### 7.2 Frozen execution configuration - PT01 / C4",
+            "PT04/C1": "### 7.3 Frozen execution configuration - PT04 / C1",
+            "PT04/C4": "### 7.4 Frozen execution configuration - PT04 / C4",
+            "PT07/C1": "### 7.5 Frozen execution configuration - PT07 / C1",
+            "PT07/C4": "### 7.6 Frozen execution configuration - PT07 / C4",
+        },
+        # Same reasoning as the efficiency pilot's: the static architecture
+        # delivery pin is dropped because the two arms legitimately differ, and
+        # the delivery is then re-derived per condition and compared, which is
+        # the stronger check.
+        diagnostic_freeze_pins=tuple(
+            (k, v)
+            for k, v in DIAGNOSTIC_FREEZE_PINS
+            if k != "diagnostic_freeze_architecture_delivery"
+        ),
+        # Truthful at the time of writing. TD-B42 joins the list because it was
+        # open when this record was written and this record does not close it.
+        diagnostic_freeze_global_pins=(
+            ("global_g1", False),
+            ("global_g1_passed_by_this_record", False),
+            ("suite_frozen", False),
+            ("global_manifest_frozen", False),
+            ("global_td_b32_status", "open"),
+            ("td_b12_g6_status", "open"),
+            ("td_b34_status", "open"),
+            ("td_b01_status", "open"),
+            ("td_b11_status", "open"),
+            ("td_b42_status", "open"),
+            ("priority_b_state", "started; not complete"),
+            ("td_b03_status", "open"),
+        ),
+        # The corpus exemption is NOT inherited from SL-V2-EFF-ELIG-01: that
+        # decision is scoped to that purpose. This purpose carries its own,
+        # adjudicated on its own facts in its own record, and evaluated against
+        # the SAME eight conditions. The one wording that legitimately differs is
+        # the measurement's role: the efficiency pilot produced no architecture
+        # result at all, and this one reports a descriptive, non-confirmatory
+        # architecture endpoint.
+        architecture_corpus_exemption="SL-V2-LOWER-MODEL-01",
+        architecture_corpus_exemption_record=(
+            "docs/v2/AFCI_LOWER_MODEL_PILOT_DECISION.md"
+        ),
+        architecture_corpus_exemption_heading="### 9.1 The eligibility rule table",
+        architecture_corpus_exemption_pins=(
+            ("decision_id", "SL-V2-LOWER-MODEL-01"),
+            ("run_purpose", "AFCI_LOWER_MODEL_PILOT"),
+            ("architecture_corpus_required_for_run_eligibility", False),
+            ("pilot_scoped_conditions_required", 8),
+            (
+                "architecture_measurement_role",
+                "descriptive non-confirmatory quality endpoint",
+            ),
+            ("architecture_corpus_requirement_waived_globally", False),
+            ("architecture_corpus_required_for_confirmatory_use", True),
+            ("private_public_sync_propagation_still_required", True),
+            ("enters_confirmatory_e1_analysis", False),
+            ("enters_treatment_effect_analysis", False),
+            ("enters_power_estimation", False),
+            ("passes_g1", False),
+            ("passes_g2", False),
+            ("closes_td_b32", False),
+            ("closes_td_b34", False),
+            ("closes_td_b39", False),
+            ("changes_e1", False),
+            ("admits_new_candidates", False),
+            ("makes_pilot_tasks_confirmatory", False),
+            ("changes_frozen_pilot_metrics_or_thresholds", False),
+            ("observations_when_recorded", 0),
+        ),
+        # FUNCTIONAL_VALID is adopted UNCHANGED from SL-V2-EFF-FUNC-01 rather
+        # than redefined: a second definition of "did the run work?" would make
+        # the two pilots' functional counts incomparable, which is precisely what
+        # the descriptive cross-model comparison needs them to be.
+        functional_evaluation_authority="SL-V2-EFF-FUNC-01",
+        functional_evaluation_record=(
+            "docs/v2/AFCI_EFFICIENCY_PILOT_FUNCTIONAL_VALIDITY_DECISION.md"
+        ),
+        # THE FIRST purpose that measures live-run architecture quality. The
+        # efficiency pilot was COST-ONLY and set this False; this pilot's whole
+        # quality question is an architecture question, so it owes one.
+        produces_architecture_result=True,
+        architecture_evaluation_authority="SL-V2-LOWER-MODEL-01",
+        architecture_evaluation_record=(
+            "docs/v2/AFCI_LOWER_MODEL_PILOT_DECISION.md"
+        ),
+        # The same operator-level isolation requirement the replacement
+        # efficiency execution carries, and for the same reason: a root under the
+        # operator's profile is audited CONTAMINATED, correctly.
+        requires_isolated_execution_root="SL-V2-LOWER-MODEL-01",
     ),
 }
 

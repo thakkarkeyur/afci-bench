@@ -193,6 +193,72 @@ diagnostic_model_selection:
     confers_no_confirmatory_eligibility: true
     td_b03_status: "open; unchanged by this pin"
 
+  # SL-V2-LOWER-MODEL-01 - the PT01/PT04/PT07 x C1/C4 x NON_RESET lower-
+  # capability-model pilot. It is a NEW purpose with a NEW model, and it is the
+  # first block here whose Q1 readback was performed FOR THIS BLOCK rather than
+  # cited: a model pin may never inherit another model's readback.
+  #
+  # THE MODEL WAS NOT GUESSED. The installed runtime binary was enumerated
+  # read-only first: the only Haiku-family identifiers it carries are
+  # claude-haiku-4-5 / claude-haiku-4-5-20251001 and the legacy 3.x families, so
+  # Haiku 4.5 is the strongest Haiku this runtime can address and nothing newer
+  # could have been missed. One infrastructure-only Q1 probe then requested the
+  # EXACT dated id - never the alias - and the runtime resolved exactly it.
+  #
+  # Q8 is CITED from SL-PT08-05, not re-performed. Invalid-model-id rejection is
+  # a property of the RUNTIME, not of a model, and the runtime, the machine and
+  # the CLI version are the ones it was validated on.
+  #
+  # Like every block above, this confers NO primary selection: TD-B03 stays open
+  # and primary_model stays null. It also confers nothing on the Sonnet
+  # efficiency pilot, whose configuration and outcome are untouched.
+  AFCI_LOWER_MODEL_PILOT:
+    decision_id: "SL-V2-LOWER-MODEL-01"
+    primary_model_family: "Claude Haiku"
+    requested_selector: "claude-haiku-4-5-20251001"   # the exact id, never the alias
+    exact_model_id: "claude-haiku-4-5-20251001"       # what the runtime resolved
+    selector_used_for_repetitions: "claude-haiku-4-5-20251001"
+    model_availability_evidence: "read-only enumeration of the installed 2.1.229 runtime binary; Haiku-family ids present are claude-haiku-4-5 and claude-haiku-4-5-20251001 plus the legacy 3.x families; no Haiku 5 or newer Haiku id exists in this runtime"
+    lower_capability_than_primary_candidate: true
+    lower_capability_basis: "small-tier model of the preceding generation; compared against claude-sonnet-5, which the efficiency pilot ran"
+    q1_readback: "PASS"
+    q1_readback_sources: ["system.init.model", "modelUsage"]
+    q1_unambiguous: true
+    q1_validation_provenance: "SL-V2-LOWER-MODEL-01; performed live for THIS model id, not cited"
+    q1_exit_status: 0
+    q8_invalid_model_id_rejection: "PASS"
+    q8_invalid_model_id: "claude-nonexistent-model-9x7q-not-a-real-id"
+    q8_evidence: "exit status 1; modelUsage empty; no other model reported; assistant turn synthetic"
+    q8_validation_provenance: "SL-PT08-05; cited, not re-performed - invalid-model-id rejection is a runtime property and the runtime is unchanged"
+    sterile_context_validation: "PASS"
+    api_key_used: false
+    authentication: "claude-code-subscription-oauth (apiKeySource=none)"
+    fallback_model: "none; --fallback-model is refused by the launcher"
+    permission_mode: "acceptEdits"
+    tools: ["Read", "Edit", "Write", "Glob", "Grep", "Bash"]
+    # Reused UNCHANGED from SL-V2-EFF-01 section 5. Without it the governed CI
+    # surface is refused in headless mode and the run measures the refusal.
+    allowed_tools: ["Bash(npm run ci:agent)", "Bash(npm run ci:agent:*)"]
+    allowed_tools_rationale: "SL-V2-EFF-01 section 5, reused unchanged; TD-B42 remains open and is not resolved here"
+    allowed_tools_scope: "AFCI_LOWER_MODEL_PILOT ONLY; PT08, PT09/PT10 and AFCI_EFFICIENCY_PILOT configurations are unchanged"
+    repetitions: 3                              # PER (task, condition) cell
+    tasks: ["PT01", "PT04", "PT07"]
+    conditions: ["C1", "C4"]
+    reset_states: ["NON_RESET"]
+    observations_maximum: 18
+    # The Sonnet pilot's NON_RESET allowance, deliberately UNCHANGED. A cheaper
+    # model is not given a smaller ceiling: needing more turns is the phenomenon
+    # under study, and capping it would turn that into a truncation artifact.
+    non_reset_max_turns: 64
+    turn_budget_authority: "SL-V2-LOWER-MODEL-01"
+    validated_claude_code_cli_version: "2.1.229"
+    governed_toolchain_cli_version: "2.1.209"
+    cli_version_discrepancy: "UNRESOLVED - the governed toolchain value predates this machine's installed runtime; no version match is claimed"
+    confers_no_primary_selection: true
+    confers_no_confirmatory_eligibility: true
+    pools_with_sonnet_efficiency_pilot: false
+    td_b03_status: "open; unchanged by this pin"
+
 # Model screening (CRITICAL_DESIGN_DECISIONS D10; TD-B03).
 screening:
   screen_models: ["Sonnet 5", "Opus 4.8"]
@@ -262,17 +328,17 @@ models:
   - model_label: "Haiku 4.5"
     exact_model_id: "claude-haiku-4-5-20251001"
     context_variant_id: null
-    alias_status: "dated exact id (doc-derived)"
+    alias_status: "dated exact id; RUNTIME-VERIFIED - the runtime resolved this exact id when it was requested by name"
     provider: Anthropic
     claude_code_version: "2.1.209"
     agent_sdk_version: "0.3.212"
-    intended_role: "candidate low-cost / secondary generalizability model (not a primary candidate)"
+    intended_role: "candidate low-cost / secondary generalizability model (not a primary candidate); the lower-capability arm of the AFCI_LOWER_MODEL_PILOT"
     model_selection_status: "candidate - not selected as primary (TD-B03; screened incl C1/C3/C4; never selected on AFCI effect; D10)"
     effort_input: "--effort flag (log as input metadata)"
     thinking_control_status: "not pinnable/recordable; not a factor"
     workflow_control_status: "disable via CLAUDE_CODE_DISABLE_WORKFLOWS=1"
-    evidence_classification: "id doc-derived; CLI CLI-verified; SDK env-observed"
-    dry_run_validation_status: "pending - no paid run executed"
+    evidence_classification: "id doc-derived; strongest Haiku id in the installed runtime by read-only binary enumeration; CLI CLI-verified; SDK env-observed; exact id now RUNTIME-VERIFIED by Q1 readback on CLI 2.1.229"
+    dry_run_validation_status: "pending for the confirmatory pilot - Q1 validated live on CLI 2.1.229 for AFCI_LOWER_MODEL_PILOT only (SL-V2-LOWER-MODEL-01), Q8 cited from SL-PT08-05; no benchmark condition executed and no result produced"
 
   - model_label: "Fable 5"
     exact_model_id: "claude-fable-5"

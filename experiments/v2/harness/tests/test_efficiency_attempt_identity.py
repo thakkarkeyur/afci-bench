@@ -606,14 +606,34 @@ def test_an_approved_external_root_is_eligible(tmp_path):
     ) == root.resolve()
 
 
-def test_only_the_pilot_carries_the_isolation_requirement():
+#: Every purpose that carries an execution-root isolation requirement, and the
+#: AUTHORITY that imposed it. A mapping rather than a single name, because a
+#: second pilot has since been authorised — and the mapping is what keeps the
+#: check fail-closed in BOTH directions: a purpose absent from it must carry
+#: none, and a purpose present in it must carry exactly its own authority.
+#:
+#: The purposes that are absent are absent for a reason that has not changed:
+#: PT08, PT09 and PT10 EXECUTED under roots this requirement would now refuse,
+#: and retro-fitting it to them would invalidate artifacts produced correctly
+#: under the rules in force when they ran.
+ISOLATION_REQUIRED_PURPOSES = {
+    "AFCI_EFFICIENCY_PILOT": "SL-V2-EFF-RESTART-01",
+    # SL-V2-LOWER-MODEL-01 imposes it on itself from the start, which is the
+    # cheap case: it has no executed artifacts to invalidate.
+    "AFCI_LOWER_MODEL_PILOT": "SL-V2-LOWER-MODEL-01",
+}
+
+
+def test_only_an_authorised_pilot_carries_the_isolation_requirement():
     assert PILOT.requires_isolated_execution_root == "SL-V2-EFF-RESTART-01"
     for name, purpose in gov.RUN_PURPOSES.items():
-        if name != "AFCI_EFFICIENCY_PILOT":
-            assert purpose.requires_isolated_execution_root is None, (
-                f"{name} executed under roots this requirement would refuse; "
-                "retro-fitting it would invalidate artifacts produced correctly"
-            )
+        expected = ISOLATION_REQUIRED_PURPOSES.get(name)
+        assert purpose.requires_isolated_execution_root == expected, (
+            f"{name} carries isolation authority "
+            f"{purpose.requires_isolated_execution_root!r}, not {expected!r}; a "
+            "purpose that executed under roots this requirement would refuse "
+            "must not acquire it retroactively"
+        )
 
 
 # --------------------------------------------------------------------------- #

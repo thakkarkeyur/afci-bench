@@ -52,6 +52,7 @@ from typing import Dict, List, Optional, Sequence
 #: ``worktree_post_run`` is deliberately ABSENT: it is the captured evidence.
 REBUILDABLE_TEMPORARY_NAMES: Sequence[str] = ("worktree",)
 
+import architecture_evaluation as ae
 import context_audit as ca
 import functional_evaluation as fe
 import reset_budget as rb
@@ -326,6 +327,8 @@ GOVERNED_OBSERVATION_ARTIFACTS: tuple = (
     "prompt_manifest.json",
     "functional_evaluation.json",
     "functional_evaluation_result.json",
+    "architecture_evaluation.json",
+    "architecture_evaluation_result.json",
     "runtime_evidence.jsonl",
     "phase_a_runtime_evidence.jsonl",
     "phase_b_runtime_evidence.jsonl",
@@ -618,6 +621,49 @@ def _validated_functional_evaluation(block: Dict[str, object]) -> Dict[str, obje
     return dict(block)
 
 
+def _validated_architecture_evaluation(block: Dict[str, object]) -> Dict[str, object]:
+    """Re-derive the architecture verdict at record-assembly time, and refuse a lie.
+
+    The architecture counterpart of :func:`_validated_functional_evaluation`, and
+    it exists for the same reason: ``SL-V2-LOWER-MODEL-01`` says the verdict is
+    DERIVED from the opportunity accounting, and that has to be a property of the
+    record rather than a convention of the module that wrote it.
+
+    A block that was never scored is passed through unchanged. That is not a
+    hole: an unscored block carries ``architecture_violation_present: null``, and
+    null is exactly what "nobody measured this" must read as. What is refused is
+    a block that claims a scored measurement its own counts do not support.
+    """
+    if not block.get("architecture_scored"):
+        if block.get("architecture_violation_present") is not None:
+            raise gov.RunnerRefusal(
+                ae.ARCHITECTURE_RESULT_NOT_DERIVABLE,
+                "the architecture evaluation block reports a violation verdict "
+                f"({block.get('architecture_violation_present')!r}) while "
+                "recording that nothing was scored; an unmeasured run has no "
+                "architecture verdict in either direction",
+            )
+        return dict(block)
+
+    missing = [f for f in ae.REQUIRED_COUNTS if block.get(f) is None]
+    if missing:
+        raise gov.RunnerRefusal(
+            ae.ARCHITECTURE_EVALUATOR_MALFORMED_RESULT,
+            f"the architecture evaluation block claims to be scored but omits "
+            f"{missing}; it is assembled from a scorer result, never by hand",
+        )
+    derived = ae.derive_violation_present(block)
+    if bool(block.get("architecture_violation_present")) != derived:
+        raise gov.RunnerRefusal(
+            ae.ARCHITECTURE_RESULT_NOT_DERIVABLE,
+            f"the architecture evaluation block claims "
+            f"architecture_violation_present="
+            f"{block.get('architecture_violation_present')!r} while its own "
+            f"counts derive {derived!r}; the verdict is not a supplied value",
+        )
+    return dict(block)
+
+
 def build_run_record(
     *,
     purpose: gov.RunPurpose,
@@ -654,6 +700,13 @@ def build_run_record(
     #: byte-identical to the one it produced before this field existed, and the
     #: PT08/PT09/PT10 records already on disk stay schema-valid unchanged.
     functional_evaluation: Optional[Dict[str, object]] = None,
+    #: SL-V2-LOWER-MODEL-01. Same contract again, and deliberately a SEPARATE
+    #: field from ``functional_evaluation``: the two channels are different
+    #: measurements of the same candidate and neither is derivable from the
+    #: other. ``None`` is omitted, so every record written by a purpose that
+    #: carries no architecture evaluation — which is every purpose before this
+    #: decision — is byte-identical to the one it produced before this existed.
+    architecture_evaluation: Optional[Dict[str, object]] = None,
     #: SL-V2-EFF-ABORT-01 / SL-V2-EFF-RESTART-01. Same contract again: both are
     #: OMITTED when ``None``, so a record written by a purpose that declares no
     #: execution attempt and no reset-aware identity is byte-identical to the one
@@ -687,6 +740,10 @@ def build_run_record(
     if functional_evaluation is not None:
         extra["functional_evaluation"] = _validated_functional_evaluation(
             functional_evaluation
+        )
+    if architecture_evaluation is not None:
+        extra["architecture_evaluation"] = _validated_architecture_evaluation(
+            architecture_evaluation
         )
 
     return {
