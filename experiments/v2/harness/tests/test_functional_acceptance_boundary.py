@@ -324,16 +324,36 @@ def test_authoring_report_records_the_boundary_and_the_aggregate_novelty_conclus
 #: any *other* private slot appearing publicly is a leak.
 DELIBERATELY_PUBLIC_OPPORTUNITY_IDS = {"PT04-OPP-01"}
 
+#: The shape of a private opportunity/expectation slot identifier.
+#:
+#: The task number is ``\d{2}`` - **every** governed two-digit task id - not an
+#: enumerated range. A guard written as ``PT0[1-9]`` stops at the tasks that
+#: existed when it was written and then silently stops guarding every task
+#: authored after them: it cannot match ``PT10`` or any later two-digit id, so a
+#: leak of one would pass this suite. That is a fail-open, and enumerating the
+#: tasks that exist today only reintroduces it at the next task. The practice
+#: prefix is widened for the same reason - ``PR0[1-2]`` would not see ``PR03``.
+#: The same two-digit form is used by the suite-classification guard.
+PRIVATE_OPPORTUNITY_ID = re.compile(r"\b(?:PT|PR)\d{2}-(?:OPP|EXP)-[A-Z0-9-]+\b")
+
+
+def _synthetic_slot_id(prefix, number, kind="OPP", slot="01"):
+    """Build an identifier of the governed *shape* without writing one literally.
+
+    The regression tests below must exercise the matcher against ``PT09``,
+    ``PT10`` and later forms. Spelling those out as literals would put strings
+    indistinguishable from real private slot identifiers into public test source,
+    which is the very thing this guard exists to prevent - and the scan above
+    exempts only *this* file, not the other public guards that also look for the
+    ``-OPP-``/``-EXP-`` shape. Composing them at run time keeps the public source
+    free of any such literal while still proving the pattern matches one.
+    """
+    return f"{prefix}{number:02d}-{kind}-{slot}"
+
 
 def test_public_record_discloses_no_private_opportunity_identifier():
-    """PART I: the aggregate conclusion is published; the private slots are not.
-
-    The task range is ``PT0[1-9]``, not ``PT0[1-7]``: a guard that stops at the
-    tasks that existed when it was written silently stops guarding every task
-    authored after it. PT08's opportunity identifier is private exactly like every
-    other, and admitting its opportunity to the active register did not publish it.
-    """
-    private_id = re.compile(r"\b(?:PT0[1-9]|PR0[1-2])-(?:OPP|EXP)-[A-Z0-9-]+\b")
+    """PART I: the aggregate conclusion is published; the private slots are not."""
+    private_id = PRIVATE_OPPORTUNITY_ID
     offenders = []
     for path in _iter_repo_files():
         if path.suffix not in {".md", ".csv", ".yml", ".yaml", ".json", ".py"}:
@@ -344,6 +364,91 @@ def test_public_record_discloses_no_private_opportunity_identifier():
         if hits:
             offenders.append((path.relative_to(REPO).as_posix(), sorted(hits)))
     assert not offenders, f"private opportunity identifiers published: {offenders}"
+
+
+def test_the_leakage_matcher_detects_the_tasks_that_exist_today():
+    """PT09 and PT10 slots are private exactly like PT01's, and must be detected.
+
+    PT09 is the last id an enumerated ``PT0[1-9]`` guard could see; PT10 is the
+    first it could not. Asserting both pins the exact boundary the defect sat on.
+    """
+    for number in (1, 4, 8, 9, 10):
+        for kind in ("OPP", "EXP"):
+            candidate = _synthetic_slot_id("PT", number, kind)
+            assert PRIVATE_OPPORTUNITY_ID.search(candidate), (
+                f"the leakage guard cannot see a {kind} slot of task {number:02d}; "
+                "a two-digit task identifier must not escape it"
+            )
+
+
+def test_the_leakage_matcher_detects_two_digit_tasks_not_yet_authored():
+    """The guard must cover tasks authored after it, not just the current set.
+
+    This is the regression proper: an enumerated range passes the suite the day
+    it is written and fails silently forever after. These numbers correspond to
+    no authored task, so nothing here can be a real identifier.
+    """
+    for number in (11, 12, 27, 99):
+        for prefix in ("PT", "PR"):
+            candidate = _synthetic_slot_id(prefix, number)
+            assert PRIVATE_OPPORTUNITY_ID.search(candidate), (
+                f"the leakage guard would not detect a leaked {prefix}{number:02d} "
+                "slot identifier, so a task authored later would be unguarded"
+            )
+
+
+def test_the_leakage_matcher_covers_the_practice_prefix_beyond_the_authored_two():
+    """``PR0[1-2]`` had the same fail-open: PR03 onwards would have escaped."""
+    for number in (1, 2, 3, 10):
+        candidate = _synthetic_slot_id("PR", number)
+        assert PRIVATE_OPPORTUNITY_ID.search(candidate), (
+            f"practice task {number:02d} slot identifiers must be guarded too"
+        )
+
+
+def test_a_two_digit_identifier_is_not_silently_exempted():
+    """Detection is worthless if the offender is then subtracted as 'deliberate'.
+
+    Only the one identifier ``TD-B29`` publishes may be exempt; a later task's
+    slot must never be swept into that allowlist.
+    """
+    for number in (9, 10, 11):
+        candidate = _synthetic_slot_id("PT", number)
+        assert candidate not in DELIBERATELY_PUBLIC_OPPORTUNITY_IDS, (
+            f"{candidate} would be detected and then discarded by the allowlist"
+        )
+    assert DELIBERATELY_PUBLIC_OPPORTUNITY_IDS == {"PT04-OPP-01"}, (
+        "exactly one opportunity identifier is deliberately public"
+    )
+
+
+def test_safe_aggregate_public_wording_is_still_allowed():
+    """The aggregate conclusion is publishable; only the slot identifiers are not.
+
+    A guard widened until it flags the counts, the task ids and the register
+    prose would force those off the public record, which the protocol requires to
+    be published. Widening the task number must not widen anything else.
+    """
+    permitted = [
+        "active e1 opportunities: 6",
+        "6 active e1 opportunities over 3 decision clusters",
+        "active `e1` opportunities remain 5",
+        "PT09 and PT10 are qualification candidates",
+        "PT10 is recorded as scored in TASK_INDEX.csv",
+        "PT11",
+        "the opportunity identifier is recorded as an identifier only",
+        "its content, justification and disposition stay in the private "
+        "evaluator repository",
+        "AR-DEP-005",
+        # A different middle segment is a different kind of identifier: only the
+        # opportunity and expectation slots are private to this guard.
+        _synthetic_slot_id("PT", 10, "AC"),
+    ]
+    for phrase in permitted:
+        assert not PRIVATE_OPPORTUNITY_ID.search(phrase), (
+            f"safe aggregate wording must stay publishable, but {phrase!r} was "
+            "flagged as a private opportunity identifier"
+        )
 
 
 def test_the_one_published_opportunity_identifier_is_still_only_an_identifier():
