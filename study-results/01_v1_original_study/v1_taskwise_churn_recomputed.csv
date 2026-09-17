@@ -1,0 +1,13 @@
+task,baseline_code_churn,afci_code_churn,afci_over_baseline_ratio,higher_churn,baseline_test_churn,afci_test_churn,baseline_delta_loc_code,afci_delta_loc_code,baseline_reset_delta_loc_code,afci_reset_delta_loc_code,baseline_ci_pass,afci_ci_pass,baseline_reset_ci_pass,afci_reset_ci_pass
+T01,321,346,1.0779,AFCI,53,77,165,156,152,176,True,True,True,True
+T02,437,517,1.1831,AFCI,105,138,279,325,155,161,True,True,True,True
+T03,497,569,1.1449,AFCI,105,138,271,279,-70,-67,True,True,True,True
+T04,512,743,1.4512,AFCI,107,142,284,451,4,3,True,True,True,True
+T05,518,805,1.5541,AFCI,128,184,286,507,-3,-3,True,True,True,True
+T06,534,875,1.6386,AFCI,145,217,302,575,8,23,True,True,True,True
+T07,542,938,1.7306,AFCI,173,268,278,606,11,7,True,True,True,True
+T08,549,994,1.8106,AFCI,173,268,271,656,-11,-11,True,True,True,True
+T09,678,1235,1.8215,AFCI,222,338,400,897,212,232,True,True,True,True
+T10,713,1327,1.8612,AFCI,257,350,433,985,50,-19,True,True,True,True
+T11,804,1523,1.8943,AFCI,285,386,524,1181,240,217,True,True,True,True
+T12,814,1593,1.957,AFCI,319,422,532,1247,293,336,True,True,True,True

@@ -1,0 +1,15 @@
+rule_branch,clause,detail,satisfied
+11.0 GATE,11.0 at least 12 of the 18 blocks are paired functionally valid,16 of 18 blocks are eligible; 12 are required,true
+11.1 STRONG GO,11.1.2 functional guardrail,"C1 functional-valid 17/18, C4 17/18; C4 may be at most 1 lower",true
+11.1 STRONG GO,11.1.3 overall median TOKEN_RATIO <= 0.90,median TOKEN_RATIO = 1.4014156759323886,false
+11.1 STRONG GO,11.1.4 C4 uses fewer tokens in >= 60% of eligible pairs,C4 cheaper in 4 of 16 pairs,false
+11.1 STRONG GO,11.1.5 >= 2 of 3 tasks have a task-median TOKEN_RATIO < 1,tasks improving: ['PT04'],false
+11.0 GATE,11.0 at least 12 of the 18 blocks are paired functionally valid,16 of 18 blocks are eligible; 12 are required,true
+11.2 QUALIFIED GO,11.2.2 functional guardrail,"C1 functional-valid 17/18, C4 17/18; C4 may be at most 1 lower",true
+11.2 QUALIFIED GO,11.2.3 overall median TOKEN_RATIO <= 1.10,median TOKEN_RATIO = 1.4014156759323886,false
+11.2 QUALIFIED GO,11.2.4 at least one secondary endpoint meets its ceiling,qualifying endpoints: [],false
+11.2 QUALIFIED GO,11.2.5 a qualifying endpoint improves directionally in >= 2 of 3 tasks,directionally qualifying endpoints: [],false
+11.3 RESET-SPECIFIC GO,11.3.1 functional guardrail,"C1 functional-valid 17/18, C4 17/18; C4 may be at most 1 lower",true
+11.3 RESET-SPECIFIC GO,11.3.2 overall TOKEN_RATIO <= 1.10,median TOKEN_RATIO = 1.4014156759323886,false
+11.3 RESET-SPECIFIC GO,11.3.3 C4 has lower token reset-overhead in >= 2 of 3 tasks,"tasks: ['PT01', 'PT07']",true
+11.3 RESET-SPECIFIC GO,11.3.4 C4 has lower MODEL_WALL_SECONDS or EXPLORATION_CALLS reset overhead in >= 2 of 3 tasks,"MODEL_WALL_SECONDS: ['PT01', 'PT04', 'PT07']; EXPLORATION_CALLS: ['PT01', 'PT07']",true

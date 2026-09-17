@@ -1,0 +1,5 @@
+condition,n,mean_code_churn,median_code_churn,mean_test_churn,median_test_churn,mean_files_changed,mean_total_loc_churn,pct_ci_pass
+baseline,12,576.58,538.0,172.67,159.0,9.25,749.25,100.0
+afci,12,955.42,906.5,244.0,242.5,13.58,1199.42,100.0
+baseline_reset,12,268.92,257.0,104.92,49.5,5.83,373.83,100.0
+afci_reset,12,286.25,308.0,97.0,71.5,5.83,383.25,100.0

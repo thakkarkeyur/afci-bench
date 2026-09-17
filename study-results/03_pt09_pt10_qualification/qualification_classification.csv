@@ -1,0 +1,3 @@
+task,functional_valid_runs,runs,target_violation_runs,classification,consequence,rule_source
+PT09,3,3,0,FAIL / ARCHITECTURE FLOOR,STOP / REASSESS,SL-V2-QUAL-01 section 7 (frozen before any observation)
+PT10,3,3,1,REVISE / WEAK PRESSURE,STOP / REASSESS,SL-V2-QUAL-01 section 7 (frozen before any observation)

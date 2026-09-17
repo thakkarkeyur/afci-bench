@@ -1,0 +1,5 @@
+metric,baseline,afci,relative_change,per_task_direction
+NON_RESET code churn mean,576.58,955.42,+65.7%,AFCI higher in 12/12 tasks
+NON_RESET test churn mean,172.67,244.00,+41.3%,AFCI higher in 12/12 tasks
+RESET true drift (delta CodeLOC) mean,307.7,670.5,+117.9%,AFCI LOWER drift in 1/12 tasks
+CI pass rate,100.0%,100.0%,0.0pp,"48/48 runs ci_pass=True; saturated, so it does not discriminate"

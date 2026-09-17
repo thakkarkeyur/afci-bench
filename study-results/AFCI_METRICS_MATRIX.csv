@@ -1,0 +1,18 @@
+metric,V1 Original,PT08 Diagnostic,PT09 Qualification,PT10 Qualification,Efficiency Attempt 1,Efficiency Attempt 2
+functional correctness,NOT CAPTURED (no acceptance oracle; ci_pass saturated 100% and does not discriminate),3/3 functional (15/15 acceptance cases each),3/3 functional-valid (14/14 acceptance cases each),3/3 functional-valid (8/8 acceptance cases each),EXCLUDED (attempt aborted wholesale),"C1 17/18, C4 17/18 functional-valid"
+architecture violations,INVALID FOR INFERENCE (AFCI-Guard reported all zeros but its regexes never fire - L3),0 of 1 applicable opportunity per run; 0/3 runs (architecture FLOOR),0 of 3 functional-valid runs violated the target (FAIL / ARCHITECTURE FLOOR),1 of 3 functional-valid runs violated the target (REVISE / WEAK PRESSURE),EXCLUDED (attempt aborted wholesale),NOT PRODUCED - AFCI_EFFICIENCY_PILOT is cost-only by frozen governance
+code churn,AVAILABLE: baseline mean 576.58 -> AFCI 955.42 (+65.7%); AFCI higher in 12/12,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),NOT CAPTURED
+test churn,AVAILABLE: baseline mean 172.67 -> AFCI 244.00 (+41.3%),NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),NOT CAPTURED
+CI success,"AVAILABLE: 100% (48/48) - saturated, does not discriminate",NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),AVAILABLE as a tool-call count: CI_COMMAND_RUNS median ratio 1.0000 (C4 lower in 1/16)
+input tokens,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),AVAILABLE: median C4/C1 = 1.4014 (n=16); C4 lower in 4/16
+output tokens,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),"PARTIAL: median C4/C1 = 1.4671, NON_RESET only (n=9); withheld for RESET"
+wall time,NOT CAPTURED,"PARTIAL: process wall clock only, from invocation.detail","PARTIAL: process wall clock only, from invocation.detail","PARTIAL: process wall clock only, from invocation.detail",EXCLUDED (attempt aborted wholesale),AVAILABLE: MODEL_WALL_SECONDS median C4/C1 = 1.2660 (n=16)
+provider cost,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),PARTIAL: NON_RESET median C4/C1 = 1.4928 (n=9); RESET cost UNAVAILABLE
+tool calls,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),AVAILABLE: TOTAL_TOOL_CALLS median C4/C1 = 1.1864 (n=16)
+exploration calls,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),AVAILABLE: median C4/C1 = 1.3939 (n=16)
+unique files read,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),AVAILABLE: median C4/C1 = 1.2111 (n=16)
+edit/write effort,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),AVAILABLE: EDIT_AND_WRITE_CALLS median C4/C1 = 1.9167 (n=16); C4 lower in 0/16
+re-edits,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),AVAILABLE per run (FILES_REEDITED); no frozen paired endpoint defined
+reset recovery,"AVAILABLE (different construct): true reset drift delta CodeLOC, baseline mean 307.7 vs AFCI 670.5; AFCI lower in 1/12",NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),AVAILABLE: C4 token reset-overhead lower in 2/3 tasks; wall-time lower in 3/3
+LOC changed,AVAILABLE: delta_loc_code / delta_loc_test per run,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),NOT CAPTURED by this cost-only purpose
+test command runs,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,NOT CAPTURED,EXCLUDED (attempt aborted wholesale),NOT CAPTURED: 0 paired observations (no agent-initiated test command matched)
