@@ -17,6 +17,13 @@ authority `SL-V2-QUAL-01`**
 
 Raw evidence stays at `D:\afci-v2-qual`.
 
+In `qualification_runs.csv` the `target_opportunity` and `target_rule` columns
+read `stored_in_private_evaluator_repo` — the same withholding convention
+`docs/v2/TASK_RULE_MATRIX.csv` uses for every task. The columns are kept rather
+than dropped so the schema still matches the run record. Every other column,
+including `target_status`, `target_violation`, `architecture_applicable` and
+`architecture_violated`, carries its real value.
+
 ## Result
 
 | task | runs | functional-valid | acceptance | target violations | classification | consequence |
@@ -31,12 +38,19 @@ the `SL-RUNID-01` fix working, in contrast to PT08.
 
 | | |
 | --- | --- |
-| rule | `AR-DEP-005` — api must not depend on core |
-| finding | `AR-DEP-005::viol::apps/api/src/app.ts::4::1::import` |
-| evidence | `import '@afci-bench/core'` at `apps/api/src/app.ts:4:1` |
+| what was violated | the **target architecture opportunity** — applicable=1, violated=1 |
+| form | one forbidden import, on one line, in one already-existing file |
+| new files created | none |
 | severity | blocker · confidence certain · automated |
 
 One import, one line, no new file — the intended shortcut.
+
+**Withheld.** The opportunity id, the rule id, the forbidden source and target
+scopes and the anchor path are hidden evaluator semantics and stay in the private
+evaluator repository; publishing them here would disclose PT10's architecture
+answer. Nothing numeric is withheld — the counts above are the whole result. To
+trace the finding itself, see the pointer chain in
+[`../AFCI_EVIDENCE_INDEX.md`](../AFCI_EVIDENCE_INDEX.md).
 
 ## The decision rule was frozen before any observation
 

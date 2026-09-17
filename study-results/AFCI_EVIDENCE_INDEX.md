@@ -168,10 +168,26 @@ the `SL-RUNID-01` fix working.
 manifests remain `status=review` and unmodified.
 
 **Trace the one violation.** "PT10 1/3" → `qualification_classification.csv` →
-`D:\afci-v2-qual\score\pt10-r3.json` → `architecture.target_findings[0]`:
-`AR-DEP-005::viol::apps/api/src/app.ts::4::1::import`, evidence
-`import '@afci-bench/core'` at `apps/api/src/app.ts:4:1` → the captured worktree
-under `…pt10-c1-real-r3-8f809ab6ee92\worktree_post_run\`.
+`qualification_runs.csv` (row `PT10,3`, `target_status=VIOLATION`,
+`architecture_applicable=1`, `architecture_violated=1`) → run
+`instrument-qualification-diagnostic-pt10-c1-real-r3-8f809ab6ee92`,
+`task_sha256=1b1fe298…` → `D:\afci-v2-qual\score\pt10-r3.json` →
+`architecture.target_findings[0]` → the captured worktree under
+`…pt10-c1-real-r3-8f809ab6ee92\worktree_post_run\`.
+
+The chain stops at the field, not its value. `target_findings[0]` resolves to a
+finding id carrying the rule id and the anchor path — hidden evaluator semantics,
+and PT10's architecture answer. Reading it requires the private evaluator
+repository and the raw evidence root above, both outside this repository.
+
+**Why no digest is published in its place.** A hash of the withheld identifier
+would not be a redaction: the public rule catalog
+(`docs/v2/ARCHITECTURE_RULE_CATALOG.yml`) and the public corpus together bound the
+preimage space to a few thousand candidates, so any such digest is recoverable by
+enumeration. Traceability instead runs through values that are already public and
+already high-entropy — the run id, the `task_sha256`, and the evaluator manifest
+digests recorded above. Those identify the evidence uniquely without disclosing
+what it says.
 
 ---
 

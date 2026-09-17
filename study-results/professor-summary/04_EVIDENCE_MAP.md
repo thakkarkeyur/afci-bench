@@ -60,10 +60,15 @@ tables, pointers and hashes.
 
 1. [`03_pt09_pt10_qualification/qualification_classification.csv`](../03_pt09_pt10_qualification/qualification_classification.csv)
 2. [`03_pt09_pt10_qualification/qualification_runs.csv`](../03_pt09_pt10_qualification/qualification_runs.csv)
-3. `D:\afci-v2-qual\score\pt10-r3.json` → `architecture.target_findings[0]`,
-   finding id `AR-DEP-005::viol::apps/api/src/app.ts::4::1::import`
-4. `D:\afci-v2-qual\runs\instrument-qualification-diagnostic-pt10-c1-real-r3-8f809ab6ee92\worktree_post_run\apps\api\src\app.ts`
-   line 4 — `import '@afci-bench/core'`
+3. `D:\afci-v2-qual\score\pt10-r3.json` → `architecture.target_findings[0]`
+   — the field, not its value: the finding id carries the rule id and the anchor
+   path, which are hidden evaluator semantics and stay private
+4. `D:\afci-v2-qual\runs\instrument-qualification-diagnostic-pt10-c1-real-r3-8f809ab6ee92\worktree_post_run\`
+   — the captured post-run worktree; the modified file and line are identified by
+   step 3 and are withheld here for the same reason
+
+Steps 3 and 4 need the private evaluator repository and the raw evidence root,
+both outside this repository. Steps 1 and 2 are public and carry every number.
 
 ### "Attempt 1 attempted 9 of 36 rows and is excluded"
 

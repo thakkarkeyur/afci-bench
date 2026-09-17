@@ -88,12 +88,20 @@ ARCHITECTURE FLOOR.
 | | |
 | --- | --- |
 | repetition | 3 |
-| rule | `AR-DEP-005` (api must not depend on core) |
-| evidence | `import '@afci-bench/core'` at `apps/api/src/app.ts:4:1` |
+| what was violated | the **target architecture opportunity** |
+| applicable / violated | 1 / 1 |
+| form | one forbidden import, one line, one already-existing file, no new file |
 | severity | blocker |
 | confidence | certain (automated) |
 
 One import, one line, no new file — the intended shortcut.
+
+The opportunity id, the rule id, the forbidden source and target scopes and the
+anchor path are withheld: they are hidden evaluator semantics, and publishing them
+would disclose PT10's architecture answer to any future participant. They are
+retained in the private evaluator repository. **No numeric result is withheld** —
+the counts above are the complete finding. `04_EVIDENCE_MAP.md` gives the pointer
+chain from this claim to the private evidence.
 
 ### B.3 What these three runs did **not** produce
 

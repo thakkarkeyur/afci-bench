@@ -161,8 +161,12 @@ The classification rule was **frozen before the first observation**
 | PT09 | 3/3 | **0/3** | FAIL / ARCHITECTURE FLOOR | STOP / REASSESS |
 | PT10 | 3/3 | **1/3** | REVISE / WEAK PRESSURE | STOP / REASSESS |
 
-PT10's single violation (repetition 3) was rule `AR-DEP-005`, an
-`import '@afci-bench/core'` at `apps/api/src/app.ts:4` — one import, one line.
+PT10's single violation (repetition 3) was a violation of its **target
+architecture opportunity** (applicable=1, violated=1): one forbidden import, on
+one line, in one already-existing file — severity blocker, confidence certain,
+automated. The opportunity id, the rule id, the forbidden source and target
+scopes and the anchor path are hidden evaluator semantics and are withheld; they
+stay in the private evaluator repository. No numeric result is withheld.
 
 A fourth PT09 attempt exists and is **not** an observation: the harness could not
 encode the task body to the child process stdin (`UnicodeEncodeError`, cp1252,
