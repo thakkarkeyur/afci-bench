@@ -81,7 +81,8 @@ No private evaluator identifier appears anywhere in this package.
 | what | value |
 | --- | --- |
 | public repo branch | `study-v2` |
-| public repo HEAD at compile time | `0dc81a0b3d6d0b3f8638aaabba9d4aa60ad79fce` |
+| evidence commit (last change to study-results/ outside this package) | `0dc81a0b3d6d0b3f8638aaabba9d4aa60ad79fce` |
+| that commit's subject | docs(v2): add lower-model AFCI pilot results |
 | public repo origin | https://github.com/thakkarkeyur/afci-bench.git |
 | public repo `main` (v1 base, tag `paper-v0`) | `2adc8741acad7ea5423f0bf3d9ad821ff023a35f` |
 | private evaluator repo HEAD (read-only, unchanged) | `8ad5e3738a50804aa81bbf99928acf7e54372b51` |

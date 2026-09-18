@@ -15,6 +15,7 @@ Two rules are enforced throughout:
 Run with:  python study-results/professor-delivery/_build/build_professor_delivery.py
 """
 import csv
+import datetime
 import json
 import statistics
 import subprocess
@@ -599,7 +600,15 @@ def git(*args, cwd=REPO):
         return "(unavailable)"
 
 
-GIT = {"branch": git("rev-parse", "--abbrev-ref", "HEAD"), "head": git("rev-parse", "HEAD"),
+#: The commit pinned in this package is the EVIDENCE commit - the last one to
+#: touch study-results/ outside professor-delivery/ - not the repository HEAD.
+#: Pinning HEAD would be self-referential: committing this package changes HEAD,
+#: which changes the package, which needs another commit.
+GIT = {"branch": git("rev-parse", "--abbrev-ref", "HEAD"),
+       "evidence_commit": git("log", "-1", "--format=%H", "--",
+                              "study-results/", ":(exclude)study-results/professor-delivery"),
+       "evidence_subject": git("log", "-1", "--format=%s", "--",
+                               "study-results/", ":(exclude)study-results/professor-delivery"),
        "origin": git("config", "--get", "remote.origin.url")}
 
 AUDIT_MISMATCHES = [a for a in AUDIT if a["status"] != "MATCH"]
@@ -884,6 +893,15 @@ r = table(ws, r, ["experiment_id", "experiment_name", "study_version", "model", 
           widths=[26, 42, 12, 26, 30, 10, 14, 18, 11, 12, 13, 15, 26, 13, 32, 46, 48, 80],
           autofilter=True)
 r = note(ws, r, "OPEN_SOURCE_COMPLEXITY_STUDY is a placeholder. No runs exist and no result is pre-populated.", AMBER)
+r = note(ws, r, "planned / attempted / completed_runs on this sheet are the experiment registry's own counts. "
+                "V2_EFF_ATTEMPT1's 'completed_runs = 7' is the registry counting its 7 surviving rows; those rows carry "
+                "run_status = INTACT_GOVERNED_OBSERVATION, not COMPLETE, so a status-based recount of the same rows gives "
+                "0. Both readings are correct at their own definition and neither is reconciled away. See sheet 20.")
+r = note(ws, r, "Recounted from the run rows, the two analysed pilots agree with the registry exactly: Attempt 2 "
+                f"{PE['V2_EFF_ATTEMPT2']['completed']} complete / {PE['V2_EFF_ATTEMPT2']['functional_valid']} "
+                f"functionally valid / {sum(1 for b in A2_BLOCKS if b['eligible'])} paired blocks, and the lower-model "
+                f"pilot {PE['V2_LOWER_MODEL_PILOT']['completed']} / {PE['V2_LOWER_MODEL_PILOT']['functional_valid']} / "
+                f"{sum(1 for b in LM_BLOCKS if b['eligible'])}.")
 freeze(ws, "B5")
 
 # --------------------------------------------------------------------------- 03
@@ -1761,7 +1779,8 @@ r = table(ws, r, ["summary result", "analysis artifact", "run record", "raw arti
 r = section(ws, r, "REPOSITORY AND GOVERNANCE ANCHORS")
 r = table(ws, r, ["what", "value"], [
     ["public repo branch", GIT["branch"]],
-    ["public repo HEAD at compile time", GIT["head"]],
+    ["evidence commit (last change to study-results/ outside this package)", GIT["evidence_commit"]],
+    ["  that commit's subject", GIT["evidence_subject"]],
     ["public repo origin", GIT["origin"]],
     ["public repo main (v1 base, tag paper-v0)", "2adc8741acad7ea5423f0bf3d9ad821ff023a35f"],
     ["private evaluator repo HEAD (read-only, unchanged)", "8ad5e3738a50804aa81bbf99928acf7e54372b51"],
@@ -1916,7 +1935,56 @@ for name in wb.sheetnames:
 
 OUT.mkdir(parents=True, exist_ok=True)
 XLSX = OUT / "AFCI_Professor_Results.xlsx"
+
+# Fixed document properties. openpyxl stamps the current clock into
+# docProps/core.xml, which would make every rebuild of an unchanged workbook
+# produce different bytes.
+_stamp = datetime.datetime(int(COMPILED[:4]), int(COMPILED[5:7]), int(COMPILED[8:10]))
+wb.properties.creator = "AFCI-Bench study-results"
+wb.properties.lastModifiedBy = "AFCI-Bench study-results"
+wb.properties.title = "AFCI-Bench - professor results delivery"
+wb.properties.description = (
+    f"All AFCI experiments to date. Compiled {COMPILED} from study-results/. "
+    "Reporting only; no benchmark observation was executed.")
+wb.properties.created = _stamp
+wb.properties.modified = _stamp
 wb.save(XLSX)
+
+
+def normalize_xlsx(path):
+    """Rewrite the .xlsx zip with fixed member timestamps.
+
+    An .xlsx is a zip, and a zip records a modification time per member. Without
+    this, rebuilding an unchanged workbook produces different bytes, so a reader
+    who regenerates the package to check it sees a 100 KB binary diff that means
+    nothing. Content, order and compression are untouched."""
+    import io
+    import re as _re
+    import zipfile
+    stamp = f"{COMPILED}T00:00:00Z".encode()
+    src = path.read_bytes()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(src)) as zin, zipfile.ZipFile(buf, "w") as zout:
+        for info in zin.infolist():
+            data = zin.read(info.filename)
+            if info.filename == "docProps/core.xml":
+                # openpyxl rewrites dcterms:modified with the wall clock at save
+                # time whatever wb.properties says, so pin both timestamps here.
+                # \g<1> rather than \1: the replacement is immediately followed by
+                # a digit, and \1 + "2..." parses as backreference 12.
+                for tag in (b"created", b"modified"):
+                    data = _re.sub(rb"(<dcterms:" + tag + rb"[^>]*>)[^<]*(</dcterms:" + tag + rb">)",
+                                   rb"\g<1>" + stamp + rb"\g<2>", data)
+            fixed = zipfile.ZipInfo(info.filename, date_time=(1980, 1, 1, 0, 0, 0))
+            fixed.compress_type = info.compress_type
+            fixed.external_attr = info.external_attr
+            fixed.internal_attr = info.internal_attr
+            fixed.create_system = 0
+            zout.writestr(fixed, data)
+    path.write_bytes(buf.getvalue())
+
+
+normalize_xlsx(XLSX)
 WRITTEN = [XLSX]
 print(f"wrote {XLSX}")
 
@@ -1973,7 +2041,9 @@ def ratio_line(label, src, metric):
 
 SUMMARY = f"""# AFCI-Bench - results delivery
 
-**Compiled {COMPILED}** from `study-results/` on branch `{GIT['branch']}` at `{GIT['head'][:12]}`.
+**Compiled {COMPILED}** from `study-results/` on branch `{GIT['branch']}`, pinned to evidence
+commit `{GIT['evidence_commit'][:12]}` (*{GIT['evidence_subject']}*) - the last change to the
+evidence this package reports.
 
 Reporting and export only. No benchmark observation was executed to produce this
 package, no model was invoked, and no task definition, architecture document,
@@ -2587,7 +2657,8 @@ for e in EV:
               f"- **status** - {e[5]}", ""]
 EV_MD += ["---", "", "## Repository and governance anchors", "", "| what | value |", "| --- | --- |"]
 EV_MD += [f"| public repo branch | `{GIT['branch']}` |",
-          f"| public repo HEAD at compile time | `{GIT['head']}` |",
+          f"| evidence commit (last change to study-results/ outside this package) | `{GIT['evidence_commit']}` |",
+          f"| that commit's subject | {GIT['evidence_subject']} |",
           f"| public repo origin | {GIT['origin']} |",
           "| public repo `main` (v1 base, tag `paper-v0`) | `2adc8741acad7ea5423f0bf3d9ad821ff023a35f` |",
           "| private evaluator repo HEAD (read-only, unchanged) | `8ad5e3738a50804aa81bbf99928acf7e54372b51` |",
@@ -2641,7 +2712,9 @@ print(f"wrote {EV_PATH}")
 
 README = f"""# AFCI-Bench - professor results delivery package
 
-**Compiled {COMPILED}** from `study-results/` on branch `{GIT['branch']}` at `{GIT['head'][:12]}`.
+**Compiled {COMPILED}** from `study-results/` on branch `{GIT['branch']}`, pinned to evidence
+commit `{GIT['evidence_commit'][:12]}` (*{GIT['evidence_subject']}*) - the last change to the
+evidence this package reports.
 
 This package is safe to send outside the private evaluator repository. It carries
 no private opportunity identifier, rule identifier, evaluator path, hidden
@@ -2867,9 +2940,12 @@ def build_pdf(md_text, path, doc_title):
         canvas.drawRightString(A4[0] - 16 * mm, 10 * mm, f"page {canvas.getPageNumber()}")
         canvas.restoreState()
 
+    # invariant=1 fixes the embedded creation date and document id, so rebuilding
+    # an unchanged report produces a byte-identical PDF instead of a spurious diff.
     SimpleDocTemplate(str(path), pagesize=A4, leftMargin=16 * mm, rightMargin=16 * mm,
                       topMargin=15 * mm, bottomMargin=16 * mm, title=doc_title,
-                      author="AFCI-Bench").build(flow, onFirstPage=footer, onLaterPages=footer)
+                      author="AFCI-Bench", invariant=1).build(flow, onFirstPage=footer,
+                                                              onLaterPages=footer)
 
 
 PDF_PATH = OUT / "AFCI_Professor_Results_Summary.pdf"

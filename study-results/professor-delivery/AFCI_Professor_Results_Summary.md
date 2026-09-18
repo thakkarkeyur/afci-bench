@@ -1,6 +1,8 @@
 # AFCI-Bench - results delivery
 
-**Compiled 2026-09-18** from `study-results/` on branch `study-v2` at `0dc81a0b3d6d`.
+**Compiled 2026-09-18** from `study-results/` on branch `study-v2`, pinned to evidence
+commit `0dc81a0b3d6d` (*docs(v2): add lower-model AFCI pilot results*) - the last change to the
+evidence this package reports.
 
 Reporting and export only. No benchmark observation was executed to produce this
 package, no model was invoked, and no task definition, architecture document,
