@@ -611,9 +611,6 @@ GIT = {"branch": git("rev-parse", "--abbrev-ref", "HEAD"),
                                "study-results/", ":(exclude)study-results/professor-delivery"),
        "origin": git("config", "--get", "remote.origin.url")}
 
-AUDIT_MISMATCHES = [a for a in AUDIT if a["status"] != "MATCH"]
-
-
 # =========================================================================== #
 #                              EXCEL WORKBOOK
 # =========================================================================== #
@@ -731,6 +728,61 @@ def ratio_chart(ws, anchor, title, cat_ref, series, y_title="C4 / C1 (1.00 = par
     ch.gapWidth = 60
     ws.add_chart(ch, anchor)
     return ch
+
+
+OUT.mkdir(parents=True, exist_ok=True)
+WRITTEN = []
+
+# --------------------------------------------------------------------------- #
+# 10. professor-safe full run export
+#
+# Written BEFORE the workbook so that its four fidelity checks are part of the
+# audit total the workbook publishes, rather than four checks the workbook
+# cannot see.
+# --------------------------------------------------------------------------- #
+
+RUN_COLS = ["experiment_id", "execution_attempt", "sequence", "run_id", "task", "model", "condition", "reset_state",
+            "repetition", "run_purpose", "functional_valid", "semantic_pass", "semantic_fail",
+            "architecture_applicable", "architecture_violated", "raw_architecture_violations",
+            "input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "total_input_tokens",
+            "total_output_tokens", "model_wall_seconds", "total_run_seconds", "provider_cost_usd",
+            "total_tool_calls", "exploration_calls", "read_calls", "grep_calls", "glob_calls", "bash_calls",
+            "edit_calls", "write_calls", "unique_files_read", "unique_files_modified", "files_reedited",
+            "ci_command_runs", "test_command_runs", "lines_added", "lines_removed", "net_lines",
+            "checkpoint_status", "max_turn_status", "run_status", "eligible_for_analysis", "reason_if_excluded",
+            "artifact_path", "evidence_hash_if_available", "notes"]
+NUMERIC_COLS = {"execution_attempt", "sequence", "repetition", "semantic_pass", "semantic_fail",
+                "architecture_applicable", "architecture_violated", "raw_architecture_violations",
+                "input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "total_input_tokens",
+                "total_output_tokens", "model_wall_seconds", "total_run_seconds", "provider_cost_usd",
+                "total_tool_calls", "exploration_calls", "read_calls", "grep_calls", "glob_calls", "bash_calls",
+                "edit_calls", "write_calls", "unique_files_read", "unique_files_modified", "files_reedited",
+                "ci_command_runs", "test_command_runs", "lines_added", "lines_removed", "net_lines"}
+CSV_PATH = OUT / "AFCI_Professor_Full_Run_Results.csv"
+with open(CSV_PATH, "w", newline="", encoding="utf-8") as fh:
+    # LF explicitly: the repository pins eol=lf, so the working tree matches the blob.
+    w = csv.DictWriter(fh, fieldnames=RUN_COLS, extrasaction="ignore", lineterminator=LF)
+    w.writeheader()
+    for src in RUNS:
+        w.writerow({c: ("" if blank(src.get(c)) else src.get(c)) for c in RUN_COLS})
+WRITTEN.append(CSV_PATH)
+print(f"wrote {CSV_PATH}")
+
+exported = read_csv(CSV_PATH)
+check("exported CSV row count equals the master run rows", len(RUNS), len(exported))
+check("exported CSV preserves every excluded row",
+      sum(1 for r in RUNS if r["eligible_for_analysis"] != "true"),
+      sum(1 for r in exported if r["eligible_for_analysis"] != "true"))
+check("exported CSV carries a reason for every excluded row",
+      True, all(not blank(r["reason_if_excluded"]) for r in exported if r["eligible_for_analysis"] != "true"))
+check("exported CSV introduced no zero where the master had a blank", 0, sum(
+    1 for a, b in zip(RUNS, exported)
+    for c in RUN_COLS if blank(a.get(c)) and not blank(b.get(c))))
+
+
+#: Computed here, after every check above has run, so the workbook publishes the
+#: real total rather than a snapshot taken partway through.
+AUDIT_MISMATCHES = [a for a in AUDIT if a["status"] != "MATCH"]
 
 
 wb = Workbook()
@@ -909,23 +961,6 @@ ws = wb.create_sheet("03_ALL_RUNS")
 r = sheet_title(ws, f"All {INV['total_rows']} run / attempt records",
                 "Verbatim from AFCI_MASTER_RUN_RESULTS.csv. A blank cell means the metric was NOT CAPTURED for that run; "
                 "it never means zero. Private evaluator identifiers are not present in any column.")
-RUN_COLS = ["experiment_id", "execution_attempt", "sequence", "run_id", "task", "model", "condition", "reset_state",
-            "repetition", "run_purpose", "functional_valid", "semantic_pass", "semantic_fail",
-            "architecture_applicable", "architecture_violated", "raw_architecture_violations",
-            "input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "total_input_tokens",
-            "total_output_tokens", "model_wall_seconds", "total_run_seconds", "provider_cost_usd",
-            "total_tool_calls", "exploration_calls", "read_calls", "grep_calls", "glob_calls", "bash_calls",
-            "edit_calls", "write_calls", "unique_files_read", "unique_files_modified", "files_reedited",
-            "ci_command_runs", "test_command_runs", "lines_added", "lines_removed", "net_lines",
-            "checkpoint_status", "max_turn_status", "run_status", "eligible_for_analysis", "reason_if_excluded",
-            "artifact_path", "evidence_hash_if_available", "notes"]
-NUMERIC_COLS = {"execution_attempt", "sequence", "repetition", "semantic_pass", "semantic_fail",
-                "architecture_applicable", "architecture_violated", "raw_architecture_violations",
-                "input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "total_input_tokens",
-                "total_output_tokens", "model_wall_seconds", "total_run_seconds", "provider_cost_usd",
-                "total_tool_calls", "exploration_calls", "read_calls", "grep_calls", "glob_calls", "bash_calls",
-                "edit_calls", "write_calls", "unique_files_read", "unique_files_modified", "files_reedited",
-                "ci_command_runs", "test_command_runs", "lines_added", "lines_removed", "net_lines"}
 run_rows = []
 for src in RUNS:
     row = []
@@ -1906,13 +1941,17 @@ r = table(ws, r, ["check", "value in the frozen analysis artifact", "value recom
 r = section(ws, r, "SCOPE NOTES - where a figure elsewhere in the evidence package is stated at a different scope")
 r = table(ws, r, ["figure", "this package reports", "note"], [
     ["Haiku CI command runs, C1 vs C4",
-     f"over the 8 PAIRED BLOCKS: C1 {int(HAI_REWORK['C1']['ci_command_runs'])}, C4 {int(HAI_REWORK['C4']['ci_command_runs'])}; "
-     f"over ALL 9 runs per arm: C1 {int(ARM_TOTALS[('Haiku', 'C1')]['ci_command_runs'])}, "
-     f"C4 {int(ARM_TOTALS[('Haiku', 'C4')]['ci_command_runs'])}",
-     "AFCI_RESULTS_SUMMARY.md reports '9 vs 13' for this, which is the all-runs scope, and labels it 'failed CI cycles'. "
-     "The lower-model evidence carries a CI COMMAND COUNT, not a failed-cycle count, so this package reports it as a "
-     "command count and states both scopes. The Sonnet pilot does record a genuine FAILED_TEST_OR_CI_CYCLES figure "
-     f"(C1 {int(SON_REWORK['C1']['failed_ci_cycles'])}, C4 {int(SON_REWORK['C4']['failed_ci_cycles'])} over 16 blocks)."],
+     f"over the 8 PAIRED BLOCKS: C1 {int(HAI_REWORK['C1']['ci_command_runs'])}, "
+     f"C4 {int(HAI_REWORK['C4']['ci_command_runs'])}. Over ALL 9 runs per arm: "
+     f"C1 {int(ARM_TOTALS[('Haiku', 'C1')]['ci_command_runs'])}, "
+     f"C4 {int(ARM_TOTALS[('Haiku', 'C4')]['ci_command_runs'])}. Both scopes are stated, and neither is mixed.",
+     "AFCI_RESULTS_SUMMARY.md reports 'C4 needed fewer failed CI cycles (9 vs 13)'. Two things differ here. First, the "
+     "lower-model evidence carries a CI COMMAND COUNT, not a failed-cycle count, so this package reports it as a command "
+     "count; the Sonnet pilot does record a genuine FAILED_TEST_OR_CI_CYCLES figure "
+     f"(C1 {int(SON_REWORK['C1']['failed_ci_cycles'])}, C4 {int(SON_REWORK['C4']['failed_ci_cycles'])} over 16 blocks) "
+     "and that is reported as one. Second, '9 vs 13' takes its two numbers from different scopes: 9 is C4 over all 9 "
+     "runs and 13 is C1 over the 8 paired blocks. Held to one scope the pair is 8 vs 13 (paired) or 9 vs 15 (all runs). "
+     "The direction is the same either way; the magnitude is not."],
     ["Haiku 'files changed', C1 25 vs C4 30",
      "reported as FILES_CHANGED (worktree diff), and UNIQUE_FILES_MODIFIED (tool-call count) is reported beside it as a "
      f"separate metric: C1 {int(HAI_REWORK['C1']['unique_files_modified'])}, C4 {int(HAI_REWORK['C4']['unique_files_modified'])}",
@@ -1933,7 +1972,6 @@ for name in wb.sheetnames:
     if not sh.auto_filter.ref and name != "01_EXECUTIVE_SUMMARY" and name in FIRST_TABLE:
         sh.auto_filter.ref = FIRST_TABLE[name]
 
-OUT.mkdir(parents=True, exist_ok=True)
 XLSX = OUT / "AFCI_Professor_Results.xlsx"
 
 # Fixed document properties. openpyxl stamps the current clock into
@@ -1985,35 +2023,13 @@ def normalize_xlsx(path):
 
 
 normalize_xlsx(XLSX)
-WRITTEN = [XLSX]
+WRITTEN.append(XLSX)
 print(f"wrote {XLSX}")
 
 
 # =========================================================================== #
 #                            FULL RUN CSV EXPORT
 # =========================================================================== #
-
-CSV_PATH = OUT / "AFCI_Professor_Full_Run_Results.csv"
-with open(CSV_PATH, "w", newline="", encoding="utf-8") as fh:
-    # LF explicitly: the repository pins eol=lf, so the working tree matches the blob.
-    w = csv.DictWriter(fh, fieldnames=RUN_COLS, extrasaction="ignore", lineterminator=LF)
-    w.writeheader()
-    for src in RUNS:
-        w.writerow({c: ("" if blank(src.get(c)) else src.get(c)) for c in RUN_COLS})
-WRITTEN.append(CSV_PATH)
-print(f"wrote {CSV_PATH}")
-
-exported = read_csv(CSV_PATH)
-check("exported CSV row count equals the master run rows", len(RUNS), len(exported))
-check("exported CSV preserves every excluded row",
-      sum(1 for r in RUNS if r["eligible_for_analysis"] != "true"),
-      sum(1 for r in exported if r["eligible_for_analysis"] != "true"))
-check("exported CSV carries a reason for every excluded row",
-      True, all(not blank(r["reason_if_excluded"]) for r in exported if r["eligible_for_analysis"] != "true"))
-check("exported CSV introduced no zero where the master had a blank", 0, sum(
-    1 for a, b in zip(RUNS, exported)
-    for c in RUN_COLS if blank(a.get(c)) and not blank(b.get(c))))
-
 
 # =========================================================================== #
 #                              MARKDOWN WRITERS
@@ -2797,6 +2813,11 @@ python study-results/professor-delivery/_build/build_professor_delivery.py
 
 `_build/` holds that generator. It reads only `study-results/` and writes only
 this directory.
+
+The build is **byte-reproducible**: running it twice on unchanged evidence
+produces identical files, down to the SHA-256 of the workbook and the PDF. So if
+you regenerate the package and `git status` is clean, nothing in it was edited by
+hand after generation.
 """
 README_PATH = OUT / "README.md"
 README_PATH.write_text(README, encoding="utf-8", newline=LF)

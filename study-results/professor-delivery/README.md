@@ -85,3 +85,8 @@ python study-results/professor-delivery/_build/build_professor_delivery.py
 
 `_build/` holds that generator. It reads only `study-results/` and writes only
 this directory.
+
+The build is **byte-reproducible**: running it twice on unchanged evidence
+produces identical files, down to the SHA-256 of the workbook and the PDF. So if
+you regenerate the package and `git status` is clean, nothing in it was edited by
+hand after generation.
