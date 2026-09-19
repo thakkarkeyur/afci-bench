@@ -67,6 +67,35 @@ readable without reading the axis.
 - It is a **secondary artifact**. Where it and a primary artifact disagree, the
   primary artifact wins.
 
+## Registered but not yet run
+
+One experiment is registered in
+[`../AFCI_MASTER_EXPERIMENT_REGISTRY.csv`](../AFCI_MASTER_EXPERIMENT_REGISTRY.csv)
+with **no results in this package, because it has none**:
+
+| field | value |
+| --- | --- |
+| experiment | `V2_BACKSTAGE_PILOT` — Backstage real-repository architecture pilot |
+| status | **PRE-DATA / NOT STARTED** |
+| planned runs | 18 (3 tasks × 2 conditions × 3 repetitions, NON_RESET, 9 paired blocks) |
+| attempted / completed / usable | **0 / 0 / 0** |
+| run-result rows in this package | **0** |
+| model | `claude-sonnet-5`, Claude Code CLI 2.1.229, effort `high` (pinned and read back) |
+| substrate | Backstage `f285f6e46ba57d30c5be8448fd018b960d7d4748` (2025-12-08), which predates the 2026-02-15 contamination boundary |
+| repository complexity | 203 workspace packages, ~769k TS/TSX LOC, 519 external dependencies — against 6 projects, ~1.2k LOC and 23 dependencies on the synthetic substrate |
+| primary endpoint | architectural placement / ownership: target-violation run count per arm, one frozen applicable opportunity per run |
+| decision | [`SL-V2-BACKSTAGE-PILOT-01`](../../docs/v2/AFCI_BACKSTAGE_PILOT_DECISION.md) |
+
+It exists in the registry so that a planned experiment is visible rather than
+invented later. **No run-result row, no matrix cell, no chart point and no
+figure anywhere in this package comes from it**, and none may be created until
+its runs actually execute. It is the first package to attack the question the
+three completed architecture channels could not answer: all of them found an
+architecture **floor** on the synthetic substrate — 0 target violations in both
+arms — which is consistent either with AFCI having no architectural effect or
+with that substrate being too small to place anything wrongly in. This pilot
+moves to a repository where the placement decision is genuinely ambiguous.
+
 ## Provenance
 
 Reporting and export only. Producing this package executed no benchmark

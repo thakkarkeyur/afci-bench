@@ -191,6 +191,32 @@ Deliberately **omitted** because not reliably pinnable/recordable under `-p`: th
 
 ## 7. Open questions (to resolve before freezing the final config)
 
+> **STATUS UPDATE (SL-V2-BACKSTAGE-PILOT-01, 2026-09-19): Q2 and Q4 are
+> RESOLVED, and their answers reverse this document's §3.2 verdict for CLI
+> 2.1.229.** Effort is both pinnable AND recordable there, so it IS usable as an
+> experimental control.
+>
+> * **Q4 — is there any headless mechanism reporting the effort actually used?**
+>   **Yes.** Tool-use-context hooks (PreToolUse, PostToolUse, Stop,
+>   SubagentStop) carry `effort.level`, and the runtime injects `CLAUDE_EFFORT`
+>   into hook commands and Bash tool child processes. Both are documented as the
+>   active level **after any silent downgrade**. `system.init` carries no effort
+>   field, which is why the negative looked true from the JSON alone.
+> * **Q2 — reconcile the two env vars.** They are not two spellings of one
+>   input. `CLAUDE_CODE_EFFORT_LEVEL` is the **input**; `CLAUDE_EFFORT` is the
+>   **output readback**. Seeing `CLAUDE_EFFORT` set on this machine means the
+>   shell is inside a Claude Code session, not that an input was configured.
+> * **Caveat that matters for §4 and §6:** the readback arrives through a hook,
+>   and `--safe-mode` disables hooks. A run that must record its effort cannot
+>   also use `--safe-mode`; reconstruct the isolation explicitly instead.
+>
+> Evidence: one infrastructure-only probe plus read-only enumeration of the
+> installed 2.1.229 binary, recorded in
+> [`AFCI_BACKSTAGE_PILOT_DECISION.md`](AFCI_BACKSTAGE_PILOT_DECISION.md) §3.2.
+> **This changes no historical result**: every completed package ran under the
+> configuration it recorded, and those records are untouched.
+
+
 > **Q1 and Q8 are explicit dry-run BLOCKERS before the paid pilot** — the
 > **resolved-model-id readback** (Q1) and the **invalid-model-id rejection** (Q8)
 > **must** be verified through controlled dry runs **after the runner exists**.

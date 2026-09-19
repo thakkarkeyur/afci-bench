@@ -259,6 +259,98 @@ diagnostic_model_selection:
     pools_with_sonnet_efficiency_pilot: false
     td_b03_status: "open; unchanged by this pin"
 
+  # SL-V2-BACKSTAGE-PILOT-01 - the T1/T2/T5 x C1/C4 x NON_RESET pilot on the
+  # Backstage repository. Same model and runtime as the Sonnet efficiency pilot,
+  # on the same machine, with TWO deliberate differences recorded here.
+  #
+  # DIFFERENCE 1: effort is PINNED AND READ BACK. `--effort high` is passed, and
+  # the value the runtime reports for the turn - after any silent downgrade - is
+  # recorded per observation. This is the first block in this registry whose
+  # effort is a verified control rather than a logged input, and it is why the
+  # effort_input block below was corrected.
+  #
+  # DIFFERENCE 2: --safe-mode is NOT used, because it disables hooks and the hook
+  # is the readback channel. Its isolation is reconstructed explicitly from
+  # --setting-sources "", a governed --settings file OUTSIDE the model workspace
+  # carrying only the effort-provenance hook, --strict-mcp-config,
+  # --disable-slash-commands, a tool allowlist, CLAUDE_CODE_DISABLE_AUTO_MEMORY=1
+  # and an export with every agent-instruction surface removed.
+  #
+  # The allowlist is NOT the efficiency pilot's: this substrate has a different
+  # visible gate, so the governed command surface is Backstage's own toolchain.
+  #
+  # Like every block above, this confers NO primary selection: TD-B03 stays open
+  # and primary_model stays null. It pools with nothing.
+  AFCI_BACKSTAGE_PILOT:
+    decision_id: "SL-V2-BACKSTAGE-PILOT-01"
+    primary_model_family: "Claude Sonnet"
+    requested_selector: "claude-sonnet-5"        # the exact id, never the alias
+    exact_model_id: "claude-sonnet-5"            # what the runtime resolved
+    selector_used_for_repetitions: "claude-sonnet-5"
+    q1_readback: "PASS"
+    q1_readback_sources: ["system.init.model", "modelUsage.canonicalModel"]
+    q1_unambiguous: true
+    q1_validation_provenance: "SL-V2-BACKSTAGE-PILOT-01; performed live for this purpose on CLI 2.1.229 (system.init.model=claude-sonnet-5; modelUsage key=claude-sonnet-5; canonicalModel=claude-sonnet-5; provider=firstParty)"
+    q1_exit_status: 0
+    q8_invalid_model_id_rejection: "PASS"
+    q8_invalid_model_id: "claude-nonexistent-model-9x7q-not-a-real-id"
+    q8_evidence: "exit status 1; modelUsage empty; no other model reported; assistant turn synthetic"
+    q8_validation_provenance: "SL-PT08-05; cited, not re-performed - invalid-model-id rejection is a runtime property and the runtime is unchanged (2.1.229)"
+    effort: "high"
+    effort_mechanism: "--effort high"
+    effort_readback: "PASS"
+    effort_readback_value: "high"
+    effort_readback_sources:
+      - "PreToolUse hook payload effort.level = high"
+      - "PostToolUse hook payload effort.level = high"
+      - "CLAUDE_EFFORT=high in the Bash tool child process"
+    effort_readback_provenance: "SL-V2-BACKSTAGE-PILOT-01; one infrastructure-only probe in a disposable directory with no Backstage content, no task and no MAD; not study data"
+    effort_downgrade_observed: false
+    effort_unsupported_warning_present: false
+    effort_env_isolated: "CLAUDE_EFFORT and CLAUDE_CODE_EFFORT_LEVEL unset in the launcher environment, so the readback value came from the flag alone"
+    indeterminate_rule: "an observation whose effort readback is absent or is not 'high' is INDETERMINATE, excluded and re-run; it is never assumed"
+    thinking_control: "not an experimental factor; no --think/--reason flag on 2.1.229; the hidden --max-thinking-tokens is NOT used; thinking rides on effort, and output_tokens_details.thinking_tokens is captured as observed runtime state"
+    sterile_context_validation: "PASS"
+    safe_mode: false
+    safe_mode_rationale: "--safe-mode disables hooks (verified: the hook did not fire under it and did fire without it), and the hook is the effort readback channel"
+    api_key_used: false
+    authentication: "claude-code-subscription-oauth (apiKeySource=none)"
+    fallback_model: "none; --fallback-model is refused by the launcher"
+    permission_mode: "acceptEdits"
+    tools: ["Read", "Edit", "Write", "Glob", "Grep", "Bash"]
+    allowed_tools:
+      - "Bash(yarn tsc)"
+      - "Bash(yarn tsc:*)"
+      - "Bash(yarn test:*)"
+      - "Bash(yarn prettier:*)"
+      - "Bash(yarn backstage-cli:*)"
+      - "Bash(yarn backstage-repo-tools:*)"
+      - "Bash(git status:*)"
+      - "Bash(git diff:*)"
+    allowed_tools_rationale: "the frozen visible gate for this substrate; without an allow rule headless Bash is refused and the run measures the refusal (SL-V2-EFF-01 section 5, same failure mode, different command surface)"
+    allowed_tools_scope: "AFCI_BACKSTAGE_PILOT ONLY; every earlier configuration is unchanged"
+    run_environment:
+      CI: "true"
+      CLAUDE_CODE_DISABLE_AUTO_MEMORY: "1"
+      DISABLE_AUTOUPDATER: "1"
+    permission_denials_captured: true
+    repetitions: 3                              # PER (task, condition) cell
+    tasks: ["T1", "T2", "T5"]
+    conditions: ["C1", "C4"]
+    reset_states: ["NON_RESET"]
+    observations_maximum: 18
+    non_reset_max_turns: 64
+    turn_budget_authority: "SL-V2-BACKSTAGE-PILOT-01 (retained unchanged from SL-V2-EFF-RESET-01)"
+    substrate: "backstage f285f6e46ba57d30c5be8448fd018b960d7d4748"
+    substrate_content_hash: "4dfadc101db1c9f29b82934db25def67a93a2563"
+    validated_claude_code_cli_version: "2.1.229"
+    governed_toolchain_cli_version: "2.1.209"
+    cli_version_discrepancy: "UNRESOLVED - the governed toolchain value predates this machine's installed runtime; no version match is claimed"
+    confers_no_primary_selection: true
+    confers_no_confirmatory_eligibility: true
+    pools_with_afci_bench: false
+    td_b03_status: "open; unchanged by this pin"
+
 # Model screening (CRITICAL_DESIGN_DECISIONS D10; TD-B03).
 screening:
   screen_models: ["Sonnet 5", "Opus 4.8"]
@@ -281,10 +373,26 @@ dry_run_blockers:
 # (MODEL_EXECUTION_CONTROLS.md §6). Runtime-behaviour claims remain
 # dry-run-required until a controlled run is performed (Q1-Q10 in that doc).
 execution_controls:
+  # CORRECTED under SL-V2-BACKSTAGE-PILOT-01. The previous values said effort was
+  # "input metadata only" and "not recordable from output", both tagged
+  # dry-run-required against MODEL_EXECUTION_CONTROLS Q4. That negative was never
+  # tested; it has now been tested on CLI 2.1.229 and it is FALSE. A readback
+  # exists. The value is corrected rather than reinterpreted, because "not
+  # recordable" is now a false statement. It changes NO historical result: the
+  # PT08, PT09/PT10, efficiency and lower-model packages ran under the
+  # configurations they recorded, and those records are untouched.
   effort_input:
     mechanism: "--effort <low|medium|high|xhigh|max>"   # CLI-verified enum
-    recorded_as: "input metadata only (log the flag passed)"
-    recordable_from_output: "no - doc-derived; dry-run-required (Q4)"
+    recorded_as: "input metadata AND runtime readback"
+    recordable_from_output: "yes, on CLI 2.1.229 - resolves Q4, and Q2 with it"
+    readback_channels:
+      - "hook payload field `effort.level`, present on tool-use-context hooks (PreToolUse, PostToolUse, Stop, SubagentStop); absent on session-lifecycle hooks and on models without effort support"
+      - "`CLAUDE_EFFORT` environment variable, injected into hook commands and into Bash tool child processes"
+    readback_semantics: "the runtime documents both channels as the ACTIVE effort level for the turn AFTER ANY SILENT DOWNGRADE for the selected model, so reading back the pinned value is positive evidence that it was applied, not merely that it was requested"
+    env_var_roles: "CLAUDE_CODE_EFFORT_LEVEL is the INPUT env var; CLAUDE_EFFORT is the OUTPUT readback - they are not two spellings of one input (resolves MODEL_EXECUTION_CONTROLS Q2)"
+    downgrade_signal: "on server rejection the runtime warns `[effort] model <id> rejected output_config.effort; latching unsupported and retrying without it` and emits tengu_effort_unsupported_retry"
+    model_support: "effort is denied to claude-3-*, claude-opus-4-0, claude-opus-4-1, claude-sonnet-4-0, claude-sonnet-4-5 and claude-haiku-4-5; claude-sonnet-5 is not denied, and the level `high` carries no additional per-model gate (only `xhigh` and `max` do)"
+    readback_requires_hooks: "yes - and --safe-mode disables hooks, so a run that must record its effort cannot also use --safe-mode; isolation is reconstructed explicitly instead (SL-V2-BACKSTAGE-PILOT-01 section 3.2)"
   thinking_control_status:
     pinnable: false                              # CLI-verified (no --think/--reason flag)
     note: "adaptive and governed by effort on Opus 4.8 (doc-derived); NOT an experimental factor"
