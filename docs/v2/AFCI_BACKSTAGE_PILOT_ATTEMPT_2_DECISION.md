@@ -419,14 +419,29 @@ blocks and the pairing are identical.
 
 ## 9. Readiness
 
-**69 pre-data checks, all passing**, re-derived from the artifacts rather than
+**87 pre-data checks, all passing**, re-derived from the artifacts rather than
 asserted: the controlled reference matrix, every frozen digest, task and packet
 non-leakage, the visible gate's byte-identity across the three statements, the
 matrix and pairing, the 96-turn ceiling in both arms, the 15-rule allowlist with
-its 32 negative controls, the network preflight, `core.longpaths` at system
-scope, all 36 real destination lengths, the export tree, dependency isolation at
-the real path length, the 36 reserved identities with 72 free destinations, zero
-overlap with Attempt 1, and **zero Attempt-2 substantive observations**.
+its 32 negative controls, the five probe records and what they measured against
+the live runtime, the network preflight, `core.longpaths` at system scope, all
+36 real destination lengths, the export tree, dependency isolation at the real
+path length, the 36 reserved identities with 72 free destinations, zero overlap
+with Attempt 1, and **zero Attempt-2 substantive observations**.
+
+Several of those checks EXERCISE the guard rather than reading a constant: the
+readiness gate builds launches at 64, 95, 97 and three malformed ceilings and
+requires all six to be refused; it asks the preflight for two passes and
+requires that to be refused; and it hands the export check a wrong tree hash and
+requires `SUBSTRATE_IDENTITY_MISMATCH`. A guard that had been removed would fail
+the readiness check rather than pass it.
+
+Dependency isolation was re-proved end to end at the real 62-character
+destination length, on two disposable workspaces standing for `C1` and `C4`:
+both committed the frozen export tree, both carried 10,362 tracked files, 204
+junctions, 266,599 dependency files and 1,979,103,089 bytes — **identical** —
+with zero junctions outside either run root, neither pre-warm touching a tracked
+file, and the template unchanged.
 
 ---
 
