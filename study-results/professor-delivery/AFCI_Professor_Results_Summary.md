@@ -1,7 +1,7 @@
 # AFCI-Bench - results delivery
 
 **Compiled 2026-09-18** from `study-results/` on branch `study-v2`, pinned to evidence
-commit `0ded51b1d578` (*study(backstage): freeze public-safe AFCI pilot protocol*) - the last change to the
+commit `cfdb646b22f4` (*study(backstage): halt AFCI pilot attempt 1 and record the escalation*) - the last change to the
 evidence this package reports.
 
 Reporting and export only. No benchmark observation was executed to produce this

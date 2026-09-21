@@ -802,7 +802,9 @@ ws.column_dimensions["I"].width = 60
 r = section(ws, r, "PROGRAMME TOTALS")
 r = table(ws, r, ["measure", "value", "note"], [
     ["Experiment sets executed", 7, "V1, PT08, PT09, PT10, efficiency Attempt 1 (aborted), efficiency Attempt 2, lower-model pilot"],
-    ["Experiment sets not started", 1, "OPEN_SOURCE_COMPLEXITY_STUDY - placeholder only, no runs exist"],
+    ["Experiment sets not started", 2,
+     "OPEN_SOURCE_COMPLEXITY_STUDY - placeholder only, no runs exist; "
+     "V2_BACKSTAGE_PILOT_ATTEMPT_2 - pre-registered, 18 planned, 0 attempted"],
     ["Total run/attempt records", INV["total_rows"], "one row per scheduled run or attempt, including excluded ones"],
     ["Distinct run identities", INV["unique_run_ids"],
      "3 fewer than rows: the PT08 run-id collision (3 rows share 1 id) and the Attempt-1 collision pair (2 rows share 1 id)"],
@@ -913,7 +915,7 @@ PE = {x["experiment_id"]: x for x in PER_EXPERIMENT}
 inv_rows = []
 ORDER = ["V1_ORIGINAL", "V2_PT08_DIAGNOSTIC", "V2_PT09_QUALIFICATION", "V2_PT10_QUALIFICATION",
          "V2_EFF_ATTEMPT1", "V2_EFF_ATTEMPT2", "V2_LOWER_MODEL_PILOT", "V2_BACKSTAGE_PILOT",
-         "OPEN_SOURCE_COMPLEXITY_STUDY"]
+         "V2_BACKSTAGE_PILOT_ATTEMPT_2", "OPEN_SOURCE_COMPLEXITY_STUDY"]
 CLASSIFICATION = {
     "V1_ORIGINAL": "HISTORICAL / EXPLORATORY",
     "V2_PT08_DIAGNOSTIC": "DIAGNOSTIC ONLY",
@@ -923,6 +925,7 @@ CLASSIFICATION = {
     "V2_EFF_ATTEMPT2": "COMPLETED PILOT, NON-CONFIRMATORY",
     "V2_LOWER_MODEL_PILOT": "COMPLETED PILOT, NON-CONFIRMATORY",
     "V2_BACKSTAGE_PILOT": "HALTED / EXCLUDED WHOLESALE",
+    "V2_BACKSTAGE_PILOT_ATTEMPT_2": "PRE-DATA / NOT STARTED",
     "OPEN_SOURCE_COMPLEXITY_STUDY": "NOT STARTED",
 }
 for eid in ORDER:
@@ -947,6 +950,11 @@ r = table(ws, r, ["experiment_id", "experiment_name", "study_version", "model", 
           widths=[26, 42, 12, 26, 30, 10, 14, 18, 11, 12, 13, 15, 26, 13, 32, 46, 48, 80],
           autofilter=True)
 r = note(ws, r, "OPEN_SOURCE_COMPLEXITY_STUDY is a placeholder. No runs exist and no result is pre-populated.", AMBER)
+r = note(ws, r, "V2_BACKSTAGE_PILOT_ATTEMPT_2 is PRE-DATA: 18 planned, 0 attempted, 0 completed, and no run row "
+                "exists anywhere in this package. It is a WHOLLY NEW execution of the science SL-V2-BACKSTAGE-PILOT-01 "
+                "froze, with new run ids and new destinations and zero overlap with attempt 1. V2_BACKSTAGE_PILOT "
+                "(attempt 1) stays HALTED and EXCLUDED WHOLESALE and is never pooled with it, replaced by it, or "
+                "re-run under it.", AMBER)
 r = note(ws, r, "planned / attempted / completed_runs on this sheet are the experiment registry's own counts. "
                 "V2_EFF_ATTEMPT1's 'completed_runs = 7' is the registry counting its 7 surviving rows; those rows carry "
                 "run_status = INTACT_GOVERNED_OBSERVATION, not COMPLETE, so a status-based recount of the same rows gives "
@@ -2825,6 +2833,33 @@ are unbalanced, no paired block is both complete and usable, and
 `SL-V2-BACKSTAGE-PILOT-01` S11.3 forbids a confirmatory claim from this pilot
 even when complete. **No matrix cell, chart point or figure in this package
 comes from it.**
+
+## Pre-registered, not started
+
+`V2_BACKSTAGE_PILOT_ATTEMPT_2` is a **wholly new** 18-run execution of the same
+frozen science, pre-registered by `SL-V2-BACKSTAGE-PILOT-03`. It has **no data**.
+
+| field | value |
+| --- | --- |
+| status | **{REG['V2_BACKSTAGE_PILOT_ATTEMPT_2']['status']}** |
+| planned runs | {REG['V2_BACKSTAGE_PILOT_ATTEMPT_2']['planned_runs']} (3 tasks x 2 conditions x 3 repetitions, NON_RESET, 9 paired blocks) |
+| attempted / completed / **usable** | {REG['V2_BACKSTAGE_PILOT_ATTEMPT_2']['attempted_runs']} / {REG['V2_BACKSTAGE_PILOT_ATTEMPT_2']['completed_runs']} / **{REG['V2_BACKSTAGE_PILOT_ATTEMPT_2']['usable_runs']}** |
+| run rows here | {sum(1 for r in RUNS if r['experiment_id'] == 'V2_BACKSTAGE_PILOT_ATTEMPT_2')} |
+| decisions | `SL-V2-BACKSTAGE-PILOT-01` (science, unchanged), `SL-V2-BACKSTAGE-PILOT-03` (attempt-2 execution controls) |
+
+It reuses the substrate, the three tasks and their bytes, the architecture
+packet, the model, the effort level, the runtime, both conditions, the reset
+state, the repetitions, the endpoints, the oracles, the scorer and the
+continuation rule **unchanged**, and changes five execution controls: the turn
+ceiling 64 -> 96, the Bash allowlist 8 -> 15 rules, a network preflight that
+refuses before the task is delivered, 18 pre-authorised infrastructure-retry
+identities, and real-destination path validation.
+
+**Attempt 1 is retained above and is never pooled with, replaced by, or re-run
+under attempt 2.** No scientific outcome from attempt 1 was used to change any
+task, architecture packet, oracle, scorer, threshold, endpoint, metric or
+treatment definition - and none could have been, because no `C1`-vs-`C4`
+comparison was ever computed from it.
 
 ## Provenance
 

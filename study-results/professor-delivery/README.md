@@ -1,7 +1,7 @@
 # AFCI-Bench - professor results delivery package
 
 **Compiled 2026-09-18** from `study-results/` on branch `study-v2`, pinned to evidence
-commit `0ded51b1d578` (*study(backstage): freeze public-safe AFCI pilot protocol*) - the last change to the
+commit `cfdb646b22f4` (*study(backstage): halt AFCI pilot attempt 1 and record the escalation*) - the last change to the
 evidence this package reports.
 
 This package is safe to send outside the private evaluator repository. It carries
@@ -95,6 +95,33 @@ are unbalanced, no paired block is both complete and usable, and
 `SL-V2-BACKSTAGE-PILOT-01` S11.3 forbids a confirmatory claim from this pilot
 even when complete. **No matrix cell, chart point or figure in this package
 comes from it.**
+
+## Pre-registered, not started
+
+`V2_BACKSTAGE_PILOT_ATTEMPT_2` is a **wholly new** 18-run execution of the same
+frozen science, pre-registered by `SL-V2-BACKSTAGE-PILOT-03`. It has **no data**.
+
+| field | value |
+| --- | --- |
+| status | **PRE-DATA / NOT STARTED** |
+| planned runs | 18 (3 tasks x 2 conditions x 3 repetitions, NON_RESET, 9 paired blocks) |
+| attempted / completed / **usable** | 0 / 0 / **0** |
+| run rows here | 0 |
+| decisions | `SL-V2-BACKSTAGE-PILOT-01` (science, unchanged), `SL-V2-BACKSTAGE-PILOT-03` (attempt-2 execution controls) |
+
+It reuses the substrate, the three tasks and their bytes, the architecture
+packet, the model, the effort level, the runtime, both conditions, the reset
+state, the repetitions, the endpoints, the oracles, the scorer and the
+continuation rule **unchanged**, and changes five execution controls: the turn
+ceiling 64 -> 96, the Bash allowlist 8 -> 15 rules, a network preflight that
+refuses before the task is delivered, 18 pre-authorised infrastructure-retry
+identities, and real-destination path validation.
+
+**Attempt 1 is retained above and is never pooled with, replaced by, or re-run
+under attempt 2.** No scientific outcome from attempt 1 was used to change any
+task, architecture packet, oracle, scorer, threshold, endpoint, metric or
+treatment definition - and none could have been, because no `C1`-vs-`C4`
+comparison was ever computed from it.
 
 ## Provenance
 

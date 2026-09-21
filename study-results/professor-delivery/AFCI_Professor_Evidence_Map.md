@@ -81,8 +81,8 @@ No private evaluator identifier appears anywhere in this package.
 | what | value |
 | --- | --- |
 | public repo branch | `study-v2` |
-| evidence commit (last change to study-results/ outside this package) | `0ded51b1d57832f9d506dfa770827d200c86b9e8` |
-| that commit's subject | study(backstage): freeze public-safe AFCI pilot protocol |
+| evidence commit (last change to study-results/ outside this package) | `cfdb646b22f41404bb8d414d55cdd2fc630f7492` |
+| that commit's subject | study(backstage): halt AFCI pilot attempt 1 and record the escalation |
 | public repo origin | https://github.com/thakkarkeyur/afci-bench.git |
 | public repo `main` (v1 base, tag `paper-v0`) | `2adc8741acad7ea5423f0bf3d9ad821ff023a35f` |
 | private evaluator repo HEAD (read-only, unchanged) | `8ad5e3738a50804aa81bbf99928acf7e54372b51` |
