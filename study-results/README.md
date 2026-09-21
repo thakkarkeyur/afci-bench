@@ -42,7 +42,7 @@ Four facts frame everything below, and each is verifiable from the files here.
 | --- | --- |
 | [`AFCI_RESULTS_SUMMARY.md`](AFCI_RESULTS_SUMMARY.md) | What we found, what it supports, what it does not |
 | [`AFCI_MASTER_EXPERIMENT_REGISTRY.csv`](AFCI_MASTER_EXPERIMENT_REGISTRY.csv) | One row per experiment set: counts, status, decision |
-| [`AFCI_MASTER_RUN_RESULTS.csv`](AFCI_MASTER_RUN_RESULTS.csv) | One row per actual run/attempt (121 rows) |
+| [`AFCI_MASTER_RUN_RESULTS.csv`](AFCI_MASTER_RUN_RESULTS.csv) | One row per actual run/attempt (128 rows) |
 | [`AFCI_METRICS_MATRIX.csv`](AFCI_METRICS_MATRIX.csv) | Which metric exists in which experiment, and at what status |
 | [`AFCI_EVIDENCE_INDEX.md`](AFCI_EVIDENCE_INDEX.md) | Summary number → analysis artifact → run record → raw evidence |
 | [`AFCI_EXCLUSIONS_AND_LIMITATIONS.md`](AFCI_EXCLUSIONS_AND_LIMITATIONS.md) | Everything that weakens or bounds the evidence |

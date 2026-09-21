@@ -183,7 +183,7 @@ for exp in INV["by_experiment"]:
         "loc_coverage": sum(1 for r in rs if not blank(r["lines_added"])),
     })
 
-check("master run/attempt rows", 121, INV["total_rows"])
+check("master run/attempt rows", 128, INV["total_rows"])
 check("rows eligible for any analysis", 50, INV["eligible"])
 
 # --------------------------------------------------------------------------- #
@@ -912,7 +912,8 @@ REG = {x["experiment_id"]: x for x in REGISTRY}
 PE = {x["experiment_id"]: x for x in PER_EXPERIMENT}
 inv_rows = []
 ORDER = ["V1_ORIGINAL", "V2_PT08_DIAGNOSTIC", "V2_PT09_QUALIFICATION", "V2_PT10_QUALIFICATION",
-         "V2_EFF_ATTEMPT1", "V2_EFF_ATTEMPT2", "V2_LOWER_MODEL_PILOT", "OPEN_SOURCE_COMPLEXITY_STUDY"]
+         "V2_EFF_ATTEMPT1", "V2_EFF_ATTEMPT2", "V2_LOWER_MODEL_PILOT", "V2_BACKSTAGE_PILOT",
+         "OPEN_SOURCE_COMPLEXITY_STUDY"]
 CLASSIFICATION = {
     "V1_ORIGINAL": "HISTORICAL / EXPLORATORY",
     "V2_PT08_DIAGNOSTIC": "DIAGNOSTIC ONLY",
@@ -921,6 +922,7 @@ CLASSIFICATION = {
     "V2_EFF_ATTEMPT1": "ABORTED / EXCLUDED WHOLESALE",
     "V2_EFF_ATTEMPT2": "COMPLETED PILOT, NON-CONFIRMATORY",
     "V2_LOWER_MODEL_PILOT": "COMPLETED PILOT, NON-CONFIRMATORY",
+    "V2_BACKSTAGE_PILOT": "HALTED / EXCLUDED WHOLESALE",
     "OPEN_SOURCE_COMPLEXITY_STUDY": "NOT STARTED",
 }
 for eid in ORDER:
@@ -1561,7 +1563,7 @@ freeze(ws, "A5")
 # --------------------------------------------------------------------------- 15
 ws = wb.create_sheet("15_EXCLUSIONS")
 r = sheet_title(ws, "Exclusions, invalid observations and unavailable metrics",
-                "Nothing unfavourable is omitted. Of the 121 recorded run/attempt rows, 50 are eligible for any analysis "
+                f"Nothing unfavourable is omitted. Of the {INV['total_rows']} recorded run/attempt rows, 50 are eligible for any analysis "
                 "at all, all 50 belong to two non-confirmatory pilots, and 0 are confirmatory.")
 excl = [
     ["V1_ORIGINAL", "48", "HISTORICAL / EXPLORATORY ONLY",
@@ -2794,6 +2796,35 @@ readable without reading the axis.
   because none exists in this programme.
 - It is a **secondary artifact**. Where it and a primary artifact disagree, the
   primary artifact wins.
+
+## Started, then halted - no results
+
+`V2_BACKSTAGE_PILOT`, the Backstage real-repository architecture pilot, began
+execution and was **halted part-way**. It contributes **no analysable result**.
+
+| field | value |
+| --- | --- |
+| status | **{REG['V2_BACKSTAGE_PILOT']['status']}** |
+| planned runs | {REG['V2_BACKSTAGE_PILOT']['planned_runs']} (3 tasks x 2 conditions x 3 repetitions, NON_RESET, 9 paired blocks) |
+| attempted / valid observations / **usable** | {REG['V2_BACKSTAGE_PILOT']['attempted_runs']} / {REG['V2_BACKSTAGE_PILOT']['completed_runs']} / **{REG['V2_BACKSTAGE_PILOT']['usable_runs']}** |
+| run rows here | {sum(1 for r in RUNS if r['experiment_id'] == 'V2_BACKSTAGE_PILOT')}, all `eligible_for_analysis = false` |
+| consumed | $10.93 provider cost, ~5.3 h model wall time |
+| decisions | `SL-V2-BACKSTAGE-PILOT-01` (freeze), `SL-V2-BACKSTAGE-PILOT-02` (halt) |
+| attempt record | `../07_backstage_pilot_attempt_1_halted/` |
+
+Two scheduled observations were severed mid-task by a local network failure
+(`INFRA_API_TRANSPORT`), *below* the turn ceiling. That is rerun-eligible under
+`FAILURE_RERUN_POLICY.md` S2, but the launcher refuses any run id absent from
+the frozen plan, so a replacement needs a recorded protocol amendment - and S5
+directs repeated infrastructure failure to be **escalated, not silently
+re-attempted** (`TD-N06`, open). Execution stopped rather than improvising.
+
+**No `C1`-vs-`C4` comparison, arm total, ratio, median or continuation criterion
+was computed, and none may be derived.** The schedule is 11 rows short, the arms
+are unbalanced, no paired block is both complete and usable, and
+`SL-V2-BACKSTAGE-PILOT-01` S11.3 forbids a confirmatory claim from this pilot
+even when complete. **No matrix cell, chart point or figure in this package
+comes from it.**
 
 ## Provenance
 

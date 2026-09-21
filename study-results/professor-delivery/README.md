@@ -1,7 +1,7 @@
 # AFCI-Bench - professor results delivery package
 
 **Compiled 2026-09-18** from `study-results/` on branch `study-v2`, pinned to evidence
-commit `0dc81a0b3d6d` (*docs(v2): add lower-model AFCI pilot results*) - the last change to the
+commit `0ded51b1d578` (*study(backstage): freeze public-safe AFCI pilot protocol*) - the last change to the
 evidence this package reports.
 
 This package is safe to send outside the private evaluator repository. It carries
@@ -15,7 +15,7 @@ architecture rule, or hidden source/target label.
 | `AFCI_Professor_Results_Summary.md` | the 15-section narrative report - read this first |
 | `AFCI_Professor_Results_Summary.pdf` | the same report, rendered |
 | `AFCI_Professor_Results.xlsx` | 20 sheets: every matrix, every decision clause, every run |
-| `AFCI_Professor_Full_Run_Results.csv` | all 121 run/attempt rows, excluded ones included |
+| `AFCI_Professor_Full_Run_Results.csv` | all 128 run/attempt rows, excluded ones included |
 | `AFCI_Professor_Metric_Definitions.md` | what each metric means and which way is better |
 | `AFCI_Professor_Evidence_Map.md` | summary number -> analysis artifact -> run record -> raw artifact |
 
@@ -25,7 +25,7 @@ architecture rule, or hidden source/target label.
 | --- | --- |
 | `01_EXECUTIVE_SUMMARY` | programme totals, three result cards, the current research conclusion |
 | `02_EXPERIMENT_INVENTORY` | one row per experiment set, including the one not started |
-| `03_ALL_RUNS` | all 121 run/attempt records, every public-safe column |
+| `03_ALL_RUNS` | all 128 run/attempt records, every public-safe column |
 | `04_FUNCTIONAL_MATRIX` | functional correctness by experiment, task and condition |
 | `05_ARCHITECTURE_MATRIX` | architecture evidence, and what produced none |
 | `06_TOKEN_MATRIX` | input and output tokens, by arm and reset state |
@@ -59,7 +59,7 @@ readable without reading the axis.
 
 ## What this package is not
 
-- It is **not confirmatory**. Of 121 run rows, 50
+- It is **not confirmatory**. Of 128 run rows, 50
   are eligible for any analysis, all 50 belong to two
   non-confirmatory pilots, and **0** are confirmatory.
 - It contains **no p-value, confidence interval, effect size or power estimate**,
@@ -67,34 +67,34 @@ readable without reading the axis.
 - It is a **secondary artifact**. Where it and a primary artifact disagree, the
   primary artifact wins.
 
-## Registered but not yet run
+## Started, then halted - no results
 
-One experiment is registered in
-[`../AFCI_MASTER_EXPERIMENT_REGISTRY.csv`](../AFCI_MASTER_EXPERIMENT_REGISTRY.csv)
-with **no results in this package, because it has none**:
+`V2_BACKSTAGE_PILOT`, the Backstage real-repository architecture pilot, began
+execution and was **halted part-way**. It contributes **no analysable result**.
 
 | field | value |
 | --- | --- |
-| experiment | `V2_BACKSTAGE_PILOT` — Backstage real-repository architecture pilot |
-| status | **PRE-DATA / NOT STARTED** |
-| planned runs | 18 (3 tasks × 2 conditions × 3 repetitions, NON_RESET, 9 paired blocks) |
-| attempted / completed / usable | **0 / 0 / 0** |
-| run-result rows in this package | **0** |
-| model | `claude-sonnet-5`, Claude Code CLI 2.1.229, effort `high` (pinned and read back) |
-| substrate | Backstage `f285f6e46ba57d30c5be8448fd018b960d7d4748` (2025-12-08), which predates the 2026-02-15 contamination boundary |
-| repository complexity | 203 workspace packages, ~769k TS/TSX LOC, 519 external dependencies — against 6 projects, ~1.2k LOC and 23 dependencies on the synthetic substrate |
-| primary endpoint | architectural placement / ownership: target-violation run count per arm, one frozen applicable opportunity per run |
-| decision | [`SL-V2-BACKSTAGE-PILOT-01`](../../docs/v2/AFCI_BACKSTAGE_PILOT_DECISION.md) |
+| status | **EXECUTION HALTED - ATTEMPT 1 (INFRASTRUCTURE)** |
+| planned runs | 18 (3 tasks x 2 conditions x 3 repetitions, NON_RESET, 9 paired blocks) |
+| attempted / valid observations / **usable** | 7 / 5 / **0** |
+| run rows here | 7, all `eligible_for_analysis = false` |
+| consumed | $10.93 provider cost, ~5.3 h model wall time |
+| decisions | `SL-V2-BACKSTAGE-PILOT-01` (freeze), `SL-V2-BACKSTAGE-PILOT-02` (halt) |
+| attempt record | `../07_backstage_pilot_attempt_1_halted/` |
 
-It exists in the registry so that a planned experiment is visible rather than
-invented later. **No run-result row, no matrix cell, no chart point and no
-figure anywhere in this package comes from it**, and none may be created until
-its runs actually execute. It is the first package to attack the question the
-three completed architecture channels could not answer: all of them found an
-architecture **floor** on the synthetic substrate — 0 target violations in both
-arms — which is consistent either with AFCI having no architectural effect or
-with that substrate being too small to place anything wrongly in. This pilot
-moves to a repository where the placement decision is genuinely ambiguous.
+Two scheduled observations were severed mid-task by a local network failure
+(`INFRA_API_TRANSPORT`), *below* the turn ceiling. That is rerun-eligible under
+`FAILURE_RERUN_POLICY.md` S2, but the launcher refuses any run id absent from
+the frozen plan, so a replacement needs a recorded protocol amendment - and S5
+directs repeated infrastructure failure to be **escalated, not silently
+re-attempted** (`TD-N06`, open). Execution stopped rather than improvising.
+
+**No `C1`-vs-`C4` comparison, arm total, ratio, median or continuation criterion
+was computed, and none may be derived.** The schedule is 11 rows short, the arms
+are unbalanced, no paired block is both complete and usable, and
+`SL-V2-BACKSTAGE-PILOT-01` S11.3 forbids a confirmatory claim from this pilot
+even when complete. **No matrix cell, chart point or figure in this package
+comes from it.**
 
 ## Provenance
 

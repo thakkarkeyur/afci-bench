@@ -1,13 +1,13 @@
 # AFCI-Bench - results delivery
 
 **Compiled 2026-09-18** from `study-results/` on branch `study-v2`, pinned to evidence
-commit `0dc81a0b3d6d` (*docs(v2): add lower-model AFCI pilot results*) - the last change to the
+commit `0ded51b1d578` (*study(backstage): freeze public-safe AFCI pilot protocol*) - the last change to the
 evidence this package reports.
 
 Reporting and export only. No benchmark observation was executed to produce this
 package, no model was invoked, and no task definition, architecture document,
 scorer, threshold, run plan, condition, raw run artifact or prior analysis was
-changed. Every figure below was recomputed from the 121 run/attempt
+changed. Every figure below was recomputed from the 128 run/attempt
 rows and then checked against the frozen per-experiment analysis artifacts:
 **124 checks, 0 mismatches**. The full check list is in
 the workbook sheet `20_RECOMPUTATION_AUDIT`.
@@ -65,16 +65,16 @@ changed afterwards.
 
 | measure | count |
 | --- | ---: |
-| total run/attempt records | 121 |
-| distinct run identities | 118 |
+| total run/attempt records | 128 |
+| distinct run identities | 125 |
 | completed observations | 110 |
-| functionally valid observations | 60 |
-| explicitly functionally invalid | 2 |
-| no functional verdict captured at all | 59 |
+| functionally valid observations | 62 |
+| explicitly functionally invalid | 5 |
+| no functional verdict captured at all | 61 |
 | diagnostic / qualification observations | 10 |
-| infrastructure-invalid or damaged records | 3 |
+| infrastructure-invalid or damaged records | 5 |
 | refused | 1 |
-| excluded from every analysis | 71 |
+| excluded from every analysis | 78 |
 | eligible for any analysis | 50 |
 | **confirmatory observations** | **0** |
 
@@ -91,6 +91,7 @@ collision pair shares a single id. Both are recorded defects, kept as found.
 | `V2_EFF_ATTEMPT1` | 9 | 0 | not captured | 0 | 0/9 | 0/9 | 0/9 |
 | `V2_EFF_ATTEMPT2` | 36 | 35 | 34 | 34 | 35/36 | 19/36 | 0/36 |
 | `V2_LOWER_MODEL_PILOT` | 18 | 18 | 17 | 16 | 18/18 | 18/18 | 18/18 |
+| `V2_BACKSTAGE_PILOT` | 7 | 0 | 2 | 0 | 7/7 | 7/7 | 5/7 |
 
 `V2_EFF_ATTEMPT1` shows 0 under *status COMPLETE* because its rows carry
 `INTACT_GOVERNED_OBSERVATION` (7 rows) and `DAMAGED_*` (2 rows) instead - a
@@ -313,7 +314,7 @@ information**.
 
 **[FACT] Token audit.** `TOTAL_INPUT_TOKENS = input_tokens +
 cache_creation_input_tokens + cache_read_input_tokens` on every row that carries
-tokens - checked on all 53 such rows, 0 failures. The MAD's
+tokens - checked on all 60 such rows, 0 failures. The MAD's
 own tokens and all cache traffic stay inside the number.
 
 | scope | paired blocks | C1 total input tokens | C4 total input tokens | C1 median/run | C4 median/run | median C4/C1 |
@@ -323,8 +324,8 @@ own tokens and all cache traffic stay inside the number.
 | Sonnet RESET | 7 | 5,076,078 | 6,520,701 | 733,633 | 1,028,101 | 1.3776 |
 | Haiku NON_RESET | 8 | 5,599,750 | 9,504,643 | 652,919 | 1,271,816 | 2.0372 |
 
-Token coverage: 53 of 121 run rows carry
-input-token evidence, 37 carry output tokens. v1, the
+Token coverage: 60 of 128 run rows carry
+input-token evidence, 44 carry output tokens. v1, the
 aborted Attempt 1 and the three diagnostics predate or do not use the token
 instrumentation; their cells are blank, never 0.
 
@@ -347,10 +348,10 @@ reset state at all, so it sits outside both arms. 18 + 17 + 1 = 36.
 | Haiku NON_RESET | 8 | $1.3862 | $2.0068 | 1.8865 |
 
 **Total captured provider cost across all runs carrying cost evidence:
-$14.99 over 37 runs.**
+$25.92 over 44 runs.**
 
 > **CAPTURED COST, NOT NECESSARILY TOTAL STUDY COST.**
-> 84 of 121 run rows carry no
+> 84 of 128 run rows carry no
 > provider-cost record at all: all 48 v1 rows, all 9 Attempt-1 rows, all 10
 > diagnostic rows, 16 of 17 Sonnet RESET rows, and the one refused run. Money was
 > spent on those runs; the runtime never reported it in a form the record could

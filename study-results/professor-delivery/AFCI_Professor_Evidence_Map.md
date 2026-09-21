@@ -81,8 +81,8 @@ No private evaluator identifier appears anywhere in this package.
 | what | value |
 | --- | --- |
 | public repo branch | `study-v2` |
-| evidence commit (last change to study-results/ outside this package) | `0dc81a0b3d6d0b3f8638aaabba9d4aa60ad79fce` |
-| that commit's subject | docs(v2): add lower-model AFCI pilot results |
+| evidence commit (last change to study-results/ outside this package) | `0ded51b1d57832f9d506dfa770827d200c86b9e8` |
+| that commit's subject | study(backstage): freeze public-safe AFCI pilot protocol |
 | public repo origin | https://github.com/thakkarkeyur/afci-bench.git |
 | public repo `main` (v1 base, tag `paper-v0`) | `2adc8741acad7ea5423f0bf3d9ad821ff023a35f` |
 | private evaluator repo HEAD (read-only, unchanged) | `8ad5e3738a50804aa81bbf99928acf7e54372b51` |
@@ -137,7 +137,7 @@ manifest digests above. Those identify the evidence uniquely without disclosing 
 
 ## Recomputation
 
-Every headline figure in this package was recomputed from the 121 run/attempt rows
+Every headline figure in this package was recomputed from the 128 run/attempt rows
 and compared against the frozen per-experiment analysis artifact:
 **124 checks, 0 mismatches.** The full list is in workbook sheet
 `20_RECOMPUTATION_AUDIT`. Regenerate this package with:
