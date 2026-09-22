@@ -1,0 +1,5 @@
+scope,c1_functional_valid,c1_runs,c4_functional_valid,c4_runs,paired_functionally_valid_blocks,paired_blocks,c1_max_turns,c1_runs_mt,c4_max_turns,c4_runs_mt
+OVERALL,4,9,4,9,3,9,1,9,1,9
+T1,0,3,0,3,0,3,0,3,0,3
+T2,2,3,3,3,2,3,0,3,0,3
+T5,2,3,1,3,1,3,1,3,1,3

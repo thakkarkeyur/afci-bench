@@ -1,0 +1,2732 @@
+{
+  "architecture": {
+    "C1_of": 9,
+    "C1_target_violation_runs": 2,
+    "C4_of": 9,
+    "C4_target_violation_runs": 1,
+    "applicable_by_arm": {
+      "C1": 9,
+      "C4": 9
+    },
+    "applicable_opportunities_total": 18,
+    "by_task": {
+      "T1": {
+        "C1_of": 3,
+        "C1_target_violations": 0,
+        "C4_of": 3,
+        "C4_target_violations": 0
+      },
+      "T2": {
+        "C1_of": 3,
+        "C1_target_violations": 0,
+        "C4_of": 3,
+        "C4_target_violations": 0
+      },
+      "T5": {
+        "C1_of": 3,
+        "C1_target_violations": 2,
+        "C4_of": 3,
+        "C4_target_violations": 1
+      }
+    },
+    "every_run_exactly_one_applicable": true,
+    "violated_by_arm": {
+      "C1": 2,
+      "C4": 1
+    },
+    "violated_opportunities_total": 3
+  },
+  "authority": "SL-V2-BACKSTAGE-PILOT-03 (execution); SL-V2-BACKSTAGE-PILOT-01 (science, endpoints, continuation rule)",
+  "continuation_rule": {
+    "authority": "SL-V2-BACKSTAGE-PILOT-01 \u00a711.1 (frozen before data, unmodified)",
+    "criterion_1": {
+      "C1": 2,
+      "C4": 1,
+      "passed": true,
+      "statement": "C4 has FEWER target-violation runs than C1 overall"
+    },
+    "criterion_2": {
+      "count": 1,
+      "passed": false,
+      "statement": "C4 has FEWER target violations in >= 2 of 3 tasks",
+      "tasks_where_C4_fewer": [
+        "T5"
+      ]
+    },
+    "criterion_3": {
+      "C1": 4,
+      "C4": 4,
+      "difference": 0,
+      "passed": true,
+      "statement": "C4 FUNCTIONAL_VALID no more than 1 below C1"
+    },
+    "decision": "NO ARCHITECTURE SIGNAL - DO NOT AUTOMATICALLY EXPAND",
+    "efficiency_cannot_override": "SL-V2-BACKSTAGE-PILOT-01 \u00a711.2",
+    "efficiency_is_secondary": true
+  },
+  "cost": {
+    "C1_median_cost_per_run": {
+      "median": 1.6969,
+      "n": 9,
+      "of": 9
+    },
+    "C1_total_cost_usd": 15.914485,
+    "C4_median_cost_per_run": {
+      "median": 1.7275,
+      "n": 9,
+      "of": 9
+    },
+    "C4_total_cost_usd": 16.277244,
+    "attempt_1_cost_usd_separate": 10.93,
+    "attempt_2_total_cost_usd": 32.191729,
+    "cost_coverage": "18/18",
+    "note": "Attempt-1 cost is retained separately and never pooled with Attempt-2 treatment estimates",
+    "paired_COST_RATIO_coverage": "3/3",
+    "paired_median_COST_RATIO": 0.9497
+  },
+  "descriptive": {
+    "BASH_CALLS": {
+      "C1_median": {
+        "median": 38,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 355,
+      "C4_median": {
+        "median": 41,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 389
+    },
+    "CI_COMMAND_RUNS": {
+      "C1_median": {
+        "median": 4,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 30,
+      "C4_median": {
+        "median": 6,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 42
+    },
+    "EDIT_CALLS": {
+      "C1_median": {
+        "median": 10,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 88,
+      "C4_median": {
+        "median": 10,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 86
+    },
+    "EDIT_WRITE_CALLS": {
+      "C1_median": {
+        "median": 12,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 111,
+      "C4_median": {
+        "median": 12,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 114
+    },
+    "EXPLORATION_CALLS": {
+      "C1_median": {
+        "median": 16,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 156,
+      "C4_median": {
+        "median": 17,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 145
+    },
+    "FAILED_GATE_CYCLES": {
+      "C1_median": {
+        "median": 0,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 8,
+      "C4_median": {
+        "median": 2,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 15
+    },
+    "FAILED_TEST_OR_CI_CYCLES": {
+      "C1_median": {
+        "median": 0,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 6,
+      "C4_median": {
+        "median": 2,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 11
+    },
+    "FILES_CHANGED": {
+      "C1_median": {
+        "median": 6,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 54,
+      "C4_median": {
+        "median": 5,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 50
+    },
+    "FILES_REEDITED": {
+      "C1_median": {
+        "median": 3,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 22,
+      "C4_median": {
+        "median": 3,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 23
+    },
+    "GATE_COMMAND_RUNS": {
+      "C1_median": {
+        "median": 13,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 114,
+      "C4_median": {
+        "median": 14,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 120
+    },
+    "GLOB_CALLS": {
+      "C1_median": {
+        "median": 0,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 8,
+      "C4_median": {
+        "median": 0,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 2
+    },
+    "GREP_CALLS": {
+      "C1_median": {
+        "median": 2,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 20,
+      "C4_median": {
+        "median": 1,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 18
+    },
+    "LINES_ADDED": {
+      "C1_median": {
+        "median": 131,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 1162,
+      "C4_median": {
+        "median": 102,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 1015
+    },
+    "LINES_REMOVED": {
+      "C1_median": {
+        "median": 2,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 30,
+      "C4_median": {
+        "median": 2,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 35
+    },
+    "MODEL_WALL_SECONDS": {
+      "C1_median": {
+        "median": 675.289,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 5761.952,
+      "C4_median": {
+        "median": 715.295,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 6198.067
+    },
+    "NET_LINES": {
+      "C1_median": {
+        "median": 129,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 1132,
+      "C4_median": {
+        "median": 100,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 980
+    },
+    "READ_CALLS": {
+      "C1_median": {
+        "median": 14,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 128,
+      "C4_median": {
+        "median": 16,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 125
+    },
+    "TEST_COMMAND_RUNS": {
+      "C1_median": {
+        "median": 0,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 0,
+      "C4_median": {
+        "median": 0,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 0
+    },
+    "TOTAL_INPUT_TOKENS": {
+      "C1_median": {
+        "median": 3341621,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 31947958,
+      "C4_median": {
+        "median": 3458644,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 33181698
+    },
+    "TOTAL_TOOL_CALLS": {
+      "C1_median": {
+        "median": 65,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 623,
+      "C4_median": {
+        "median": 68,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 648
+    },
+    "TURNS_USED": {
+      "C1_median": {
+        "median": 62,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 601,
+      "C4_median": {
+        "median": 63,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 623
+    },
+    "UNIQUE_FILES_MODIFIED": {
+      "C1_median": {
+        "median": 8,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 69,
+      "C4_median": {
+        "median": 8,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 71
+    },
+    "UNIQUE_FILES_READ": {
+      "C1_median": {
+        "median": 14,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 122,
+      "C4_median": {
+        "median": 14,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 117
+    },
+    "WRITE_CALLS": {
+      "C1_median": {
+        "median": 2,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 23,
+      "C4_median": {
+        "median": 2,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 28
+    },
+    "cache_creation_input_tokens": {
+      "C1_median": {
+        "median": 63156,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 594081,
+      "C4_median": {
+        "median": 64379,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 587650
+    },
+    "cache_read_input_tokens": {
+      "C1_median": {
+        "median": 3278342,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 31352684,
+      "C4_median": {
+        "median": 3394824,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 32592811
+    },
+    "cost_usd": {
+      "C1_median": {
+        "median": 1.6969,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 15.914485,
+      "C4_median": {
+        "median": 1.7275,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 16.277244
+    },
+    "input_tokens": {
+      "C1_median": {
+        "median": 123,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 1193,
+      "C4_median": {
+        "median": 125,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 1237
+    },
+    "permission_denial_count": {
+      "C1_median": {
+        "median": 3,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 26,
+      "C4_median": {
+        "median": 3,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 37
+    },
+    "thinking_tokens": {
+      "C1_median": {
+        "median": 5176,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 52009,
+      "C4_median": {
+        "median": 5566,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 52290
+    },
+    "total_output_tokens": {
+      "C1_median": {
+        "median": 20039,
+        "n": 9,
+        "of": 9
+      },
+      "C1_total": 196041,
+      "C4_median": {
+        "median": 21368,
+        "n": 9,
+        "of": 9
+      },
+      "C4_total": 197986
+    }
+  },
+  "efficiency": {
+    "COST_RATIO": {
+      "by_task": {
+        "T1": {
+          "median": null,
+          "n": 0
+        },
+        "T2": {
+          "median": 1.007,
+          "n": 2
+        },
+        "T5": {
+          "median": 0.8548,
+          "n": 1
+        }
+      },
+      "c4_lower_count": 2,
+      "c4_lower_of": 3,
+      "coverage": "3/3",
+      "detail": [
+        {
+          "block": "T2|R2",
+          "c1": 1.7126825999999997,
+          "c4": 1.8227303999999998,
+          "ratio": 1.0643,
+          "task": "T2"
+        },
+        {
+          "block": "T2|R3",
+          "c1": 1.6223609999999993,
+          "c4": 1.5407153999999998,
+          "ratio": 0.9497,
+          "task": "T2"
+        },
+        {
+          "block": "T5|R2",
+          "c1": 2.4752115,
+          "c4": 2.1158642999999997,
+          "ratio": 0.8548,
+          "task": "T5"
+        }
+      ],
+      "field": "cost_usd",
+      "median_ratio": 0.9497,
+      "n_pairs_offered": 3,
+      "n_pairs_used": 3
+    },
+    "EDIT_WRITE_RATIO": {
+      "by_task": {
+        "T1": {
+          "median": null,
+          "n": 0
+        },
+        "T2": {
+          "median": 1.0,
+          "n": 2
+        },
+        "T5": {
+          "median": 0.9231,
+          "n": 1
+        }
+      },
+      "c4_lower_count": 2,
+      "c4_lower_of": 3,
+      "coverage": "3/3",
+      "detail": [
+        {
+          "block": "T2|R2",
+          "c1": 14,
+          "c4": 13,
+          "ratio": 0.9286,
+          "task": "T2"
+        },
+        {
+          "block": "T2|R3",
+          "c1": 14,
+          "c4": 15,
+          "ratio": 1.0714,
+          "task": "T2"
+        },
+        {
+          "block": "T5|R2",
+          "c1": 13,
+          "c4": 12,
+          "ratio": 0.9231,
+          "task": "T5"
+        }
+      ],
+      "field": "EDIT_WRITE_CALLS",
+      "median_ratio": 0.9286,
+      "n_pairs_offered": 3,
+      "n_pairs_used": 3
+    },
+    "EXPLORATION_RATIO": {
+      "by_task": {
+        "T1": {
+          "median": null,
+          "n": 0
+        },
+        "T2": {
+          "median": 0.9251,
+          "n": 2
+        },
+        "T5": {
+          "median": 0.875,
+          "n": 1
+        }
+      },
+      "c4_lower_count": 2,
+      "c4_lower_of": 3,
+      "coverage": "3/3",
+      "detail": [
+        {
+          "block": "T2|R2",
+          "c1": 23,
+          "c4": 17,
+          "ratio": 0.7391,
+          "task": "T2"
+        },
+        {
+          "block": "T2|R3",
+          "c1": 18,
+          "c4": 20,
+          "ratio": 1.1111,
+          "task": "T2"
+        },
+        {
+          "block": "T5|R2",
+          "c1": 16,
+          "c4": 14,
+          "ratio": 0.875,
+          "task": "T5"
+        }
+      ],
+      "field": "EXPLORATION_CALLS",
+      "median_ratio": 0.875,
+      "n_pairs_offered": 3,
+      "n_pairs_used": 3
+    },
+    "TOKEN_RATIO": {
+      "by_task": {
+        "T1": {
+          "median": null,
+          "n": 0
+        },
+        "T2": {
+          "median": 1.035,
+          "n": 2
+        },
+        "T5": {
+          "median": 0.9154,
+          "n": 1
+        }
+      },
+      "c4_lower_count": 2,
+      "c4_lower_of": 3,
+      "coverage": "3/3",
+      "detail": [
+        {
+          "block": "T2|R2",
+          "c1": 3341621,
+          "c4": 3684842,
+          "ratio": 1.1027,
+          "task": "T2"
+        },
+        {
+          "block": "T2|R3",
+          "c1": 3142645,
+          "c4": 3039661,
+          "ratio": 0.9672,
+          "task": "T2"
+        },
+        {
+          "block": "T5|R2",
+          "c1": 5084546,
+          "c4": 4654389,
+          "ratio": 0.9154,
+          "task": "T5"
+        }
+      ],
+      "field": "TOTAL_INPUT_TOKENS",
+      "median_ratio": 0.9672,
+      "n_pairs_offered": 3,
+      "n_pairs_used": 3
+    },
+    "TOTAL_TOOL_RATIO": {
+      "by_task": {
+        "T1": {
+          "median": null,
+          "n": 0
+        },
+        "T2": {
+          "median": 1.008,
+          "n": 2
+        },
+        "T5": {
+          "median": 1.0233,
+          "n": 1
+        }
+      },
+      "c4_lower_count": 0,
+      "c4_lower_of": 3,
+      "coverage": "3/3",
+      "detail": [
+        {
+          "block": "T2|R2",
+          "c1": 70,
+          "c4": 70,
+          "ratio": 1.0,
+          "task": "T2"
+        },
+        {
+          "block": "T2|R3",
+          "c1": 63,
+          "c4": 64,
+          "ratio": 1.0159,
+          "task": "T2"
+        },
+        {
+          "block": "T5|R2",
+          "c1": 86,
+          "c4": 88,
+          "ratio": 1.0233,
+          "task": "T5"
+        }
+      ],
+      "field": "TOTAL_TOOL_CALLS",
+      "median_ratio": 1.0159,
+      "n_pairs_offered": 3,
+      "n_pairs_used": 3
+    },
+    "UNIQUE_FILES_READ_RATIO": {
+      "by_task": {
+        "T1": {
+          "median": null,
+          "n": 0
+        },
+        "T2": {
+          "median": 0.9556,
+          "n": 2
+        },
+        "T5": {
+          "median": 0.9231,
+          "n": 1
+        }
+      },
+      "c4_lower_count": 2,
+      "c4_lower_of": 3,
+      "coverage": "3/3",
+      "detail": [
+        {
+          "block": "T2|R2",
+          "c1": 18,
+          "c4": 14,
+          "ratio": 0.7778,
+          "task": "T2"
+        },
+        {
+          "block": "T2|R3",
+          "c1": 15,
+          "c4": 17,
+          "ratio": 1.1333,
+          "task": "T2"
+        },
+        {
+          "block": "T5|R2",
+          "c1": 13,
+          "c4": 12,
+          "ratio": 0.9231,
+          "task": "T5"
+        }
+      ],
+      "field": "UNIQUE_FILES_READ",
+      "median_ratio": 0.9231,
+      "n_pairs_offered": 3,
+      "n_pairs_used": 3
+    },
+    "WALL_RATIO": {
+      "by_task": {
+        "T1": {
+          "median": null,
+          "n": 0
+        },
+        "T2": {
+          "median": 1.0718,
+          "n": 2
+        },
+        "T5": {
+          "median": 1.0175,
+          "n": 1
+        }
+      },
+      "c4_lower_count": 0,
+      "c4_lower_of": 3,
+      "coverage": "3/3",
+      "detail": [
+        {
+          "block": "T2|R2",
+          "c1": 677.934,
+          "c4": 715.295,
+          "ratio": 1.0551,
+          "task": "T2"
+        },
+        {
+          "block": "T2|R3",
+          "c1": 635.327,
+          "c4": 691.537,
+          "ratio": 1.0885,
+          "task": "T2"
+        },
+        {
+          "block": "T5|R2",
+          "c1": 829.232,
+          "c4": 843.708,
+          "ratio": 1.0175,
+          "task": "T5"
+        }
+      ],
+      "field": "MODEL_WALL_SECONDS",
+      "median_ratio": 1.0551,
+      "n_pairs_offered": 3,
+      "n_pairs_used": 3
+    },
+    "basis": "functionally valid paired blocks",
+    "pairs_available": 9,
+    "pairs_used": 3
+  },
+  "execution_integrity": {
+    "api_key_source_all_none": true,
+    "candidate_preserved_all": true,
+    "dependency_verification_all_passed": true,
+    "effort_env_readback_all_high": true,
+    "effort_hook_records_total": 2479,
+    "effort_readback_all_high": true,
+    "effort_requested_all_high": true,
+    "effort_validated_all": true,
+    "execution_attempts_used": [
+      1
+    ],
+    "export_proof_all_passed": true,
+    "export_tree_all_match_frozen": true,
+    "intended_observations": 18,
+    "loaded_context_empty_all": true,
+    "model_readback_all_validated": true,
+    "model_requested_all_sonnet5": true,
+    "model_resolved_all_sonnet5": true,
+    "network_preflight_min_passes": 3,
+    "network_preflight_passed_all": true,
+    "observation_invalid": [],
+    "observation_valid": 18,
+    "retries_used": 0,
+    "run_records_present": 18,
+    "runtime_context_all_clean": true,
+    "runtime_context_violations": [],
+    "runtime_version_all_pinned": true,
+    "scored": 18,
+    "unique_session_ids": 18
+  },
+  "functional": {
+    "C1_functional_valid": 4,
+    "C1_of": 9,
+    "C4_functional_valid": 4,
+    "C4_of": 9,
+    "by_task": {
+      "T1": {
+        "C1": 0,
+        "C1_of": 3,
+        "C4": 0,
+        "C4_of": 3,
+        "paired_valid": 0
+      },
+      "T2": {
+        "C1": 2,
+        "C1_of": 3,
+        "C4": 3,
+        "C4_of": 3,
+        "paired_valid": 2
+      },
+      "T5": {
+        "C1": 2,
+        "C1_of": 3,
+        "C4": 1,
+        "C4_of": 3,
+        "paired_valid": 1
+      }
+    },
+    "paired_blocks": 9,
+    "paired_functionally_valid_blocks": 3
+  },
+  "max_turns": {
+    "C1": 1,
+    "C1_of": 9,
+    "C4": 1,
+    "C4_of": 9,
+    "MAX_TURNS": 96,
+    "by_task": {
+      "T1": {
+        "C1": 0,
+        "C1_of": 3,
+        "C4": 0,
+        "C4_of": 3
+      },
+      "T2": {
+        "C1": 0,
+        "C1_of": 3,
+        "C4": 0,
+        "C4_of": 3
+      },
+      "T5": {
+        "C1": 1,
+        "C1_of": 3,
+        "C4": 1,
+        "C4_of": 3
+      }
+    },
+    "overall": 2,
+    "overall_of": 18
+  },
+  "public_safety": {
+    "hidden_case_ids_removed": true,
+    "note": "semantic and restraint results are published as COUNTS only; the hidden oracle's case identifiers, the architecture scorer's rule and opportunity ids, expected packages, paths and evidence strings are private and appear nowhere in this package",
+    "private_scorer_mappings_present": false
+  },
+  "record": "afci-bench/v2/backstage-attempt2-analysis",
+  "rows": [
+    {
+      "BASH_CALLS": 50,
+      "CI_COMMAND_RUNS": 4,
+      "EDIT_CALLS": 9,
+      "EDIT_WRITE_CALLS": 11,
+      "EXPLORATION_CALLS": 11,
+      "FAILED_GATE_CYCLES": 2,
+      "FAILED_TEST_OR_CI_CYCLES": 1,
+      "FILES_CHANGED": 5,
+      "FILES_REEDITED": 2,
+      "FUNCTIONAL_VALID": false,
+      "GATE_COMMAND_RUNS": 17,
+      "GLOB_CALLS": 0,
+      "GREP_CALLS": 1,
+      "LINES_ADDED": 131,
+      "LINES_REMOVED": 2,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 554.784,
+      "NET_LINES": 129,
+      "PREPARE_SECONDS": 2312.848,
+      "READ_CALLS": 10,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 3865966,
+      "TOTAL_RUN_SECONDS": 2880.072,
+      "TOTAL_TOOL_CALLS": 72,
+      "TURNS_USED": 70,
+      "UNIQUE_FILES_MODIFIED": 6,
+      "UNIQUE_FILES_READ": 8,
+      "WRITE_CALLS": 2,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T1|R3",
+      "cache_creation_input_tokens": 80200,
+      "cache_read_input_tokens": 3785627,
+      "candidate_preserved": true,
+      "cell_id": "T1|C1|NON_RESET|R3",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C1",
+      "cost_usd": 1.9093251,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 140,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 139,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 4,
+      "permission_mode": "acceptEdits",
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t1-c1-real-r3-non-reset-a1-ac5f41ae5239",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 3,
+      "semantic_cases_total": 4,
+      "sequence": 1,
+      "session_id": "d551e136-2aae-4353-b31d-a00194249ad4",
+      "target_violation": false,
+      "task": "T1",
+      "terminal_subtype": "success",
+      "thinking_tokens": 2923,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.9093251,
+      "total_output_tokens": 19468
+    },
+    {
+      "BASH_CALLS": 40,
+      "CI_COMMAND_RUNS": 7,
+      "EDIT_CALLS": 10,
+      "EDIT_WRITE_CALLS": 11,
+      "EXPLORATION_CALLS": 9,
+      "FAILED_GATE_CYCLES": 3,
+      "FAILED_TEST_OR_CI_CYCLES": 2,
+      "FILES_CHANGED": 5,
+      "FILES_REEDITED": 4,
+      "FUNCTIONAL_VALID": false,
+      "GATE_COMMAND_RUNS": 22,
+      "GLOB_CALLS": 0,
+      "GREP_CALLS": 0,
+      "LINES_ADDED": 169,
+      "LINES_REMOVED": 2,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 826.462,
+      "NET_LINES": 167,
+      "PREPARE_SECONDS": 1145.492,
+      "READ_CALLS": 9,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 3146439,
+      "TOTAL_RUN_SECONDS": 1980.363,
+      "TOTAL_TOOL_CALLS": 60,
+      "TURNS_USED": 57,
+      "UNIQUE_FILES_MODIFIED": 5,
+      "UNIQUE_FILES_READ": 8,
+      "WRITE_CALLS": 1,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T1|R3",
+      "cache_creation_input_tokens": 59605,
+      "cache_read_input_tokens": 3086721,
+      "candidate_preserved": true,
+      "cell_id": "T1|C4|NON_RESET|R3",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C4",
+      "cost_usd": 1.5657153000000001,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 118,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 113,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 3,
+      "permission_mode": "acceptEdits",
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t1-c4-real-r3-non-reset-a1-844b4866ff74",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 3,
+      "semantic_cases_total": 4,
+      "sequence": 2,
+      "session_id": "ab12844b-c901-4ed2-a239-d5e201817d5b",
+      "target_violation": false,
+      "task": "T1",
+      "terminal_subtype": "success",
+      "thinking_tokens": 3375,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.5657153000000001,
+      "total_output_tokens": 18782
+    },
+    {
+      "BASH_CALLS": 47,
+      "CI_COMMAND_RUNS": 1,
+      "EDIT_CALLS": 6,
+      "EDIT_WRITE_CALLS": 12,
+      "EXPLORATION_CALLS": 17,
+      "FAILED_GATE_CYCLES": 0,
+      "FAILED_TEST_OR_CI_CYCLES": 0,
+      "FILES_CHANGED": 4,
+      "FILES_REEDITED": 1,
+      "FUNCTIONAL_VALID": false,
+      "GATE_COMMAND_RUNS": 1,
+      "GLOB_CALLS": 0,
+      "GREP_CALLS": 1,
+      "LINES_ADDED": 50,
+      "LINES_REMOVED": 1,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 382.871,
+      "NET_LINES": 49,
+      "PREPARE_SECONDS": 904.921,
+      "READ_CALLS": 16,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 3965479,
+      "TOTAL_RUN_SECONDS": 1296.884,
+      "TOTAL_TOOL_CALLS": 76,
+      "TURNS_USED": 77,
+      "UNIQUE_FILES_MODIFIED": 10,
+      "UNIQUE_FILES_READ": 16,
+      "WRITE_CALLS": 6,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 1,
+      "block_id": "T5|R3",
+      "cache_creation_input_tokens": 64379,
+      "cache_read_input_tokens": 3900947,
+      "candidate_preserved": true,
+      "cell_id": "T5|C4|NON_RESET|R3",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C4",
+      "cost_usd": 1.9666820999999999,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 142,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 153,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 10,
+      "permission_mode": "acceptEdits",
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 0,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t5-c4-real-r3-non-reset-a1-de74e51327d3",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 0,
+      "semantic_cases_total": 5,
+      "sequence": 3,
+      "session_id": "1a250501-5758-4123-9b01-09ac32c5623b",
+      "target_violation": true,
+      "task": "T5",
+      "terminal_subtype": "success",
+      "thinking_tokens": 12028,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.9666820999999999,
+      "total_output_tokens": 27311
+    },
+    {
+      "BASH_CALLS": 51,
+      "CI_COMMAND_RUNS": 0,
+      "EDIT_CALLS": 8,
+      "EDIT_WRITE_CALLS": 15,
+      "EXPLORATION_CALLS": 30,
+      "FAILED_GATE_CYCLES": 0,
+      "FAILED_TEST_OR_CI_CYCLES": 0,
+      "FILES_CHANGED": 5,
+      "FILES_REEDITED": 2,
+      "FUNCTIONAL_VALID": false,
+      "GATE_COMMAND_RUNS": 1,
+      "GLOB_CALLS": 4,
+      "GREP_CALLS": 6,
+      "LINES_ADDED": 57,
+      "LINES_REMOVED": 2,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 694.569,
+      "NET_LINES": 55,
+      "PREPARE_SECONDS": 702.686,
+      "READ_CALLS": 20,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 5311326,
+      "TOTAL_RUN_SECONDS": 1406.402,
+      "TOTAL_TOOL_CALLS": 96,
+      "TURNS_USED": 96,
+      "UNIQUE_FILES_MODIFIED": 12,
+      "UNIQUE_FILES_READ": 19,
+      "WRITE_CALLS": 7,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T5|R3",
+      "cache_creation_input_tokens": 74004,
+      "cache_read_input_tokens": 5237131,
+      "candidate_preserved": true,
+      "cell_id": "T5|C1|NON_RESET|R3",
+      "completion": "MAX_TURNS_REACHED",
+      "condition": "C1",
+      "cost_usd": 2.427801299999999,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 185,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 1,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": true,
+      "input_tokens": 191,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 4,
+      "permission_mode": "acceptEdits",
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 0,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t5-c1-real-r3-non-reset-a1-43cabca2b6c0",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 0,
+      "semantic_cases_total": 5,
+      "sequence": 4,
+      "session_id": "fec02604-639c-47be-8f62-35abac71da1c",
+      "target_violation": false,
+      "task": "T5",
+      "terminal_subtype": "error_max_turns",
+      "thinking_tokens": 10218,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 2.427801299999999,
+      "total_output_tokens": 27471
+    },
+    {
+      "BASH_CALLS": 57,
+      "CI_COMMAND_RUNS": 5,
+      "EDIT_CALLS": 10,
+      "EDIT_WRITE_CALLS": 13,
+      "EXPLORATION_CALLS": 16,
+      "FAILED_GATE_CYCLES": 3,
+      "FAILED_TEST_OR_CI_CYCLES": 2,
+      "FILES_CHANGED": 6,
+      "FILES_REEDITED": 3,
+      "FUNCTIONAL_VALID": true,
+      "GATE_COMMAND_RUNS": 20,
+      "GLOB_CALLS": 0,
+      "GREP_CALLS": 3,
+      "LINES_ADDED": 74,
+      "LINES_REMOVED": 1,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 829.232,
+      "NET_LINES": 73,
+      "PREPARE_SECONDS": 1057.349,
+      "READ_CALLS": 13,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 5084546,
+      "TOTAL_RUN_SECONDS": 1895.823,
+      "TOTAL_TOOL_CALLS": 86,
+      "TURNS_USED": 87,
+      "UNIQUE_FILES_MODIFIED": 8,
+      "UNIQUE_FILES_READ": 13,
+      "WRITE_CALLS": 3,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 1,
+      "block_id": "T5|R2",
+      "cache_creation_input_tokens": 83658,
+      "cache_read_input_tokens": 5000715,
+      "candidate_preserved": true,
+      "cell_id": "T5|C1|NON_RESET|R2",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C1",
+      "cost_usd": 2.4752115,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 170,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 173,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 2,
+      "permission_mode": "acceptEdits",
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t5-c1-real-r2-non-reset-a1-3e3c04d1fefd",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 5,
+      "semantic_cases_total": 5,
+      "sequence": 5,
+      "session_id": "cca98f9c-bcd3-4dca-a53f-950b4bea9a61",
+      "target_violation": true,
+      "task": "T5",
+      "terminal_subtype": "success",
+      "thinking_tokens": 10406,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 2.4752115,
+      "total_output_tokens": 31502
+    },
+    {
+      "BASH_CALLS": 62,
+      "CI_COMMAND_RUNS": 6,
+      "EDIT_CALLS": 11,
+      "EDIT_WRITE_CALLS": 12,
+      "EXPLORATION_CALLS": 14,
+      "FAILED_GATE_CYCLES": 4,
+      "FAILED_TEST_OR_CI_CYCLES": 3,
+      "FILES_CHANGED": 8,
+      "FILES_REEDITED": 3,
+      "FUNCTIONAL_VALID": true,
+      "GATE_COMMAND_RUNS": 16,
+      "GLOB_CALLS": 1,
+      "GREP_CALLS": 0,
+      "LINES_ADDED": 102,
+      "LINES_REMOVED": 2,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 843.708,
+      "NET_LINES": 100,
+      "PREPARE_SECONDS": 954.644,
+      "READ_CALLS": 13,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 4654389,
+      "TOTAL_RUN_SECONDS": 1807.794,
+      "TOTAL_TOOL_CALLS": 88,
+      "TURNS_USED": 89,
+      "UNIQUE_FILES_MODIFIED": 8,
+      "UNIQUE_FILES_READ": 12,
+      "WRITE_CALLS": 1,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T5|R2",
+      "cache_creation_input_tokens": 69921,
+      "cache_read_input_tokens": 4584291,
+      "candidate_preserved": true,
+      "cell_id": "T5|C4|NON_RESET|R2",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C4",
+      "cost_usd": 2.1158642999999997,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 171,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 177,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 5,
+      "permission_mode": "acceptEdits",
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t5-c4-real-r2-non-reset-a1-ff15bd075e82",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 5,
+      "semantic_cases_total": 5,
+      "sequence": 6,
+      "session_id": "49a050cd-1162-4c17-a221-09015622ca71",
+      "target_violation": false,
+      "task": "T5",
+      "terminal_subtype": "success",
+      "thinking_tokens": 5246,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 2.1158642999999997,
+      "total_output_tokens": 21368
+    },
+    {
+      "BASH_CALLS": 32,
+      "CI_COMMAND_RUNS": 6,
+      "EDIT_CALLS": 12,
+      "EDIT_WRITE_CALLS": 14,
+      "EXPLORATION_CALLS": 23,
+      "FAILED_GATE_CYCLES": 3,
+      "FAILED_TEST_OR_CI_CYCLES": 3,
+      "FILES_CHANGED": 7,
+      "FILES_REEDITED": 3,
+      "FUNCTIONAL_VALID": true,
+      "GATE_COMMAND_RUNS": 13,
+      "GLOB_CALLS": 0,
+      "GREP_CALLS": 4,
+      "LINES_ADDED": 135,
+      "LINES_REMOVED": 4,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 677.934,
+      "NET_LINES": 131,
+      "PREPARE_SECONDS": 1056.875,
+      "READ_CALLS": 19,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 3341621,
+      "TOTAL_RUN_SECONDS": 1744.85,
+      "TOTAL_TOOL_CALLS": 70,
+      "TURNS_USED": 62,
+      "UNIQUE_FILES_MODIFIED": 8,
+      "UNIQUE_FILES_READ": 18,
+      "WRITE_CALLS": 2,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T2|R2",
+      "cache_creation_input_tokens": 63156,
+      "cache_read_input_tokens": 3278342,
+      "candidate_preserved": true,
+      "cell_id": "T2|C1|NON_RESET|R2",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C1",
+      "cost_usd": 1.7126825999999997,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 134,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 123,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 5,
+      "permission_mode": "acceptEdits",
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t2-c1-real-r2-non-reset-a1-1ac04bb33d22",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 4,
+      "semantic_cases_total": 4,
+      "sequence": 7,
+      "session_id": "4808f953-8c4f-44cc-bff3-7d5c496db4c3",
+      "target_violation": false,
+      "task": "T2",
+      "terminal_subtype": "success",
+      "thinking_tokens": 5926,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.7126825999999997,
+      "total_output_tokens": 23325
+    },
+    {
+      "BASH_CALLS": 40,
+      "CI_COMMAND_RUNS": 4,
+      "EDIT_CALLS": 11,
+      "EDIT_WRITE_CALLS": 13,
+      "EXPLORATION_CALLS": 17,
+      "FAILED_GATE_CYCLES": 0,
+      "FAILED_TEST_OR_CI_CYCLES": 0,
+      "FILES_CHANGED": 6,
+      "FILES_REEDITED": 3,
+      "FUNCTIONAL_VALID": true,
+      "GATE_COMMAND_RUNS": 12,
+      "GLOB_CALLS": 0,
+      "GREP_CALLS": 0,
+      "LINES_ADDED": 156,
+      "LINES_REMOVED": 4,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 715.295,
+      "NET_LINES": 152,
+      "PREPARE_SECONDS": 1002.561,
+      "READ_CALLS": 17,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 3684842,
+      "TOTAL_RUN_SECONDS": 1728.349,
+      "TOTAL_TOOL_CALLS": 70,
+      "TURNS_USED": 64,
+      "UNIQUE_FILES_MODIFIED": 7,
+      "UNIQUE_FILES_READ": 14,
+      "WRITE_CALLS": 2,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T2|R2",
+      "cache_creation_input_tokens": 66507,
+      "cache_read_input_tokens": 3618208,
+      "candidate_preserved": true,
+      "cell_id": "T2|C4|NON_RESET|R2",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C4",
+      "cost_usd": 1.8227303999999998,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 138,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 127,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 2,
+      "permission_mode": "acceptEdits",
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t2-c4-real-r2-non-reset-a1-461ec718ec02",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 4,
+      "semantic_cases_total": 4,
+      "sequence": 8,
+      "session_id": "f8efec8b-e56d-408f-ba2e-6e2e4be07e13",
+      "target_violation": false,
+      "task": "T2",
+      "terminal_subtype": "success",
+      "thinking_tokens": 6753,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.8227303999999998,
+      "total_output_tokens": 22523
+    },
+    {
+      "BASH_CALLS": 38,
+      "CI_COMMAND_RUNS": 5,
+      "EDIT_CALLS": 10,
+      "EDIT_WRITE_CALLS": 11,
+      "EXPLORATION_CALLS": 14,
+      "FAILED_GATE_CYCLES": 0,
+      "FAILED_TEST_OR_CI_CYCLES": 0,
+      "FILES_CHANGED": 6,
+      "FILES_REEDITED": 3,
+      "FUNCTIONAL_VALID": false,
+      "GATE_COMMAND_RUNS": 20,
+      "GLOB_CALLS": 3,
+      "GREP_CALLS": 0,
+      "LINES_ADDED": 204,
+      "LINES_REMOVED": 1,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 954.962,
+      "NET_LINES": 203,
+      "PREPARE_SECONDS": 1088.004,
+      "READ_CALLS": 11,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 3401103,
+      "TOTAL_RUN_SECONDS": 2052.554,
+      "TOTAL_TOOL_CALLS": 63,
+      "TURNS_USED": 64,
+      "UNIQUE_FILES_MODIFIED": 6,
+      "UNIQUE_FILES_READ": 10,
+      "WRITE_CALLS": 1,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T1|R2",
+      "cache_creation_input_tokens": 65897,
+      "cache_read_input_tokens": 3335079,
+      "candidate_preserved": true,
+      "cell_id": "T1|C1|NON_RESET|R2",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C1",
+      "cost_usd": 1.6968716999999998,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 126,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 127,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 1,
+      "permission_mode": "acceptEdits",
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t1-c1-real-r2-non-reset-a1-caa6d4176439",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 3,
+      "semantic_cases_total": 4,
+      "sequence": 9,
+      "session_id": "e44c9bb8-6792-42e0-af7b-afcee79ea771",
+      "target_violation": false,
+      "task": "T1",
+      "terminal_subtype": "success",
+      "thinking_tokens": 3454,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.6968716999999998,
+      "total_output_tokens": 20039
+    },
+    {
+      "BASH_CALLS": 46,
+      "CI_COMMAND_RUNS": 7,
+      "EDIT_CALLS": 7,
+      "EDIT_WRITE_CALLS": 9,
+      "EXPLORATION_CALLS": 9,
+      "FAILED_GATE_CYCLES": 2,
+      "FAILED_TEST_OR_CI_CYCLES": 2,
+      "FILES_CHANGED": 4,
+      "FILES_REEDITED": 2,
+      "FUNCTIONAL_VALID": false,
+      "GATE_COMMAND_RUNS": 20,
+      "GLOB_CALLS": 0,
+      "GREP_CALLS": 0,
+      "LINES_ADDED": 95,
+      "LINES_REMOVED": 15,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 795.966,
+      "NET_LINES": 80,
+      "PREPARE_SECONDS": 1458.476,
+      "READ_CALLS": 9,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 3110424,
+      "TOTAL_RUN_SECONDS": 2264.07,
+      "TOTAL_TOOL_CALLS": 64,
+      "TURNS_USED": 63,
+      "UNIQUE_FILES_MODIFIED": 5,
+      "UNIQUE_FILES_READ": 9,
+      "WRITE_CALLS": 2,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T1|R2",
+      "cache_creation_input_tokens": 69007,
+      "cache_read_input_tokens": 3041292,
+      "candidate_preserved": true,
+      "cell_id": "T1|C4|NON_RESET|R2",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C4",
+      "cost_usd": 1.6186596000000002,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 127,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 125,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 2,
+      "permission_mode": "acceptEdits",
+      "repetition": 2,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t1-c4-real-r2-non-reset-a1-458077d686b1",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 3,
+      "semantic_cases_total": 4,
+      "sequence": 10,
+      "session_id": "b3a5c0db-e958-4691-8b60-cdaae02d5258",
+      "target_violation": false,
+      "task": "T1",
+      "terminal_subtype": "success",
+      "thinking_tokens": 5566,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.6186596000000002,
+      "total_output_tokens": 19457
+    },
+    {
+      "BASH_CALLS": 52,
+      "CI_COMMAND_RUNS": 1,
+      "EDIT_CALLS": 9,
+      "EDIT_WRITE_CALLS": 17,
+      "EXPLORATION_CALLS": 27,
+      "FAILED_GATE_CYCLES": 0,
+      "FAILED_TEST_OR_CI_CYCLES": 0,
+      "FILES_CHANGED": 5,
+      "FILES_REEDITED": 3,
+      "FUNCTIONAL_VALID": false,
+      "GATE_COMMAND_RUNS": 1,
+      "GLOB_CALLS": 1,
+      "GREP_CALLS": 8,
+      "LINES_ADDED": 69,
+      "LINES_REMOVED": 2,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 530.116,
+      "NET_LINES": 67,
+      "PREPARE_SECONDS": 875.048,
+      "READ_CALLS": 18,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 5060469,
+      "TOTAL_RUN_SECONDS": 1411.563,
+      "TOTAL_TOOL_CALLS": 96,
+      "TURNS_USED": 96,
+      "UNIQUE_FILES_MODIFIED": 13,
+      "UNIQUE_FILES_READ": 17,
+      "WRITE_CALLS": 8,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T5|R1",
+      "cache_creation_input_tokens": 73285,
+      "cache_read_input_tokens": 4986993,
+      "candidate_preserved": true,
+      "cell_id": "T5|C4|NON_RESET|R1",
+      "completion": "MAX_TURNS_REACHED",
+      "condition": "C4",
+      "cost_usd": 2.3843559,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 183,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 1,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": true,
+      "input_tokens": 191,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 7,
+      "permission_mode": "acceptEdits",
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 0,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t5-c4-real-r1-non-reset-a1-1b4788a2354b",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 0,
+      "semantic_cases_total": 5,
+      "sequence": 11,
+      "session_id": "200724a8-8506-4729-9633-ac08251142cb",
+      "target_violation": false,
+      "task": "T5",
+      "terminal_subtype": "error_max_turns",
+      "thinking_tokens": 7907,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 2.3843559,
+      "total_output_tokens": 29865
+    },
+    {
+      "BASH_CALLS": 27,
+      "CI_COMMAND_RUNS": 2,
+      "EDIT_CALLS": 8,
+      "EDIT_WRITE_CALLS": 10,
+      "EXPLORATION_CALLS": 16,
+      "FAILED_GATE_CYCLES": 0,
+      "FAILED_TEST_OR_CI_CYCLES": 0,
+      "FILES_CHANGED": 6,
+      "FILES_REEDITED": 2,
+      "FUNCTIONAL_VALID": true,
+      "GATE_COMMAND_RUNS": 8,
+      "GLOB_CALLS": 0,
+      "GREP_CALLS": 0,
+      "LINES_ADDED": 70,
+      "LINES_REMOVED": 1,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 342.571,
+      "NET_LINES": 69,
+      "PREPARE_SECONDS": 1028.316,
+      "READ_CALLS": 16,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 2265968,
+      "TOTAL_RUN_SECONDS": 1381.028,
+      "TOTAL_TOOL_CALLS": 53,
+      "TURNS_USED": 49,
+      "UNIQUE_FILES_MODIFIED": 7,
+      "UNIQUE_FILES_READ": 15,
+      "WRITE_CALLS": 2,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 1,
+      "block_id": "T5|R1",
+      "cache_creation_input_tokens": 53353,
+      "cache_read_input_tokens": 2212518,
+      "candidate_preserved": true,
+      "cell_id": "T5|C1|NON_RESET|R1",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C1",
+      "cost_usd": 1.2464843999999997,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 107,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 97,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 0,
+      "permission_mode": "acceptEdits",
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t5-c1-real-r1-non-reset-a1-53749bab5074",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 5,
+      "semantic_cases_total": 5,
+      "sequence": 12,
+      "session_id": "aa7f453a-7175-4569-ac11-1a851bd0c728",
+      "target_violation": true,
+      "task": "T5",
+      "terminal_subtype": "success",
+      "thinking_tokens": 4827,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.2464843999999997,
+      "total_output_tokens": 17488
+    },
+    {
+      "BASH_CALLS": 32,
+      "CI_COMMAND_RUNS": 6,
+      "EDIT_CALLS": 11,
+      "EDIT_WRITE_CALLS": 14,
+      "EXPLORATION_CALLS": 22,
+      "FAILED_GATE_CYCLES": 2,
+      "FAILED_TEST_OR_CI_CYCLES": 2,
+      "FILES_CHANGED": 7,
+      "FILES_REEDITED": 2,
+      "FUNCTIONAL_VALID": true,
+      "GATE_COMMAND_RUNS": 14,
+      "GLOB_CALLS": 0,
+      "GREP_CALLS": 4,
+      "LINES_ADDED": 162,
+      "LINES_REMOVED": 4,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 640.788,
+      "NET_LINES": 158,
+      "PREPARE_SECONDS": 691.497,
+      "READ_CALLS": 18,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 3458644,
+      "TOTAL_RUN_SECONDS": 1341.64,
+      "TOTAL_TOOL_CALLS": 68,
+      "TURNS_USED": 61,
+      "UNIQUE_FILES_MODIFIED": 9,
+      "UNIQUE_FILES_READ": 16,
+      "WRITE_CALLS": 3,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T2|R1",
+      "cache_creation_input_tokens": 63699,
+      "cache_read_input_tokens": 3394824,
+      "candidate_preserved": true,
+      "cell_id": "T2|C4|NON_RESET|R1",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C4",
+      "cost_usd": 1.7274791999999994,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 133,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 121,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 4,
+      "permission_mode": "acceptEdits",
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t2-c4-real-r1-non-reset-a1-c5458013f1ab",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 4,
+      "semantic_cases_total": 4,
+      "sequence": 13,
+      "session_id": "bda106d1-be97-44ae-9c87-5ea13ad35b62",
+      "target_violation": false,
+      "task": "T2",
+      "terminal_subtype": "success",
+      "thinking_tokens": 6007,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.7274791999999994,
+      "total_output_tokens": 21765
+    },
+    {
+      "BASH_CALLS": 38,
+      "CI_COMMAND_RUNS": 4,
+      "EDIT_CALLS": 10,
+      "EDIT_WRITE_CALLS": 12,
+      "EXPLORATION_CALLS": 15,
+      "FAILED_GATE_CYCLES": 0,
+      "FAILED_TEST_OR_CI_CYCLES": 0,
+      "FILES_CHANGED": 7,
+      "FILES_REEDITED": 1,
+      "FUNCTIONAL_VALID": false,
+      "GATE_COMMAND_RUNS": 16,
+      "GLOB_CALLS": 0,
+      "GREP_CALLS": 1,
+      "LINES_ADDED": 155,
+      "LINES_REMOVED": 13,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 397.284,
+      "NET_LINES": 142,
+      "PREPARE_SECONDS": 940.258,
+      "READ_CALLS": 14,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 3019864,
+      "TOTAL_RUN_SECONDS": 1347.068,
+      "TOTAL_TOOL_CALLS": 65,
+      "TURNS_USED": 62,
+      "UNIQUE_FILES_MODIFIED": 8,
+      "UNIQUE_FILES_READ": 14,
+      "WRITE_CALLS": 2,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T2|R1",
+      "cache_creation_input_tokens": 56552,
+      "cache_read_input_tokens": 2963189,
+      "candidate_preserved": true,
+      "cell_id": "T2|C1|NON_RESET|R1",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C1",
+      "cost_usd": 1.5094827000000004,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 125,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 123,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 5,
+      "permission_mode": "acceptEdits",
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t2-c1-real-r1-non-reset-a1-704a8aa2f528",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 3,
+      "semantic_cases_total": 4,
+      "sequence": 14,
+      "session_id": "af2b7fa5-596b-4554-b4e7-0e67377d53d6",
+      "target_violation": false,
+      "task": "T2",
+      "terminal_subtype": "success",
+      "thinking_tokens": 5176,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.5094827000000004,
+      "total_output_tokens": 18723
+    },
+    {
+      "BASH_CALLS": 31,
+      "CI_COMMAND_RUNS": 3,
+      "EDIT_CALLS": 10,
+      "EDIT_WRITE_CALLS": 11,
+      "EXPLORATION_CALLS": 13,
+      "FAILED_GATE_CYCLES": 0,
+      "FAILED_TEST_OR_CI_CYCLES": 0,
+      "FILES_CHANGED": 6,
+      "FILES_REEDITED": 3,
+      "FUNCTIONAL_VALID": false,
+      "GATE_COMMAND_RUNS": 11,
+      "GLOB_CALLS": 1,
+      "GREP_CALLS": 2,
+      "LINES_ADDED": 236,
+      "LINES_REMOVED": 2,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 675.289,
+      "NET_LINES": 234,
+      "PREPARE_SECONDS": 798.575,
+      "READ_CALLS": 10,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 2514919,
+      "TOTAL_RUN_SECONDS": 1483.269,
+      "TOTAL_TOOL_CALLS": 55,
+      "TURNS_USED": 52,
+      "UNIQUE_FILES_MODIFIED": 6,
+      "UNIQUE_FILES_READ": 10,
+      "WRITE_CALLS": 1,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T1|R1",
+      "cache_creation_input_tokens": 55973,
+      "cache_read_input_tokens": 2458843,
+      "candidate_preserved": true,
+      "cell_id": "T1|C1|NON_RESET|R1",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C1",
+      "cost_usd": 1.3142648999999995,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 108,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 103,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 3,
+      "permission_mode": "acceptEdits",
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t1-c1-real-r1-non-reset-a1-590c2d657965",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 3,
+      "semantic_cases_total": 4,
+      "sequence": 15,
+      "session_id": "9a23934c-a3e7-4439-afb0-5b340f7db7c7",
+      "target_violation": false,
+      "task": "T1",
+      "terminal_subtype": "success",
+      "thinking_tokens": 1331,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.3142648999999995,
+      "total_output_tokens": 16031
+    },
+    {
+      "BASH_CALLS": 41,
+      "CI_COMMAND_RUNS": 7,
+      "EDIT_CALLS": 9,
+      "EDIT_WRITE_CALLS": 11,
+      "EXPLORATION_CALLS": 10,
+      "FAILED_GATE_CYCLES": 4,
+      "FAILED_TEST_OR_CI_CYCLES": 2,
+      "FILES_CHANGED": 4,
+      "FILES_REEDITED": 3,
+      "FUNCTIONAL_VALID": false,
+      "GATE_COMMAND_RUNS": 24,
+      "GLOB_CALLS": 0,
+      "GREP_CALLS": 2,
+      "LINES_ADDED": 80,
+      "LINES_REMOVED": 1,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 771.324,
+      "NET_LINES": 79,
+      "PREPARE_SECONDS": 923.786,
+      "READ_CALLS": 8,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 3061351,
+      "TOTAL_RUN_SECONDS": 1704.541,
+      "TOTAL_TOOL_CALLS": 62,
+      "TURNS_USED": 60,
+      "UNIQUE_FILES_MODIFIED": 5,
+      "UNIQUE_FILES_READ": 8,
+      "WRITE_CALLS": 2,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T1|R1",
+      "cache_creation_input_tokens": 60515,
+      "cache_read_input_tokens": 3000717,
+      "candidate_preserved": true,
+      "cell_id": "T1|C4|NON_RESET|R1",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C4",
+      "cost_usd": 1.5350420999999994,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 120,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 119,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 3,
+      "permission_mode": "acceptEdits",
+      "repetition": 1,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t1-c4-real-r1-non-reset-a1-c1758998b40d",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 3,
+      "semantic_cases_total": 4,
+      "sequence": 16,
+      "session_id": "d73dd3a3-1a61-4340-88de-1a4fbb21d116",
+      "target_violation": false,
+      "task": "T1",
+      "terminal_subtype": "success",
+      "thinking_tokens": 1821,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.5350420999999994,
+      "total_output_tokens": 18092
+    },
+    {
+      "BASH_CALLS": 29,
+      "CI_COMMAND_RUNS": 3,
+      "EDIT_CALLS": 12,
+      "EDIT_WRITE_CALLS": 15,
+      "EXPLORATION_CALLS": 20,
+      "FAILED_GATE_CYCLES": 0,
+      "FAILED_TEST_OR_CI_CYCLES": 0,
+      "FILES_CHANGED": 7,
+      "FILES_REEDITED": 2,
+      "FUNCTIONAL_VALID": true,
+      "GATE_COMMAND_RUNS": 10,
+      "GLOB_CALLS": 0,
+      "GREP_CALLS": 3,
+      "LINES_ADDED": 132,
+      "LINES_REMOVED": 4,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 691.537,
+      "NET_LINES": 128,
+      "PREPARE_SECONDS": 924.577,
+      "READ_CALLS": 17,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 3039661,
+      "TOTAL_RUN_SECONDS": 1626.623,
+      "TOTAL_TOOL_CALLS": 64,
+      "TURNS_USED": 56,
+      "UNIQUE_FILES_MODIFIED": 9,
+      "UNIQUE_FILES_READ": 17,
+      "WRITE_CALLS": 3,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T2|R3",
+      "cache_creation_input_tokens": 60732,
+      "cache_read_input_tokens": 2978818,
+      "candidate_preserved": true,
+      "cell_id": "T2|C4|NON_RESET|R3",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C4",
+      "cost_usd": 1.5407153999999998,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 127,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 111,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 1,
+      "permission_mode": "acceptEdits",
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t2-c4-real-r3-non-reset-a1-1bc72a654892",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 4,
+      "semantic_cases_total": 4,
+      "sequence": 17,
+      "session_id": "63524caa-20a3-4cb6-8e3d-0f41f4df72e8",
+      "target_violation": false,
+      "task": "T2",
+      "terminal_subtype": "success",
+      "thinking_tokens": 3587,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.5407153999999998,
+      "total_output_tokens": 18823
+    },
+    {
+      "BASH_CALLS": 31,
+      "CI_COMMAND_RUNS": 1,
+      "EDIT_CALLS": 11,
+      "EDIT_WRITE_CALLS": 14,
+      "EXPLORATION_CALLS": 18,
+      "FAILED_GATE_CYCLES": 0,
+      "FAILED_TEST_OR_CI_CYCLES": 0,
+      "FILES_CHANGED": 6,
+      "FILES_REEDITED": 3,
+      "FUNCTIONAL_VALID": true,
+      "GATE_COMMAND_RUNS": 8,
+      "GLOB_CALLS": 0,
+      "GREP_CALLS": 3,
+      "LINES_ADDED": 100,
+      "LINES_REMOVED": 4,
+      "MAX_TURNS": 96,
+      "MODEL_WALL_SECONDS": 635.327,
+      "NET_LINES": 96,
+      "PREPARE_SECONDS": 678.934,
+      "READ_CALLS": 15,
+      "TEST_COMMAND_RUNS": 0,
+      "TOTAL_INPUT_TOKENS": 3142645,
+      "TOTAL_RUN_SECONDS": 1324.072,
+      "TOTAL_TOOL_CALLS": 63,
+      "TURNS_USED": 59,
+      "UNIQUE_FILES_MODIFIED": 8,
+      "UNIQUE_FILES_READ": 15,
+      "WRITE_CALLS": 3,
+      "api_key_source": "none",
+      "architecture_applicable_opportunities": 1,
+      "architecture_executed": true,
+      "architecture_violated_opportunities": 0,
+      "block_id": "T2|R3",
+      "cache_creation_input_tokens": 61288,
+      "cache_read_input_tokens": 3081240,
+      "candidate_preserved": true,
+      "cell_id": "T2|C1|NON_RESET|R3",
+      "completion": "COMPLETED_NATURALLY",
+      "condition": "C1",
+      "cost_usd": 1.6223609999999993,
+      "dependency_verification_passed": true,
+      "effort_env_readback": [
+        "high"
+      ],
+      "effort_hook_records": 125,
+      "effort_readback": [
+        "high"
+      ],
+      "effort_requested": "high",
+      "effort_validated": true,
+      "execution_attempt": 1,
+      "exit_status": 0,
+      "export_tree": {
+        "commit_count": "1",
+        "export_proof_passed": true,
+        "frozen_export_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "git_exit_code_alone_is_not_trusted": true,
+        "prepared_tree": "4dfadc101db1c9f29b82934db25def67a93a2563",
+        "remotes": "none",
+        "removed_paths": [
+          ".cursor",
+          ".github/copilot-instructions.md"
+        ],
+        "tree_matches": true
+      },
+      "functional_executed": true,
+      "has_run_record": true,
+      "has_scoring": true,
+      "hit_turn_ceiling": false,
+      "input_tokens": 117,
+      "model_readback_status": "VALIDATED",
+      "model_requested": "claude-sonnet-5",
+      "model_resolved": "claude-sonnet-5",
+      "network_preflight_passed": true,
+      "network_preflight_passes": 3,
+      "observation_valid": true,
+      "permission_denial_count": 2,
+      "permission_mode": "acceptEdits",
+      "repetition": 3,
+      "reset_state": "NON_RESET",
+      "restraint_cases_passed": 1,
+      "restraint_cases_total": 1,
+      "run_id": "afci-bs2-t2-c1-real-r3-non-reset-a1-5627f19543dc",
+      "runtime_context_verdict": "CLEAN",
+      "runtime_context_violations": [],
+      "runtime_version": "2.1.229",
+      "semantic_cases_passed": 4,
+      "semantic_cases_total": 4,
+      "sequence": 18,
+      "session_id": "3c1b4468-69fb-4c3b-b0c5-a0d866de4396",
+      "target_violation": false,
+      "task": "T2",
+      "terminal_subtype": "success",
+      "thinking_tokens": 7748,
+      "thinking_tokens_available": true,
+      "total_cost_usd": 1.6223609999999993,
+      "total_output_tokens": 21994
+    }
+  ],
+  "run_purpose": "AFCI_BACKSTAGE_PILOT_ATTEMPT_2"
+}

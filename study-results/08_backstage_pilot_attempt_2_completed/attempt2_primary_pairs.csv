@@ -1,0 +1,4 @@
+block,task,c1_total_input_tokens,c4_total_input_tokens,token_ratio_c4_over_c1
+T2|R2,T2,3341621,3684842,1.1027
+T2|R3,T2,3142645,3039661,0.9672
+T5|R2,T5,5084546,4654389,0.9154

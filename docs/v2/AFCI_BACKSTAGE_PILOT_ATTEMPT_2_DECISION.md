@@ -1,6 +1,16 @@
 # SL-V2-BACKSTAGE-PILOT-03 — Attempt 2 of the Backstage pilot, pre-registered
 
-Status: **PRE-DATA freeze. 18 planned observations, 0 attempted, 0 completed.**
+Status when written: **PRE-DATA freeze. 18 planned observations, 0 attempted,
+0 completed.**
+
+> **EXECUTED 2026-09-22 — this freeze has since been discharged in full.** All
+> 18 observations ran, 18 are valid, 0 infrastructure-invalid, 0 retries, and
+> none of the 18 pre-authorised `execution_attempt=2` identities was activated.
+> The frozen §11.1 continuation rule returned **NO ARCHITECTURE SIGNAL — DO NOT
+> AUTOMATICALLY EXPAND**. Results, per-run rows and the decision clauses are in
+> [`study-results/08_backstage_pilot_attempt_2_completed/`](../../study-results/08_backstage_pilot_attempt_2_completed/README.md).
+> **Everything below is the pre-data record and is unchanged.** Nothing in it
+> was edited after data existed.
 
 This record authorizes a **new** 18-run execution of the science frozen by
 [`AFCI_BACKSTAGE_PILOT_DECISION.md`](AFCI_BACKSTAGE_PILOT_DECISION.md)

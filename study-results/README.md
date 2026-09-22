@@ -56,10 +56,12 @@ Per-experiment folders hold derived tables and pointers, not bulk artifacts:
 - [`04_efficiency_attempt_1_aborted/`](04_efficiency_attempt_1_aborted/)
 - [`05_efficiency_attempt_2_completed/`](05_efficiency_attempt_2_completed/)
 - [`06_lower_model_pilot_completed/`](06_lower_model_pilot_completed/)
+- [`07_backstage_pilot_attempt_1_halted/`](07_backstage_pilot_attempt_1_halted/)
+- [`08_backstage_pilot_attempt_2_completed/`](08_backstage_pilot_attempt_2_completed/)
 
 ---
 
-## The seven experiments at a glance
+## The nine experiments at a glance
 
 | id | what | runs (attempted → usable) | class | decision |
 | --- | --- | --- | --- | --- |
@@ -70,9 +72,17 @@ Per-experiment folders hold derived tables and pointers, not bulk artifacts:
 | `V2_EFF_ATTEMPT1` | efficiency pilot, first execution | 9 → 0 | aborted | excluded wholesale |
 | `V2_EFF_ATTEMPT2` | efficiency pilot, second execution | 36 → 34 | cost pilot | STOP — no efficiency signal |
 | `V2_LOWER_MODEL_PILOT` | lower-capability model pilot (Haiku 4.5) | 18 → 17 | quality + cost pilot | NO SIGNAL — do not expand |
+| `V2_BACKSTAGE_PILOT` | Backstage real-repository pilot, attempt 1 | 7 → 0 | halted | excluded wholesale |
+| `V2_BACKSTAGE_PILOT_ATTEMPT_2` | Backstage real-repository pilot, attempt 2 | 18 → 6 | architecture + cost pilot | NO ARCHITECTURE SIGNAL — do not expand |
 
 "Usable" means *eligible to enter an analysis*. It is 0 for every experiment
-except Attempt 2 and the lower-model pilot, and neither is confirmatory.
+except the efficiency Attempt 2, the lower-model pilot and Backstage Attempt 2,
+and none of the three is confirmatory.
+
+For Backstage Attempt 2 "usable" counts the **6** rows in the 3 functionally
+valid paired blocks, which are the rows that enter the *efficiency* analysis.
+All **18** enter the primary architecture endpoint, which is scored
+independently of functional validity.
 
 ---
 
