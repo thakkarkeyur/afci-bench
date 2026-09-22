@@ -1,6 +1,6 @@
 # AFCI-Bench - evidence map
 
-Compiled 2026-09-18. Professor-safe traceability: summary result -> analysis artifact ->
+Compiled 2026-09-23. Professor-safe traceability: summary result -> analysis artifact ->
 run record -> raw artifact, with a hash at each anchor.
 
 Every chain stops at the private boundary, and it stops at a **field**, not at its value.
@@ -81,11 +81,11 @@ No private evaluator identifier appears anywhere in this package.
 | what | value |
 | --- | --- |
 | public repo branch | `study-v2` |
-| evidence commit (last change to study-results/ outside this package) | `cfdb646b22f41404bb8d414d55cdd2fc630f7492` |
-| that commit's subject | study(backstage): halt AFCI pilot attempt 1 and record the escalation |
+| evidence commit (last change to study-results/ outside this package) | `49be470aea78829d7cd17c65a7f22d763e9c149d` |
+| that commit's subject | study(backstage): execute attempt 2 in full and record the result |
 | public repo origin | https://github.com/thakkarkeyur/afci-bench.git |
 | public repo `main` (v1 base, tag `paper-v0`) | `2adc8741acad7ea5423f0bf3d9ad821ff023a35f` |
-| private evaluator repo HEAD (read-only, unchanged) | `8ad5e3738a50804aa81bbf99928acf7e54372b51` |
+| private evaluator repo HEAD (result provenance only; never pushed) | `9b047bed21e3c6c2169345322b9b14dfe80f56ee` |
 | governed substrate commit | `630d3180af0d02a86330dfb599f559e78df65e94` |
 | governed substrate content hash | `0198d76c189f38589e872cab4305527c08e86ef736e1550e428e05f9178060f3` (49 entries) |
 | the MAD, `docs/v2/ARCHITECTURE_CONTEXT.md` | `bf6f32b162a23b851596d8b489d938bef10d0b8616a50dcc039873d12ffa7a4d` |
@@ -137,7 +137,7 @@ manifest digests above. Those identify the evidence uniquely without disclosing 
 
 ## Recomputation
 
-Every headline figure in this package was recomputed from the 128 run/attempt rows
+Every headline figure in this package was recomputed from the 146 run/attempt rows
 and compared against the frozen per-experiment analysis artifact:
 **124 checks, 0 mismatches.** The full list is in workbook sheet
 `20_RECOMPUTATION_AUDIT`. Regenerate this package with:

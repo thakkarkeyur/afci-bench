@@ -1,7 +1,7 @@
 # AFCI-Bench - professor results delivery package
 
-**Compiled 2026-09-18** from `study-results/` on branch `study-v2`, pinned to evidence
-commit `cfdb646b22f4` (*study(backstage): halt AFCI pilot attempt 1 and record the escalation*) - the last change to the
+**Compiled 2026-09-23** from `study-results/` on branch `study-v2`, pinned to evidence
+commit `49be470aea78` (*study(backstage): execute attempt 2 in full and record the result*) - the last change to the
 evidence this package reports.
 
 This package is safe to send outside the private evaluator repository. It carries
@@ -12,10 +12,10 @@ architecture rule, or hidden source/target label.
 
 | file | what it is |
 | --- | --- |
-| `AFCI_Professor_Results_Summary.md` | the 15-section narrative report - read this first |
+| `AFCI_Professor_Results_Summary.md` | the 16-section narrative report - read this first |
 | `AFCI_Professor_Results_Summary.pdf` | the same report, rendered |
 | `AFCI_Professor_Results.xlsx` | 20 sheets: every matrix, every decision clause, every run |
-| `AFCI_Professor_Full_Run_Results.csv` | all 128 run/attempt rows, excluded ones included |
+| `AFCI_Professor_Full_Run_Results.csv` | all 146 run/attempt rows, excluded ones included |
 | `AFCI_Professor_Metric_Definitions.md` | what each metric means and which way is better |
 | `AFCI_Professor_Evidence_Map.md` | summary number -> analysis artifact -> run record -> raw artifact |
 
@@ -25,7 +25,7 @@ architecture rule, or hidden source/target label.
 | --- | --- |
 | `01_EXECUTIVE_SUMMARY` | programme totals, three result cards, the current research conclusion |
 | `02_EXPERIMENT_INVENTORY` | one row per experiment set, including the one not started |
-| `03_ALL_RUNS` | all 128 run/attempt records, every public-safe column |
+| `03_ALL_RUNS` | all 146 run/attempt records, every public-safe column |
 | `04_FUNCTIONAL_MATRIX` | functional correctness by experiment, task and condition |
 | `05_ARCHITECTURE_MATRIX` | architecture evidence, and what produced none |
 | `06_TOKEN_MATRIX` | input and output tokens, by arm and reset state |
@@ -59,8 +59,8 @@ readable without reading the axis.
 
 ## What this package is not
 
-- It is **not confirmatory**. Of 128 run rows, 50
-  are eligible for any analysis, all 50 belong to two
+- It is **not confirmatory**. Of 146 run rows, 56
+  are eligible for any analysis, all 56 belong to two
   non-confirmatory pilots, and **0** are confirmatory.
 - It contains **no p-value, confidence interval, effect size or power estimate**,
   because none exists in this programme.
@@ -96,40 +96,75 @@ are unbalanced, no paired block is both complete and usable, and
 even when complete. **No matrix cell, chart point or figure in this package
 comes from it.**
 
-## Pre-registered, not started
+## Backstage attempt 2 - COMPLETE
 
 `V2_BACKSTAGE_PILOT_ATTEMPT_2` is a **wholly new** 18-run execution of the same
-frozen science, pre-registered by `SL-V2-BACKSTAGE-PILOT-03`. It has **no data**.
+frozen science, pre-registered by `SL-V2-BACKSTAGE-PILOT-03` and executed in
+full on 2026-09-22.
 
 | field | value |
 | --- | --- |
-| status | **PRE-DATA / NOT STARTED** |
+| status | **COMPLETE** |
 | planned runs | 18 (3 tasks x 2 conditions x 3 repetitions, NON_RESET, 9 paired blocks) |
-| attempted / completed / **usable** | 0 / 0 / **0** |
-| run rows here | 0 |
+| attempted / completed / **usable** | 18 / 18 / **18** |
+| run rows here | 18 |
+| infrastructure-invalid attempts / retries used | 0 / 0 |
 | decisions | `SL-V2-BACKSTAGE-PILOT-01` (science, unchanged), `SL-V2-BACKSTAGE-PILOT-03` (attempt-2 execution controls) |
 
-It reuses the substrate, the three tasks and their bytes, the architecture
+It reused the substrate, the three tasks and their bytes, the architecture
 packet, the model, the effort level, the runtime, both conditions, the reset
 state, the repetitions, the endpoints, the oracles, the scorer and the
-continuation rule **unchanged**, and changes five execution controls: the turn
+continuation rule **unchanged**, and changed five execution controls: the turn
 ceiling 64 -> 96, the Bash allowlist 8 -> 15 rules, a network preflight that
 refuses before the task is delivered, 18 pre-authorised infrastructure-retry
 identities, and real-destination path validation.
+
+### The frozen continuation rule returned NO ARCHITECTURE SIGNAL
+
+`SL-V2-BACKSTAGE-PILOT-01` S11.1 requires **all three** criteria:
+
+| clause | statement | observed | verdict |
+| --- | --- | --- | --- |
+| 11.1.1 | C4 has fewer target-violation runs than C1 overall | C1 2/9, C4 1/9 | **PASS** |
+| 11.1.2 | C4 has fewer target violations in >=2 of 3 tasks | fewer in **1** of 3 (T5 only) | **FAIL** |
+| 11.1.3 | C4 FUNCTIONAL_VALID no more than 1 below C1 | C1 4, C4 4 | **PASS** |
+
+> **NO ARCHITECTURE SIGNAL - DO NOT AUTOMATICALLY EXPAND**
+
+Criterion 11.1.2 fails on **ties at zero, not on C4 being worse**: T1 and T2
+produced zero target violations in *both* arms, so neither can show C4 as
+"fewer". Only T5 discriminated. This is the same architecture-floor failure
+mode the lower-model pilot hit, here partial rather than total.
+
+**T1 is a task-instrument failure, not a model result.** All six T1 runs - both
+arms, all three repetitions - passed exactly 3 of 4 semantic cases and failed
+the *same single case* every time, while both controlled T1 references pass
+that case in the frozen reference matrix. The oracle is satisfiable; the
+model-facing task statement does not ask for the behaviour it checks. T1
+therefore contributes 0 functionally valid runs and 0 target violations to
+*either* arm - inert on both endpoints. Nothing was changed in response.
+
+Efficiency is secondary (S11.2) and cannot override S11.1. Its medians rest on
+only **3 of 9** paired blocks, because no T1 run is functionally valid, and are
+descriptive only at that coverage.
 
 **Attempt 1 is retained above and is never pooled with, replaced by, or re-run
 under attempt 2.** No scientific outcome from attempt 1 was used to change any
 task, architecture packet, oracle, scorer, threshold, endpoint, metric or
 treatment definition - and none could have been, because no `C1`-vs-`C4`
-comparison was ever computed from it.
+comparison was ever computed from it. Attempt 1's **$10.93** and attempt 2's
+**$32.19** are reported separately and never combined into a treatment
+estimate.
 
 ## Provenance
 
 Reporting and export only. Producing this package executed no benchmark
 observation, invoked no model, and changed no task definition, architecture
 document, scorer, threshold, run plan, condition, raw run artifact or prior
-analysis. The private evaluator repository was not modified and nothing was
-pushed to it.
+analysis. The private evaluator repository received one result-provenance
+commit for the Backstage attempt-2 execution - an index, its leakage-validator
+entries and its phase-aware launcher guards, no task, scorer or threshold - and
+**nothing was pushed to it**.
 
 Every figure was recomputed from the run/attempt rows and checked against the
 frozen per-experiment analysis artifacts: **124 checks,

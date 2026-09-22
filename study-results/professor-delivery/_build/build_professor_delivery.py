@@ -31,7 +31,7 @@ SR = HERE.parents[2]                     # study-results/
 OUT = HERE.parents[1]                    # study-results/professor-delivery/
 REPO = SR.parent                         # repository root
 
-COMPILED = "2026-09-18"
+COMPILED = "2026-09-23"
 
 #: Text output is written with LF explicitly. The repository pins `eol=lf` in
 #: .gitattributes, so writing CRLF here would leave the working tree differing
@@ -88,6 +88,17 @@ A2_RESET = read_csv(A2 / "attempt2_reset_overhead.csv")
 A2_CLAUSES = read_csv(A2 / "attempt2_decision_clauses.csv")
 A2_RAW = read_csv(A2 / "attempt2_runs_raw_metrics.csv")
 A2_REPORT = json.loads((A2 / "efficiency_pilot_frozen_analysis_report.json").read_text(encoding="utf-8"))
+
+# Backstage attempt 2. Prefixed BS2, never A2: "A2" in this file means the
+# EFFICIENCY attempt 2, and both directories happen to name their files
+# attempt2_*.
+BS2 = SR / "08_backstage_pilot_attempt_2_completed"
+BS2_ARCH = read_csv(BS2 / "attempt2_architecture_summary.csv")
+BS2_FUNC = read_csv(BS2 / "attempt2_functional_summary.csv")
+BS2_RATIOS = read_csv(BS2 / "attempt2_endpoint_ratios.csv")
+BS2_PAIRS = read_csv(BS2 / "attempt2_primary_pairs.csv")
+BS2_CLAUSES = read_csv(BS2 / "attempt2_decision_clauses.csv")
+BS2_RAW = read_csv(BS2 / "attempt2_runs_raw_metrics.csv")
 
 LM_PAIRS = read_csv(LM / "lower_model_primary_pairs.csv")
 LM_RATIOS = read_csv(LM / "lower_model_endpoint_ratios.csv")
@@ -183,8 +194,8 @@ for exp in INV["by_experiment"]:
         "loc_coverage": sum(1 for r in rs if not blank(r["lines_added"])),
     })
 
-check("master run/attempt rows", 128, INV["total_rows"])
-check("rows eligible for any analysis", 50, INV["eligible"])
+check("master run/attempt rows", 146, INV["total_rows"])
+check("rows eligible for any analysis", 56, INV["eligible"])
 
 # --------------------------------------------------------------------------- #
 # 2. paired endpoints
@@ -801,10 +812,10 @@ ws.column_dimensions["I"].width = 60
 
 r = section(ws, r, "PROGRAMME TOTALS")
 r = table(ws, r, ["measure", "value", "note"], [
-    ["Experiment sets executed", 7, "V1, PT08, PT09, PT10, efficiency Attempt 1 (aborted), efficiency Attempt 2, lower-model pilot"],
-    ["Experiment sets not started", 2,
-     "OPEN_SOURCE_COMPLEXITY_STUDY - placeholder only, no runs exist; "
-     "V2_BACKSTAGE_PILOT_ATTEMPT_2 - pre-registered, 18 planned, 0 attempted"],
+    ["Experiment sets executed", 9, "V1, PT08, PT09, PT10, efficiency Attempt 1 (aborted), efficiency Attempt 2, "
+                                    "lower-model pilot, Backstage Attempt 1 (halted), Backstage Attempt 2 (complete)"],
+    ["Experiment sets not started", 1,
+     "OPEN_SOURCE_COMPLEXITY_STUDY - placeholder only, no runs exist"],
     ["Total run/attempt records", INV["total_rows"], "one row per scheduled run or attempt, including excluded ones"],
     ["Distinct run identities", INV["unique_run_ids"],
      "3 fewer than rows: the PT08 run-id collision (3 rows share 1 id) and the Attempt-1 collision pair (2 rows share 1 id)"],
@@ -815,11 +826,19 @@ r = table(ws, r, ["measure", "value", "note"], [
      f"{INV['functional_invalid']} explicitly invalid; {INV['functional_not_captured']} carry no functional verdict at all"],
     ["Diagnostic / qualification observations", INV["diagnostic_qualification"],
      "PT08 (3) + PT09 (4, one infrastructure-invalid) + PT10 (3); instrument evidence, never treatment evidence"],
-    ["Excluded from every analysis", INV["excluded"], "v1 (48), Attempt 1 (9), diagnostics/qualification (10), plus 4 v2 rows"],
-    ["Eligible for any analysis", INV["eligible"], "all of them non-confirmatory: Attempt 2 (34) + lower-model pilot (16)"],
+    ["Excluded from every analysis", INV["excluded"],
+     "v1 (48), efficiency Attempt 1 (9), diagnostics/qualification (10), Backstage Attempt 1 (7), plus 4 v2 rows. "
+     "The 12 Backstage Attempt-2 rows outside a functionally valid pair are counted here too, but ONLY the paired "
+     "EFFICIENCY analysis excludes them: all 18 enter the primary architecture endpoint, which is scored "
+     "independently of functional validity"],
+    ["Eligible for any analysis", INV["eligible"],
+     "all of them non-confirmatory: efficiency Attempt 2 (34) + lower-model pilot (16) + "
+     "Backstage Attempt 2 (6, the 3 functionally valid paired blocks)"],
     ["Confirmatory observations", 0, "none. No p-value, confidence interval, effect size or power estimate exists"],
     ["Models tested", 3, "'Opus 7' (v1, historical), claude-sonnet-5, claude-haiku-4-5-20251001"],
-    ["Tasks tested", len(INV["by_task"]), "12 v1 tasks (T01-T12) + 6 v2 tasks (PT01, PT04, PT07, PT08, PT09, PT10)"],
+    ["Tasks tested", len(INV["by_task"]),
+     "12 v1 tasks (T01-T12) + 6 v2 synthetic tasks (PT01, PT04, PT07, PT08, PT09, PT10) + "
+     "3 Backstage real-repository tasks (T1, T2, T5)"],
     ["Conditions", 4, "v1: baseline / AFCI. v2: C1 (task only) / C4 (task + explicit MAD)"],
     ["Reset states", 2, "NON_RESET and RESET; the lower-model pilot is NON_RESET only, by design"],
 ], formats={1: FMT_INT}, widths=[46, 17, 100])
@@ -925,7 +944,7 @@ CLASSIFICATION = {
     "V2_EFF_ATTEMPT2": "COMPLETED PILOT, NON-CONFIRMATORY",
     "V2_LOWER_MODEL_PILOT": "COMPLETED PILOT, NON-CONFIRMATORY",
     "V2_BACKSTAGE_PILOT": "HALTED / EXCLUDED WHOLESALE",
-    "V2_BACKSTAGE_PILOT_ATTEMPT_2": "PRE-DATA / NOT STARTED",
+    "V2_BACKSTAGE_PILOT_ATTEMPT_2": "COMPLETED PILOT, NON-CONFIRMATORY",
     "OPEN_SOURCE_COMPLEXITY_STUDY": "NOT STARTED",
 }
 for eid in ORDER:
@@ -950,11 +969,12 @@ r = table(ws, r, ["experiment_id", "experiment_name", "study_version", "model", 
           widths=[26, 42, 12, 26, 30, 10, 14, 18, 11, 12, 13, 15, 26, 13, 32, 46, 48, 80],
           autofilter=True)
 r = note(ws, r, "OPEN_SOURCE_COMPLEXITY_STUDY is a placeholder. No runs exist and no result is pre-populated.", AMBER)
-r = note(ws, r, "V2_BACKSTAGE_PILOT_ATTEMPT_2 is PRE-DATA: 18 planned, 0 attempted, 0 completed, and no run row "
-                "exists anywhere in this package. It is a WHOLLY NEW execution of the science SL-V2-BACKSTAGE-PILOT-01 "
-                "froze, with new run ids and new destinations and zero overlap with attempt 1. V2_BACKSTAGE_PILOT "
-                "(attempt 1) stays HALTED and EXCLUDED WHOLESALE and is never pooled with it, replaced by it, or "
-                "re-run under it.", AMBER)
+r = note(ws, r, "V2_BACKSTAGE_PILOT_ATTEMPT_2 is COMPLETE: 18 planned, 18 attempted, 18 completed, 18 valid, 0 "
+                "infrastructure-invalid, 0 retries. It was a WHOLLY NEW execution of the science "
+                "SL-V2-BACKSTAGE-PILOT-01 froze, with new run ids and new destinations and zero overlap with attempt "
+                "1. The frozen 11.1 continuation rule returned NO ARCHITECTURE SIGNAL - DO NOT AUTOMATICALLY EXPAND "
+                "(criterion 1 PASS, criterion 2 FAIL, criterion 3 PASS). V2_BACKSTAGE_PILOT (attempt 1) stays HALTED "
+                "and EXCLUDED WHOLESALE and is never pooled with it, replaced by it, or re-run under it.", AMBER)
 r = note(ws, r, "planned / attempted / completed_runs on this sheet are the experiment registry's own counts. "
                 "V2_EFF_ATTEMPT1's 'completed_runs = 7' is the registry counting its 7 surviving rows; those rows carry "
                 "run_status = INTACT_GOVERNED_OBSERVATION, not COMPLETE, so a status-based recount of the same rows gives "
@@ -1656,8 +1676,8 @@ r = table(ws, r, ["#", "limitation"], [
         "PRE-FREEZE, gate G1 is not passed, and TD-B32, TD-B34, TD-B03 and TD-B19 all remain open."],
     [2, "NO STATISTICAL INFERENCE OF ANY KIND. No p-value, confidence interval, effect size or power estimate exists "
         "anywhere in this programme, and no power calculation has ever been run. Every reported ratio is a median of "
-        "paired ratios, a descriptive statistic. With 16 and 8 paired blocks and 3 repetitions, nothing else would be "
-        "defensible."],
+        "paired ratios, a descriptive statistic. With 16, 8 and 3 paired blocks and 3 repetitions, nothing else would "
+        "be defensible."],
     [3, "ONE SYNTHETIC SUBSTRATE. Every v2 run used one governed substrate: 49 files, a synthetic Nx monorepo whose "
         "layering is inferable from its own import graph and path aliases. A model can often deduce the intended "
         "architecture WITHOUT the MAD, which directly attacks the MAD's marginal value - the thing the study measures. "
@@ -1828,7 +1848,8 @@ r = table(ws, r, ["what", "value"], [
     ["  that commit's subject", GIT["evidence_subject"]],
     ["public repo origin", GIT["origin"]],
     ["public repo main (v1 base, tag paper-v0)", "2adc8741acad7ea5423f0bf3d9ad821ff023a35f"],
-    ["private evaluator repo HEAD (read-only, unchanged)", "8ad5e3738a50804aa81bbf99928acf7e54372b51"],
+    ["private evaluator repo HEAD (result provenance only; never pushed)",
+     "9b047bed21e3c6c2169345322b9b14dfe80f56ee"],
     ["governed substrate commit", "630d3180af0d02a86330dfb599f559e78df65e94"],
     ["governed substrate content hash", "0198d76c189f38589e872cab4305527c08e86ef736e1550e428e05f9178060f3 (49 entries)"],
     ["the MAD - docs/v2/ARCHITECTURE_CONTEXT.md", "bf6f32b162a23b851596d8b489d938bef10d0b8616a50dcc039873d12ffa7a4d"],
@@ -2118,11 +2139,13 @@ Two constructs are measured, and they are never combined into one score:
 | 5 | Efficiency pilot, Attempt 1 | claude-sonnet-5 | 9 attempted of 36 | ABORTED | excluded wholesale; no analysis was ever performed |
 | 6 | Efficiency pilot, Attempt 2 | claude-sonnet-5 | 36 | COMPLETE | STOP - NO EFFICIENCY SIGNAL JUSTIFIES FULL-SUITE EXPANSION |
 | 7 | Lower-capability model pilot | claude-haiku-4-5-20251001 | 18 | COMPLETE | NO LOWER-MODEL SIGNAL - DO NOT EXPAND THE SYNTHETIC LOWER-MODEL MATRIX |
-| 8 | Open-source complexity study | TBD | 0 | **NOT STARTED** | none - no runs exist and no result is pre-populated |
+| 8 | Backstage real-repository pilot, Attempt 1 | claude-sonnet-5 | 7 attempted of 18 | HALTED | excluded wholesale; no analysis was ever performed |
+| 9 | Backstage real-repository pilot, Attempt 2 | claude-sonnet-5 | 18 | COMPLETE | NO ARCHITECTURE SIGNAL - DO NOT AUTOMATICALLY EXPAND |
+| 10 | Open-source complexity study | TBD | 0 | **NOT STARTED** | none - no runs exist and no result is pre-populated |
 
-Both completed pilots were judged by a decision rule frozen **before** the data
-they judge existed, and both rules returned a negative verdict. Neither was
-changed afterwards.
+All three completed pilots were judged by a decision rule frozen **before** the
+data they judge existed, and all three rules returned a negative verdict. None
+was changed afterwards.
 
 ---
 
@@ -2164,10 +2187,10 @@ deliberately distinct status, because those runs were never admitted as
 observations. The experiment registry counts the same 7 rows as "completed runs";
 both readings are shown rather than reconciled away.
 
-**[LIMITATION]** All {INV['eligible']} eligible rows belong to two
+**[LIMITATION]** All {INV['eligible']} eligible rows belong to three
 **non-confirmatory** pilots. No p-value, confidence interval, effect size or
 power estimate exists anywhere in this programme, and none would be defensible
-from 16 and 8 paired blocks at 3 repetitions.
+from 16, 8 and 3 paired blocks at 3 repetitions.
 
 ---
 
@@ -2372,7 +2395,94 @@ information**.
 
 ---
 
-## 8. Cost and token findings
+## 8. Backstage real-repository pilot (Attempt 2)
+
+**Design.** The first AFCI experiment on a **real, large, ambiguous** open-source
+repository rather than the synthetic substrate: Backstage at
+`f285f6e4`, which predates the 2026-02-15 contamination boundary. 3 tasks
+(T1, T2, T5) x {{C1, C4}} x NON_RESET x 3 repetitions = 18 runs, 9 paired
+blocks, `claude-sonnet-5` at effort `high`, CLI 2.1.229, 96-turn ceiling.
+Attempt 1 was halted at 7 of 18 and is **excluded wholesale**; attempt 2 is a
+wholly new execution with new run ids and new destinations.
+
+**[FACT] Execution.** 18/18 executed in the committed order, 18 valid, **0
+infrastructure-invalid, 0 retries**, 18 unique sessions, 0 scientific
+modifications. Model requested and resolved `claude-sonnet-5` on every row;
+effort `high` read back from two independent channels over 2,479 hook firings;
+runtime context `CLEAN` with loaded context empty on all four fields; export
+tree `4dfadc10...` verified per run. Captured provider cost **${fnum(sum(num(r['provider_cost_usd']) or 0 for r in BS2_RAW), 2)}**.
+
+**[FACT] Primary endpoint - architectural placement.** 1 applicable opportunity
+per run, 18 across the set.
+
+| scope | C1 target-violation runs | C4 target-violation runs |
+| --- | ---: | ---: |
+""" + "\n".join(
+    f"| {r['scope']} | {r['c1_target_violation_runs']} / {r['c1_runs']} | "
+    f"{r['c4_target_violation_runs']} / {r['c4_runs']} |" for r in BS2_ARCH) + f"""
+
+**[FACT] Functional endpoint.**
+
+| scope | C1 valid | C4 valid | paired-valid blocks |
+| --- | ---: | ---: | ---: |
+""" + "\n".join(
+    f"| {r['scope']} | {r['c1_functional_valid']} / {r['c1_runs']} | "
+    f"{r['c4_functional_valid']} / {r['c4_runs']} | "
+    f"{r['paired_functionally_valid_blocks']} / {r['paired_blocks']} |"
+    for r in BS2_FUNC) + f"""
+
+**[FACT] The frozen decision** (`SL-V2-BACKSTAGE-PILOT-01` S11.1, all three
+required):
+
+| clause | statement | observed | verdict |
+| --- | --- | --- | --- |
+""" + "\n".join(
+    f"| {c['clause']} | {c['statement']} | {c['observed']} | **{c['verdict']}** |"
+    for c in BS2_CLAUSES) + f"""
+
+> **`NO ARCHITECTURE SIGNAL - DO NOT AUTOMATICALLY EXPAND`**
+
+**[LIMITATION]** Criterion 11.1.2 fails on **ties at zero**, not on C4 being
+worse. T1 and T2 produced zero target violations in *both* arms, so neither can
+show C4 as "fewer"; only T5 discriminated. Two of three tasks sat at an
+architecture floor - the same failure mode the Haiku pilot hit, here partial
+rather than total.
+
+**[LIMITATION] T1 is a task-instrument failure, not a model result.** All six
+T1 runs - both arms, all three repetitions - passed exactly 3 of 4 semantic
+cases and failed the **same single case every time**, while both controlled T1
+references pass that case in the frozen reference matrix. The oracle is
+satisfiable; the model-facing task statement does not ask for the behaviour it
+checks. T1 therefore contributes 0 functionally valid runs *and* 0 target
+violations to either arm - inert on both endpoints. Nothing was changed in
+response; the task bytes, oracle, scorer and rule stand exactly as frozen.
+
+**[FACT] MAX_TURNS.** 2 of 18 reached the 96-turn ceiling, one per arm, both on
+T5. The 64->96 raise worked: attempt 1 hit its ceiling on 4 of its 5 valid rows.
+`MAX_TURNS` is a scientific outcome and was never a retry reason.
+
+**[FACT] Secondary efficiency** (S11.2, cannot override S11.1), median C4/C1
+over functionally valid paired blocks:
+
+| endpoint | median C4/C1 | coverage | C4 lower |
+| --- | ---: | ---: | ---: |
+""" + "\n".join(
+    f"| `{r['endpoint']}` | {r['median_ratio_c4_over_c1']} | {r['coverage']} | "
+    f"{r['c4_lower_count']}/{r['c4_lower_of']} |" for r in BS2_RATIOS) + f"""
+
+**[LIMITATION]** Coverage is **3 of 9** blocks, because no T1 run is
+functionally valid. At n=3 a single block moves every median. These figures are
+descriptive only and could not have rescued a failed S11.1 in any case.
+
+**[FACT] The network preflight prevented a repeat of the attempt-1 loss.** 20
+preflight refusals occurred, every one `VPN_ADAPTER_UP` - the adapter state that
+severed two attempt-1 observations. Each refused **before the task was
+delivered**: no artifact directory, no workspace, no provider call, no
+observation consumed, $0. The cost was wall-clock only.
+
+---
+
+## 9. Cost and token findings
 
 **[FACT] Token audit.** `TOTAL_INPUT_TOKENS = input_tokens +
 cache_creation_input_tokens + cache_read_input_tokens` on every row that carries
@@ -2431,7 +2541,7 @@ describes the non-reset arm only.
 
 ---
 
-## 9. Functional and architecture quality
+## 10. Functional and architecture quality
 
 **[FACT]**
 
@@ -2464,7 +2574,7 @@ The cost result must not be allowed to stand in for an architecture result.
 
 ---
 
-## 10. Cross-model interpretation
+## 11. Cross-model interpretation
 
 **[FACT]** Both sides below are NON_RESET, so the comparison is like-for-like.
 
@@ -2505,7 +2615,7 @@ direction is not read as unanimity.
 
 ---
 
-## 11. What the evidence supports
+## 12. What the evidence supports
 
 1. **[FACT]** On this substrate with `claude-sonnet-5`, explicit MAD injection
    costs more than it saves across every captured cost dimension except CI
@@ -2528,7 +2638,7 @@ direction is not read as unanimity.
 
 ---
 
-## 12. What the evidence does NOT support
+## 13. What the evidence does NOT support
 
 1. **We cannot conclude AFCI does not work.** We can conclude it did not reduce
    cost here. Efficiency is one construct; architectural conformance is the
@@ -2554,7 +2664,7 @@ direction is not read as unanimity.
 
 ---
 
-## 13. Limitations
+## 14. Limitations
 
 | # | limitation |
 | --- | --- |
@@ -2568,7 +2678,7 @@ direction is not read as unanimity.
 
 ---
 
-## 14. Current research direction
+## 15. Current research direction
 
 The chain is short and each link is recorded:
 
@@ -2598,7 +2708,7 @@ by elimination rather than by evidence, and nothing in this package tests it.
 
 ---
 
-## 15. Next study - open-source architectural complexity
+## 16. Next study - open-source architectural complexity
 
 **Status: NOT STARTED.** No runs exist. No results are pre-populated.
 
@@ -2687,7 +2797,7 @@ EV_MD += [f"| public repo branch | `{GIT['branch']}` |",
           f"| that commit's subject | {GIT['evidence_subject']} |",
           f"| public repo origin | {GIT['origin']} |",
           "| public repo `main` (v1 base, tag `paper-v0`) | `2adc8741acad7ea5423f0bf3d9ad821ff023a35f` |",
-          "| private evaluator repo HEAD (read-only, unchanged) | `8ad5e3738a50804aa81bbf99928acf7e54372b51` |",
+          "| private evaluator repo HEAD (result provenance only; never pushed) | `9b047bed21e3c6c2169345322b9b14dfe80f56ee` |",
           "| governed substrate commit | `630d3180af0d02a86330dfb599f559e78df65e94` |",
           "| governed substrate content hash | `0198d76c189f38589e872cab4305527c08e86ef736e1550e428e05f9178060f3` (49 entries) |",
           "| the MAD, `docs/v2/ARCHITECTURE_CONTEXT.md` | `bf6f32b162a23b851596d8b489d938bef10d0b8616a50dcc039873d12ffa7a4d` |",
@@ -2750,7 +2860,7 @@ architecture rule, or hidden source/target label.
 
 | file | what it is |
 | --- | --- |
-| `AFCI_Professor_Results_Summary.md` | the 15-section narrative report - read this first |
+| `AFCI_Professor_Results_Summary.md` | the 16-section narrative report - read this first |
 | `AFCI_Professor_Results_Summary.pdf` | the same report, rendered |
 | `AFCI_Professor_Results.xlsx` | 20 sheets: every matrix, every decision clause, every run |
 | `AFCI_Professor_Full_Run_Results.csv` | all {INV['total_rows']} run/attempt rows, excluded ones included |
@@ -2834,10 +2944,11 @@ are unbalanced, no paired block is both complete and usable, and
 even when complete. **No matrix cell, chart point or figure in this package
 comes from it.**
 
-## Pre-registered, not started
+## Backstage attempt 2 - COMPLETE
 
 `V2_BACKSTAGE_PILOT_ATTEMPT_2` is a **wholly new** 18-run execution of the same
-frozen science, pre-registered by `SL-V2-BACKSTAGE-PILOT-03`. It has **no data**.
+frozen science, pre-registered by `SL-V2-BACKSTAGE-PILOT-03` and executed in
+full on 2026-09-22.
 
 | field | value |
 | --- | --- |
@@ -2845,29 +2956,63 @@ frozen science, pre-registered by `SL-V2-BACKSTAGE-PILOT-03`. It has **no data**
 | planned runs | {REG['V2_BACKSTAGE_PILOT_ATTEMPT_2']['planned_runs']} (3 tasks x 2 conditions x 3 repetitions, NON_RESET, 9 paired blocks) |
 | attempted / completed / **usable** | {REG['V2_BACKSTAGE_PILOT_ATTEMPT_2']['attempted_runs']} / {REG['V2_BACKSTAGE_PILOT_ATTEMPT_2']['completed_runs']} / **{REG['V2_BACKSTAGE_PILOT_ATTEMPT_2']['usable_runs']}** |
 | run rows here | {sum(1 for r in RUNS if r['experiment_id'] == 'V2_BACKSTAGE_PILOT_ATTEMPT_2')} |
+| infrastructure-invalid attempts / retries used | 0 / 0 |
 | decisions | `SL-V2-BACKSTAGE-PILOT-01` (science, unchanged), `SL-V2-BACKSTAGE-PILOT-03` (attempt-2 execution controls) |
 
-It reuses the substrate, the three tasks and their bytes, the architecture
+It reused the substrate, the three tasks and their bytes, the architecture
 packet, the model, the effort level, the runtime, both conditions, the reset
 state, the repetitions, the endpoints, the oracles, the scorer and the
-continuation rule **unchanged**, and changes five execution controls: the turn
+continuation rule **unchanged**, and changed five execution controls: the turn
 ceiling 64 -> 96, the Bash allowlist 8 -> 15 rules, a network preflight that
 refuses before the task is delivered, 18 pre-authorised infrastructure-retry
 identities, and real-destination path validation.
+
+### The frozen continuation rule returned NO ARCHITECTURE SIGNAL
+
+`SL-V2-BACKSTAGE-PILOT-01` S11.1 requires **all three** criteria:
+
+| clause | statement | observed | verdict |
+| --- | --- | --- | --- |
+| 11.1.1 | C4 has fewer target-violation runs than C1 overall | C1 2/9, C4 1/9 | **PASS** |
+| 11.1.2 | C4 has fewer target violations in >=2 of 3 tasks | fewer in **1** of 3 (T5 only) | **FAIL** |
+| 11.1.3 | C4 FUNCTIONAL_VALID no more than 1 below C1 | C1 4, C4 4 | **PASS** |
+
+> **NO ARCHITECTURE SIGNAL - DO NOT AUTOMATICALLY EXPAND**
+
+Criterion 11.1.2 fails on **ties at zero, not on C4 being worse**: T1 and T2
+produced zero target violations in *both* arms, so neither can show C4 as
+"fewer". Only T5 discriminated. This is the same architecture-floor failure
+mode the lower-model pilot hit, here partial rather than total.
+
+**T1 is a task-instrument failure, not a model result.** All six T1 runs - both
+arms, all three repetitions - passed exactly 3 of 4 semantic cases and failed
+the *same single case* every time, while both controlled T1 references pass
+that case in the frozen reference matrix. The oracle is satisfiable; the
+model-facing task statement does not ask for the behaviour it checks. T1
+therefore contributes 0 functionally valid runs and 0 target violations to
+*either* arm - inert on both endpoints. Nothing was changed in response.
+
+Efficiency is secondary (S11.2) and cannot override S11.1. Its medians rest on
+only **3 of 9** paired blocks, because no T1 run is functionally valid, and are
+descriptive only at that coverage.
 
 **Attempt 1 is retained above and is never pooled with, replaced by, or re-run
 under attempt 2.** No scientific outcome from attempt 1 was used to change any
 task, architecture packet, oracle, scorer, threshold, endpoint, metric or
 treatment definition - and none could have been, because no `C1`-vs-`C4`
-comparison was ever computed from it.
+comparison was ever computed from it. Attempt 1's **$10.93** and attempt 2's
+**$32.19** are reported separately and never combined into a treatment
+estimate.
 
 ## Provenance
 
 Reporting and export only. Producing this package executed no benchmark
 observation, invoked no model, and changed no task definition, architecture
 document, scorer, threshold, run plan, condition, raw run artifact or prior
-analysis. The private evaluator repository was not modified and nothing was
-pushed to it.
+analysis. The private evaluator repository received one result-provenance
+commit for the Backstage attempt-2 execution - an index, its leakage-validator
+entries and its phase-aware launcher guards, no task, scorer or threshold - and
+**nothing was pushed to it**.
 
 Every figure was recomputed from the run/attempt rows and checked against the
 frozen per-experiment analysis artifacts: **{len(AUDIT)} checks,
