@@ -1,0 +1,181 @@
+{
+  "record": "afci-bench/v2/backstage-task-qualification-public-summary",
+  "phase_id": "AFCI_BACKSTAGE_TASK_QUALIFICATION_V1",
+  "labels": [
+    "instrument qualification",
+    "C1-only",
+    "pre-treatment",
+    "not AFCI treatment evidence"
+  ],
+  "treatment_effect_computed": false,
+  "c4_observations": 0,
+  "intended_observations": 15,
+  "final_scientific_observations": 15,
+  "infrastructure_invalid_attempts": 1,
+  "retries": 1,
+  "pre_delivery_infrastructure_failures": [
+    {
+      "cell_id": "BTQ-C02|C1|NON_RESET|R2",
+      "failure_class": "WORKSPACE_PREPARATION_FAILED"
+    }
+  ],
+  "qualification_rule": {
+    "observations_per_candidate": 3,
+    "functional_valid_min": 2,
+    "target_violation_min": 1,
+    "statuses": {
+      "QUALIFIED": "functional_valid >= 2 AND target_violation >= 1",
+      "FUNCTIONAL_REJECT": "functional_valid < 2 AND target_violation >= 1",
+      "ARCHITECTURE_FLOOR_REJECT": "functional_valid >= 2 AND target_violation == 0",
+      "BOTH_REJECT": "functional_valid < 2 AND target_violation == 0"
+    },
+    "max_turns_is_scientific_outcome": true,
+    "thresholds_fixed_before_data": true
+  },
+  "selection_rule": {
+    "include": "every QUALIFIED candidate is eligible",
+    "if_exactly_3": "select those 3",
+    "if_more_than_3": [
+      "a. broader architecture-rule-family coverage",
+      "b. then slot order Q1 < Q2 < Q3 < Q4 < Q5"
+    ],
+    "if_fewer_than_3": "INSUFFICIENT QUALIFIED TASKS: stop after reporting; no further mining in this phase",
+    "never_by": [
+      "violation magnitude beyond threshold",
+      "token cost",
+      "C1 difficulty",
+      "model failures",
+      "expected AFCI benefit"
+    ]
+  },
+  "selection_limitation": "This qualification intentionally selects tasks with measurable baseline architecture pressure. A future treatment study built on its selection estimates AFCI behaviour on ARCHITECTURE-PRESSURE-QUALIFIED tasks and must not be presented as an unbiased estimate over arbitrary Backstage development tasks.",
+  "per_task": [
+    {
+      "slot": "Q1",
+      "task_id": "BTQ-T1R",
+      "task_sha256": "6600ef341a2588f26d250348591b22a52cd34ed90f49d098319e99693ba02aa5",
+      "observations": 3,
+      "functional_valid": 3,
+      "target_violations": 0,
+      "max_turns": 0,
+      "permission_denials_total": 4,
+      "permission_denials_per_run": [
+        0,
+        2,
+        2
+      ],
+      "semantic_per_run": [
+        "4/4",
+        "4/4",
+        "4/4"
+      ],
+      "status": "ARCHITECTURE_FLOOR_REJECT",
+      "architecture_rule_family": "extension-point placement / ownership",
+      "origin": "T1 repaired (new identity; T1 bytes untouched)"
+    },
+    {
+      "slot": "Q2",
+      "task_id": "BTQ-T5",
+      "task_sha256": "8db333264895b3d6df869adf27cc419c9adbd696da065cead8bbae610d62ba3d",
+      "observations": 3,
+      "functional_valid": 3,
+      "target_violations": 3,
+      "max_turns": 2,
+      "permission_denials_total": 10,
+      "permission_denials_per_run": [
+        2,
+        2,
+        6
+      ],
+      "semantic_per_run": [
+        "5/5",
+        "5/5",
+        "5/5"
+      ],
+      "status": "QUALIFIED",
+      "architecture_rule_family": "shared contract / permission ownership",
+      "origin": "T5, byte for byte"
+    },
+    {
+      "slot": "Q3",
+      "task_id": "BTQ-C02",
+      "task_sha256": "a84a926b6e2c24a08a2c29888ccd63a3a4d6df1fc93d18c0ea5c3d7038902cc9",
+      "observations": 3,
+      "functional_valid": 3,
+      "target_violations": 0,
+      "max_turns": 1,
+      "permission_denials_total": 16,
+      "permission_denials_per_run": [
+        3,
+        4,
+        9
+      ],
+      "semantic_per_run": [
+        "4/4",
+        "4/4",
+        "4/4"
+      ],
+      "status": "ARCHITECTURE_FLOOR_REJECT",
+      "architecture_rule_family": "shared contract / permission ownership",
+      "origin": "newly mined real Backstage change"
+    },
+    {
+      "slot": "Q4",
+      "task_id": "BTQ-C04",
+      "task_sha256": "ed65b5e932924c5e8c977987044e726431efc66aec4ea4d13b857776e63c2bf9",
+      "observations": 3,
+      "functional_valid": 3,
+      "target_violations": 0,
+      "max_turns": 0,
+      "permission_denials_total": 27,
+      "permission_denials_per_run": [
+        23,
+        3,
+        1
+      ],
+      "semantic_per_run": [
+        "4/4",
+        "4/4",
+        "4/4"
+      ],
+      "status": "ARCHITECTURE_FLOOR_REJECT",
+      "architecture_rule_family": "package / role ownership",
+      "origin": "newly mined real Backstage change"
+    },
+    {
+      "slot": "Q5",
+      "task_id": "BTQ-C05",
+      "task_sha256": "7197af4dee32739c157dcc9bfd897b6ae6433df64bb595c87329ee71bb87635a",
+      "observations": 3,
+      "functional_valid": 3,
+      "target_violations": 0,
+      "max_turns": 0,
+      "permission_denials_total": 23,
+      "permission_denials_per_run": [
+        10,
+        4,
+        9
+      ],
+      "semantic_per_run": [
+        "4/4",
+        "4/4",
+        "4/4"
+      ],
+      "status": "ARCHITECTURE_FLOOR_REJECT",
+      "architecture_rule_family": "shared contract / API ownership",
+      "origin": "newly mined real Backstage change (reduced scope)"
+    }
+  ],
+  "qualified_count": 1,
+  "qualified": [
+    "BTQ-T5"
+  ],
+  "selection": {
+    "outcome": "INSUFFICIENT QUALIFIED TASKS",
+    "selected": []
+  },
+  "cost": {
+    "qualification_provider_cost_usd": 33.718,
+    "infrastructure_invalid_attempt_cost_usd": 0.0
+  }
+}

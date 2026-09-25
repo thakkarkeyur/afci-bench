@@ -58,10 +58,11 @@ Per-experiment folders hold derived tables and pointers, not bulk artifacts:
 - [`06_lower_model_pilot_completed/`](06_lower_model_pilot_completed/)
 - [`07_backstage_pilot_attempt_1_halted/`](07_backstage_pilot_attempt_1_halted/)
 - [`08_backstage_pilot_attempt_2_completed/`](08_backstage_pilot_attempt_2_completed/)
+- [`09_backstage_task_qualification_v1/`](09_backstage_task_qualification_v1/)
 
 ---
 
-## The nine experiments at a glance
+## The ten experiments at a glance
 
 | id | what | runs (attempted → usable) | class | decision |
 | --- | --- | --- | --- | --- |
@@ -74,6 +75,7 @@ Per-experiment folders hold derived tables and pointers, not bulk artifacts:
 | `V2_LOWER_MODEL_PILOT` | lower-capability model pilot (Haiku 4.5) | 18 → 17 | quality + cost pilot | NO SIGNAL — do not expand |
 | `V2_BACKSTAGE_PILOT` | Backstage real-repository pilot, attempt 1 | 7 → 0 | halted | excluded wholesale |
 | `V2_BACKSTAGE_PILOT_ATTEMPT_2` | Backstage real-repository pilot, attempt 2 | 18 → 6 | architecture + cost pilot | NO ARCHITECTURE SIGNAL — do not expand |
+| `V2_BACKSTAGE_TASK_QUALIFICATION_V1` | Backstage task qualification, C1 only | 16 → 0 | instrument qualification (pre-treatment, not treatment evidence) | INSUFFICIENT QUALIFIED TASKS — 1 of 5 qualified; stop |
 
 "Usable" means *eligible to enter an analysis*. It is 0 for every experiment
 except the efficiency Attempt 2, the lower-model pilot and Backstage Attempt 2,
@@ -83,6 +85,12 @@ For Backstage Attempt 2 "usable" counts the **6** rows in the 3 functionally
 valid paired blocks, which are the rows that enter the *efficiency* analysis.
 All **18** enter the primary architecture endpoint, which is scored
 independently of functional validity.
+
+`V2_BACKSTAGE_TASK_QUALIFICATION_V1` is 16 attempts for 15 C1 observations: one
+attempt failed before its task was delivered and its cell completed on the
+pre-authorised attempt-2 identity. Every row is instrument qualification /
+C1-only / pre-treatment / not AFCI treatment evidence, so none is usable by any
+analysis.
 
 ---
 

@@ -3,6 +3,19 @@
 Status when written: **PRE-DATA freeze. PRE-TREATMENT INSTRUMENT QUALIFICATION.
 EXPLORATORY. 15 intended observations, 0 attempted, 0 completed.**
 
+> **EXECUTED 2026-09-24/25 — this freeze has since been discharged in full.**
+> All 15 C1 observations ran in the frozen order and all 15 are valid final
+> observations; 1 attempt failed before its task was delivered (host standby
+> during workspace preparation) and its cell completed on the pre-authorised
+> attempt-2 identity under the recorded deviation `SL-V2-BACKSTAGE-TQ-01-D1`.
+> The frozen rule qualified **1 of 5** candidates (`BTQ-T5`); the other four
+> were `ARCHITECTURE_FLOOR_REJECT`. Outcome: **INSUFFICIENT QUALIFIED TASKS** —
+> the phase stops, with no further mining. Results, per-attempt rows and the
+> deviation are in
+> [`study-results/09_backstage_task_qualification_v1/`](../../study-results/09_backstage_task_qualification_v1/README.md).
+> **Everything below is the pre-data record and is unchanged.** Nothing in it
+> was edited after data existed.
+
 This phase is **not** an AFCI treatment-effect study and produces **no** AFCI
 treatment evidence. It runs the baseline condition **C1 only**. **No C4
 observation is permitted**: no architecture packet is composed, delivered or

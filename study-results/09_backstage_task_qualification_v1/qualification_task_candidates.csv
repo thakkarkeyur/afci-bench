@@ -1,0 +1,6 @@
+labels,slot,task_id,origin,architecture_rule_family,statement_sha256,static_qualification
+instrument qualification; C1-only; pre-treatment; not AFCI treatment evidence,Q1,BTQ-T1R,T1 repaired (new identity; T1 bytes untouched),extension-point placement / ownership,6600ef341a2588f26d250348591b22a52cd34ed90f49d098319e99693ba02aa5,PASS
+instrument qualification; C1-only; pre-treatment; not AFCI treatment evidence,Q2,BTQ-T5,"T5, byte for byte",shared contract / permission ownership,8db333264895b3d6df869adf27cc419c9adbd696da065cead8bbae610d62ba3d,PASS
+instrument qualification; C1-only; pre-treatment; not AFCI treatment evidence,Q3,BTQ-C02,newly mined real Backstage change,shared contract / permission ownership,a84a926b6e2c24a08a2c29888ccd63a3a4d6df1fc93d18c0ea5c3d7038902cc9,PASS
+instrument qualification; C1-only; pre-treatment; not AFCI treatment evidence,Q4,BTQ-C04,newly mined real Backstage change,package / role ownership,ed65b5e932924c5e8c977987044e726431efc66aec4ea4d13b857776e63c2bf9,PASS
+instrument qualification; C1-only; pre-treatment; not AFCI treatment evidence,Q5,BTQ-C05,newly mined real Backstage change (reduced scope),shared contract / API ownership,7197af4dee32739c157dcc9bfd897b6ae6433df64bb595c87329ee71bb87635a,PASS
