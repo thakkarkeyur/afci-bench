@@ -3,6 +3,15 @@
 Status when written: **PRE-DATA freeze. PRE-TREATMENT INSTRUMENT QUALIFICATION.
 C1 ONLY. EXPLORATORY. 15 intended observations, 0 attempted, 0 completed.**
 
+> **HALTED 2026-09-25 after 1 of 15 observations** — Study-Lead decision
+> [`SL-V2-BACKSTAGE-TQ-02-H1`](AFCI_BACKSTAGE_TASK_QUALIFICATION_V2_HALT_DECISION.md).
+> The runtime pin launched the frozen binary by an extensionless path, which broke
+> Claude Code's built-in Grep tool in the one delivered observation; the executor
+> was stopped before a second task was delivered, and the Study Lead stopped the
+> phase. No candidate status is determined and no task newly qualified. Results:
+> [`study-results/10_backstage_task_qualification_v2/`](../../study-results/10_backstage_task_qualification_v2/README.md).
+> **Everything below is the pre-data record and is unchanged.**
+
 This phase is **not** an AFCI treatment-effect study and produces **no** AFCI
 treatment evidence. It runs the baseline condition **C1 only**. **No C4
 observation is permitted**: no architecture packet is composed, delivered or

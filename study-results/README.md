@@ -59,10 +59,11 @@ Per-experiment folders hold derived tables and pointers, not bulk artifacts:
 - [`07_backstage_pilot_attempt_1_halted/`](07_backstage_pilot_attempt_1_halted/)
 - [`08_backstage_pilot_attempt_2_completed/`](08_backstage_pilot_attempt_2_completed/)
 - [`09_backstage_task_qualification_v1/`](09_backstage_task_qualification_v1/)
+- [`10_backstage_task_qualification_v2/`](10_backstage_task_qualification_v2/)
 
 ---
 
-## The ten experiments at a glance
+## The eleven experiments at a glance
 
 | id | what | runs (attempted → usable) | class | decision |
 | --- | --- | --- | --- | --- |
@@ -76,6 +77,7 @@ Per-experiment folders hold derived tables and pointers, not bulk artifacts:
 | `V2_BACKSTAGE_PILOT` | Backstage real-repository pilot, attempt 1 | 7 → 0 | halted | excluded wholesale |
 | `V2_BACKSTAGE_PILOT_ATTEMPT_2` | Backstage real-repository pilot, attempt 2 | 18 → 6 | architecture + cost pilot | NO ARCHITECTURE SIGNAL — do not expand |
 | `V2_BACKSTAGE_TASK_QUALIFICATION_V1` | Backstage task qualification, C1 only | 16 → 0 | instrument qualification (pre-treatment, not treatment evidence) | INSUFFICIENT QUALIFIED TASKS — 1 of 5 qualified; stop |
+| `V2_BACKSTAGE_TASK_QUALIFICATION_V2` | Backstage task qualification V2, C1 only | 2 → 0 | halted (instrument qualification, not treatment evidence) | HALTED after 1 of 15 — runtime-launch defect; 0 new qualified |
 
 "Usable" means *eligible to enter an analysis*. It is 0 for every experiment
 except the efficiency Attempt 2, the lower-model pilot and Backstage Attempt 2,
@@ -91,6 +93,11 @@ attempt failed before its task was delivered and its cell completed on the
 pre-authorised attempt-2 identity. Every row is instrument qualification /
 C1-only / pre-treatment / not AFCI treatment evidence, so none is usable by any
 analysis.
+
+`V2_BACKSTAGE_TASK_QUALIFICATION_V2` is 2 attempts: one delivered observation,
+produced under a runtime-launch defect and not used as qualification evidence,
+and one identity stopped before its task was delivered. The phase was halted
+with no candidate status determined; `BTQ-T5` remains the only qualified task.
 
 ---
 
