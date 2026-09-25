@@ -7,9 +7,9 @@ evidence this package reports.
 Reporting and export only. No benchmark observation was executed to produce this
 package, no model was invoked, and no task definition, architecture document,
 scorer, threshold, run plan, condition, raw run artifact or prior analysis was
-changed. Every figure below was recomputed from the 162 run/attempt
+changed. Every figure below was recomputed from the 164 run/attempt
 rows and then checked against the frozen per-experiment analysis artifacts:
-**139 checks, 0 mismatches**. The full check list is in
+**146 checks, 0 mismatches**. The full check list is in
 the workbook sheet `20_RECOMPUTATION_AUDIT`.
 
 Claims are tagged **[FACT]** (a measured value, reproducible from the artifacts),
@@ -70,16 +70,16 @@ decide which tasks a future study may use.
 
 | measure | count |
 | --- | ---: |
-| total run/attempt records | 162 |
-| distinct run identities | 159 |
-| completed observations | 143 |
+| total run/attempt records | 164 |
+| distinct run identities | 161 |
+| completed observations | 144 |
 | functionally valid observations | 85 |
-| explicitly functionally invalid | 15 |
-| no functional verdict captured at all | 62 |
-| diagnostic / qualification observations | 26 |
-| infrastructure-invalid or damaged records | 6 |
+| explicitly functionally invalid | 16 |
+| no functional verdict captured at all | 63 |
+| diagnostic / qualification observations | 28 |
+| infrastructure-invalid or damaged records | 7 |
 | refused | 1 |
-| excluded from every analysis | 106 |
+| excluded from every analysis | 108 |
 | eligible for any analysis | 56 |
 | **confirmatory observations** | **0** |
 
@@ -99,6 +99,7 @@ collision pair shares a single id. Both are recorded defects, kept as found.
 | `V2_BACKSTAGE_PILOT` | 7 | 0 | 2 | 0 | 7/7 | 7/7 | 5/7 |
 | `V2_BACKSTAGE_PILOT_ATTEMPT_2` | 18 | 18 | 8 | 6 | 18/18 | 18/18 | 18/18 |
 | `V2_BACKSTAGE_TASK_QUALIFICATION_V1` | 16 | 15 | 15 | 0 | 15/16 | 16/16 | 15/16 |
+| `V2_BACKSTAGE_TASK_QUALIFICATION_V2` | 2 | 1 | 0 | 0 | 1/2 | 2/2 | 1/2 |
 
 `V2_EFF_ATTEMPT1` shows 0 under *status COMPLETE* because its rows carry
 `INTACT_GOVERNED_OBSERVATION` (7 rows) and `DAMAGED_*` (2 rows) instead - a
@@ -472,11 +473,57 @@ the cell completed on its pre-authorised attempt-2 identity.
 
 ---
 
+## 9B. BACKSTAGE TASK QUALIFICATION V2 - HALTED
+
+> **Every row in this section is: instrument qualification / C1-only / pre-treatment / not AFCI treatment evidence. None is a qualification result.**
+
+**Design.** `SL-V2-BACKSTAGE-TQ-02`, pre-registered before its first
+observation: five **new** mined candidates (Q6-Q10), 3 C1 observations each,
+the same model, effort, CLI version, turn ceiling and substrate as V1, looking
+for at least two tasks to join `BTQ-T5`. It applied V1's lesson - its floors
+followed an obvious nearby precedent - by mining for changes where the nearest
+code points away from the documented owner. All five candidates passed static
+qualification before data (reference matrix, visible gate, task/oracle
+alignment, leakage audit, real preparation). Two of them prepare only under a
+pre-registered warm-up report restore, which puts back committed API reports
+that the frozen warm-up rewrites on the untouched substrate.
+
+**[FACT] Halted after 1 of 15** (`SL-V2-BACKSTAGE-TQ-02-H1`). The runtime pin
+launched the frozen `2.1.229` binary by an extensionless path. The version and
+digest checks passed, but Claude Code's built-in Grep tool re-spawns its own
+executable, which Windows cannot resolve without an executable extension, so
+the tool could not start. V1 ran the same version under its usual executable
+name and never hit this (93 successful Grep/Glob results, 0 such errors); no
+pre-data gate exercised a built-in tool.
+
+| seq | slot | task | status | delivered | functional | turns | files changed | cost |
+| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: |
+| 1 | Q6 | `BTQ2-C01` | valid under the frozen classifier; produced under the defect | yes | FAIL (0/5) | 34/96 | 0 | $1.35 |
+| 2 | Q7 | `BTQ2-C02` | stopped before task delivery | no | - | - | - | $0.00 |
+
+> **HALTED - no candidate status determined; 0 tasks newly qualified.** The
+> frozen rule's first branch applies: **INSUFFICIENT ADDITIONAL QUALIFIED
+> TASKS**, reached by halt, not by measurement. `BTQ-T5` remains the only
+> qualified task.
+
+**[FACT] Decision.** Offered a fix under a recorded deviation (launch the
+byte-identical binary under an executable name, prove the tools, classify every
+observation launched by the extensionless path as infrastructure-invalid,
+resume on the pre-authorised second attempts), continuing unchanged, or
+stopping, the Study Lead stopped the phase. The five candidates remain
+statically qualified instruments; using them needs a new pre-data decision.
+
+**[LIMITATION] Selection.** Unchanged from V1: qualification selects tasks with
+measurable baseline architecture pressure, so any study built on it estimates
+AFCI behaviour on architecture-pressure-qualified Backstage tasks only.
+
+---
+
 ## 10. Cost and token findings
 
 **[FACT] Token audit.** `TOTAL_INPUT_TOKENS = input_tokens +
 cache_creation_input_tokens + cache_read_input_tokens` on every row that carries
-tokens - checked on all 93 such rows, 0 failures. The MAD's
+tokens - checked on all 94 such rows, 0 failures. The MAD's
 own tokens and all cache traffic stay inside the number.
 
 | scope | paired blocks | C1 total input tokens | C4 total input tokens | C1 median/run | C4 median/run | median C4/C1 |
@@ -486,8 +533,8 @@ own tokens and all cache traffic stay inside the number.
 | Sonnet RESET | 7 | 5,076,078 | 6,520,701 | 733,633 | 1,028,101 | 1.3776 |
 | Haiku NON_RESET | 8 | 5,599,750 | 9,504,643 | 652,919 | 1,271,816 | 2.0372 |
 
-Token coverage: 93 of 162 run rows carry
-input-token evidence, 77 carry output tokens. v1, the
+Token coverage: 94 of 164 run rows carry
+input-token evidence, 78 carry output tokens. v1, the
 aborted Attempt 1 and the three diagnostics predate or do not use the token
 instrumentation; their cells are blank, never 0. The one Backstage
 task-qualification attempt that failed before delivery invoked no model and has
@@ -512,10 +559,10 @@ reset state at all, so it sits outside both arms. 18 + 17 + 1 = 36.
 | Haiku NON_RESET | 8 | $1.3862 | $2.0068 | 1.8865 |
 
 **Total captured provider cost across all runs carrying cost evidence:
-$91.83 over 78 runs.**
+$93.18 over 80 runs.**
 
 > **CAPTURED COST, NOT NECESSARILY TOTAL STUDY COST.**
-> 84 of 162 run rows carry no
+> 84 of 164 run rows carry no
 > provider-cost record at all: all 48 v1 rows, all 9 Attempt-1 rows, all 10
 > diagnostic rows, 16 of 17 Sonnet RESET rows, and the one refused run. Money was
 > spent on those runs; the runtime never reported it in a form the record could

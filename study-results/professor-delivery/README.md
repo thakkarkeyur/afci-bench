@@ -15,7 +15,7 @@ architecture rule, or hidden source/target label.
 | `AFCI_Professor_Results_Summary.md` | the 17-section narrative report - read this first |
 | `AFCI_Professor_Results_Summary.pdf` | the same report, rendered |
 | `AFCI_Professor_Results.xlsx` | 21 sheets: every matrix, every decision clause, every run |
-| `AFCI_Professor_Full_Run_Results.csv` | all 162 run/attempt rows, excluded ones included |
+| `AFCI_Professor_Full_Run_Results.csv` | all 164 run/attempt rows, excluded ones included |
 | `AFCI_Professor_Metric_Definitions.md` | what each metric means and which way is better |
 | `AFCI_Professor_Evidence_Map.md` | summary number -> analysis artifact -> run record -> raw artifact |
 
@@ -25,7 +25,7 @@ architecture rule, or hidden source/target label.
 | --- | --- |
 | `01_EXECUTIVE_SUMMARY` | programme totals, three result cards, the current research conclusion |
 | `02_EXPERIMENT_INVENTORY` | one row per experiment set, including the one not started |
-| `03_ALL_RUNS` | all 162 run/attempt records, every public-safe column |
+| `03_ALL_RUNS` | all 164 run/attempt records, every public-safe column |
 | `04_FUNCTIONAL_MATRIX` | functional correctness by experiment, task and condition |
 | `05_ARCHITECTURE_MATRIX` | architecture evidence, and what produced none |
 | `06_TOKEN_MATRIX` | input and output tokens, by arm and reset state |
@@ -42,7 +42,9 @@ architecture rule, or hidden source/target label.
 | `17_METRIC_AVAILABILITY` | metric x experiment availability grid |
 | `18_EVIDENCE_MAP` | traceability, repository anchors, hashes |
 | `19_METRIC_DEFINITIONS` | plain-English definitions |
-| `20_RECOMPUTATION_AUDIT` | the 139 checks behind every figure in this package |
+| `20_RECOMPUTATION_AUDIT` | the 146 checks behind every figure in this package |
+| `21_BACKSTAGE_TASK_QUALIFICATION` | Backstage task qualification V1, every attempt (instrument qualification only) |
+| `22_BACKSTAGE_TASK_QUAL_V2` | Backstage task qualification V2 - HALTED after 1 of 15; every attempt |
 
 Five descriptive charts are embedded, on sheets 04, 05, 06, 07 and 12. None
 carries a significance marking, because no significance test exists in this
@@ -59,7 +61,7 @@ readable without reading the axis.
 
 ## What this package is not
 
-- It is **not confirmatory**. Of 162 run rows, 56
+- It is **not confirmatory**. Of 164 run rows, 56
   are eligible for any analysis, all 56 belong to two
   non-confirmatory pilots, and **0** are confirmatory.
 - It contains **no p-value, confidence interval, effect size or power estimate**,
@@ -192,6 +194,31 @@ Attempts 1 and 2 above are unchanged.
 Full detail: summary section 9, workbook sheet `21_BACKSTAGE_TASK_QUALIFICATION`,
 and `../09_backstage_task_qualification_v1/`.
 
+## BACKSTAGE TASK QUALIFICATION V2 - HALTED - instrument qualification / C1-only / pre-treatment / not AFCI treatment evidence
+
+`V2_BACKSTAGE_TASK_QUALIFICATION_V2`, pre-registered as `SL-V2-BACKSTAGE-TQ-02` before its first
+observation, sought at least two more qualified tasks among five new candidates.
+It was **halted after 1 of 15 scheduled observations** (`SL-V2-BACKSTAGE-TQ-02-H1`):
+the runtime pin launched the frozen `2.1.229` binary by an extensionless path, and
+Claude Code's built-in Grep tool, which re-spawns its own executable, could not
+start. V1 never hit this. The one delivered observation is valid under the frozen
+classifier but was produced under the defect and is not qualification evidence;
+a second identity was stopped before its task was delivered.
+
+| field | value |
+| --- | --- |
+| status | **EXECUTION HALTED - RUNTIME LAUNCH DEFECT** |
+| planned / attempted / delivered observations | 15 / 2 / 1 |
+| usable for any analysis | **0** - every row is instrument qualification / C1-only / pre-treatment / not AFCI treatment evidence |
+| outcome | **HALTED** - no candidate status determined; 0 newly qualified (INSUFFICIENT ADDITIONAL QUALIFIED TASKS, by halt) |
+| qualified inventory for a future study | `BTQ-T5` (V1) only |
+| decisions | `SL-V2-BACKSTAGE-TQ-02` (pre-registration), `SL-V2-BACKSTAGE-TQ-02-H1` (halt) |
+
+The five V2 candidates remain statically qualified instruments; any future use
+needs a new pre-data decision with the launch path fixed. Full detail: summary
+section 9B, workbook sheet `22_BACKSTAGE_TASK_QUAL_V2`, and
+`../10_backstage_task_qualification_v2/`.
+
 ## Provenance
 
 Reporting and export only. Producing this package executed no benchmark
@@ -200,10 +227,11 @@ document, scorer, threshold, run plan, condition, raw run artifact or prior
 analysis. The private evaluator repository received result-provenance commits
 for the Backstage attempt-2 execution and for the Backstage task qualification
 V1 phase - its pre-data freeze, tooling, the D1 incident record and an execution
-index - and **nothing was pushed to it**.
+index - and for the task qualification V2 phase - its pre-data freeze, readiness
+gate and halt record - and **nothing was pushed to it**.
 
 Every figure was recomputed from the run/attempt rows and checked against the
-frozen per-experiment analysis artifacts: **139 checks,
+frozen per-experiment analysis artifacts: **146 checks,
 0 mismatches**. Regenerate with:
 
 ```sh

@@ -110,6 +110,14 @@ BTQ_STATUS = read_csv(BTQ / "qualification_status.csv")
 BTQ_ROWS = read_csv(BTQ / "qualification_run_rows.csv")
 BTQ_SUMMARY = json.loads((BTQ / "qualification_public_summary.json").read_text(encoding="utf-8"))
 
+# Backstage task qualification V2: pre-treatment instrument qualification, C1
+# only, HALTED after 1 of 15 scheduled observations (SL-V2-BACKSTAGE-TQ-02-H1).
+# Its one delivered observation was produced under a runtime-launch defect and is
+# not qualification evidence; no candidate status was determined.
+BTQ2 = SR / "10_backstage_task_qualification_v2"
+BTQ2_ID = "V2_BACKSTAGE_TASK_QUALIFICATION_V2"
+BTQ2_ROWS = read_csv(BTQ2 / "qualification_v2_run_rows.csv")
+
 LM_PAIRS = read_csv(LM / "lower_model_primary_pairs.csv")
 LM_RATIOS = read_csv(LM / "lower_model_endpoint_ratios.csv")
 LM_ARCH = read_csv(LM / "lower_model_architecture_summary.csv")
@@ -143,8 +151,9 @@ def check(name, expected, observed, tol=5e-5):
 # --------------------------------------------------------------------------- #
 
 DIAGNOSTIC_PURPOSES = {"PT08_DIFFICULTY_DIAGNOSTIC", "INSTRUMENT_QUALIFICATION_DIAGNOSTIC",
-                       "BACKSTAGE_TASK_QUALIFICATION_C1_ONLY"}
+                       "BACKSTAGE_TASK_QUALIFICATION_C1_ONLY", "BACKSTAGE_TASK_QUALIFICATION_V2_C1_ONLY"}
 INFRA_STATUSES = {"INFRASTRUCTURE_INVALID_NON_OBSERVATION",
+                  "STOPPED_BEFORE_DELIVERY_NON_OBSERVATION",
                   "DAMAGED_GOVERNED_RECORD_OVERWRITTEN",
                   "DAMAGED_POST_DELIVERY_COLLIDING_OBSERVATION"}
 
@@ -205,7 +214,7 @@ for exp in INV["by_experiment"]:
         "loc_coverage": sum(1 for r in rs if not blank(r["lines_added"])),
     })
 
-check("master run/attempt rows", 162, INV["total_rows"])
+check("master run/attempt rows", 164, INV["total_rows"])
 check("rows eligible for any analysis", 56, INV["eligible"])
 
 # Backstage task qualification V1: recomputed from the master rows, compared with
@@ -220,6 +229,22 @@ check("task qualification: every row carries the instrument-qualification label"
 check("task qualification: final observations equal the public summary",
       int(BTQ_SUMMARY["final_scientific_observations"]), len(BTQ_FINAL))
 check("task qualification: no C4 row", 0, sum(1 for r in BTQ_MASTER if r["condition"] != "C1"))
+
+# Backstage task qualification V2 (HALTED): the master rows against the phase's own
+# public rows.
+BTQ2_MASTER = [r for r in RUNS if r["experiment_id"] == BTQ2_ID]
+check("task qualification V2: master rows (1 delivered observation + 1 stopped before delivery)", 2,
+      len(BTQ2_MASTER))
+check("task qualification V2: master rows equal the phase's public rows", len(BTQ2_ROWS), len(BTQ2_MASTER))
+check("task qualification V2: rows eligible for any analysis", 0,
+      sum(1 for r in BTQ2_MASTER if r["eligible_for_analysis"] == "true"))
+check("task qualification V2: every row carries the instrument-qualification label", True,
+      all(BTQ_LABEL in r["reason_if_excluded"] for r in BTQ2_MASTER))
+check("task qualification V2: exactly one task delivered", 1,
+      sum(1 for r in BTQ2_ROWS if r["task_delivered"] == "True"))
+check("task qualification V2: no row used as qualification evidence", 0,
+      sum(1 for r in BTQ2_ROWS if r["used_as_qualification_evidence"] == "True"))
+check("task qualification V2: no C4 row", 0, sum(1 for r in BTQ2_MASTER if r["condition"] != "C1"))
 for s in BTQ_STATUS:
     mine = [r for r in BTQ_FINAL if r["task"] == s["task_id"]]
     check(f"task qualification: {s['task_id']} FUNCTIONAL_VALID of 3", int(s["functional_valid_of_3"]),
@@ -857,9 +882,11 @@ r = table(ws, r, ["measure", "value", "note"], [
      f"{INV['functional_invalid']} explicitly invalid; {INV['functional_not_captured']} carry no functional verdict at all"],
     ["Diagnostic / qualification observations", INV["diagnostic_qualification"],
      "PT08 (3) + PT09 (4, one infrastructure-invalid) + PT10 (3) + Backstage task qualification V1 (16: 15 C1 "
-     "observations + 1 pre-delivery infrastructure-invalid attempt); instrument evidence, never treatment evidence"],
+     "observations + 1 pre-delivery infrastructure-invalid attempt) + Backstage task qualification V2 (2, HALTED: "
+     "1 observation under a runtime-launch defect + 1 identity stopped before delivery); instrument evidence, never "
+     "treatment evidence"],
     ["Excluded from every analysis", INV["excluded"],
-     "v1 (48), efficiency Attempt 1 (9), diagnostics/qualification (26), Backstage Attempt 1 (7), plus 4 v2 rows. "
+     "v1 (48), efficiency Attempt 1 (9), diagnostics/qualification (28), Backstage Attempt 1 (7), plus 4 v2 rows. "
      "The 12 Backstage Attempt-2 rows outside a functionally valid pair are counted here too, but ONLY the paired "
      "EFFICIENCY analysis excludes them: all 18 enter the primary architecture endpoint, which is scored "
      "independently of functional validity"],
@@ -871,7 +898,8 @@ r = table(ws, r, ["measure", "value", "note"], [
     ["Tasks tested", len(INV["by_task"]),
      "12 v1 tasks (T01-T12) + 6 v2 synthetic tasks (PT01, PT04, PT07, PT08, PT09, PT10) + "
      "3 Backstage real-repository tasks (T1, T2, T5) + 5 Backstage qualification candidates "
-     "(BTQ-T1R, BTQ-T5, BTQ-C02, BTQ-C04, BTQ-C05; C1 only)"],
+     "(BTQ-T1R, BTQ-T5, BTQ-C02, BTQ-C04, BTQ-C05; C1 only) + 2 Backstage V2 candidates that received an attempt "
+     "before the halt (BTQ2-C01, BTQ2-C02; C1 only)"],
     ["Conditions", 4, "v1: baseline / AFCI. v2: C1 (task only) / C4 (task + explicit MAD)"],
     ["Reset states", 2, "NON_RESET and RESET; the lower-model pilot is NON_RESET only, by design"],
 ], formats={1: FMT_INT}, widths=[46, 17, 100])
@@ -967,7 +995,7 @@ PE = {x["experiment_id"]: x for x in PER_EXPERIMENT}
 inv_rows = []
 ORDER = ["V1_ORIGINAL", "V2_PT08_DIAGNOSTIC", "V2_PT09_QUALIFICATION", "V2_PT10_QUALIFICATION",
          "V2_EFF_ATTEMPT1", "V2_EFF_ATTEMPT2", "V2_LOWER_MODEL_PILOT", "V2_BACKSTAGE_PILOT",
-         "V2_BACKSTAGE_PILOT_ATTEMPT_2", BTQ_ID, "OPEN_SOURCE_COMPLEXITY_STUDY"]
+         "V2_BACKSTAGE_PILOT_ATTEMPT_2", BTQ_ID, BTQ2_ID, "OPEN_SOURCE_COMPLEXITY_STUDY"]
 CLASSIFICATION = {
     "V1_ORIGINAL": "HISTORICAL / EXPLORATORY",
     "V2_PT08_DIAGNOSTIC": "DIAGNOSTIC ONLY",
@@ -979,6 +1007,7 @@ CLASSIFICATION = {
     "V2_BACKSTAGE_PILOT": "HALTED / EXCLUDED WHOLESALE",
     "V2_BACKSTAGE_PILOT_ATTEMPT_2": "COMPLETED PILOT, NON-CONFIRMATORY",
     BTQ_ID: "INSTRUMENT QUALIFICATION ONLY (C1-ONLY, PRE-TREATMENT)",
+    BTQ2_ID: "HALTED - INSTRUMENT QUALIFICATION ONLY (C1-ONLY, PRE-TREATMENT)",
     "OPEN_SOURCE_COMPLEXITY_STUDY": "NOT STARTED",
 }
 for eid in ORDER:
@@ -1014,6 +1043,10 @@ r = note(ws, r, f"{BTQ_ID} is {BTQ_LABEL.upper()}: 15 C1 observations of 5 candi
                 "No C4, no packet, no treatment effect; never pooled with either Backstage attempt. Its 16 rows "
                 "(15 observations + 1 attempt that failed before task delivery) are all ineligible. See sheet 21.",
          AMBER)
+r = note(ws, r, f"{BTQ2_ID} is HALTED ({BTQ_LABEL}): 1 of 15 scheduled observations was delivered and it ran under "
+                "a runtime-launch defect (the built-in Grep tool could not start), so it is not qualification "
+                "evidence; a second identity was stopped before its task was delivered. No candidate status was "
+                "determined, 0 tasks newly qualified; BTQ-T5 remains the only qualified task. See sheet 22.", AMBER)
 r = note(ws, r, "planned / attempted / completed_runs on this sheet are the experiment registry's own counts. "
                 "V2_EFF_ATTEMPT1's 'completed_runs = 7' is the registry counting its 7 surviving rows; those rows carry "
                 "run_status = INTACT_GOVERNED_OBSERVATION, not COMPLETE, so a status-based recount of the same rows gives "
@@ -1213,7 +1246,8 @@ r = note(ws, r, f"Programme-wide: {INV['token_coverage']} of {INV['total_rows']}
                 f"{INV['output_token_coverage']} carry output-token evidence. v1 (48 rows), Attempt 1 (9 rows) and the "
                 "PT08/PT09/PT10 diagnostics (10 rows) predate or do not use the token instrumentation, and their cells are "
                 "blank rather than 0. The one Backstage task-qualification attempt that failed before its task was "
-                "delivered invoked no model, so it has no token record either.")
+                "delivered, and the V2 identity stopped before delivery, invoked no model, so they have no token "
+                "record either.")
 CH = r + 2
 ws.cell(row=CH, column=1, value="Median C4/C1 input-token ratio by scope").font = Font(bold=True, size=10, color=NAVY)
 base = CH + 1
@@ -1887,6 +1921,14 @@ EV = [
      "the private boundary",
      "execution plan sha256 6b913631e1c35a6115fdb81bc7000f8b9e609dc0894b6c79036113e3c59dbee8",
      "VERIFIED - recomputed from the run rows in 20_RECOMPUTATION_AUDIT; instrument qualification only"],
+    [f"Backstage task qualification V2: HALTED after 1 of 15 - {BTQ_LABEL}",
+     "study-results/10_backstage_task_qualification_v2/README.md -> qualification_v2_run_rows.csv (2 rows); "
+     "docs/v2/AFCI_BACKSTAGE_TASK_QUALIFICATION_V2_HALT_DECISION.md",
+     f"AFCI_MASTER_RUN_RESULTS.csv, experiment_id = {BTQ2_ID} (2 rows)",
+     "D:\\afci-bq2\\runs\\<run_id>\\run_record.json (usage, tools, timing) -> post-hoc hidden scoring, which stops at "
+     "the private boundary",
+     "execution plan sha256 2c34bcb8e326a9687b563f0583de5460bb0ce5d6288b9b1f2476422c585bcc55",
+     "VERIFIED - recomputed from the run rows in 20_RECOMPUTATION_AUDIT; HALTED, no qualification result"],
 ]
 r = table(ws, r, ["summary result", "analysis artifact", "run record", "raw artifact reference", "hash / SHA", "status"],
           EV, widths=[44, 70, 50, 74, 62, 60], autofilter=True)
@@ -2086,6 +2128,40 @@ BTQ_COLS = ["sequence", "slot", "task_id", "repetition", "execution_attempt", "r
             "max_turns_reached", "turns_used", "permission_denials", "cost_usd", "labels"]
 r = table(ws, r, BTQ_COLS, [[row.get(c, "") for c in BTQ_COLS] for row in BTQ_ROWS],
           widths=[9, 6, 10, 10, 10, 58, 26, 30, 12, 12, 10, 10, 12, 12, 12, 12, 10, 10, 10, 70])
+freeze(ws, "A5")
+
+# --------------------------------------------------------------------------- 22
+ws = wb.create_sheet("22_BACKSTAGE_TASK_QUAL_V2")
+r = sheet_title(ws, "BACKSTAGE TASK QUALIFICATION V2 - HALTED - " + BTQ_LABEL,
+                "SL-V2-BACKSTAGE-TQ-02 (pre-registered), halted by SL-V2-BACKSTAGE-TQ-02-H1 after 1 of 15 scheduled "
+                "observations. C1 only: no C4 observation, no architecture packet, no treatment effect. Never pooled "
+                "with Backstage Attempts 1/2 or Task Qualification V1, which are unchanged.")
+r = note(ws, r, "EVERY ROW ON THIS SHEET IS: " + BTQ_LABEL.upper() + ". NONE IS A QUALIFICATION RESULT.", AMBER)
+r = section(ws, r, "OUTCOME - HALTED; NO CANDIDATE STATUS DETERMINED; 0 NEW QUALIFIED")
+r = note(ws, r, "WHAT HAPPENED: the V2 runtime pin launched the frozen Claude Code 2.1.229 binary by an extensionless "
+                "path. Version and digest checks passed, but the built-in Grep tool re-spawns its own executable, "
+                "which Windows cannot resolve without an executable extension, so the tool could not start. Task "
+                "Qualification V1 ran the same version under its usual executable name and never hit this (93 "
+                "successful Grep/Glob results, 0 such errors). No pre-data gate exercised a built-in tool.", AMBER)
+r = note(ws, r, "The one delivered observation is valid under the frozen classifier but was produced under the defect "
+                "and is NOT used as qualification evidence. The executor was stopped before the second task was "
+                "delivered (no model process, $0). Offered a fix under a recorded deviation, continuing unchanged or "
+                "stopping, the Study Lead stopped the phase. Frozen selection rule, first branch: fewer than two newly "
+                "QUALIFIED = INSUFFICIENT ADDITIONAL QUALIFIED TASKS - reached by halt, not by measurement.")
+r = note(ws, r, "All five V2 candidates remain statically qualified instruments (reference matrix, visible gate, "
+                "task/oracle alignment, leakage audit and real preparation all green before data); any future use "
+                "needs a new pre-data decision. Qualified inventory for a future study: BTQ-T5 (V1) only.")
+r = note(ws, r, "SELECTION LIMITATION (recorded before data): qualification selects tasks with measurable baseline "
+                "architecture pressure; a study built on it estimates AFCI behaviour on ARCHITECTURE-PRESSURE-QUALIFIED "
+                "BACKSTAGE TASKS only, never an unbiased estimate over arbitrary Backstage changes.", AMBER)
+r = section(ws, r, "EVERY ATTEMPT - " + BTQ_LABEL)
+BTQ2_COLS = ["sequence", "slot", "task_id", "repetition", "execution_attempt", "run_id", "disposition",
+             "task_delivered", "observation_valid", "functional_valid", "semantic_passed", "semantic_total",
+             "architecture_applicable_opportunities", "architecture_violated_opportunities", "target_violation",
+             "turns_used", "permission_denials", "files_changed", "cost_usd", "runtime_launch_defect",
+             "used_as_qualification_evidence", "labels"]
+r = table(ws, r, BTQ2_COLS, [[row.get(c, "") for c in BTQ2_COLS] for row in BTQ2_ROWS],
+          widths=[9, 6, 10, 10, 10, 58, 26, 12, 12, 12, 10, 10, 12, 12, 12, 10, 10, 10, 10, 12, 14, 70])
 freeze(ws, "A5")
 
 # Excel allows one auto-filter per sheet. Sheets built from stacked sections get
@@ -2638,6 +2714,60 @@ the cell completed on its pre-authorised attempt-2 identity.
 
 ---
 
+## 9B. BACKSTAGE TASK QUALIFICATION V2 - HALTED
+
+> **Every row in this section is: {BTQ_LABEL}. None is a qualification result.**
+
+**Design.** `SL-V2-BACKSTAGE-TQ-02`, pre-registered before its first
+observation: five **new** mined candidates (Q6-Q10), 3 C1 observations each,
+the same model, effort, CLI version, turn ceiling and substrate as V1, looking
+for at least two tasks to join `BTQ-T5`. It applied V1's lesson - its floors
+followed an obvious nearby precedent - by mining for changes where the nearest
+code points away from the documented owner. All five candidates passed static
+qualification before data (reference matrix, visible gate, task/oracle
+alignment, leakage audit, real preparation). Two of them prepare only under a
+pre-registered warm-up report restore, which puts back committed API reports
+that the frozen warm-up rewrites on the untouched substrate.
+
+**[FACT] Halted after 1 of 15** (`SL-V2-BACKSTAGE-TQ-02-H1`). The runtime pin
+launched the frozen `2.1.229` binary by an extensionless path. The version and
+digest checks passed, but Claude Code's built-in Grep tool re-spawns its own
+executable, which Windows cannot resolve without an executable extension, so
+the tool could not start. V1 ran the same version under its usual executable
+name and never hit this (93 successful Grep/Glob results, 0 such errors); no
+pre-data gate exercised a built-in tool.
+
+| seq | slot | task | status | delivered | functional | turns | files changed | cost |
+| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: |
+""" + "\n".join(
+    f"| {r2['sequence']} | {r2['slot']} | `{r2['task_id']}` | "
+    + ("valid under the frozen classifier; produced under the defect" if r2["task_delivered"] == "True"
+       else "stopped before task delivery") + " | "
+    + ("yes" if r2["task_delivered"] == "True" else "no") + " | "
+    + (("PASS" if r2["functional_valid"] == "True" else "FAIL") + f" ({r2['semantic_passed']}/{r2['semantic_total']})"
+       if r2["task_delivered"] == "True" else "-") + " | "
+    + (f"{r2['turns_used']}/96" if r2["task_delivered"] == "True" else "-") + " | "
+    + (r2["files_changed"] if r2["task_delivered"] == "True" else "-") + " | "
+    + f"${float(r2['cost_usd']):.2f} |" for r2 in BTQ2_ROWS) + f"""
+
+> **HALTED - no candidate status determined; 0 tasks newly qualified.** The
+> frozen rule's first branch applies: **INSUFFICIENT ADDITIONAL QUALIFIED
+> TASKS**, reached by halt, not by measurement. `BTQ-T5` remains the only
+> qualified task.
+
+**[FACT] Decision.** Offered a fix under a recorded deviation (launch the
+byte-identical binary under an executable name, prove the tools, classify every
+observation launched by the extensionless path as infrastructure-invalid,
+resume on the pre-authorised second attempts), continuing unchanged, or
+stopping, the Study Lead stopped the phase. The five candidates remain
+statically qualified instruments; using them needs a new pre-data decision.
+
+**[LIMITATION] Selection.** Unchanged from V1: qualification selects tasks with
+measurable baseline architecture pressure, so any study built on it estimates
+AFCI behaviour on architecture-pressure-qualified Backstage tasks only.
+
+---
+
 ## 10. Cost and token findings
 
 **[FACT] Token audit.** `TOTAL_INPUT_TOKENS = input_tokens +
@@ -3059,6 +3189,8 @@ architecture rule, or hidden source/target label.
 | `18_EVIDENCE_MAP` | traceability, repository anchors, hashes |
 | `19_METRIC_DEFINITIONS` | plain-English definitions |
 | `20_RECOMPUTATION_AUDIT` | the {len(AUDIT)} checks behind every figure in this package |
+| `21_BACKSTAGE_TASK_QUALIFICATION` | Backstage task qualification V1, every attempt (instrument qualification only) |
+| `22_BACKSTAGE_TASK_QUAL_V2` | Backstage task qualification V2 - HALTED after 1 of 15; every attempt |
 
 Five descriptive charts are embedded, on sheets 04, 05, 06, 07 and 12. None
 carries a significance marking, because no significance test exists in this
@@ -3206,6 +3338,31 @@ Attempts 1 and 2 above are unchanged.
 Full detail: summary section 9, workbook sheet `21_BACKSTAGE_TASK_QUALIFICATION`,
 and `../09_backstage_task_qualification_v1/`.
 
+## BACKSTAGE TASK QUALIFICATION V2 - HALTED - {BTQ_LABEL}
+
+`{BTQ2_ID}`, pre-registered as `SL-V2-BACKSTAGE-TQ-02` before its first
+observation, sought at least two more qualified tasks among five new candidates.
+It was **halted after 1 of 15 scheduled observations** (`SL-V2-BACKSTAGE-TQ-02-H1`):
+the runtime pin launched the frozen `2.1.229` binary by an extensionless path, and
+Claude Code's built-in Grep tool, which re-spawns its own executable, could not
+start. V1 never hit this. The one delivered observation is valid under the frozen
+classifier but was produced under the defect and is not qualification evidence;
+a second identity was stopped before its task was delivered.
+
+| field | value |
+| --- | --- |
+| status | **{REG[BTQ2_ID]['status']}** |
+| planned / attempted / delivered observations | {REG[BTQ2_ID]['planned_runs']} / {REG[BTQ2_ID]['attempted_runs']} / {REG[BTQ2_ID]['completed_runs']} |
+| usable for any analysis | **0** - every row is {BTQ_LABEL} |
+| outcome | **HALTED** - no candidate status determined; 0 newly qualified (INSUFFICIENT ADDITIONAL QUALIFIED TASKS, by halt) |
+| qualified inventory for a future study | `BTQ-T5` (V1) only |
+| decisions | `SL-V2-BACKSTAGE-TQ-02` (pre-registration), `SL-V2-BACKSTAGE-TQ-02-H1` (halt) |
+
+The five V2 candidates remain statically qualified instruments; any future use
+needs a new pre-data decision with the launch path fixed. Full detail: summary
+section 9B, workbook sheet `22_BACKSTAGE_TASK_QUAL_V2`, and
+`../10_backstage_task_qualification_v2/`.
+
 ## Provenance
 
 Reporting and export only. Producing this package executed no benchmark
@@ -3214,7 +3371,8 @@ document, scorer, threshold, run plan, condition, raw run artifact or prior
 analysis. The private evaluator repository received result-provenance commits
 for the Backstage attempt-2 execution and for the Backstage task qualification
 V1 phase - its pre-data freeze, tooling, the D1 incident record and an execution
-index - and **nothing was pushed to it**.
+index - and for the task qualification V2 phase - its pre-data freeze, readiness
+gate and halt record - and **nothing was pushed to it**.
 
 Every figure was recomputed from the run/attempt rows and checked against the
 frozen per-experiment analysis artifacts: **{len(AUDIT)} checks,
