@@ -1,15 +1,15 @@
 # AFCI-Bench - results delivery
 
-**Compiled 2026-09-23** from `study-results/` on branch `study-v2`, pinned to evidence
-commit `49be470aea78` (*study(backstage): execute attempt 2 in full and record the result*) - the last change to the
+**Compiled 2026-09-25** from `study-results/` on branch `study-v2`, pinned to evidence
+commit `b98cc65af4c2` (*study(backstage): execute task qualification V1 in full and record the result*) - the last change to the
 evidence this package reports.
 
 Reporting and export only. No benchmark observation was executed to produce this
 package, no model was invoked, and no task definition, architecture document,
 scorer, threshold, run plan, condition, raw run artifact or prior analysis was
-changed. Every figure below was recomputed from the 146 run/attempt
+changed. Every figure below was recomputed from the 162 run/attempt
 rows and then checked against the frozen per-experiment analysis artifacts:
-**124 checks, 0 mismatches**. The full check list is in
+**139 checks, 0 mismatches**. The full check list is in
 the workbook sheet `20_RECOMPUTATION_AUDIT`.
 
 Claims are tagged **[FACT]** (a measured value, reproducible from the artifacts),
@@ -53,11 +53,14 @@ Two constructs are measured, and they are never combined into one score:
 | 7 | Lower-capability model pilot | claude-haiku-4-5-20251001 | 18 | COMPLETE | NO LOWER-MODEL SIGNAL - DO NOT EXPAND THE SYNTHETIC LOWER-MODEL MATRIX |
 | 8 | Backstage real-repository pilot, Attempt 1 | claude-sonnet-5 | 7 attempted of 18 | HALTED | excluded wholesale; no analysis was ever performed |
 | 9 | Backstage real-repository pilot, Attempt 2 | claude-sonnet-5 | 18 | COMPLETE | NO ARCHITECTURE SIGNAL - DO NOT AUTOMATICALLY EXPAND |
-| 10 | Open-source complexity study | TBD | 0 | **NOT STARTED** | none - no runs exist and no result is pre-populated |
+| 10 | Backstage task qualification V1 (*instrument qualification / C1-only / pre-treatment / not AFCI treatment evidence*) | claude-sonnet-5 | 15 C1 (+1 pre-delivery infra-invalid) | COMPLETE | INSUFFICIENT QUALIFIED TASKS - 1 of 5 qualified |
+| 11 | Open-source complexity study | TBD | 0 | **NOT STARTED** | none - no runs exist and no result is pre-populated |
 
 All three completed pilots were judged by a decision rule frozen **before** the
 data they judge existed, and all three rules returned a negative verdict. None
-was changed afterwards.
+was changed afterwards. The task qualification (row 10) is not a pilot and
+judges no treatment: it applied a frozen **instrument** rule to C1 runs only, to
+decide which tasks a future study may use.
 
 ---
 
@@ -67,16 +70,16 @@ was changed afterwards.
 
 | measure | count |
 | --- | ---: |
-| total run/attempt records | 146 |
-| distinct run identities | 143 |
-| completed observations | 128 |
-| functionally valid observations | 70 |
+| total run/attempt records | 162 |
+| distinct run identities | 159 |
+| completed observations | 143 |
+| functionally valid observations | 85 |
 | explicitly functionally invalid | 15 |
-| no functional verdict captured at all | 61 |
-| diagnostic / qualification observations | 10 |
-| infrastructure-invalid or damaged records | 5 |
+| no functional verdict captured at all | 62 |
+| diagnostic / qualification observations | 26 |
+| infrastructure-invalid or damaged records | 6 |
 | refused | 1 |
-| excluded from every analysis | 90 |
+| excluded from every analysis | 106 |
 | eligible for any analysis | 56 |
 | **confirmatory observations** | **0** |
 
@@ -95,6 +98,7 @@ collision pair shares a single id. Both are recorded defects, kept as found.
 | `V2_LOWER_MODEL_PILOT` | 18 | 18 | 17 | 16 | 18/18 | 18/18 | 18/18 |
 | `V2_BACKSTAGE_PILOT` | 7 | 0 | 2 | 0 | 7/7 | 7/7 | 5/7 |
 | `V2_BACKSTAGE_PILOT_ATTEMPT_2` | 18 | 18 | 8 | 6 | 18/18 | 18/18 | 18/18 |
+| `V2_BACKSTAGE_TASK_QUALIFICATION_V1` | 16 | 15 | 15 | 0 | 15/16 | 16/16 | 15/16 |
 
 `V2_EFF_ATTEMPT1` shows 0 under *status COMPLETE* because its rows carry
 `INTACT_GOVERNED_OBSERVATION` (7 rows) and `DAMAGED_*` (2 rows) instead - a
@@ -405,11 +409,74 @@ observation consumed, $0. The cost was wall-clock only.
 
 ---
 
-## 9. Cost and token findings
+## 9. BACKSTAGE TASK QUALIFICATION V1
+
+> **Every row in this section is: instrument qualification / C1-only / pre-treatment / not AFCI treatment evidence.**
+
+**Design.** `SL-V2-BACKSTAGE-TQ-01`, frozen before its first observation. It
+asks which candidate Backstage tasks a **future** AFCI study may use, and runs
+the baseline condition **C1 only**: no C4 observation, no architecture packet,
+no treatment effect. 5 candidates x 3 C1 observations = 15, `claude-sonnet-5`
+at effort `high`, CLI 2.1.229, NON_RESET, 96 turns, on the same frozen
+substrate. Backstage Attempts 1 and 2 are unchanged and never pooled with it.
+
+**Why it exists.** Attempt 2 showed that the instrument, not only the model,
+limited what could be seen: T1 was functionally underspecified, T2 sat at an
+architecture floor, and only T5 discriminated.
+
+* **Q1 `BTQ-T1R` is T1 repaired** under a new identity. All six Attempt-2 T1
+  runs failed the same semantic case because the statement never said a
+  returned value must be **synchronous**; one sentence now says so, and no
+  architecture guidance was added. T1's original bytes are untouched.
+* **Q2 `BTQ-T5` is T5**, byte for byte.
+* **Q3-Q5** are newly mined, real post-substrate Backstage changes.
+* **T2 is RETIRED** (architecture floor in Attempt 2) and was not substituted.
+
+Every candidate passed static qualification before any model run: the untouched
+substrate fails the functional check and scores 0/0; a legal reference is
+functional PASS with 1 applicable, 0 violated; a violating reference is
+functional PASS with 1 applicable, 1 violated; both pass the model-visible gate.
+
+**[FACT] The frozen rule** - QUALIFIED iff `FUNCTIONAL_VALID` >= 2 of 3 **and**
+target violation >= 1 of 3:
+
+| slot | task | rule family | FUNCTIONAL_VALID | target violation | MAX_TURNS | status |
+| --- | --- | --- | ---: | ---: | ---: | --- |
+| Q1 | `BTQ-T1R` | extension-point placement / ownership | 3 / 3 | 0 / 3 | 0 / 3 | **ARCHITECTURE_FLOOR_REJECT** |
+| Q2 | `BTQ-T5` | shared contract / permission ownership | 3 / 3 | 3 / 3 | 2 / 3 | **QUALIFIED** |
+| Q3 | `BTQ-C02` | shared contract / permission ownership | 3 / 3 | 0 / 3 | 1 / 3 | **ARCHITECTURE_FLOOR_REJECT** |
+| Q4 | `BTQ-C04` | package / role ownership | 3 / 3 | 0 / 3 | 0 / 3 | **ARCHITECTURE_FLOOR_REJECT** |
+| Q5 | `BTQ-C05` | shared contract / API ownership | 3 / 3 | 0 / 3 | 0 / 3 | **ARCHITECTURE_FLOOR_REJECT** |
+
+> **`INSUFFICIENT QUALIFIED TASKS`** - 1 of 5 qualified
+> (BTQ-T5). Fewer than three: the phase stops, with no further mining.
+
+**[FACT] Reading a zero.** Every final observation had exactly one applicable
+architecture opportunity, so each 0 means the legal placement was made every
+time the decision arose - an architecture floor under C1, not an opportunity
+the instrument missed. The T1 repair worked on the functional axis (3/3 valid
+against 0/6 for the original T1 in Attempt 2) but exposed no baseline pressure.
+
+**[LIMITATION] Selection.** This qualification intentionally selects tasks with measurable baseline architecture pressure. A future treatment study built on its selection estimates AFCI behaviour on ARCHITECTURE-PRESSURE-QUALIFIED tasks and must not be presented as an unbiased estimate over arbitrary Backstage development tasks. The tasks are
+**pressure-qualified** by a rule declared in advance, not cherry-picked; with
+fewer than three qualified, no task was selected.
+
+**[FACT] Execution.** 15 valid final
+observations, all functionally valid; 1
+infrastructure-invalid attempt; captured provider cost
+**$33.72**. One attempt
+failed **before its task was delivered** (host standby during workspace
+preparation, no model invoked, $0): deviation `SL-V2-BACKSTAGE-TQ-01-D1`
+re-derived `WORKSPACE_PREPARATION_FAILED` from the attempt's own artifacts and
+the cell completed on its pre-authorised attempt-2 identity.
+
+---
+
+## 10. Cost and token findings
 
 **[FACT] Token audit.** `TOTAL_INPUT_TOKENS = input_tokens +
 cache_creation_input_tokens + cache_read_input_tokens` on every row that carries
-tokens - checked on all 78 such rows, 0 failures. The MAD's
+tokens - checked on all 93 such rows, 0 failures. The MAD's
 own tokens and all cache traffic stay inside the number.
 
 | scope | paired blocks | C1 total input tokens | C4 total input tokens | C1 median/run | C4 median/run | median C4/C1 |
@@ -419,10 +486,12 @@ own tokens and all cache traffic stay inside the number.
 | Sonnet RESET | 7 | 5,076,078 | 6,520,701 | 733,633 | 1,028,101 | 1.3776 |
 | Haiku NON_RESET | 8 | 5,599,750 | 9,504,643 | 652,919 | 1,271,816 | 2.0372 |
 
-Token coverage: 78 of 146 run rows carry
-input-token evidence, 62 carry output tokens. v1, the
+Token coverage: 93 of 162 run rows carry
+input-token evidence, 77 carry output tokens. v1, the
 aborted Attempt 1 and the three diagnostics predate or do not use the token
-instrumentation; their cells are blank, never 0.
+instrumentation; their cells are blank, never 0. The one Backstage
+task-qualification attempt that failed before delivery invoked no model and has
+no token record either.
 
 **[FACT] Cost audit.**
 
@@ -443,10 +512,10 @@ reset state at all, so it sits outside both arms. 18 + 17 + 1 = 36.
 | Haiku NON_RESET | 8 | $1.3862 | $2.0068 | 1.8865 |
 
 **Total captured provider cost across all runs carrying cost evidence:
-$58.11 over 62 runs.**
+$91.83 over 78 runs.**
 
 > **CAPTURED COST, NOT NECESSARILY TOTAL STUDY COST.**
-> 84 of 146 run rows carry no
+> 84 of 162 run rows carry no
 > provider-cost record at all: all 48 v1 rows, all 9 Attempt-1 rows, all 10
 > diagnostic rows, 16 of 17 Sonnet RESET rows, and the one refused run. Money was
 > spent on those runs; the runtime never reported it in a form the record could
@@ -464,7 +533,7 @@ describes the non-reset arm only.
 
 ---
 
-## 10. Functional and architecture quality
+## 11. Functional and architecture quality
 
 **[FACT]**
 
@@ -497,7 +566,7 @@ The cost result must not be allowed to stand in for an architecture result.
 
 ---
 
-## 11. Cross-model interpretation
+## 12. Cross-model interpretation
 
 **[FACT]** Both sides below are NON_RESET, so the comparison is like-for-like.
 
@@ -542,7 +611,7 @@ direction is not read as unanimity.
 
 ---
 
-## 12. What the evidence supports
+## 13. What the evidence supports
 
 1. **[FACT]** On this substrate with `claude-sonnet-5`, explicit MAD injection
    costs more than it saves across every captured cost dimension except CI
@@ -565,7 +634,7 @@ direction is not read as unanimity.
 
 ---
 
-## 13. What the evidence does NOT support
+## 14. What the evidence does NOT support
 
 1. **We cannot conclude AFCI does not work.** We can conclude it did not reduce
    cost here. Efficiency is one construct; architectural conformance is the
@@ -591,7 +660,7 @@ direction is not read as unanimity.
 
 ---
 
-## 14. Limitations
+## 15. Limitations
 
 | # | limitation |
 | --- | --- |
@@ -602,10 +671,11 @@ direction is not read as unanimity.
 | 5 | **Architecture is measured only where it sat at a floor.** The evidence base is lopsided toward cost. |
 | 6 | **Reset cost and output tokens do not exist for reset runs** - withheld by construction, not missing by accident. |
 | 7 | **This package is a secondary artifact.** Where it and a primary artifact disagree, the primary artifact wins. |
+| 8 | **Task selection by baseline pressure.** Backstage task qualification V1 selects tasks with measurable C1 architecture pressure; any study built on it estimates AFCI behaviour on **architecture-pressure-qualified** tasks and must not be presented as an unbiased estimate over arbitrary Backstage tasks. It qualified 1 of 5 candidates, so no selection exists yet. |
 
 ---
 
-## 15. Current research direction
+## 16. Current research direction
 
 The chain is short and each link is recorded:
 
@@ -633,9 +703,18 @@ context-recovery burden is therefore the next scientifically distinct moderator 
 investigate. **This is the next hypothesis to test, not a proven one.** It stands
 by elimination rather than by evidence, and nothing in this package tests it.
 
+**[FACT] The first real-repository evidence points the same way.** Backstage
+Attempt 2 returned NO ARCHITECTURE SIGNAL with two of three tasks at an
+architecture floor, and Backstage task qualification V1 (C1 only, no treatment)
+then found the floor again on 4 of 5 candidates: only T5 carries measurable
+baseline pressure. **[INTERPRETATION]** On a large, ambiguous real repository
+too, `claude-sonnet-5` mostly makes the legal placement decision without being
+told the architecture, so finding tasks where a baseline agent actually violates
+the architecture is itself the bottleneck for any C1-vs-C4 study.
+
 ---
 
-## 16. Next study - open-source architectural complexity
+## 17. Next study - open-source architectural complexity
 
 **Status: NOT STARTED.** No runs exist. No results are pre-populated.
 

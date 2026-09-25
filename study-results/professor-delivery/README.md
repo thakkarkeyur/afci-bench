@@ -1,7 +1,7 @@
 # AFCI-Bench - professor results delivery package
 
-**Compiled 2026-09-23** from `study-results/` on branch `study-v2`, pinned to evidence
-commit `49be470aea78` (*study(backstage): execute attempt 2 in full and record the result*) - the last change to the
+**Compiled 2026-09-25** from `study-results/` on branch `study-v2`, pinned to evidence
+commit `b98cc65af4c2` (*study(backstage): execute task qualification V1 in full and record the result*) - the last change to the
 evidence this package reports.
 
 This package is safe to send outside the private evaluator repository. It carries
@@ -12,10 +12,10 @@ architecture rule, or hidden source/target label.
 
 | file | what it is |
 | --- | --- |
-| `AFCI_Professor_Results_Summary.md` | the 16-section narrative report - read this first |
+| `AFCI_Professor_Results_Summary.md` | the 17-section narrative report - read this first |
 | `AFCI_Professor_Results_Summary.pdf` | the same report, rendered |
-| `AFCI_Professor_Results.xlsx` | 20 sheets: every matrix, every decision clause, every run |
-| `AFCI_Professor_Full_Run_Results.csv` | all 146 run/attempt rows, excluded ones included |
+| `AFCI_Professor_Results.xlsx` | 21 sheets: every matrix, every decision clause, every run |
+| `AFCI_Professor_Full_Run_Results.csv` | all 162 run/attempt rows, excluded ones included |
 | `AFCI_Professor_Metric_Definitions.md` | what each metric means and which way is better |
 | `AFCI_Professor_Evidence_Map.md` | summary number -> analysis artifact -> run record -> raw artifact |
 
@@ -25,7 +25,7 @@ architecture rule, or hidden source/target label.
 | --- | --- |
 | `01_EXECUTIVE_SUMMARY` | programme totals, three result cards, the current research conclusion |
 | `02_EXPERIMENT_INVENTORY` | one row per experiment set, including the one not started |
-| `03_ALL_RUNS` | all 146 run/attempt records, every public-safe column |
+| `03_ALL_RUNS` | all 162 run/attempt records, every public-safe column |
 | `04_FUNCTIONAL_MATRIX` | functional correctness by experiment, task and condition |
 | `05_ARCHITECTURE_MATRIX` | architecture evidence, and what produced none |
 | `06_TOKEN_MATRIX` | input and output tokens, by arm and reset state |
@@ -42,7 +42,7 @@ architecture rule, or hidden source/target label.
 | `17_METRIC_AVAILABILITY` | metric x experiment availability grid |
 | `18_EVIDENCE_MAP` | traceability, repository anchors, hashes |
 | `19_METRIC_DEFINITIONS` | plain-English definitions |
-| `20_RECOMPUTATION_AUDIT` | the 124 checks behind every figure in this package |
+| `20_RECOMPUTATION_AUDIT` | the 139 checks behind every figure in this package |
 
 Five descriptive charts are embedded, on sheets 04, 05, 06, 07 and 12. None
 carries a significance marking, because no significance test exists in this
@@ -59,7 +59,7 @@ readable without reading the axis.
 
 ## What this package is not
 
-- It is **not confirmatory**. Of 146 run rows, 56
+- It is **not confirmatory**. Of 162 run rows, 56
   are eligible for any analysis, all 56 belong to two
   non-confirmatory pilots, and **0** are confirmatory.
 - It contains **no p-value, confidence interval, effect size or power estimate**,
@@ -156,18 +156,54 @@ comparison was ever computed from it. Attempt 1's **$10.93** and attempt 2's
 **$32.19** are reported separately and never combined into a treatment
 estimate.
 
+## BACKSTAGE TASK QUALIFICATION V1 - instrument qualification / C1-only / pre-treatment / not AFCI treatment evidence
+
+`V2_BACKSTAGE_TASK_QUALIFICATION_V1`, governed by `SL-V2-BACKSTAGE-TQ-01` and frozen before its first
+observation, is **not** an AFCI treatment study. It ran C1 only - no C4, no
+architecture packet, no treatment effect - to decide which candidate tasks a
+future study may use. It is never pooled with either Backstage attempt, and
+Attempts 1 and 2 above are unchanged.
+
+| field | value |
+| --- | --- |
+| status | **COMPLETE - INSTRUMENT QUALIFICATION** |
+| planned / attempted / final observations | 15 / 16 / 15 |
+| usable for any analysis | **0** - every row is instrument qualification / C1-only / pre-treatment / not AFCI treatment evidence |
+| outcome | **INSUFFICIENT QUALIFIED TASKS** (1 of 5 qualified: BTQ-T5) |
+| decisions | `SL-V2-BACKSTAGE-TQ-01` (freeze), deviation `SL-V2-BACKSTAGE-TQ-01-D1` (one pre-delivery infrastructure failure) |
+
+| slot | task | FUNCTIONAL_VALID | target violation | status |
+| --- | --- | ---: | ---: | --- |
+| Q1 | `BTQ-T1R` | 3 / 3 | 0 / 3 | ARCHITECTURE_FLOOR_REJECT |
+| Q2 | `BTQ-T5` | 3 / 3 | 3 / 3 | QUALIFIED |
+| Q3 | `BTQ-C02` | 3 / 3 | 0 / 3 | ARCHITECTURE_FLOOR_REJECT |
+| Q4 | `BTQ-C04` | 3 / 3 | 0 / 3 | ARCHITECTURE_FLOOR_REJECT |
+| Q5 | `BTQ-C05` | 3 / 3 | 0 / 3 | ARCHITECTURE_FLOOR_REJECT |
+
+- **Q1 `BTQ-T1R` repairs T1** under a new identity: one sentence now says the
+  returned value is synchronous, the behaviour all six Attempt-2 T1 runs missed.
+  No architecture guidance was added. It was 3/3 functionally valid here.
+- **T2 is retired** (architecture floor in Attempt 2) and was not substituted.
+- Every final observation had exactly one applicable opportunity, so a 0 is the
+  legal placement made every time - an architecture floor under C1.
+- Tasks are **pressure-qualified** by a rule frozen before data, not
+  cherry-picked. This qualification intentionally selects tasks with measurable baseline architecture pressure. A future treatment study built on its selection estimates AFCI behaviour on ARCHITECTURE-PRESSURE-QUALIFIED tasks and must not be presented as an unbiased estimate over arbitrary Backstage development tasks.
+
+Full detail: summary section 9, workbook sheet `21_BACKSTAGE_TASK_QUALIFICATION`,
+and `../09_backstage_task_qualification_v1/`.
+
 ## Provenance
 
 Reporting and export only. Producing this package executed no benchmark
 observation, invoked no model, and changed no task definition, architecture
 document, scorer, threshold, run plan, condition, raw run artifact or prior
-analysis. The private evaluator repository received one result-provenance
-commit for the Backstage attempt-2 execution - an index, its leakage-validator
-entries and its phase-aware launcher guards, no task, scorer or threshold - and
-**nothing was pushed to it**.
+analysis. The private evaluator repository received result-provenance commits
+for the Backstage attempt-2 execution and for the Backstage task qualification
+V1 phase - its pre-data freeze, tooling, the D1 incident record and an execution
+index - and **nothing was pushed to it**.
 
 Every figure was recomputed from the run/attempt rows and checked against the
-frozen per-experiment analysis artifacts: **124 checks,
+frozen per-experiment analysis artifacts: **139 checks,
 0 mismatches**. Regenerate with:
 
 ```sh

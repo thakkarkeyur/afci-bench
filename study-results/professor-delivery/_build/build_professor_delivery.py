@@ -31,7 +31,7 @@ SR = HERE.parents[2]                     # study-results/
 OUT = HERE.parents[1]                    # study-results/professor-delivery/
 REPO = SR.parent                         # repository root
 
-COMPILED = "2026-09-23"
+COMPILED = "2026-09-25"
 
 #: Text output is written with LF explicitly. The repository pins `eol=lf` in
 #: .gitattributes, so writing CRLF here would leave the working tree differing
@@ -100,6 +100,16 @@ BS2_PAIRS = read_csv(BS2 / "attempt2_primary_pairs.csv")
 BS2_CLAUSES = read_csv(BS2 / "attempt2_decision_clauses.csv")
 BS2_RAW = read_csv(BS2 / "attempt2_runs_raw_metrics.csv")
 
+# Backstage task qualification V1: pre-treatment instrument qualification, C1
+# only. Every one of its rows is instrument qualification / C1-only /
+# pre-treatment / not AFCI treatment evidence, and none enters any analysis.
+BTQ = SR / "09_backstage_task_qualification_v1"
+BTQ_ID = "V2_BACKSTAGE_TASK_QUALIFICATION_V1"
+BTQ_LABEL = "instrument qualification / C1-only / pre-treatment / not AFCI treatment evidence"
+BTQ_STATUS = read_csv(BTQ / "qualification_status.csv")
+BTQ_ROWS = read_csv(BTQ / "qualification_run_rows.csv")
+BTQ_SUMMARY = json.loads((BTQ / "qualification_public_summary.json").read_text(encoding="utf-8"))
+
 LM_PAIRS = read_csv(LM / "lower_model_primary_pairs.csv")
 LM_RATIOS = read_csv(LM / "lower_model_endpoint_ratios.csv")
 LM_ARCH = read_csv(LM / "lower_model_architecture_summary.csv")
@@ -132,7 +142,8 @@ def check(name, expected, observed, tol=5e-5):
 # 1. run inventory
 # --------------------------------------------------------------------------- #
 
-DIAGNOSTIC_PURPOSES = {"PT08_DIFFICULTY_DIAGNOSTIC", "INSTRUMENT_QUALIFICATION_DIAGNOSTIC"}
+DIAGNOSTIC_PURPOSES = {"PT08_DIFFICULTY_DIAGNOSTIC", "INSTRUMENT_QUALIFICATION_DIAGNOSTIC",
+                       "BACKSTAGE_TASK_QUALIFICATION_C1_ONLY"}
 INFRA_STATUSES = {"INFRASTRUCTURE_INVALID_NON_OBSERVATION",
                   "DAMAGED_GOVERNED_RECORD_OVERWRITTEN",
                   "DAMAGED_POST_DELIVERY_COLLIDING_OBSERVATION"}
@@ -194,8 +205,27 @@ for exp in INV["by_experiment"]:
         "loc_coverage": sum(1 for r in rs if not blank(r["lines_added"])),
     })
 
-check("master run/attempt rows", 146, INV["total_rows"])
+check("master run/attempt rows", 162, INV["total_rows"])
 check("rows eligible for any analysis", 56, INV["eligible"])
+
+# Backstage task qualification V1: recomputed from the master rows, compared with
+# the phase's own frozen public tables.
+BTQ_MASTER = [r for r in RUNS if r["experiment_id"] == BTQ_ID]
+BTQ_FINAL = [r for r in BTQ_MASTER if r["run_status"] == "COMPLETE"]
+check("task qualification: master rows (15 observations + 1 pre-delivery attempt)", 16, len(BTQ_MASTER))
+check("task qualification: rows eligible for any analysis", 0,
+      sum(1 for r in BTQ_MASTER if r["eligible_for_analysis"] == "true"))
+check("task qualification: every row carries the instrument-qualification label", True,
+      all(BTQ_LABEL in r["reason_if_excluded"] for r in BTQ_MASTER))
+check("task qualification: final observations equal the public summary",
+      int(BTQ_SUMMARY["final_scientific_observations"]), len(BTQ_FINAL))
+check("task qualification: no C4 row", 0, sum(1 for r in BTQ_MASTER if r["condition"] != "C1"))
+for s in BTQ_STATUS:
+    mine = [r for r in BTQ_FINAL if r["task"] == s["task_id"]]
+    check(f"task qualification: {s['task_id']} FUNCTIONAL_VALID of 3", int(s["functional_valid_of_3"]),
+          sum(1 for r in mine if r["functional_valid"] == "true"))
+    check(f"task qualification: {s['task_id']} target violations of 3", int(s["target_violations_of_3"]),
+          sum(1 for r in mine if (intn(r["architecture_violated"]) or 0) > 0))
 
 # --------------------------------------------------------------------------- #
 # 2. paired endpoints
@@ -812,8 +842,9 @@ ws.column_dimensions["I"].width = 60
 
 r = section(ws, r, "PROGRAMME TOTALS")
 r = table(ws, r, ["measure", "value", "note"], [
-    ["Experiment sets executed", 9, "V1, PT08, PT09, PT10, efficiency Attempt 1 (aborted), efficiency Attempt 2, "
-                                    "lower-model pilot, Backstage Attempt 1 (halted), Backstage Attempt 2 (complete)"],
+    ["Experiment sets executed", 10, "V1, PT08, PT09, PT10, efficiency Attempt 1 (aborted), efficiency Attempt 2, "
+                                     "lower-model pilot, Backstage Attempt 1 (halted), Backstage Attempt 2 (complete), "
+                                     "Backstage task qualification V1 (instrument qualification, C1-only)"],
     ["Experiment sets not started", 1,
      "OPEN_SOURCE_COMPLEXITY_STUDY - placeholder only, no runs exist"],
     ["Total run/attempt records", INV["total_rows"], "one row per scheduled run or attempt, including excluded ones"],
@@ -825,9 +856,10 @@ r = table(ws, r, ["measure", "value", "note"], [
     ["Functionally valid observations", INV["functional_valid"],
      f"{INV['functional_invalid']} explicitly invalid; {INV['functional_not_captured']} carry no functional verdict at all"],
     ["Diagnostic / qualification observations", INV["diagnostic_qualification"],
-     "PT08 (3) + PT09 (4, one infrastructure-invalid) + PT10 (3); instrument evidence, never treatment evidence"],
+     "PT08 (3) + PT09 (4, one infrastructure-invalid) + PT10 (3) + Backstage task qualification V1 (16: 15 C1 "
+     "observations + 1 pre-delivery infrastructure-invalid attempt); instrument evidence, never treatment evidence"],
     ["Excluded from every analysis", INV["excluded"],
-     "v1 (48), efficiency Attempt 1 (9), diagnostics/qualification (10), Backstage Attempt 1 (7), plus 4 v2 rows. "
+     "v1 (48), efficiency Attempt 1 (9), diagnostics/qualification (26), Backstage Attempt 1 (7), plus 4 v2 rows. "
      "The 12 Backstage Attempt-2 rows outside a functionally valid pair are counted here too, but ONLY the paired "
      "EFFICIENCY analysis excludes them: all 18 enter the primary architecture endpoint, which is scored "
      "independently of functional validity"],
@@ -838,7 +870,8 @@ r = table(ws, r, ["measure", "value", "note"], [
     ["Models tested", 3, "'Opus 7' (v1, historical), claude-sonnet-5, claude-haiku-4-5-20251001"],
     ["Tasks tested", len(INV["by_task"]),
      "12 v1 tasks (T01-T12) + 6 v2 synthetic tasks (PT01, PT04, PT07, PT08, PT09, PT10) + "
-     "3 Backstage real-repository tasks (T1, T2, T5)"],
+     "3 Backstage real-repository tasks (T1, T2, T5) + 5 Backstage qualification candidates "
+     "(BTQ-T1R, BTQ-T5, BTQ-C02, BTQ-C04, BTQ-C05; C1 only)"],
     ["Conditions", 4, "v1: baseline / AFCI. v2: C1 (task only) / C4 (task + explicit MAD)"],
     ["Reset states", 2, "NON_RESET and RESET; the lower-model pilot is NON_RESET only, by design"],
 ], formats={1: FMT_INT}, widths=[46, 17, 100])
@@ -934,7 +967,7 @@ PE = {x["experiment_id"]: x for x in PER_EXPERIMENT}
 inv_rows = []
 ORDER = ["V1_ORIGINAL", "V2_PT08_DIAGNOSTIC", "V2_PT09_QUALIFICATION", "V2_PT10_QUALIFICATION",
          "V2_EFF_ATTEMPT1", "V2_EFF_ATTEMPT2", "V2_LOWER_MODEL_PILOT", "V2_BACKSTAGE_PILOT",
-         "V2_BACKSTAGE_PILOT_ATTEMPT_2", "OPEN_SOURCE_COMPLEXITY_STUDY"]
+         "V2_BACKSTAGE_PILOT_ATTEMPT_2", BTQ_ID, "OPEN_SOURCE_COMPLEXITY_STUDY"]
 CLASSIFICATION = {
     "V1_ORIGINAL": "HISTORICAL / EXPLORATORY",
     "V2_PT08_DIAGNOSTIC": "DIAGNOSTIC ONLY",
@@ -945,6 +978,7 @@ CLASSIFICATION = {
     "V2_LOWER_MODEL_PILOT": "COMPLETED PILOT, NON-CONFIRMATORY",
     "V2_BACKSTAGE_PILOT": "HALTED / EXCLUDED WHOLESALE",
     "V2_BACKSTAGE_PILOT_ATTEMPT_2": "COMPLETED PILOT, NON-CONFIRMATORY",
+    BTQ_ID: "INSTRUMENT QUALIFICATION ONLY (C1-ONLY, PRE-TREATMENT)",
     "OPEN_SOURCE_COMPLEXITY_STUDY": "NOT STARTED",
 }
 for eid in ORDER:
@@ -975,6 +1009,11 @@ r = note(ws, r, "V2_BACKSTAGE_PILOT_ATTEMPT_2 is COMPLETE: 18 planned, 18 attemp
                 "1. The frozen 11.1 continuation rule returned NO ARCHITECTURE SIGNAL - DO NOT AUTOMATICALLY EXPAND "
                 "(criterion 1 PASS, criterion 2 FAIL, criterion 3 PASS). V2_BACKSTAGE_PILOT (attempt 1) stays HALTED "
                 "and EXCLUDED WHOLESALE and is never pooled with it, replaced by it, or re-run under it.", AMBER)
+r = note(ws, r, f"{BTQ_ID} is {BTQ_LABEL.upper()}: 15 C1 observations of 5 candidate tasks, "
+                f"{BTQ_SUMMARY['qualified_count']} of 5 qualified, outcome {BTQ_SUMMARY['selection']['outcome']}. "
+                "No C4, no packet, no treatment effect; never pooled with either Backstage attempt. Its 16 rows "
+                "(15 observations + 1 attempt that failed before task delivery) are all ineligible. See sheet 21.",
+         AMBER)
 r = note(ws, r, "planned / attempted / completed_runs on this sheet are the experiment registry's own counts. "
                 "V2_EFF_ATTEMPT1's 'completed_runs = 7' is the registry counting its 7 surviving rows; those rows carry "
                 "run_status = INTACT_GOVERNED_OBSERVATION, not COMPLETE, so a status-based recount of the same rows gives "
@@ -1173,7 +1212,8 @@ r = table(ws, r, ["scope", "runs", "runs with token evidence", "runs without", "
 r = note(ws, r, f"Programme-wide: {INV['token_coverage']} of {INV['total_rows']} run rows carry input-token evidence and "
                 f"{INV['output_token_coverage']} carry output-token evidence. v1 (48 rows), Attempt 1 (9 rows) and the "
                 "PT08/PT09/PT10 diagnostics (10 rows) predate or do not use the token instrumentation, and their cells are "
-                "blank rather than 0.")
+                "blank rather than 0. The one Backstage task-qualification attempt that failed before its task was "
+                "delivered invoked no model, so it has no token record either.")
 CH = r + 2
 ws.cell(row=CH, column=1, value="Median C4/C1 input-token ratio by scope").font = Font(bold=True, size=10, color=NAVY)
 base = CH + 1
@@ -1838,6 +1878,15 @@ EV = [
      "D:\\afci-runs\\obs\\...; operator logs D:\\afci-runs\\logs\\seq-0{1..9}.log",
      "evidence inventory sha256 9985860fb3b7a5842e676cc1c66c876e712ea93a196999457d711332ba12683f",
      "VERIFIED - and excluded wholesale. No analysis was ever performed."],
+    [f"Backstage task qualification: {BTQ_SUMMARY['qualified_count']} of 5 qualified "
+     f"({BTQ_SUMMARY['selection']['outcome']}) - {BTQ_LABEL}",
+     "study-results/09_backstage_task_qualification_v1/qualification_status.csv -> qualification_public_summary.json "
+     "-> qualification_run_rows.csv (16 rows)",
+     f"AFCI_MASTER_RUN_RESULTS.csv, experiment_id = {BTQ_ID} (16 rows)",
+     "D:\\afci-bq\\runs\\<run_id>\\run_record.json (usage, tools, timing) -> post-hoc hidden scoring, which stops at "
+     "the private boundary",
+     "execution plan sha256 6b913631e1c35a6115fdb81bc7000f8b9e609dc0894b6c79036113e3c59dbee8",
+     "VERIFIED - recomputed from the run rows in 20_RECOMPUTATION_AUDIT; instrument qualification only"],
 ]
 r = table(ws, r, ["summary result", "analysis artifact", "run record", "raw artifact reference", "hash / SHA", "status"],
           EV, widths=[44, 70, 50, 74, 62, 60], autofilter=True)
@@ -1849,7 +1898,7 @@ r = table(ws, r, ["what", "value"], [
     ["public repo origin", GIT["origin"]],
     ["public repo main (v1 base, tag paper-v0)", "2adc8741acad7ea5423f0bf3d9ad821ff023a35f"],
     ["private evaluator repo HEAD (result provenance only; never pushed)",
-     "9b047bed21e3c6c2169345322b9b14dfe80f56ee"],
+     "be8374723eaa68c71a81de34946bc1fe8abaa04f"],
     ["governed substrate commit", "630d3180af0d02a86330dfb599f559e78df65e94"],
     ["governed substrate content hash", "0198d76c189f38589e872cab4305527c08e86ef736e1550e428e05f9178060f3 (49 entries)"],
     ["the MAD - docs/v2/ARCHITECTURE_CONTEXT.md", "bf6f32b162a23b851596d8b489d938bef10d0b8616a50dcc039873d12ffa7a4d"],
@@ -1994,6 +2043,49 @@ r = table(ws, r, ["figure", "this package reports", "note"], [
      "The refused record (sequence 12) carries no reset state, so it forms its own block key. The frozen analysis sees "
      "the same 19. The row is preserved exactly as recorded and is not repaired."],
 ], widths=[38, 76, 110])
+freeze(ws, "A5")
+
+# --------------------------------------------------------------------------- 21
+ws = wb.create_sheet("21_BACKSTAGE_TASK_QUALIFICATION")
+r = sheet_title(ws, "BACKSTAGE TASK QUALIFICATION V1 - " + BTQ_LABEL,
+                "SL-V2-BACKSTAGE-TQ-01. C1 only: no C4 observation, no architecture packet, no treatment effect. It "
+                "decides which candidate tasks a FUTURE AFCI study may use, and nothing else. Never pooled with Backstage "
+                "Attempt 1 or Attempt 2, which are unchanged.")
+r = note(ws, r, "EVERY ROW ON THIS SHEET IS: " + BTQ_LABEL.upper() + ".", AMBER)
+r = section(ws, r, f"OUTCOME - {BTQ_SUMMARY['selection']['outcome']}")
+r = table(ws, r, ["slot", "task", "architecture rule family", "FUNCTIONAL_VALID of 3", "target violations of 3",
+                  "MAX_TURNS of 3", "permission denials", "status", "label"],
+          [[s["slot"], s["task_id"], s["architecture_rule_family"], intn(s["functional_valid_of_3"]),
+            intn(s["target_violations_of_3"]), intn(s["max_turns_of_3"]), intn(s["permission_denials_total"]),
+            s["status"], BTQ_LABEL] for s in BTQ_STATUS],
+          formats={3: FMT_INT, 4: FMT_INT, 5: FMT_INT, 6: FMT_INT},
+          widths=[8, 12, 40, 14, 14, 12, 12, 30, 60])
+r = note(ws, r, "FROZEN RULE: QUALIFIED iff FUNCTIONAL_VALID >= 2 of 3 AND target violation >= 1 of 3; otherwise "
+                "FUNCTIONAL_REJECT, ARCHITECTURE_FLOOR_REJECT or BOTH_REJECT. MAX_TURNS counts and was never retried. All "
+                "15 observations ran in the frozen order. Fewer than three QUALIFIED = INSUFFICIENT QUALIFIED TASKS: the "
+                f"phase stops with no further mining. Qualified: {', '.join(BTQ_SUMMARY['qualified']) or 'none'}.")
+r = note(ws, r, "READING A ZERO: every final observation had exactly one applicable architecture opportunity, so a "
+                "target-violation count of 0 means the legal placement was made every time the decision arose - an "
+                "architecture floor under C1, not an opportunity the instrument missed.")
+r = note(ws, r, "SELECTION LIMITATION (recorded before data): " + BTQ_SUMMARY["selection_limitation"] + " Qualification "
+                "is by baseline architecture pressure declared in advance - pressure-qualified, not cherry-picked.", AMBER)
+r = note(ws, r, "CANDIDATES: Q1 BTQ-T1R is T1 repaired under a new identity - all six Attempt-2 T1 runs failed the same "
+                "semantic case because the statement never said a returned value must be synchronous; one sentence now "
+                "says so, with no architecture guidance. Here it was 3/3 functionally valid. Q2 BTQ-T5 is T5 byte for "
+                "byte. Q3-Q5 are newly mined real post-substrate Backstage changes. T2 is RETIRED (architecture floor in "
+                "Attempt 2) and was not substituted.")
+r = note(ws, r, "DEVIATION SL-V2-BACKSTAGE-TQ-01-D1: one attempt failed BEFORE its task was delivered (host standby "
+                "during workspace preparation; no model invoked; $0). The frozen replacement gate reads a run record that "
+                "a preparation failure never writes; a narrow Study-Lead-authorised path re-derived "
+                "WORKSPACE_PREPARATION_FAILED from the attempt's own artifacts and the cell completed on its "
+                "pre-authorised attempt-2 identity.", AMBER)
+r = section(ws, r, "EVERY ATTEMPT - " + BTQ_LABEL)
+BTQ_COLS = ["sequence", "slot", "task_id", "repetition", "execution_attempt", "run_id", "disposition",
+            "failure_class", "task_delivered", "functional_valid", "semantic_passed", "semantic_total",
+            "architecture_applicable_opportunities", "architecture_violated_opportunities", "target_violation",
+            "max_turns_reached", "turns_used", "permission_denials", "cost_usd", "labels"]
+r = table(ws, r, BTQ_COLS, [[row.get(c, "") for c in BTQ_COLS] for row in BTQ_ROWS],
+          widths=[9, 6, 10, 10, 10, 58, 26, 30, 12, 12, 10, 10, 12, 12, 12, 12, 10, 10, 10, 70])
 freeze(ws, "A5")
 
 # Excel allows one auto-filter per sheet. Sheets built from stacked sections get
@@ -2141,11 +2233,14 @@ Two constructs are measured, and they are never combined into one score:
 | 7 | Lower-capability model pilot | claude-haiku-4-5-20251001 | 18 | COMPLETE | NO LOWER-MODEL SIGNAL - DO NOT EXPAND THE SYNTHETIC LOWER-MODEL MATRIX |
 | 8 | Backstage real-repository pilot, Attempt 1 | claude-sonnet-5 | 7 attempted of 18 | HALTED | excluded wholesale; no analysis was ever performed |
 | 9 | Backstage real-repository pilot, Attempt 2 | claude-sonnet-5 | 18 | COMPLETE | NO ARCHITECTURE SIGNAL - DO NOT AUTOMATICALLY EXPAND |
-| 10 | Open-source complexity study | TBD | 0 | **NOT STARTED** | none - no runs exist and no result is pre-populated |
+| 10 | Backstage task qualification V1 (*{BTQ_LABEL}*) | claude-sonnet-5 | 15 C1 (+1 pre-delivery infra-invalid) | COMPLETE | {BTQ_SUMMARY['selection']['outcome']} - {BTQ_SUMMARY['qualified_count']} of 5 qualified |
+| 11 | Open-source complexity study | TBD | 0 | **NOT STARTED** | none - no runs exist and no result is pre-populated |
 
 All three completed pilots were judged by a decision rule frozen **before** the
 data they judge existed, and all three rules returned a negative verdict. None
-was changed afterwards.
+was changed afterwards. The task qualification (row 10) is not a pilot and
+judges no treatment: it applied a frozen **instrument** rule to C1 runs only, to
+decide which tasks a future study may use.
 
 ---
 
@@ -2482,7 +2577,68 @@ observation consumed, $0. The cost was wall-clock only.
 
 ---
 
-## 9. Cost and token findings
+## 9. BACKSTAGE TASK QUALIFICATION V1
+
+> **Every row in this section is: {BTQ_LABEL}.**
+
+**Design.** `SL-V2-BACKSTAGE-TQ-01`, frozen before its first observation. It
+asks which candidate Backstage tasks a **future** AFCI study may use, and runs
+the baseline condition **C1 only**: no C4 observation, no architecture packet,
+no treatment effect. 5 candidates x 3 C1 observations = 15, `claude-sonnet-5`
+at effort `high`, CLI 2.1.229, NON_RESET, 96 turns, on the same frozen
+substrate. Backstage Attempts 1 and 2 are unchanged and never pooled with it.
+
+**Why it exists.** Attempt 2 showed that the instrument, not only the model,
+limited what could be seen: T1 was functionally underspecified, T2 sat at an
+architecture floor, and only T5 discriminated.
+
+* **Q1 `BTQ-T1R` is T1 repaired** under a new identity. All six Attempt-2 T1
+  runs failed the same semantic case because the statement never said a
+  returned value must be **synchronous**; one sentence now says so, and no
+  architecture guidance was added. T1's original bytes are untouched.
+* **Q2 `BTQ-T5` is T5**, byte for byte.
+* **Q3-Q5** are newly mined, real post-substrate Backstage changes.
+* **T2 is RETIRED** (architecture floor in Attempt 2) and was not substituted.
+
+Every candidate passed static qualification before any model run: the untouched
+substrate fails the functional check and scores 0/0; a legal reference is
+functional PASS with 1 applicable, 0 violated; a violating reference is
+functional PASS with 1 applicable, 1 violated; both pass the model-visible gate.
+
+**[FACT] The frozen rule** - QUALIFIED iff `FUNCTIONAL_VALID` >= 2 of 3 **and**
+target violation >= 1 of 3:
+
+| slot | task | rule family | FUNCTIONAL_VALID | target violation | MAX_TURNS | status |
+| --- | --- | --- | ---: | ---: | ---: | --- |
+""" + "\n".join(
+    f"| {s['slot']} | `{s['task_id']}` | {s['architecture_rule_family']} | {s['functional_valid_of_3']} / 3 | "
+    f"{s['target_violations_of_3']} / 3 | {s['max_turns_of_3']} / 3 | **{s['status']}** |" for s in BTQ_STATUS) + f"""
+
+> **`{BTQ_SUMMARY['selection']['outcome']}`** - {BTQ_SUMMARY['qualified_count']} of 5 qualified
+> ({', '.join(BTQ_SUMMARY['qualified']) or 'none'}). Fewer than three: the phase stops, with no further mining.
+
+**[FACT] Reading a zero.** Every final observation had exactly one applicable
+architecture opportunity, so each 0 means the legal placement was made every
+time the decision arose - an architecture floor under C1, not an opportunity
+the instrument missed. The T1 repair worked on the functional axis (3/3 valid
+against 0/6 for the original T1 in Attempt 2) but exposed no baseline pressure.
+
+**[LIMITATION] Selection.** {BTQ_SUMMARY['selection_limitation']} The tasks are
+**pressure-qualified** by a rule declared in advance, not cherry-picked; with
+fewer than three qualified, no task was selected.
+
+**[FACT] Execution.** {BTQ_SUMMARY['final_scientific_observations']} valid final
+observations, all functionally valid; {BTQ_SUMMARY['infrastructure_invalid_attempts']}
+infrastructure-invalid attempt; captured provider cost
+**${BTQ_SUMMARY['cost']['qualification_provider_cost_usd']:.2f}**. One attempt
+failed **before its task was delivered** (host standby during workspace
+preparation, no model invoked, $0): deviation `SL-V2-BACKSTAGE-TQ-01-D1`
+re-derived `WORKSPACE_PREPARATION_FAILED` from the attempt's own artifacts and
+the cell completed on its pre-authorised attempt-2 identity.
+
+---
+
+## 10. Cost and token findings
 
 **[FACT] Token audit.** `TOTAL_INPUT_TOKENS = input_tokens +
 cache_creation_input_tokens + cache_read_input_tokens` on every row that carries
@@ -2499,7 +2655,9 @@ own tokens and all cache traffic stay inside the number.
 Token coverage: {INV['token_coverage']} of {INV['total_rows']} run rows carry
 input-token evidence, {INV['output_token_coverage']} carry output tokens. v1, the
 aborted Attempt 1 and the three diagnostics predate or do not use the token
-instrumentation; their cells are blank, never 0.
+instrumentation; their cells are blank, never 0. The one Backstage
+task-qualification attempt that failed before delivery invoked no model and has
+no token record either.
 
 **[FACT] Cost audit.**
 
@@ -2541,7 +2699,7 @@ describes the non-reset arm only.
 
 ---
 
-## 10. Functional and architecture quality
+## 11. Functional and architecture quality
 
 **[FACT]**
 
@@ -2574,7 +2732,7 @@ The cost result must not be allowed to stand in for an architecture result.
 
 ---
 
-## 11. Cross-model interpretation
+## 12. Cross-model interpretation
 
 **[FACT]** Both sides below are NON_RESET, so the comparison is like-for-like.
 
@@ -2615,7 +2773,7 @@ direction is not read as unanimity.
 
 ---
 
-## 12. What the evidence supports
+## 13. What the evidence supports
 
 1. **[FACT]** On this substrate with `claude-sonnet-5`, explicit MAD injection
    costs more than it saves across every captured cost dimension except CI
@@ -2638,7 +2796,7 @@ direction is not read as unanimity.
 
 ---
 
-## 13. What the evidence does NOT support
+## 14. What the evidence does NOT support
 
 1. **We cannot conclude AFCI does not work.** We can conclude it did not reduce
    cost here. Efficiency is one construct; architectural conformance is the
@@ -2664,7 +2822,7 @@ direction is not read as unanimity.
 
 ---
 
-## 14. Limitations
+## 15. Limitations
 
 | # | limitation |
 | --- | --- |
@@ -2675,10 +2833,11 @@ direction is not read as unanimity.
 | 5 | **Architecture is measured only where it sat at a floor.** The evidence base is lopsided toward cost. |
 | 6 | **Reset cost and output tokens do not exist for reset runs** - withheld by construction, not missing by accident. |
 | 7 | **This package is a secondary artifact.** Where it and a primary artifact disagree, the primary artifact wins. |
+| 8 | **Task selection by baseline pressure.** Backstage task qualification V1 selects tasks with measurable C1 architecture pressure; any study built on it estimates AFCI behaviour on **architecture-pressure-qualified** tasks and must not be presented as an unbiased estimate over arbitrary Backstage tasks. It qualified 1 of 5 candidates, so no selection exists yet. |
 
 ---
 
-## 15. Current research direction
+## 16. Current research direction
 
 The chain is short and each link is recorded:
 
@@ -2706,9 +2865,18 @@ context-recovery burden is therefore the next scientifically distinct moderator 
 investigate. **This is the next hypothesis to test, not a proven one.** It stands
 by elimination rather than by evidence, and nothing in this package tests it.
 
+**[FACT] The first real-repository evidence points the same way.** Backstage
+Attempt 2 returned NO ARCHITECTURE SIGNAL with two of three tasks at an
+architecture floor, and Backstage task qualification V1 (C1 only, no treatment)
+then found the floor again on 4 of 5 candidates: only T5 carries measurable
+baseline pressure. **[INTERPRETATION]** On a large, ambiguous real repository
+too, `claude-sonnet-5` mostly makes the legal placement decision without being
+told the architecture, so finding tasks where a baseline agent actually violates
+the architecture is itself the bottleneck for any C1-vs-C4 study.
+
 ---
 
-## 16. Next study - open-source architectural complexity
+## 17. Next study - open-source architectural complexity
 
 **Status: NOT STARTED.** No runs exist. No results are pre-populated.
 
@@ -2797,7 +2965,7 @@ EV_MD += [f"| public repo branch | `{GIT['branch']}` |",
           f"| that commit's subject | {GIT['evidence_subject']} |",
           f"| public repo origin | {GIT['origin']} |",
           "| public repo `main` (v1 base, tag `paper-v0`) | `2adc8741acad7ea5423f0bf3d9ad821ff023a35f` |",
-          "| private evaluator repo HEAD (result provenance only; never pushed) | `9b047bed21e3c6c2169345322b9b14dfe80f56ee` |",
+          "| private evaluator repo HEAD (result provenance only; never pushed) | `be8374723eaa68c71a81de34946bc1fe8abaa04f` |",
           "| governed substrate commit | `630d3180af0d02a86330dfb599f559e78df65e94` |",
           "| governed substrate content hash | `0198d76c189f38589e872cab4305527c08e86ef736e1550e428e05f9178060f3` (49 entries) |",
           "| the MAD, `docs/v2/ARCHITECTURE_CONTEXT.md` | `bf6f32b162a23b851596d8b489d938bef10d0b8616a50dcc039873d12ffa7a4d` |",
@@ -2860,9 +3028,9 @@ architecture rule, or hidden source/target label.
 
 | file | what it is |
 | --- | --- |
-| `AFCI_Professor_Results_Summary.md` | the 16-section narrative report - read this first |
+| `AFCI_Professor_Results_Summary.md` | the 17-section narrative report - read this first |
 | `AFCI_Professor_Results_Summary.pdf` | the same report, rendered |
-| `AFCI_Professor_Results.xlsx` | 20 sheets: every matrix, every decision clause, every run |
+| `AFCI_Professor_Results.xlsx` | 21 sheets: every matrix, every decision clause, every run |
 | `AFCI_Professor_Full_Run_Results.csv` | all {INV['total_rows']} run/attempt rows, excluded ones included |
 | `AFCI_Professor_Metric_Definitions.md` | what each metric means and which way is better |
 | `AFCI_Professor_Evidence_Map.md` | summary number -> analysis artifact -> run record -> raw artifact |
@@ -3004,15 +3172,49 @@ comparison was ever computed from it. Attempt 1's **$10.93** and attempt 2's
 **$32.19** are reported separately and never combined into a treatment
 estimate.
 
+## BACKSTAGE TASK QUALIFICATION V1 - {BTQ_LABEL}
+
+`{BTQ_ID}`, governed by `SL-V2-BACKSTAGE-TQ-01` and frozen before its first
+observation, is **not** an AFCI treatment study. It ran C1 only - no C4, no
+architecture packet, no treatment effect - to decide which candidate tasks a
+future study may use. It is never pooled with either Backstage attempt, and
+Attempts 1 and 2 above are unchanged.
+
+| field | value |
+| --- | --- |
+| status | **{REG[BTQ_ID]['status']}** |
+| planned / attempted / final observations | {REG[BTQ_ID]['planned_runs']} / {REG[BTQ_ID]['attempted_runs']} / {REG[BTQ_ID]['completed_runs']} |
+| usable for any analysis | **0** - every row is {BTQ_LABEL} |
+| outcome | **{BTQ_SUMMARY['selection']['outcome']}** ({BTQ_SUMMARY['qualified_count']} of 5 qualified: {', '.join(BTQ_SUMMARY['qualified']) or 'none'}) |
+| decisions | `SL-V2-BACKSTAGE-TQ-01` (freeze), deviation `SL-V2-BACKSTAGE-TQ-01-D1` (one pre-delivery infrastructure failure) |
+
+| slot | task | FUNCTIONAL_VALID | target violation | status |
+| --- | --- | ---: | ---: | --- |
+""" + "\n".join(
+    f"| {s['slot']} | `{s['task_id']}` | {s['functional_valid_of_3']} / 3 | {s['target_violations_of_3']} / 3 | "
+    f"{s['status']} |" for s in BTQ_STATUS) + f"""
+
+- **Q1 `BTQ-T1R` repairs T1** under a new identity: one sentence now says the
+  returned value is synchronous, the behaviour all six Attempt-2 T1 runs missed.
+  No architecture guidance was added. It was 3/3 functionally valid here.
+- **T2 is retired** (architecture floor in Attempt 2) and was not substituted.
+- Every final observation had exactly one applicable opportunity, so a 0 is the
+  legal placement made every time - an architecture floor under C1.
+- Tasks are **pressure-qualified** by a rule frozen before data, not
+  cherry-picked. {BTQ_SUMMARY['selection_limitation']}
+
+Full detail: summary section 9, workbook sheet `21_BACKSTAGE_TASK_QUALIFICATION`,
+and `../09_backstage_task_qualification_v1/`.
+
 ## Provenance
 
 Reporting and export only. Producing this package executed no benchmark
 observation, invoked no model, and changed no task definition, architecture
 document, scorer, threshold, run plan, condition, raw run artifact or prior
-analysis. The private evaluator repository received one result-provenance
-commit for the Backstage attempt-2 execution - an index, its leakage-validator
-entries and its phase-aware launcher guards, no task, scorer or threshold - and
-**nothing was pushed to it**.
+analysis. The private evaluator repository received result-provenance commits
+for the Backstage attempt-2 execution and for the Backstage task qualification
+V1 phase - its pre-data freeze, tooling, the D1 incident record and an execution
+index - and **nothing was pushed to it**.
 
 Every figure was recomputed from the run/attempt rows and checked against the
 frozen per-experiment analysis artifacts: **{len(AUDIT)} checks,
