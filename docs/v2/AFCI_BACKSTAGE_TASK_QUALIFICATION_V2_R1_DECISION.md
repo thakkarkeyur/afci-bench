@@ -3,6 +3,21 @@
 Status when written: **PRE-DATA freeze. PRE-TREATMENT INSTRUMENT QUALIFICATION.
 C1 ONLY. EXPLORATORY. 15 intended observations, 0 attempted, 0 completed.**
 
+> **EXECUTED 2026-09-26 — this freeze has since been discharged in full.** All 15
+> C1 observations ran in the frozen order and all 15 are valid final
+> observations. One cell (`BTQ2-C02`, repetition 2) lost both frozen attempts to an
+> expired host sign-in credential before any model turn (0 tokens, $0); the Study
+> Lead authorised, outcome-blind, one additional identity for that cell only under
+> the recorded deviation `SL-V2-BACKSTAGE-TQ-02-R1-D1`, together with a credential
+> check before every launch, and the cell completed on it. The frozen rule
+> qualified **0 of 5** candidates (0 target violations in 15 observations): three
+> `ARCHITECTURE_FLOOR_REJECT`, two `BOTH_REJECT`. Outcome: **INSUFFICIENT
+> ADDITIONAL QUALIFIED TASKS** — `BTQ-T5` remains the only qualified task. Results,
+> per-attempt rows and the deviation are in
+> [`study-results/11_backstage_task_qualification_v2_r1/`](../../study-results/11_backstage_task_qualification_v2_r1/README.md).
+> **Everything below is the pre-data record and is unchanged.** Nothing in it was
+> edited after data existed.
+
 This phase is a **clean re-execution** of Backstage Task Qualification V2 after a
 runtime-launch defect. It is **not** an AFCI treatment-effect study and produces
 **no** AFCI treatment evidence. It runs the baseline condition **C1 only**. **No C4

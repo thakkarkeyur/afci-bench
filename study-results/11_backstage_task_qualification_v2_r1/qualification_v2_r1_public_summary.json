@@ -1,0 +1,202 @@
+{
+  "record": "afci-bench/v2/backstage-task-qualification-v2-r1-public-summary",
+  "phase_id": "AFCI_BACKSTAGE_TASK_QUALIFICATION_V2_R1",
+  "labels": [
+    "instrument qualification",
+    "C1-only",
+    "pre-treatment",
+    "not AFCI treatment evidence",
+    "clean re-execution of the halted V2"
+  ],
+  "treatment_effect_computed": false,
+  "c4_observations": 0,
+  "v2_observations_used": 0,
+  "intended_observations": 15,
+  "final_scientific_observations": 15,
+  "exactly_one_architecture_opportunity_per_final_observation": false,
+  "infrastructure_invalid_attempts": 2,
+  "retries": 1,
+  "builtin_tool_launch_failures": 0,
+  "pre_delivery_infrastructure_failures": [],
+  "qualification_rule": {
+    "observations_per_candidate": 3,
+    "functional_valid_min": 2,
+    "target_violation_min": 1,
+    "statuses": {
+      "QUALIFIED": "functional_valid >= 2 AND target_violation >= 1",
+      "FUNCTIONAL_REJECT": "functional_valid < 2 AND target_violation >= 1",
+      "ARCHITECTURE_FLOOR_REJECT": "functional_valid >= 2 AND target_violation == 0",
+      "BOTH_REJECT": "functional_valid < 2 AND target_violation == 0"
+    },
+    "max_turns_is_scientific_outcome": true,
+    "thresholds_fixed_before_data": true
+  },
+  "selection_rule": {
+    "reserved": "BTQ-T5 (Task Qualification V1, QUALIFIED, family S) occupies one future slot",
+    "needed_new_qualified": 2,
+    "if_fewer_than_2": "INSUFFICIENT ADDITIONAL QUALIFIED TASKS: report and stop; no further mining in this phase",
+    "if_exactly_2": "future set = BTQ-T5 + both V2 qualified tasks",
+    "if_more_than_2": [
+      "1. maximise the number of distinct rule families among {BTQ-T5, the two chosen}",
+      "2. then the lower candidate slots: Q6 < Q7 < Q8 < Q9 < Q10"
+    ],
+    "never_by": [
+      "violation count beyond threshold",
+      "functional score beyond threshold",
+      "tokens",
+      "cost",
+      "speed",
+      "expected AFCI benefit",
+      "qualitative attractiveness"
+    ]
+  },
+  "selection_limitation": "V2 deliberately selects tasks with measurable baseline architecture pressure. Any future C1-vs-C4 study using these tasks estimates AFCI performance on ARCHITECTURE-PRESSURE-QUALIFIED BACKSTAGE TASKS. It is NOT an unbiased estimate across arbitrary Backstage software changes.",
+  "per_task": [
+    {
+      "slot": "Q6",
+      "task_id": "BTQ2-C01",
+      "task_sha256": "3b91a6ae7be948a2ab26bd2035abd18e1c0853981c888f1928ed0f05aff7cdf0",
+      "observations": 3,
+      "functional_valid": 0,
+      "target_violations": 0,
+      "max_turns": 2,
+      "permission_denials_total": 18,
+      "permission_denials_per_run": [
+        8,
+        10,
+        0
+      ],
+      "semantic_per_run": [
+        "4/5",
+        "4/5",
+        "4/5"
+      ],
+      "cost_usd": 8.5215,
+      "status": "BOTH_REJECT",
+      "architecture_rule_family": "family E: extension contract placement / ownership",
+      "origin": "newly mined real Backstage change (reduced scope)"
+    },
+    {
+      "slot": "Q7",
+      "task_id": "BTQ2-C02",
+      "task_sha256": "79252b843f675948a98b5f41a5d06b9775a4ffa5abd3dfe7fde8259ee6968aa0",
+      "observations": 3,
+      "functional_valid": 1,
+      "target_violations": 0,
+      "max_turns": 3,
+      "permission_denials_total": 13,
+      "permission_denials_per_run": [
+        1,
+        11,
+        1
+      ],
+      "semantic_per_run": [
+        "0/5",
+        "0/5",
+        "5/5"
+      ],
+      "cost_usd": 13.641,
+      "status": "BOTH_REJECT",
+      "architecture_rule_family": "family P: package / role ownership",
+      "origin": "newly mined real Backstage change"
+    },
+    {
+      "slot": "Q8",
+      "task_id": "BTQ2-C03",
+      "task_sha256": "76d8c7b81df8093dbaf0dba4806c4408287a772f69fb599ba90bae1757f01456",
+      "observations": 3,
+      "functional_valid": 3,
+      "target_violations": 0,
+      "max_turns": 0,
+      "permission_denials_total": 10,
+      "permission_denials_per_run": [
+        9,
+        0,
+        1
+      ],
+      "semantic_per_run": [
+        "3/3",
+        "3/3",
+        "3/3"
+      ],
+      "cost_usd": 5.3594,
+      "status": "ARCHITECTURE_FLOOR_REJECT",
+      "architecture_rule_family": "family P: package / role ownership",
+      "origin": "newly mined real Backstage change"
+    },
+    {
+      "slot": "Q9",
+      "task_id": "BTQ2-C04",
+      "task_sha256": "702b65623b098e868fc4412151687407b424f4a1f76d54e3c0668665dbbc7db0",
+      "observations": 3,
+      "functional_valid": 2,
+      "target_violations": 0,
+      "max_turns": 1,
+      "permission_denials_total": 36,
+      "permission_denials_per_run": [
+        10,
+        13,
+        13
+      ],
+      "semantic_per_run": [
+        "3/3",
+        "0/3",
+        "3/3"
+      ],
+      "cost_usd": 10.6744,
+      "status": "ARCHITECTURE_FLOOR_REJECT",
+      "architecture_rule_family": "family S: shared / public contract ownership",
+      "origin": "newly mined real Backstage change"
+    },
+    {
+      "slot": "Q10",
+      "task_id": "BTQ2-C05",
+      "task_sha256": "4f94ddc656b93e1b8a8a1a1211727f86b86ee3f9b4fc726ccf665f2daf50b2b2",
+      "observations": 3,
+      "functional_valid": 2,
+      "target_violations": 0,
+      "max_turns": 3,
+      "permission_denials_total": 3,
+      "permission_denials_per_run": [
+        0,
+        2,
+        1
+      ],
+      "semantic_per_run": [
+        "3/3",
+        "3/3",
+        "1/3"
+      ],
+      "cost_usd": 12.7054,
+      "status": "ARCHITECTURE_FLOOR_REJECT",
+      "architecture_rule_family": "family S: shared / public contract ownership",
+      "origin": "newly mined real Backstage change"
+    }
+  ],
+  "new_qualified_count": 0,
+  "new_qualified": [],
+  "combined_qualified_inventory": [
+    "BTQ-T5"
+  ],
+  "selection": {
+    "outcome": "INSUFFICIENT ADDITIONAL QUALIFIED TASKS",
+    "selected_new": [],
+    "future_set": null
+  },
+  "cost": {
+    "v2_r1_provider_cost_usd": 50.9016,
+    "failed_infrastructure_cost_usd": 0.0,
+    "pre_data_runtime_smoke_test_usd": 0.1126,
+    "v2_r1_total_usd": 51.0142,
+    "v2_halted_usd": 1.3543,
+    "task_qualification_v1_usd": 33.718,
+    "cumulative_task_qualification_usd": 86.0865,
+    "prior_backstage_usd": {
+      "attempt_1": 10.9275,
+      "attempt_2": 32.1917,
+      "task_qualification_v1": 33.718,
+      "task_qualification_v2_halted": 1.3543
+    },
+    "cumulative_backstage_usd": 129.2057
+  }
+}

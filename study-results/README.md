@@ -60,10 +60,11 @@ Per-experiment folders hold derived tables and pointers, not bulk artifacts:
 - [`08_backstage_pilot_attempt_2_completed/`](08_backstage_pilot_attempt_2_completed/)
 - [`09_backstage_task_qualification_v1/`](09_backstage_task_qualification_v1/)
 - [`10_backstage_task_qualification_v2/`](10_backstage_task_qualification_v2/)
+- [`11_backstage_task_qualification_v2_r1/`](11_backstage_task_qualification_v2_r1/)
 
 ---
 
-## The eleven experiments at a glance
+## The twelve experiments at a glance
 
 | id | what | runs (attempted → usable) | class | decision |
 | --- | --- | --- | --- | --- |
@@ -78,6 +79,7 @@ Per-experiment folders hold derived tables and pointers, not bulk artifacts:
 | `V2_BACKSTAGE_PILOT_ATTEMPT_2` | Backstage real-repository pilot, attempt 2 | 18 → 6 | architecture + cost pilot | NO ARCHITECTURE SIGNAL — do not expand |
 | `V2_BACKSTAGE_TASK_QUALIFICATION_V1` | Backstage task qualification, C1 only | 16 → 0 | instrument qualification (pre-treatment, not treatment evidence) | INSUFFICIENT QUALIFIED TASKS — 1 of 5 qualified; stop |
 | `V2_BACKSTAGE_TASK_QUALIFICATION_V2` | Backstage task qualification V2, C1 only | 2 → 0 | halted (instrument qualification, not treatment evidence) | HALTED after 1 of 15 — runtime-launch defect; 0 new qualified |
+| `V2_BACKSTAGE_TASK_QUALIFICATION_V2_R1` | Backstage task qualification V2-R1 (clean re-execution of V2), C1 only | 17 → 0 | instrument qualification (pre-treatment, not treatment evidence) | INSUFFICIENT ADDITIONAL QUALIFIED TASKS — 0 of 5 qualified; `BTQ-T5` remains the only qualified task |
 
 "Usable" means *eligible to enter an analysis*. It is 0 for every experiment
 except the efficiency Attempt 2, the lower-model pilot and Backstage Attempt 2,
@@ -98,6 +100,15 @@ analysis.
 produced under a runtime-launch defect and not used as qualification evidence,
 and one identity stopped before its task was delivered. The phase was halted
 with no candidate status determined; `BTQ-T5` remains the only qualified task.
+
+`V2_BACKSTAGE_TASK_QUALIFICATION_V2_R1` re-ran V2's five frozen candidates from
+scratch after a pre-data runtime correction (a byte-identical `.exe` copy of the
+same `2.1.229` binary, proved by a real Grep/Glob smoke test). It is 17 attempts
+for 15 C1 observations: one cell lost both frozen attempts to an expired host
+sign-in credential before any model turn, and completed on one additional
+identity authorised by the recorded deviation `SL-V2-BACKSTAGE-TQ-02-R1-D1`. No
+candidate qualified (0 target violations in 15 observations); every row is
+instrument qualification / C1-only / pre-treatment / not AFCI treatment evidence.
 
 ---
 

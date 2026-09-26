@@ -1,0 +1,6 @@
+labels,slot,task_id,architecture_rule_family,functional_valid_of_3,target_violations_of_3,max_turns_of_3,permission_denials_total,provider_cost_usd,status
+instrument qualification; C1-only; pre-treatment; not AFCI treatment evidence; clean re-execution of the halted V2,Q6,BTQ2-C01,family E: extension contract placement / ownership,0,0,2,18,8.5215,BOTH_REJECT
+instrument qualification; C1-only; pre-treatment; not AFCI treatment evidence; clean re-execution of the halted V2,Q7,BTQ2-C02,family P: package / role ownership,1,0,3,13,13.641,BOTH_REJECT
+instrument qualification; C1-only; pre-treatment; not AFCI treatment evidence; clean re-execution of the halted V2,Q8,BTQ2-C03,family P: package / role ownership,3,0,0,10,5.3594,ARCHITECTURE_FLOOR_REJECT
+instrument qualification; C1-only; pre-treatment; not AFCI treatment evidence; clean re-execution of the halted V2,Q9,BTQ2-C04,family S: shared / public contract ownership,2,0,1,36,10.6744,ARCHITECTURE_FLOOR_REJECT
+instrument qualification; C1-only; pre-treatment; not AFCI treatment evidence; clean re-execution of the halted V2,Q10,BTQ2-C05,family S: shared / public contract ownership,2,0,3,3,12.7054,ARCHITECTURE_FLOOR_REJECT
