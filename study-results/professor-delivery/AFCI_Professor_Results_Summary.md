@@ -1,15 +1,15 @@
 # AFCI-Bench - results delivery
 
-**Compiled 2026-09-25** from `study-results/` on branch `study-v2`, pinned to evidence
-commit `b98cc65af4c2` (*study(backstage): execute task qualification V1 in full and record the result*) - the last change to the
+**Compiled 2026-09-26** from `study-results/` on branch `study-v2`, pinned to evidence
+commit `7822e41b18fd` (*study(backstage): halt task qualification V2 after 1 of 15 observations*) - the last change to the
 evidence this package reports.
 
 Reporting and export only. No benchmark observation was executed to produce this
 package, no model was invoked, and no task definition, architecture document,
 scorer, threshold, run plan, condition, raw run artifact or prior analysis was
-changed. Every figure below was recomputed from the 164 run/attempt
+changed. Every figure below was recomputed from the 181 run/attempt
 rows and then checked against the frozen per-experiment analysis artifacts:
-**146 checks, 0 mismatches**. The full check list is in
+**171 checks, 0 mismatches**. The full check list is in
 the workbook sheet `20_RECOMPUTATION_AUDIT`.
 
 Claims are tagged **[FACT]** (a measured value, reproducible from the artifacts),
@@ -70,16 +70,16 @@ decide which tasks a future study may use.
 
 | measure | count |
 | --- | ---: |
-| total run/attempt records | 164 |
-| distinct run identities | 161 |
-| completed observations | 144 |
-| functionally valid observations | 85 |
-| explicitly functionally invalid | 16 |
-| no functional verdict captured at all | 63 |
-| diagnostic / qualification observations | 28 |
-| infrastructure-invalid or damaged records | 7 |
+| total run/attempt records | 181 |
+| distinct run identities | 178 |
+| completed observations | 159 |
+| functionally valid observations | 93 |
+| explicitly functionally invalid | 23 |
+| no functional verdict captured at all | 65 |
+| diagnostic / qualification observations | 45 |
+| infrastructure-invalid or damaged records | 9 |
 | refused | 1 |
-| excluded from every analysis | 108 |
+| excluded from every analysis | 125 |
 | eligible for any analysis | 56 |
 | **confirmatory observations** | **0** |
 
@@ -100,6 +100,7 @@ collision pair shares a single id. Both are recorded defects, kept as found.
 | `V2_BACKSTAGE_PILOT_ATTEMPT_2` | 18 | 18 | 8 | 6 | 18/18 | 18/18 | 18/18 |
 | `V2_BACKSTAGE_TASK_QUALIFICATION_V1` | 16 | 15 | 15 | 0 | 15/16 | 16/16 | 15/16 |
 | `V2_BACKSTAGE_TASK_QUALIFICATION_V2` | 2 | 1 | 0 | 0 | 1/2 | 2/2 | 1/2 |
+| `V2_BACKSTAGE_TASK_QUALIFICATION_V2_R1` | 17 | 15 | 8 | 0 | 17/17 | 17/17 | 15/17 |
 
 `V2_EFF_ATTEMPT1` shows 0 under *status COMPLETE* because its rows carry
 `INTACT_GOVERNED_OBSERVATION` (7 rows) and `DAMAGED_*` (2 rows) instead - a
@@ -512,8 +513,64 @@ observation launched by the extensionless path as infrastructure-invalid,
 resume on the pre-authorised second attempts), continuing unchanged, or
 stopping, the Study Lead stopped the phase. The five candidates remain
 statically qualified instruments; using them needs a new pre-data decision.
+That decision followed: the clean re-execution V2-R1, section 9C.
 
 **[LIMITATION] Selection.** Unchanged from V1: qualification selects tasks with
+measurable baseline architecture pressure, so any study built on it estimates
+AFCI behaviour on architecture-pressure-qualified Backstage tasks only.
+
+---
+
+## 9C. BACKSTAGE TASK QUALIFICATION V2-R1 - CLEAN RE-EXECUTION OF V2
+
+> **Every row in this section is: instrument qualification / C1-only / pre-treatment / not AFCI treatment evidence.**
+
+**Why.** V2 was excluded wholesale because of a scientific-runtime
+instrumentation defect (section 9B). `SL-V2-BACKSTAGE-TQ-02-R1`, pre-registered
+before its first observation, re-ran all five frozen V2 candidates from scratch
+- the same statements, oracles, scorers, references and rule families - with a
+new seed and new identities, after a pre-data runtime correction: the same
+`2.1.229` bytes, launched as a byte-identical `.exe` copy. Before any scientific
+task, V2's static evidence was re-verified and reproduced exactly, real
+preparation was re-proved, and a real, non-scientific smoke test showed Grep and
+Glob working under the corrected executable, while the extensionless path
+reproduced V2's failure.
+
+| slot | task | architecture rule family | FUNCTIONAL_VALID | target violations | MAX_TURNS | cost (USD) | status |
+| --- | --- | --- | ---: | ---: | ---: | ---: | --- |
+| Q6 | `BTQ2-C01` | family E: extension contract placement / ownership | 0 / 3 | 0 / 3 | 2 / 3 | 8.52 | **BOTH_REJECT** |
+| Q7 | `BTQ2-C02` | family P: package / role ownership | 1 / 3 | 0 / 3 | 3 / 3 | 13.64 | **BOTH_REJECT** |
+| Q8 | `BTQ2-C03` | family P: package / role ownership | 3 / 3 | 0 / 3 | 0 / 3 | 5.36 | **ARCHITECTURE_FLOOR_REJECT** |
+| Q9 | `BTQ2-C04` | family S: shared / public contract ownership | 2 / 3 | 0 / 3 | 1 / 3 | 10.67 | **ARCHITECTURE_FLOOR_REJECT** |
+| Q10 | `BTQ2-C05` | family S: shared / public contract ownership | 2 / 3 | 0 / 3 | 3 / 3 | 12.71 | **ARCHITECTURE_FLOOR_REJECT** |
+
+> **INSUFFICIENT ADDITIONAL QUALIFIED TASKS** - 0 of 5 newly
+> qualified. `BTQ-T5` remains the only qualified task, so no three-task set for a
+> future C1/C4 study exists.
+
+**[FACT] Reading the zero.** 13 of 15 final observations created the one pre-specified architecture opportunity, and every one of them made the legal placement (0 target violations). The other 2 never wrote the task-mandated construct (both functionally invalid), so the placement decision did not arise in them and they cannot hold a violation; the outcome does not depend on them. The zero is an architecture floor under C1 for every candidate, not an opportunity the instrument missed.
+
+**[FACT] Deviation `SL-V2-BACKSTAGE-TQ-02-R1-D1`.** One cell (`BTQ2-C02`,
+repetition 2) lost both frozen attempts to an expired host sign-in credential
+before any model turn (0 tokens, $0). The Study Lead authorised, outcome-blind,
+one additional identity for that cell only - usable only when both spent
+attempts' own records prove the authentication failure - plus a credential check
+before every launch. The cell completed on it; nothing else changed.
+
+**[FACT] Integrity.** 15 of 15 final observations;
+2 infrastructure-invalid attempts ($0);
+167 Grep/Glob calls and 0 built-in tool launch failures; the
+byte-identical `2.1.229` executable verified before every delivery; model and
+effort read back on every observation; prior phases, the halted V2 included,
+verified unchanged after observation 15.
+
+**[FACT] Cost.** V2-R1 $51.01 (observations
+$50.90, pre-data smoke test
+$0.11); the halted V2's
+$1.3543 is reported separately; cumulative task
+qualification $86.09.
+
+**[LIMITATION] Selection.** Unchanged: qualification selects tasks with
 measurable baseline architecture pressure, so any study built on it estimates
 AFCI behaviour on architecture-pressure-qualified Backstage tasks only.
 
@@ -523,7 +580,7 @@ AFCI behaviour on architecture-pressure-qualified Backstage tasks only.
 
 **[FACT] Token audit.** `TOTAL_INPUT_TOKENS = input_tokens +
 cache_creation_input_tokens + cache_read_input_tokens` on every row that carries
-tokens - checked on all 94 such rows, 0 failures. The MAD's
+tokens - checked on all 111 such rows, 0 failures. The MAD's
 own tokens and all cache traffic stay inside the number.
 
 | scope | paired blocks | C1 total input tokens | C4 total input tokens | C1 median/run | C4 median/run | median C4/C1 |
@@ -533,8 +590,8 @@ own tokens and all cache traffic stay inside the number.
 | Sonnet RESET | 7 | 5,076,078 | 6,520,701 | 733,633 | 1,028,101 | 1.3776 |
 | Haiku NON_RESET | 8 | 5,599,750 | 9,504,643 | 652,919 | 1,271,816 | 2.0372 |
 
-Token coverage: 94 of 164 run rows carry
-input-token evidence, 78 carry output tokens. v1, the
+Token coverage: 111 of 181 run rows carry
+input-token evidence, 95 carry output tokens. v1, the
 aborted Attempt 1 and the three diagnostics predate or do not use the token
 instrumentation; their cells are blank, never 0. The one Backstage
 task-qualification attempt that failed before delivery invoked no model and has
@@ -559,10 +616,10 @@ reset state at all, so it sits outside both arms. 18 + 17 + 1 = 36.
 | Haiku NON_RESET | 8 | $1.3862 | $2.0068 | 1.8865 |
 
 **Total captured provider cost across all runs carrying cost evidence:
-$93.18 over 80 runs.**
+$144.09 over 97 runs.**
 
 > **CAPTURED COST, NOT NECESSARILY TOTAL STUDY COST.**
-> 84 of 164 run rows carry no
+> 84 of 181 run rows carry no
 > provider-cost record at all: all 48 v1 rows, all 9 Attempt-1 rows, all 10
 > diagnostic rows, 16 of 17 Sonnet RESET rows, and the one refused run. Money was
 > spent on those runs; the runtime never reported it in a form the record could

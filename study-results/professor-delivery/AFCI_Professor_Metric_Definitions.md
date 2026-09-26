@@ -1,6 +1,6 @@
 # AFCI-Bench - metric definitions
 
-Compiled 2026-09-25. Plain-English definitions for every metric that appears in
+Compiled 2026-09-26. Plain-English definitions for every metric that appears in
 `AFCI_Professor_Results.xlsx`, `AFCI_Professor_Results_Summary.md` and
 `AFCI_Professor_Full_Run_Results.csv`. Direction is stated for every ratio.
 

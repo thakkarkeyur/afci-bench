@@ -1,7 +1,7 @@
 # AFCI-Bench - professor results delivery package
 
-**Compiled 2026-09-25** from `study-results/` on branch `study-v2`, pinned to evidence
-commit `b98cc65af4c2` (*study(backstage): execute task qualification V1 in full and record the result*) - the last change to the
+**Compiled 2026-09-26** from `study-results/` on branch `study-v2`, pinned to evidence
+commit `7822e41b18fd` (*study(backstage): halt task qualification V2 after 1 of 15 observations*) - the last change to the
 evidence this package reports.
 
 This package is safe to send outside the private evaluator repository. It carries
@@ -15,7 +15,7 @@ architecture rule, or hidden source/target label.
 | `AFCI_Professor_Results_Summary.md` | the 17-section narrative report - read this first |
 | `AFCI_Professor_Results_Summary.pdf` | the same report, rendered |
 | `AFCI_Professor_Results.xlsx` | 21 sheets: every matrix, every decision clause, every run |
-| `AFCI_Professor_Full_Run_Results.csv` | all 164 run/attempt rows, excluded ones included |
+| `AFCI_Professor_Full_Run_Results.csv` | all 181 run/attempt rows, excluded ones included |
 | `AFCI_Professor_Metric_Definitions.md` | what each metric means and which way is better |
 | `AFCI_Professor_Evidence_Map.md` | summary number -> analysis artifact -> run record -> raw artifact |
 
@@ -25,7 +25,7 @@ architecture rule, or hidden source/target label.
 | --- | --- |
 | `01_EXECUTIVE_SUMMARY` | programme totals, three result cards, the current research conclusion |
 | `02_EXPERIMENT_INVENTORY` | one row per experiment set, including the one not started |
-| `03_ALL_RUNS` | all 164 run/attempt records, every public-safe column |
+| `03_ALL_RUNS` | all 181 run/attempt records, every public-safe column |
 | `04_FUNCTIONAL_MATRIX` | functional correctness by experiment, task and condition |
 | `05_ARCHITECTURE_MATRIX` | architecture evidence, and what produced none |
 | `06_TOKEN_MATRIX` | input and output tokens, by arm and reset state |
@@ -42,9 +42,10 @@ architecture rule, or hidden source/target label.
 | `17_METRIC_AVAILABILITY` | metric x experiment availability grid |
 | `18_EVIDENCE_MAP` | traceability, repository anchors, hashes |
 | `19_METRIC_DEFINITIONS` | plain-English definitions |
-| `20_RECOMPUTATION_AUDIT` | the 146 checks behind every figure in this package |
+| `20_RECOMPUTATION_AUDIT` | the 171 checks behind every figure in this package |
 | `21_BACKSTAGE_TASK_QUALIFICATION` | Backstage task qualification V1, every attempt (instrument qualification only) |
 | `22_BACKSTAGE_TASK_QUAL_V2` | Backstage task qualification V2 - HALTED after 1 of 15; every attempt |
+| `23_BACKSTAGE_TASK_QUAL_V2R1` | Backstage task qualification V2-R1 - the clean re-execution of V2; per-task status and every attempt |
 
 Five descriptive charts are embedded, on sheets 04, 05, 06, 07 and 12. None
 carries a significance marking, because no significance test exists in this
@@ -61,7 +62,7 @@ readable without reading the axis.
 
 ## What this package is not
 
-- It is **not confirmatory**. Of 164 run rows, 56
+- It is **not confirmatory**. Of 181 run rows, 56
   are eligible for any analysis, all 56 belong to two
   non-confirmatory pilots, and **0** are confirmatory.
 - It contains **no p-value, confidence interval, effect size or power estimate**,
@@ -217,7 +218,28 @@ a second identity was stopped before its task was delivered.
 The five V2 candidates remain statically qualified instruments; any future use
 needs a new pre-data decision with the launch path fixed. Full detail: summary
 section 9B, workbook sheet `22_BACKSTAGE_TASK_QUAL_V2`, and
-`../10_backstage_task_qualification_v2/`.
+`../10_backstage_task_qualification_v2/`. That re-execution is V2-R1, below.
+
+## BACKSTAGE TASK QUALIFICATION V2-R1 - INSUFFICIENT ADDITIONAL QUALIFIED TASKS - instrument qualification / C1-only / pre-treatment / not AFCI treatment evidence
+
+`V2_BACKSTAGE_TASK_QUALIFICATION_V2_R1`, pre-registered as `SL-V2-BACKSTAGE-TQ-02-R1` before its first
+observation, re-ran V2's five frozen candidates from scratch after a pre-data
+runtime correction (the same `2.1.229` bytes as a byte-identical `.exe` copy,
+proved by a real Grep/Glob smoke test). V2 stays halted and excluded wholesale;
+nothing of it is pooled or reused.
+
+| field | value |
+| --- | --- |
+| status | **COMPLETE - INSTRUMENT QUALIFICATION** |
+| planned / attempted / completed observations | 15 / 17 / 15 |
+| usable for any analysis | **0** - every row is instrument qualification / C1-only / pre-treatment / not AFCI treatment evidence |
+| outcome | **INSUFFICIENT ADDITIONAL QUALIFIED TASKS** - 0 of 5 newly qualified; 0 target violations in 15 observations |
+| qualified inventory for a future study | `BTQ-T5` (V1) only |
+| deviation | `SL-V2-BACKSTAGE-TQ-02-R1-D1` - one additional identity for one cell after an authentication failure before any model turn |
+| decision | `SL-V2-BACKSTAGE-TQ-02-R1` (pre-registration) |
+
+Full detail: summary section 9C, workbook sheet `23_BACKSTAGE_TASK_QUAL_V2R1`,
+and `../11_backstage_task_qualification_v2_r1/`.
 
 ## Provenance
 
@@ -227,11 +249,13 @@ document, scorer, threshold, run plan, condition, raw run artifact or prior
 analysis. The private evaluator repository received result-provenance commits
 for the Backstage attempt-2 execution and for the Backstage task qualification
 V1 phase - its pre-data freeze, tooling, the D1 incident record and an execution
-index - and for the task qualification V2 phase - its pre-data freeze, readiness
-gate and halt record - and **nothing was pushed to it**.
+index - for the task qualification V2 phase - its pre-data freeze, readiness
+gate and halt record - and for the task qualification V2-R1 phase - its pre-data
+freeze, readiness gate, the D1 incident record and an execution index - and
+**nothing was pushed to it**.
 
 Every figure was recomputed from the run/attempt rows and checked against the
-frozen per-experiment analysis artifacts: **146 checks,
+frozen per-experiment analysis artifacts: **171 checks,
 0 mismatches**. Regenerate with:
 
 ```sh

@@ -1,6 +1,6 @@
 # AFCI-Bench - evidence map
 
-Compiled 2026-09-25. Professor-safe traceability: summary result -> analysis artifact ->
+Compiled 2026-09-26. Professor-safe traceability: summary result -> analysis artifact ->
 run record -> raw artifact, with a hash at each anchor.
 
 Every chain stops at the private boundary, and it stops at a **field**, not at its value.
@@ -90,6 +90,14 @@ No private evaluator identifier appears anywhere in this package.
 - **hash / SHA** - `execution plan sha256 2c34bcb8e326a9687b563f0583de5460bb0ce5d6288b9b1f2476422c585bcc55`
 - **status** - VERIFIED - recomputed from the run rows in 20_RECOMPUTATION_AUDIT; HALTED, no qualification result
 
+### Backstage task qualification V2-R1: INSUFFICIENT ADDITIONAL QUALIFIED TASKS - instrument qualification / C1-only / pre-treatment / not AFCI treatment evidence
+
+- **analysis artifact** - study-results/11_backstage_task_qualification_v2_r1/README.md -> qualification_v2_r1_run_rows.csv (17 rows); docs/v2/AFCI_BACKSTAGE_TASK_QUALIFICATION_V2_R1_DECISION.md
+- **run record** - AFCI_MASTER_RUN_RESULTS.csv, experiment_id = V2_BACKSTAGE_TASK_QUALIFICATION_V2_R1 (17 rows)
+- **raw artifact** - `D:\afci-bq2r1\runs\<run_id>\run_record.json (usage, tools, timing) -> post-hoc hidden scoring, which stops at the private boundary`
+- **hash / SHA** - `execution plan sha256 090d87892e9b2f20680cc82da32eb3df1f490774a04bc5696e68a5ca09be817d`
+- **status** - VERIFIED - recomputed from the run rows in 20_RECOMPUTATION_AUDIT; instrument qualification only
+
 ---
 
 ## Repository and governance anchors
@@ -97,8 +105,8 @@ No private evaluator identifier appears anywhere in this package.
 | what | value |
 | --- | --- |
 | public repo branch | `study-v2` |
-| evidence commit (last change to study-results/ outside this package) | `b98cc65af4c24f110cfa366acca9925fd6f3a202` |
-| that commit's subject | study(backstage): execute task qualification V1 in full and record the result |
+| evidence commit (last change to study-results/ outside this package) | `7822e41b18fd43b9d62737211daf0676df56b0dc` |
+| that commit's subject | study(backstage): halt task qualification V2 after 1 of 15 observations |
 | public repo origin | https://github.com/thakkarkeyur/afci-bench.git |
 | public repo `main` (v1 base, tag `paper-v0`) | `2adc8741acad7ea5423f0bf3d9ad821ff023a35f` |
 | private evaluator repo HEAD (result provenance only; never pushed) | `be8374723eaa68c71a81de34946bc1fe8abaa04f` |
@@ -153,9 +161,9 @@ manifest digests above. Those identify the evidence uniquely without disclosing 
 
 ## Recomputation
 
-Every headline figure in this package was recomputed from the 164 run/attempt rows
+Every headline figure in this package was recomputed from the 181 run/attempt rows
 and compared against the frozen per-experiment analysis artifact:
-**146 checks, 0 mismatches.** The full list is in workbook sheet
+**171 checks, 0 mismatches.** The full list is in workbook sheet
 `20_RECOMPUTATION_AUDIT`. Regenerate this package with:
 
 ```sh
